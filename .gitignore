@@ -1,0 +1,38 @@
+## Authentication
+auth/*
+.env*
+
+## R & Rstudio
+.Rhistory
+.RData
+.Rproj.user
+.Rproj.user/
+.Rapp.history
+.RData
+.Ruserdata
+*-Ex.R
+/*.tar.gz
+/*.Rcheck/
+vignettes/*.html
+vignettes/*.pdf
+*_cache/
+/cache/
+*.utf8.md
+*.knit.md
+.Renviron
+.drake/*
+
+## OS X
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
