@@ -1,2 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^peskas\.timor\.data\.pipeline\.Rproj$
+^LICENSE\.md$
+^README\.Rmd$
+^cran-comments\.md$
+^\.github$
