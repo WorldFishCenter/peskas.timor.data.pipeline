@@ -1,0 +1,10 @@
+version: '3.3'
+services:
+  r:
+    build: .
+    ports:
+      - "8802:8787"
+    volumes:
+      - .:/home/rstudio/peskas.timor.data.pipeline
+    environment:
+      DISABLE_AUTH: "true"
