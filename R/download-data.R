@@ -96,9 +96,9 @@ download_survey_data <- function(path, id = NULL, token = NULL,
 download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 
   # If the token is not provided is not possible to get the
-  no_token <- length(token) > 0 | is.null(token)
-  if (no_token & is.null(id)){
-    stop("Argument `id_string` is required if `token` is not provided")
+  no_token <- length(token) == 0 | is.null(token)
+  if (no_token) {
+    stop("Token is required")
   }
 
   assets_v1_raw <- httr::GET(
