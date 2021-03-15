@@ -1,0 +1,19 @@
+default:
+
+  landings:
+    api: kobohr
+    survey_id: 344563
+    token: !expr Sys.getenv('KOBO_TOKEN')
+
+  storage:
+    provider: google
+    options:
+      project: peskas
+      bucket: timor
+      service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+dev:
+
+  storage:
+    options:
+      bucket: timor-dev
