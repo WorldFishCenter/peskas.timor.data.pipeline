@@ -15,18 +15,14 @@ coverage](https://codecov.io/gh/WorldFishCenter/peskas.timor.data.pipeline/branc
 status](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/workflows/R-CMD-check/badge.svg)](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/actions)
 <!-- badges: end -->
 
-The goal of peskas.timor.data.pipeline is to …
+The goal of peskas.timor.data.pipeline is to implement the data and
+modelling pipelines that underpin Peskas-East Timor, the small-scale
+fisheries analytics in East Timorß
 
 ## Installation
 
-You can install the released version of peskas.timor.data.pipeline from
-[CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("peskas.timor.data.pipeline")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+You can install the development version from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
