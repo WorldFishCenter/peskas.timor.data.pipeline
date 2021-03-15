@@ -26,8 +26,8 @@ Specifies the Host URL of the API to use
 }
 \examples{
 
-kobo_host("unhcr")
-kobo_host("https://kobocat.unhcr.org/api/v1/")
+get_host_url("unhcr")
+get_host_url("https://kobocat.unhcr.org/api/v1/")
 
 }
 \author{

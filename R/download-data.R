@@ -19,8 +19,8 @@
 #'
 #' @examples
 #'
-#' kobo_host("unhcr")
-#' kobo_host("https://kobocat.unhcr.org/api/v1/")
+#' get_host_url("unhcr")
+#' get_host_url("https://kobocat.unhcr.org/api/v1/")
 #'
 get_host_url <- function(api, version = "v1") {
   if (api %in% c("kobo", "kobohr", "ona","unhcr")) {
@@ -88,7 +88,7 @@ download_survey_data <- function(path, id = NULL, token = NULL,
 #'
 #' @examples
 #'
-#' /dontrun{
+#' \dontrun{
 #'   # It's only possible to donwload survey metadata with the account Token
 #'   download_survey_metadata(753491, token = "123XXXXXX")
 #' }
@@ -111,7 +111,7 @@ download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
   # the version 2 of the api returns much richer information about the surveys
   httr::GET(
     url = paste(get_host_url(api, version = "v2"), "assets",
-                "aaztUDtRzb9SpSV7i9iptb", sep = "/"),
+                survey_basic_metadata$id_string, sep = "/"),
     config = httr::add_headers(Authorization = token)) %>%
     httr::content() %>%
     c(survey_basic_metadata)

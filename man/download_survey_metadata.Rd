@@ -29,7 +29,7 @@ Download survey metadata
 }
 \examples{
 
-/dontrun{
+\dontrun{
   # It's only possible to donwload survey metadata with the account Token
   download_survey_metadata(753491, token = "123XXXXXX")
 }

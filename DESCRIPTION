@@ -12,7 +12,9 @@ Authors@R:
 Description: This package implements the data and modelling pipelines underpining the Peskas system.
 License: GPL-3
 Imports:
-    httr
+    httr,
+    purrr,
+    magrittr
 Suggests: 
     testthat,
     covr
