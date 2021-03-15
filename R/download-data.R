@@ -22,7 +22,7 @@
 #' kobo_host("unhcr")
 #' kobo_host("https://kobocat.unhcr.org/api/v1/")
 #'
-kobo_host <- function(api, version = "v1") {
+get_host_url <- function(api, version = "v1") {
   if (api %in% c("kobo", "kobohr", "ona","unhcr")) {
     if (version == "v1") {
       switch(api,
@@ -51,21 +51,21 @@ kobo_host <- function(api, version = "v1") {
 #' @param format Either "csv" or "json"
 #' @param overwrite Will only overwrite existing path if TRUE.
 #'
-#' @inheritParams kobo_host
+#' @inheritParams get_host_url
 #'
 #' @return The file path
 #' @export
 #'
 #' @examples
 #'
-#' download_kobo_data("test.csv", id = 753491)
-#' download_kobo_data("test.json", id = 753491, format = "json")
+#' download_survey_data("test.csv", id = 753491)
+#' download_survey_data("test.json", id = 753491, format = "json")
 #'
-download_kobo_data <- function(path, id = NULL, token = NULL,
+download_survey_data <- function(path, id = NULL, token = NULL,
                                api = "kobohr", format = "csv",
                                overwrite = TRUE){
 
-  request_url <- paste(kobo_host(api),
+  request_url <- paste(get_host_url(api),
                        "data", as.character(id), sep = "/")
 
   httr::GET(url = request_url,
@@ -74,4 +74,45 @@ download_kobo_data <- function(path, id = NULL, token = NULL,
             httr::write_disk(path, overwrite = overwrite))
 
   path
+}
+
+#' Download survey metadata
+#'
+#' @param id
+#' @param token
+#' @param api
+#' @inheritParams download_survey_data
+#'
+#' @return A list with survey metadata
+#' @export
+#'
+#' @examples
+#'
+#' /dontrun{
+#'   # It's only possible to donwload survey metadata with the account Token
+#'   download_survey_metadata(753491, token = "123XXXXXX")
+#' }
+#'
+download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
+
+  # If the token is not provided is not possible to get the
+  no_token <- length(token) > 0 | is.null(token)
+  if (no_token & is.null(id)){
+    stop("Argument `id_string` is required if `token` is not provided")
+  }
+
+  assets_v1_raw <- httr::GET(
+    url = paste(get_host_url(api, version = "v1"), "data", sep = "/"),
+    config = httr::add_headers(Authorization = token))
+
+  survey_basic_metadata <- purrr::keep(httr::content(assets_v1_raw),
+                                       ~.$id == id)[[1]]
+
+  # the version 2 of the api returns much richer information about the surveys
+  httr::GET(
+    url = paste(get_host_url(api, version = "v2"), "assets",
+                "aaztUDtRzb9SpSV7i9iptb", sep = "/"),
+    config = httr::add_headers(Authorization = token)) %>%
+    httr::content() %>%
+    c(survey_basic_metadata)
 }
