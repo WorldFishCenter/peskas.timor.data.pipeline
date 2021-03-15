@@ -1,12 +1,12 @@
 Package: peskas.timor.data.pipeline
-Title: What the Package Does (One Line, Title Case)
+Title: Functions to Implement the Timor Small Scale Fisheries Data Pipeline
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Fernando",
+           family = "Cagua",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           email = "f.cagua@cgiar.org",
+           comment = c(ORCID = "0000-0001-5867-3687"))
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Suggests: 
