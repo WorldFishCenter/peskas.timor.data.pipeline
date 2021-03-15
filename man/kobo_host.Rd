@@ -7,29 +7,27 @@
 kobo_host(api, version = "v1")
 }
 \arguments{
-\item{api}{Either "kobo", "kobohr", "ona", or a custom (full) URL.}
+\item{api}{Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
+are made available for KoBo Toolbox ("kobo",
+\url{https://kc.kobotoolbox.org/api/v1/}), KoBo Humanitarian Response
+("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), Ona ("ona",
+\url{https://ona.io/api/v1/}) and Unhcr ("unhcr",
+\url{https://kobocat.unhcr.org/api/v1/}) . For your own installation, or
+other installations using the same API but accessed at a different URL,
+enter the full URL.}
 
 \item{version}{Wether using the API "v1" or "v2"}
 }
 \value{
-
+An URL
 }
 \description{
-#' Specifies the Host URL of the API to Use
-}
-\note{
-API URLs are made available for KoBo Toolbox ("kobo",
-\url{https://kc.kobotoolbox.org/api/v1/}), KoBo Humanitarian Response
-("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), Ona
-("ona", \url{https://ona.io/api/v1/}) and Unhcr ("unhcr", \url{https://kobocat.unhcr.org/api/v1/}) . For your own installation, or other
-installations using the same API but accessed at a different URL,
-enter the full URL.
+Specifies the Host URL of the API to use
 }
 \examples{
-\dontrun{
+
 kobo_host("unhcr")
-kobo_host("ttps://kobocat.unhcr.org/api/v1/")
-}
+kobo_host("https://kobocat.unhcr.org/api/v1/")
 
 }
 \author{
