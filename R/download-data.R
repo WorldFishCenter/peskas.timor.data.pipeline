@@ -39,3 +39,39 @@ kobo_host <- function(api, version = "v1") {
     api
   }
 }
+
+#' Download kobo data in as csv or json
+#'
+#' @param path string with path to file where API request should be saved
+#' @param id survey id. Usually a 6 digit number. See [this support
+#'   page](https://support.kobotoolbox.org/pulling_data_into_powerbi.html) for
+#'   an example on how this can be obtained
+#' @param token access token for the account e.g. "Token XXXXXXX"
+#' @param api
+#' @param format Either "csv" or "json"
+#' @param overwrite Will only overwrite existing path if TRUE.
+#'
+#' @inheritParams kobo_host
+#'
+#' @return The file path
+#' @export
+#'
+#' @examples
+#'
+#' download_kobo_data("test.csv", id = 753491)
+#' download_kobo_data("test.json", id = 753491, format = "json")
+#'
+download_kobo_data <- function(path, id = NULL, token = NULL,
+                               api = "kobohr", format = "csv",
+                               overwrite = TRUE){
+
+  request_url <- paste(kobo_host(api),
+                       "data", as.character(id), sep = "/")
+
+  httr::GET(url = request_url,
+            config = httr::add_headers(Authorization = token),
+            query = list(format = format),
+            httr::write_disk(path, overwrite = overwrite))
+
+  path
+}
