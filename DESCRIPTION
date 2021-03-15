@@ -12,12 +12,15 @@ Authors@R:
 Description: This package implements the data and modelling pipelines underpining the Peskas system.
 License: GPL-3
 Imports:
+    config,
+    git2r,
     httr,
-    purrr,
-    magrittr
+    magrittr,
+    purrr
 Suggests: 
     testthat,
-    covr
+    covr, 
+    jsonlite
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
