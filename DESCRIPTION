@@ -2,13 +2,13 @@ Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries Data Pipeline
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "Fernando",
+    c(person(given = "Fernando",
            family = "Cagua",
            role = c("aut", "cre"),
            email = "f.cagua@cgiar.org",
            comment = c(ORCID = "0000-0001-5867-3687")),
       person(given = "WorldFish",
-             role = c("cph"))
+             role = c("cph")))
 Description: This package implements the data and modelling pipelines underpining the Peskas system.
 License: GPL-3
 Suggests: 
