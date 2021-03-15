@@ -6,8 +6,10 @@ Authors@R:
            family = "Cagua",
            role = c("aut", "cre"),
            email = "f.cagua@cgiar.org",
-           comment = c(ORCID = "0000-0001-5867-3687"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "0000-0001-5867-3687")),
+      person(given = "WorldFish",
+             role = c("cph"))
+Description: This package implements the data and modelling pipelines underpining the Peskas system.
 License: GPL-3
 Suggests: 
     testthat,
