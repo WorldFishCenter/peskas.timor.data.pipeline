@@ -19,6 +19,8 @@ dev:
 
 local:
   inherits: dev
+  landings:
+    token: !expr readLines("auth/kobo-token")
   storage:
     options:
-      service_account_key: !expr readLines("gcp_sa_key.json")
+      service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
