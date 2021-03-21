@@ -17,8 +17,9 @@ Imports:
     config,
     git2r,
     httr,
-    logger, 
-    magrittr
+    logger,
+    magrittr,
+    purrr
 Suggests: 
     covr,
     googleCloudStorageR,
