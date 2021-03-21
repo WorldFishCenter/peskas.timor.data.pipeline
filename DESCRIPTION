@@ -20,7 +20,7 @@ Imports:
 Suggests: 
     testthat,
     covr, 
-    jsonlite
+    googleCloudStorageR,
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
