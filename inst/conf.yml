@@ -13,7 +13,12 @@ default:
       service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
 dev:
-
   storage:
     options:
       bucket: timor-dev
+
+local:
+  inherits: dev
+  storage:
+    options:
+      service_account_key: !expr readLines("gcp_sa_key.json")
