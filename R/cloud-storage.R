@@ -33,7 +33,7 @@
 #' }
 #'
 upload_cloud_file <- function(file, provider, options, name = file){
-  if (provider == "gcs") {
+  if ("gcs" %in% provider) {
 
     service_account_key <- options$service_account_key
     temp_auth_file <- tempfile(fileext = 'json')
