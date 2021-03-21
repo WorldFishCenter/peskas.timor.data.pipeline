@@ -32,7 +32,7 @@ get_host_url <- function(api, version = "v1") {
              unhcr = "https://kobocat.unhcr.org/api/v1")
     } else if (version == "v2") {
       switch(api,
-             kobo = "https://kobo.kobotoolbox.org/api/v2",
+             kobo = "https://kc.kobotoolbox.org/api/v2",
              kobohr = "https://kobo.humanitarianresponse.info/api/v2")
     }
   } else {

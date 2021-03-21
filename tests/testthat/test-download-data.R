@@ -8,7 +8,6 @@ test_that("host URLs are resolved correctly", {
     all() %>%
     expect_true()
 
-
   # In addition Kobo should have v2 of the API also implemented
   c("kobo", "kobohr") %>%
     purrr::map(get_host_url, version = "v2") %>%
