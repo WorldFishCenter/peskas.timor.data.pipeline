@@ -23,3 +23,11 @@ download_survey_data(path = json_filename,
                      token = pars$landings$token,
                      format = "json")
 
+file_list <- c(metadata_filename, csv_filename, json_filename)
+
+purrr::map(.x = file_list,
+           .f = upload_cloud_file,
+           provider = "gcs",
+           options = list(
+             service_account_key = pars$storage$options$service_account_key,
+             bucket = pars$storage$options$bucket))
