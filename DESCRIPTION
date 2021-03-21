@@ -17,6 +17,7 @@ Imports:
     config,
     git2r,
     httr,
+    logger, 
     magrittr
 Suggests: 
     covr,
