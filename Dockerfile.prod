@@ -1,0 +1,6 @@
+FROM rocker/r-ver:4.0.3
+
+# Extra R packages
+RUN install2.r --deps TRUE \".\"
+
+ENTRYPOINT ["Rscript"]

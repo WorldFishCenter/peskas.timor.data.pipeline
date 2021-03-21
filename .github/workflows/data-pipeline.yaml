@@ -1,0 +1,25 @@
+name: Peskas Timor Data Pipeline
+
+on:
+  push
+
+jobs:
+
+  build-container:
+    name: Build production R container
+    runs-on: ubuntu-20.04
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build image with cache
+        id: build_docker
+        uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: $GITHUB_ACTOR
+          password: "${{ secrets.GITHUB_TOKEN }}"
+          registry: docker.pkg.github.com
+          image_name: r-runner
+          push_git_tag: true
+          dockerfile: Dockerfile.prod
