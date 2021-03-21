@@ -12,8 +12,8 @@ logger::log_debug("Running with parameters {pars}")
 
 dir.create("tmp", showWarnings = FALSE)
 
-logger::log_info("Downloading survey metadata...")
 metadata_filename <- add_version("timor-landings-metadata", "json")
+logger::log_info("Downloading survey metadata as {metadata_file}...")
 download_survey_metadata(id = pars$landings$survey_id,
                          token = pars$landings$token,
                          api = pars$landings$api) %>%
@@ -21,16 +21,17 @@ download_survey_metadata(id = pars$landings$survey_id,
 logger::log_success("Metadata download succeeded")
 
 
-logger::log_info("Downloading survey csv data...")
 csv_filename <- add_version("timor-landings-raw", "csv")
+logger::log_info("Downloading survey csv data as {csv_filename}...")
 download_survey_data(path = csv_filename,
                      id = pars$landings$survey_id,
                      token = pars$landings$token,
                      format = "csv")
 logger::log_success("Survey csv data download succeeded")
 
-logger::log_info("Downloading survey json data...")
+
 json_filename <- add_version("timor-landings-raw", "json")
+logger::log_info("Downloading survey json data as {json_filename}...")
 download_survey_data(path = json_filename,
                      id = pars$landings$survey_id,
                      token = pars$landings$token,
