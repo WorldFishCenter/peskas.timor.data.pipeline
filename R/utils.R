@@ -9,10 +9,19 @@
 #' @param extension Extension of the file
 #' @param sha_nchar Number of characters from the SHA to use as the version
 #'   identifier
-#' @param sep Characters separating the version identifier from the filename
+#' @param sep Characters separating the version identifier from the file name
 #'
-#' @return A character string with the filename and the version identifier
+#' @return A character string with the file name and the version identifier
+#' @author Fernando Cagua
 #' @export
+#'
+#' @details
+#'
+#' The SHA information is retrieved using [git2r::sha]. If the code is not
+#' running in a context aware of a git repository (for example when code is
+#' running inside a container) then this function attempts to get the sha from
+#' the environment variable `GITHUB_SHA`. If both of these methods fail, no sha
+#' versioning is added.
 #'
 #' @examples
 #' if (git2r::in_repository()) {
@@ -26,8 +35,13 @@ add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__"){
 
   version <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-  if (git2r::in_repository()){
+  if (git2r::in_repository()) {
     commit_sha <- substr(git2r::sha(git2r::last_commit()), 1, sha_nchar)
+    version <- paste(version, commit_sha, sep = "_")
+  } else if (Sys.getenv("GITHUB_SHA") != "") {
+    # If not in a git repository (for example when code is running inside a
+    # container) get the sha from an environment variable if available
+    commit_sha <- substr(Sys.getenv("GITHUB_SHA"), 1, sha_nchar)
     version <- paste(version, commit_sha, sep = "_")
   }
 
