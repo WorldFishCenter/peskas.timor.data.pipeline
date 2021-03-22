@@ -29,7 +29,6 @@
 ingest_timor_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
-  logger::log_errors()
 
   logger::log_info("Loading configuration file...")
   pars <- config::get(
