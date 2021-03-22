@@ -26,8 +26,13 @@ jobs:
           fi
 
       - name: Get smart tag
-        id: prepare
+        id: get-tag
         uses: Surgo/docker-smart-tag-action@v1
+
+      - name: Check smart tag
+        id: check-tag
+        run: |
+          echo "-${{ steps.get-tag.outputs.tag:1 }}"
 
       - name: Build image with cache
         id: build-docker
@@ -36,7 +41,7 @@ jobs:
           username: $GITHUB_ACTOR
           password: "${{ secrets.GITHUB_TOKEN }}"
           registry: docker.pkg.github.com
-          image_name: r-runner-${{ steps.prepare.outputs.tag }}
+          image_name: r-runner
           push_git_tag: true
           dockerfile: Dockerfile.prod
 
