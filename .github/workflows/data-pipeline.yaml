@@ -36,9 +36,8 @@ jobs:
           username: $GITHUB_ACTOR
           password: "${{ secrets.GITHUB_TOKEN }}"
           registry: docker.pkg.github.com
-          image_name: r-runner
+          image_name: r-runner-${{ steps.prepare.outputs.tag }}
           push_git_tag: true
-          image_tag: ${{ steps.prepare.outputs.tag }}
           dockerfile: Dockerfile.prod
 
   ingest-landings:
