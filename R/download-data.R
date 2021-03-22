@@ -60,6 +60,7 @@ get_host_url <- function(api, version = "v1") {
 #'
 #' download_survey_data("test.csv", id = 753491)
 #' download_survey_data("test.json", id = 753491, format = "json")
+#' file.remove("test.csv", "test.json")
 #'
 download_survey_data <- function(path, id = NULL, token = NULL,
                                api = "kobohr", format = "csv",
