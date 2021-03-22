@@ -9,6 +9,7 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^Dockerfile$
+^Dockerfile*
 ^docker-compose.yaml$
 ^rstudio-prefs.json$
+^auth$
