@@ -31,7 +31,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-20.04
     container:
-      image: echo ${{needs.build-container.outputs.r-image-name}}
+      image: ${{needs.build-container.outputs.r-image-name}}
       env:
         R_CONFIG_ACTIVE: dev
         KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
