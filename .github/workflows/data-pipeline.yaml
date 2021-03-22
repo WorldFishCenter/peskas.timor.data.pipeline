@@ -41,5 +41,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
 
+      - name: Get session info
+        run: Rscript -e 'sessioninfo::session_info()'
+
       - name: Call ingest_timor_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'
