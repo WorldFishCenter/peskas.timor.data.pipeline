@@ -38,5 +38,5 @@ jobs:
         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
       steps:
 
-      - name: Call ingest_timor_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'
+        - name: Call ingest_timor_landings()
+          run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'
