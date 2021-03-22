@@ -25,6 +25,10 @@ jobs:
             echo "::set-output name=r-config::default"
           fi
 
+      - name: Get smart tag
+        id: prepare
+        uses: Surgo/docker-smart-tag-action@v1
+
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
@@ -34,6 +38,7 @@ jobs:
           registry: docker.pkg.github.com
           image_name: r-runner
           push_git_tag: true
+          image_tag: ${{ steps.prepare.outputs.tag }}
           dockerfile: Dockerfile.prod
 
   ingest-landings:
