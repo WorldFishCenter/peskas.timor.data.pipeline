@@ -11,5 +11,6 @@
 ^pkgdown$
 ^Dockerfile*
 ^docker-compose.yaml$
+^.dockerignore$
 ^rstudio-prefs.json$
 ^auth$
