@@ -23,3 +23,11 @@ jobs:
           image_name: r-runner
           push_git_tag: true
           dockerfile: Dockerfile.prod
+
+  ingest-landings:
+    name: Ingest
+    needs: build-container
+    runs-on: ubuntu-20.04
+    steps:
+
+      - run: echo ${{needs.build-container.outputs.FULL_IMAGE_NAME}}
