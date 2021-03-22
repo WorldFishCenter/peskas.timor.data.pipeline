@@ -19,7 +19,7 @@ RUN install2.r --error --skipinstalled \
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
-    covr googleCloudStorageR jsonlite RCurl remotes testthat
+    covr googleCloudStorageR jsonlite RCurl remotes sessioninfo testthat
 
 # Install local package
 COPY . /home
