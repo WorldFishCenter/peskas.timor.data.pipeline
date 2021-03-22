@@ -54,6 +54,7 @@ get_host_url <- function(api, version = "v1") {
 #' @inheritParams get_host_url
 #'
 #' @return The file path
+#' @author Fernando Cagua
 #' @export
 #'
 #' @examples
@@ -85,6 +86,7 @@ download_survey_data <- function(path, id = NULL, token = NULL,
 #' @inheritParams download_survey_data
 #'
 #' @return A list with survey metadata
+#' @author Fernando Cagua
 #' @export
 #'
 #' @examples
@@ -116,4 +118,79 @@ download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
     config = httr::add_headers(Authorization = token)) %>%
     httr::content() %>%
     c(survey_basic_metadata)
+}
+
+
+#' Download survey
+#'
+#' Download multiple survey artefacts (data and metadata) at once. Progress
+#' through the function is tracked using the package *logger*.
+#'
+#' @param prefix name to be used as the prefix of the file names to be
+#'   downloaded. Can be a path.
+#' @param api
+#' @param id
+#' @param token
+#' @param format
+#' @param metadata whether to download metadata as well as data
+#' @param append_version whether to append versioning information to the
+#'   filename using [add_version].
+#' @inheritParams download_survey_data
+#'
+#' @return a character vector with paths of the downloaded files
+#' @author Fernando Cagua
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   # It's only possible to donwload survey metadata with the account Token
+#'   download_survey(prefix = "my-survey", api = "kobohr", id = 753491,
+#'                   token = "123XXXXXX")
+#'   # To download in a different path
+#'   dir.create("my-data-dir")
+#'   download_survey(prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
+#'                   token = "123XXXXXX")
+#' }
+download_survey <- function(prefix, api, id, token, format = c("csv", "json"),
+                            metadata = TRUE, append_version = TRUE){
+
+  metadata_filename <- paste(prefix, "metadata", sep = "-")
+  data_filename <- paste(prefix, "raw", sep = "-")
+
+  if (isTRUE(append_version)) {
+    metadata_filename <- add_version(metadata_filename, "json")
+    csv_filename <- add_version(data_filename, "csv")
+    json_filename <- add_version(data_filename, "json")
+  } else {
+    metadata_filename <- paste0(metadata_filename, ".json")
+    csv_filename <- paste0(data_filename, ".csv")
+    json_filename <- paste0(data_filename, ".json")
+  }
+
+  filenames <- character()
+
+  if (isTRUE(metadata)) {
+    logger::log_info("Downloading survey metadata as {metadata_filename}...")
+    download_survey_metadata(id, token = token, api = api) %>%
+      jsonlite::write_json(metadata_filename)
+    logger::log_success("Metadata download succeeded")
+    filenames <- c(filenames, metadata_filename)
+  }
+
+  if ("csv" %in% format) {
+    logger::log_info("Downloading survey csv data as {csv_filename}...")
+    download_survey_data(path = csv_filename, id, token, format = "csv")
+    logger::log_success("Survey csv data download succeeded")
+    filenames <- c(filenames, csv_filename)
+  }
+
+  if ("json" %in% format) {
+    logger::log_info("Downloading survey json data as {json_filename}...")
+    download_survey_data(json_filename, id, token, format = "json")
+    logger::log_success("Survey json data download succeeded")
+    filenames <- c(filenames, json_filename)
+  }
+
+  filenames
+
 }
