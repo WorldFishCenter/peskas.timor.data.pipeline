@@ -7,7 +7,8 @@
 upload_cloud_file(file, provider, options, name = file)
 }
 \arguments{
-\item{file}{a filepath (character) to upload}
+\item{file}{a file-path (character) to upload. A vector with multiple files
+is also supported.}
 
 \item{provider}{cloud provider to use, either "gcs" or "aws"}
 
@@ -16,7 +17,7 @@ upload_cloud_file(file, provider, options, name = file)
 \item{name}{What to call the file once uploaded. Default is the filepath}
 }
 \value{
-If \code{provider} is "gcs" and if successful a medatada object
+If \code{provider} is "gcs" and if successful a list of medatada objects
 }
 \description{
 Upload a local file to a cloud storage bucket

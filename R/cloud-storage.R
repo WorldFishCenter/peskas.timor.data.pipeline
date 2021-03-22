@@ -1,6 +1,7 @@
 #' Upload a local file to a cloud storage bucket
 #'
-#' @param file a filepath (character) to upload
+#' @param file a file-path (character) to upload. A vector with multiple files
+#'   is also supported.
 #' @param provider cloud provider to use, either "gcs" or "aws"
 #' @param options named list with cloud provider options, see details
 #' @param name What to call the file once uploaded. Default is the filepath
@@ -17,7 +18,7 @@
 #' This function uses [googleCloudStorageR::gcs_auth] and
 #' [googleCloudStorageR::gcs_upload] under the hood to upload the file.
 #'
-#' @return If `provider` is "gcs" and if successful a medatada object
+#' @return If `provider` is "gcs" and if successful a list of medatada objects
 #' @export
 #'
 #' @examples
@@ -33,6 +34,9 @@
 #' }
 #'
 upload_cloud_file <- function(file, provider, options, name = file){
+
+  out <- list()
+
   if ("gcs" %in% provider) {
 
     service_account_key <- options$service_account_key
@@ -40,9 +44,17 @@ upload_cloud_file <- function(file, provider, options, name = file){
     writeLines(service_account_key,temp_auth_file)
     googleCloudStorageR::gcs_auth(json_file = temp_auth_file)
 
-    googleCloudStorageR::gcs_upload(file = file,
-                                    name = name,
-                                    bucket = options$bucket,
-                                    predefinedAcl = "bucketLevel")
+    # Iterate over multiple files (and names)
+    google_output <- purrr::map2(
+      file, name,
+      ~ googleCloudStorageR::gcs_upload(
+        file = .x,
+        bucket = options$bucket,
+        name = .y,
+        predefinedAcl = "bucketLevel"))
+
+    out <- c(out, google_output)
   }
+
+  out
 }
