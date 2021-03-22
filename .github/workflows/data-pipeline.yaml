@@ -10,10 +10,20 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       r-image-name: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
+      r-config: ${{ steps.setvars.outputs.r-config }}
     steps:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Set variables
+        id: setvars
+        run: |
+          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
+            echo "::set-output name=r-config::production"
+          else
+            echo "::set-output name=r-config::default"
+          fi
 
       - name: Build image with cache
         id: build-docker
@@ -33,7 +43,7 @@ jobs:
     container:
       image: ${{needs.build-container.outputs.r-image-name}}
       env:
-        R_CONFIG_ACTIVE: dev
+        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
         KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
       credentials:
