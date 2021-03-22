@@ -13,7 +13,7 @@ logger::log_debug("Running with parameters {pars}")
 dir.create("tmp", showWarnings = FALSE)
 
 metadata_filename <- add_version("timor-landings-metadata", "json")
-logger::log_info("Downloading survey metadata as {metadata_file}...")
+logger::log_info("Downloading survey metadata as {metadata_filename}...")
 download_survey_metadata(id = pars$landings$survey_id,
                          token = pars$landings$token,
                          api = pars$landings$api) %>%
