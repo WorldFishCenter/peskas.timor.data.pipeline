@@ -30,6 +30,13 @@ jobs:
     name: Ingest landings
     needs: build-container
     runs-on: ubuntu-20.04
-    steps:
+    container:
+      image: echo ${{needs.build-container.outputs.r-image-name}}
+      env:
+        R_CONFIG_ACTIVE: dev
+        KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
+        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      steps:
 
-      - run: echo ${{needs.build-container.outputs.r-image-name}}
+      - name: Call ingest_timor_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'
