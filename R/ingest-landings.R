@@ -41,6 +41,9 @@ ingest_timor_landings <- function(log_threshold = logger::DEBUG){
   dir.create("tmp", showWarnings = FALSE)
 
   metadata_filename <- add_version("timor-landings-metadata", "json")
+  csv_filename <- add_version("timor-landings-raw", "csv")
+  json_filename <- add_version("timor-landings-raw", "json")
+
   logger::log_info("Downloading survey metadata as {metadata_filename}...")
   download_survey_metadata(id = pars$landings$survey_id,
                            token = pars$landings$token,
@@ -48,7 +51,6 @@ ingest_timor_landings <- function(log_threshold = logger::DEBUG){
     jsonlite::write_json(metadata_filename)
   logger::log_success("Metadata download succeeded")
 
-  csv_filename <- add_version("timor-landings-raw", "csv")
   logger::log_info("Downloading survey csv data as {csv_filename}...")
   download_survey_data(path = csv_filename,
                        id = pars$landings$survey_id,
@@ -56,7 +58,6 @@ ingest_timor_landings <- function(log_threshold = logger::DEBUG){
                        format = "csv")
   logger::log_success("Survey csv data download succeeded")
 
-  json_filename <- add_version("timor-landings-raw", "json")
   logger::log_info("Downloading survey json data as {json_filename}...")
   download_survey_data(path = json_filename,
                        id = pars$landings$survey_id,
