@@ -24,13 +24,17 @@ add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__"){
   # Git sha are 40 characters long
   stopifnot(sha_nchar <= 40)
 
-  commit_sha <- substr(git2r::sha(git2r::last_commit()), 1, sha_nchar)
-  time_stamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+  version <- format(Sys.time(), "%Y%m%d%H%M%S")
+
+  if (git2r::in_repository()){
+    commit_sha <- substr(git2r::sha(git2r::last_commit()), 1, sha_nchar)
+    version <- paste(version, commit_sha, sep = "_")
+  }
 
   # If the extension comes without dot, add one
   if (nchar(extension) > 0 & substr(extension, 1, 1) != ".") {
     extension <- paste0(".", extension)
   }
 
-  paste0(filename, sep, time_stamp, "_", commit_sha, sep, extension)
+  paste0(filename, sep, version, sep, extension)
 }
