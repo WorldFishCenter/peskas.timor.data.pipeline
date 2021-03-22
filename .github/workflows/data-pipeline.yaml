@@ -6,15 +6,17 @@ on:
 jobs:
 
   build-container:
-    name: Build production R container
+    name: Build R container
     runs-on: ubuntu-20.04
+    outputs:
+      r-image-name: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
     steps:
 
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Build image with cache
-        id: build_docker
+        id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
         with:
           username: $GITHUB_ACTOR
@@ -25,9 +27,9 @@ jobs:
           dockerfile: Dockerfile.prod
 
   ingest-landings:
-    name: Ingest
+    name: Ingest landings
     needs: build-container
     runs-on: ubuntu-20.04
     steps:
 
-      - run: echo ${{needs.build-container.outputs.FULL_IMAGE_NAME}}
+      - run: echo ${{needs.build-container.outputs.r-image-name}}
