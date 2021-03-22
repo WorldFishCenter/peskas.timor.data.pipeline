@@ -36,6 +36,9 @@ jobs:
         R_CONFIG_ACTIVE: dev
         KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
 
       - name: Call ingest_timor_landings()
