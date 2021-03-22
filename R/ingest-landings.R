@@ -37,41 +37,16 @@ ingest_timor_landings <- function(log_threshold = logger::DEBUG){
   logger::log_info("Using configutation: {attr(pars, 'config')}")
   logger::log_debug("Running with parameters {pars}")
 
-  dir.create("tmp", showWarnings = FALSE)
-
-  metadata_filename <- add_version("timor-landings-metadata", "json")
-  csv_filename <- add_version("timor-landings-raw", "csv")
-  json_filename <- add_version("timor-landings-raw", "json")
-
-  logger::log_info("Downloading survey metadata as {metadata_filename}...")
-  download_survey_metadata(id = pars$landings$survey_id,
-                           token = pars$landings$token,
-                           api = pars$landings$api) %>%
-    jsonlite::write_json(metadata_filename)
-  logger::log_success("Metadata download succeeded")
-
-  logger::log_info("Downloading survey csv data as {csv_filename}...")
-  download_survey_data(path = csv_filename,
-                       id = pars$landings$survey_id,
-                       token = pars$landings$token,
-                       format = "csv")
-  logger::log_success("Survey csv data download succeeded")
-
-  logger::log_info("Downloading survey json data as {json_filename}...")
-  download_survey_data(path = json_filename,
-                       id = pars$landings$survey_id,
-                       token = pars$landings$token,
-                       format = "json")
-  logger::log_success("Survey json data download succeeded")
+  file_list <- download_survey("timor-landings",
+                api = pars$surveys$landings$api,
+                id = pars$surveys$landings$survey_id,
+                token = pars$surveys$landings$token)
 
   logger::log_info("Uploading files to cloud...")
-  file_list <- c(metadata_filename, csv_filename, json_filename)
-  purrr::map(.x = file_list,
-             .f = upload_cloud_file,
-             provider = "gcs",
-             options = list(
-               service_account_key = pars$storage$options$service_account_key,
-               bucket = pars$storage$options$bucket))
+  # Iterate over multiple storage providers if there are more than one
+  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
   logger::log_success("File upload succeded")
 
 }
+
+

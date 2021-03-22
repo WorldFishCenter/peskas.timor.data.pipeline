@@ -1,26 +1,39 @@
 default:
 
-  landings:
-    api: kobohr
-    survey_id: 344563
-    token: !expr Sys.getenv('KOBO_TOKEN')
+  surveys:
+    landings:
+      api: kobohr
+      survey_id: 344563
+      token: !expr Sys.getenv('KOBO_TOKEN')
+    landings_legacy:
+      api: kobohr
+      survey_id:
+      token: !expr Sys.getenv('KOBO_TOKEN')
 
   storage:
-    provider: google
-    options:
-      project: peskas
-      bucket: timor
-      service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
-dev:
+
+production:
   storage:
-    options:
-      bucket: timor-dev
+    google:
+      options:
+        bucket: timor
+
 
 local:
-  inherits: dev
-  landings:
-    token: !expr readLines("auth/kobo-token")
+  inherits: development
+  surveys:
+    landings:
+      token: !expr readLines("auth/kobo-token")
+    landings_legacy:
+      token: !expr readLines("auth/kobo-token")
   storage:
-    options:
-      service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+    google:
+      options:
+        service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
