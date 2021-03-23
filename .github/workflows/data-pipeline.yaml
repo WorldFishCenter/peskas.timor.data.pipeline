@@ -1,0 +1,72 @@
+name: Peskas Timor Data Pipeline
+
+on:
+  push:
+  schedule:
+    - cron:  '0 0 * * *'
+
+jobs:
+
+  build-container:
+    name: Build R container
+    runs-on: ubuntu-20.04
+    outputs:
+      r-image-name: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
+      r-config: ${{ steps.setvars.outputs.r-config }}
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set variables
+        id: setvars
+        run: |
+          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
+            echo "::set-output name=r-config::production"
+          else
+            echo "::set-output name=r-config::default"
+          fi
+
+      - name: Get smart tag for docker image
+        id: get-tag
+        uses: Surgo/docker-smart-tag-action@v1
+
+      # This step is necessary to remove the colon from the beginning of the tag
+      - name: Remove colon from smart tag
+        id: remove-tag-colon
+        env:
+          IMAGE_TAG: ${{ steps.get-tag.outputs.tag }}
+        run: |
+          echo "::set-output name=tag::${IMAGE_TAG:1}"
+
+      - name: Build image with cache
+        id: build-docker
+        uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: $GITHUB_ACTOR
+          password: "${{ secrets.GITHUB_TOKEN }}"
+          registry: docker.pkg.github.com
+          image_name: r-runner-${{ steps.remove-tag-colon.outputs.tag }}
+          push_git_tag: true
+          dockerfile: Dockerfile.prod
+
+  ingest-landings:
+    name: Ingest landings
+    needs: build-container
+    runs-on: ubuntu-20.04
+    container:
+      image: ${{needs.build-container.outputs.r-image-name}}
+      env:
+        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+        KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
+        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+
+      - name: Get session info
+        run: Rscript -e 'sessioninfo::session_info()'
+
+      - name: Call ingest_timor_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'

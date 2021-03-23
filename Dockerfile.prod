@@ -1,0 +1,29 @@
+FROM rocker/r-ver:4.0.3
+
+# Tidyverse system requirements
+RUN apt-get update -qq && apt-get -y --no-install-recommends install \
+    libxml2-dev \
+    libcairo2-dev \
+    libgit2-dev \
+    default-libmysqlclient-dev \
+    libpq-dev \
+    libsasl2-dev \
+    libsqlite3-dev \
+    libssh2-1-dev \
+    unixodbc-dev && \
+  rm -rf /var/lib/apt/lists/*
+
+# Install imports
+RUN install2.r --error --skipinstalled \
+    config git2r httr logger magrittr purrr
+
+# Install suggests
+RUN install2.r --error --skipinstalled \
+    covr googleCloudStorageR jsonlite RCurl remotes sessioninfo testthat
+
+# Install local package
+COPY . /home
+WORKDIR /home
+RUN Rscript -e 'remotes::install_local(dependencies = TRUE)'
+
+ENTRYPOINT ["Rscript"]
