@@ -31,8 +31,10 @@ jobs:
 
       - name: Check smart tag
         id: check-tag
+        env:
+          IMAGE_TAG: ${{ steps.get-tag.outputs.tag }}
         run: |
-          echo "-${{ steps.get-tag.outputs.tag:1 }}"
+          echo "-${IMAGE_TAG:1}"
 
       - name: Build image with cache
         id: build-docker
