@@ -25,16 +25,17 @@ jobs:
             echo "::set-output name=r-config::default"
           fi
 
-      - name: Get smart tag
+      - name: Get smart tag for docker image
         id: get-tag
         uses: Surgo/docker-smart-tag-action@v1
 
-      - name: Check smart tag
-        id: check-tag
+      # This step is necessary to remove the colon from the beginning of the tag
+      - name: Remove colon from smart tag
+        id: remove-tag-colon
         env:
           IMAGE_TAG: ${{ steps.get-tag.outputs.tag }}
         run: |
-          echo "-${IMAGE_TAG:1}"
+          echo "::set-output name=tag::${IMAGE_TAG:1}"
 
       - name: Build image with cache
         id: build-docker
@@ -43,7 +44,7 @@ jobs:
           username: $GITHUB_ACTOR
           password: "${{ secrets.GITHUB_TOKEN }}"
           registry: docker.pkg.github.com
-          image_name: r-runner
+          image_name: r-runner-${{ steps.remove-tag-colon.outputs.tag }}
           push_git_tag: true
           dockerfile: Dockerfile.prod
 
