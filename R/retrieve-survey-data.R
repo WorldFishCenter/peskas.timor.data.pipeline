@@ -154,8 +154,8 @@ retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
                             metadata = TRUE, append_version = TRUE){
 
-  metadata_filename <- paste(prefix, "metadata", sep = "-")
-  data_filename <- paste(prefix, "raw", sep = "-")
+  metadata_filename <- paste(prefix, "metadata", sep = "_")
+  data_filename <- paste(prefix, "raw", sep = "_")
 
   if (isTRUE(append_version)) {
     metadata_filename <- add_version(metadata_filename, "json")
