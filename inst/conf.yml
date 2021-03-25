@@ -5,10 +5,12 @@ default:
       api: kobohr
       survey_id: 344563
       token: !expr Sys.getenv('KOBO_TOKEN')
+      file_prefix: timor-landings-v2
     landings_legacy:
       api: kobohr
       survey_id:
       token: !expr Sys.getenv('KOBO_TOKEN')
+      file_prefix: timor-landings-v1
 
   storage:
     google:
