@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline (development version)
+
+## Breaking changes
+
+* `download_survey_data()`, `download_survey_metadata()`, and `download_survey()` have been renamed to `retrieve_survey_data()`, `retrieve_survey_metadata()`, and `retrieve_survey()`. This is to avoid confusion with planned functions that download data from cloud locations.
+
 # peskas.timor.data.pipeline 0.1.0
 
 Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings. 

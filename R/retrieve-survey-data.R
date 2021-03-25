@@ -59,11 +59,11 @@ get_host_url <- function(api, version = "v1") {
 #'
 #' @examples
 #'
-#' download_survey_data("test.csv", id = 753491)
-#' download_survey_data("test.json", id = 753491, format = "json")
+#' retrieve_survey_data("test.csv", id = 753491)
+#' retrieve_survey_data("test.json", id = 753491, format = "json")
 #' file.remove("test.csv", "test.json")
 #'
-download_survey_data <- function(path, id = NULL, token = NULL,
+retrieve_survey_data <- function(path, id = NULL, token = NULL,
                                api = "kobohr", format = "csv",
                                overwrite = TRUE){
 
@@ -83,7 +83,7 @@ download_survey_data <- function(path, id = NULL, token = NULL,
 #' @param id
 #' @param token
 #' @param api
-#' @inheritParams download_survey_data
+#' @inheritParams retrieve_survey_data
 #'
 #' @return A list with survey metadata
 #' @author Fernando Cagua
@@ -93,10 +93,10 @@ download_survey_data <- function(path, id = NULL, token = NULL,
 #'
 #' \dontrun{
 #'   # It's only possible to donwload survey metadata with the account Token
-#'   download_survey_metadata(753491, token = "123XXXXXX")
+#'   retrieve_survey_metadata(753491, token = "123XXXXXX")
 #' }
 #'
-download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
+retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 
   # If the token is not provided is not possible to get the
   no_token <- length(token) == 0 | is.null(token)
@@ -135,7 +135,7 @@ download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 #' @param metadata whether to download metadata as well as data
 #' @param append_version whether to append versioning information to the
 #'   filename using [add_version].
-#' @inheritParams download_survey_data
+#' @inheritParams retrieve_survey_data
 #'
 #' @return a character vector with paths of the downloaded files
 #' @author Fernando Cagua
@@ -144,14 +144,14 @@ download_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 #' @examples
 #' \dontrun{
 #'   # It's only possible to donwload survey metadata with the account Token
-#'   download_survey(prefix = "my-survey", api = "kobohr", id = 753491,
+#'   retrieve_survey(prefix = "my-survey", api = "kobohr", id = 753491,
 #'                   token = "123XXXXXX")
 #'   # To download in a different path
 #'   dir.create("my-data-dir")
-#'   download_survey(prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
+#'   retrieve_survey(prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
 #'                   token = "123XXXXXX")
 #' }
-download_survey <- function(prefix, api, id, token, format = c("csv", "json"),
+retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
                             metadata = TRUE, append_version = TRUE){
 
   metadata_filename <- paste(prefix, "metadata", sep = "-")
@@ -171,7 +171,7 @@ download_survey <- function(prefix, api, id, token, format = c("csv", "json"),
 
   if (isTRUE(metadata)) {
     logger::log_info("Downloading survey metadata as {metadata_filename}...")
-    download_survey_metadata(id, token = token, api = api) %>%
+    retrieve_survey_metadata(id, token = token, api = api) %>%
       jsonlite::write_json(metadata_filename)
     logger::log_success("Metadata download succeeded")
     filenames <- c(filenames, metadata_filename)
@@ -179,14 +179,14 @@ download_survey <- function(prefix, api, id, token, format = c("csv", "json"),
 
   if ("csv" %in% format) {
     logger::log_info("Downloading survey csv data as {csv_filename}...")
-    download_survey_data(path = csv_filename, id, token, format = "csv")
+    retrieve_survey_data(path = csv_filename, id, token, format = "csv")
     logger::log_success("Survey csv data download succeeded")
     filenames <- c(filenames, csv_filename)
   }
 
   if ("json" %in% format) {
     logger::log_info("Downloading survey json data as {json_filename}...")
-    download_survey_data(json_filename, id, token, format = "json")
+    retrieve_survey_data(json_filename, id, token, format = "json")
     logger::log_success("Survey json data download succeeded")
     filenames <- c(filenames, json_filename)
   }
