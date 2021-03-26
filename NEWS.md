@@ -1,3 +1,14 @@
+# peskas.timor.data.pipeline 0.2.0
+
+## Breaking changes
+
+* `download_survey_data()`, `download_survey_metadata()`, and `download_survey()` have been renamed to `retrieve_survey_data()`, `retrieve_survey_metadata()`, and `retrieve_survey()`. This is to avoid confusion with planned functions that download data from cloud locations.
+* The suffix *raw* and *metadata* that is appended to the prefix when retrieving survey information is now separated using "_" rather than "-". This is to more easily distinguish between information encoded in the file name.
+
+## New features
+
+* The prefix name of surveys is not hard-coded and can be specified in the config file (`file_prefix` field).
+
 # peskas.timor.data.pipeline 0.1.0
 
 Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings. 

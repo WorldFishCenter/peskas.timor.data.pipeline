@@ -37,7 +37,7 @@ ingest_timor_landings <- function(log_threshold = logger::DEBUG){
   logger::log_info("Using configutation: {attr(pars, 'config')}")
   logger::log_debug("Running with parameters {pars}")
 
-  file_list <- download_survey("timor-landings",
+  file_list <- retrieve_survey(pars$surveys$landings$file_prefix,
                 api = pars$surveys$landings$api,
                 id = pars$surveys$landings$survey_id,
                 token = pars$surveys$landings$token)
