@@ -1,16 +1,32 @@
-#' Nest survey attachment columns in landings data
+#' Nest survey columns in landings data
 #'
-#' @param x A data frame containing landings data from the Timor operations
-#'   in which the attachments information is spread across multiple columns
+#' `pt_nest_attachments()` nests attachment data in a kobo survey.
+#'
+#' One of the disadvantages of using structured survey data is that the tables
+#' can become very wide (many columns). This happens when question groups or
+#' other fields can be recorded multiple times. For example in the landings
+#' survey, for each species captured, about 17 questions are recorded. There is
+#' no limit to the number of species that can be recorded in the trip. If, for
+#' example a survey records seven species we will have over a hundred columns in
+#' the data corresponding to species information.
+#'
+#' To improve that situation an avoid using multiple tables we use **nested data
+#' frames** (see [tidyr::nest]). In nested data frames columns can be lists and
+#' can contain arbitrary information, like other data frames, lists, vectors, or
+#' models.
+#'
+#' @param x A data frame containing raw landings data from the Timor operations.
 #'
 #' @return Landings data in which the information about multiple attachments has
-#'   been nested into a single column
+#'   been nested into a single column (`_attachments`) this column contains a
+#'   tibble for every row. This, attachment tibble has as many rows as there are
+#'   attachments.
+#'
 #' @author Fernando Cagua
 #' @export
-#'
 #' @importFrom rlang .data
 #'
-#' @example
+#' @examples
 #' dummy_landings <- tidyr::tibble(
 #'   `_id` = "123",
 #'   `_attachments.0.download_url` = "http://url-1.com",
@@ -24,6 +40,7 @@
 pt_nest_attachments <- function(x){
 
   nested_attachments <- x %>%
+    # Using the .data pronoun to avoid RMD check notes
     dplyr::select(.data$`_id`, dplyr::starts_with("_attachments")) %>%
     # Column names follow the form "_attachments.0.download_large_url"
     tidyr::pivot_longer(cols = -.data$`_id`,
@@ -43,6 +60,6 @@ pt_nest_attachments <- function(x){
 
   x %>%
     dplyr::select(-dplyr::starts_with("_attachments")) %>%
-    dplyr::left_join(nested_attachments)
+    dplyr::left_join(nested_attachments, by = "_id")
 }
 
