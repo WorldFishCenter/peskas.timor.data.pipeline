@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ingest Timor Landings Survey data — ingest_timor_landings • peskas.timor.data.pipeline</title>
+<title>Download survey metadata — retrieve_survey_metadata • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,8 @@
 
 
 
-<meta property="og:title" content="Ingest Timor Landings Survey data — ingest_timor_landings" />
-<meta property="og:description" content="Downloads landings information that has been collected using Kobo Toolbox and
-uploads it to cloud storage services." />
+<meta property="og:title" content="Download survey metadata — retrieve_survey_metadata" />
+<meta property="og:description" content="Download survey metadata" />
 
 
 
@@ -107,46 +106,57 @@ uploads it to cloud storage services." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Ingest Timor Landings Survey data</h1>
+    <h1>Download survey metadata</h1>
     
-    <div class="hidden name"><code>ingest_timor_landings.Rd</code></div>
+    <div class="hidden name"><code>retrieve_survey_metadata.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Downloads landings information that has been collected using Kobo Toolbox and
-uploads it to cloud storage services.</p>
+    <p>Download survey metadata</p>
     </div>
 
-    <pre class="usage"><span class='fu'>ingest_timor_landings</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>retrieve_survey_metadata</span><span class='op'>(</span>id <span class='op'>=</span> <span class='cn'>NULL</span>, token <span class='op'>=</span> <span class='cn'>NULL</span>, api <span class='op'>=</span> <span class='st'>"kobohr"</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>log_threshold</th>
-      <td><p>The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See <a href='https://daroczig.github.io/logger/reference/log_levels.html'>logger::log_levels</a> for more
-details</p></td>
+      <th>id</th>
+      <td><p>survey id. Usually a 6 digit number. See <a href='https://support.kobotoolbox.org/pulling_data_into_powerbi.html'>this support page</a> for
+an example on how this can be obtained</p></td>
+    </tr>
+    <tr>
+      <th>token</th>
+      <td><p>access token for the account e.g. "Token XXXXXXX"</p></td>
+    </tr>
+    <tr>
+      <th>api</th>
+      <td><p>Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
+are made available for KoBo Toolbox ("kobo",
+<a href='https://kc.kobotoolbox.org/api/v1/'>https://kc.kobotoolbox.org/api/v1/</a>), KoBo Humanitarian Response
+("kobohr", <a href='https://kc.humanitarianresponse.info/api/v1/'>https://kc.humanitarianresponse.info/api/v1/</a>), Ona ("ona",
+<a href='https://ona.io/api/v1/'>https://ona.io/api/v1/</a>) and Unhcr ("unhcr",
+<a href='https://kobocat.unhcr.org/api/v1/'>https://kobocat.unhcr.org/api/v1/</a>) . For your own installation, or
+other installations using the same API but accessed at a different URL,
+enter the full URL.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>No output. This funcrion is used for it's side effects</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <p>A list with survey metadata</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
-    <p>This function downloads the survey metadata (survey information) as well as
-the survey responses. Afterwards it uploads this information to cloud
-services. To improve reproducibility, the file names used contain a
-versioning string that includes the date-time and, if available, the first 7
-digits of the git commit sha. This is acomplished using <code><a href='add_version.html'>add_version()</a></code></p>
-<p>The information about the surveys and the cloud storage is obtained from the
-configuration file <code>conf.yml</code>. This file is located in the <em>inst</em> directory
-of the package and can be accessed using
-<code><a href='https://rdrr.io/r/base/system.file.html'>system.file("conf.yml",package="peskas.timor.data.pipeline")</a></code>. The specific
-configuration is detemined using the environment variable <code>R_CONFIG_ACTIVE</code>.</p>
-<p>Progress through the function is tracked using the package <em>logger</em>.</p>
+    <p>Fernando Cagua</p>
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'>
+<span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+  <span class='co'># It's only possible to donwload survey metadata with the account Token</span>
+  <span class='fu'>retrieve_survey_metadata</span><span class='op'>(</span><span class='fl'>753491</span>, token <span class='op'>=</span> <span class='st'>"123XXXXXX"</span><span class='op'>)</span>
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

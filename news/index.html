@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
       </span>
     </div>
 
@@ -109,18 +109,38 @@
       
     </div>
 
-    <div id="peskastimordatapipeline-010" class="section level1">
-<h1 class="page-header" data-toc-text="0.1.0">
-<a href="#peskastimordatapipeline-010" class="anchor"></a>peskas.timor.data.pipeline 0.1.0</h1>
-<p>Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings.</p>
+    <div id="peskastimordatapipeline-020" class="section level1">
+<h1 class="page-header" data-toc-text="0.2.0">
+<a href="#peskastimordatapipeline-020" class="anchor"></a>peskas.timor.data.pipeline 0.2.0</h1>
+<div id="breaking-changes" class="section level2">
+<h2 class="hasAnchor">
+<a href="#breaking-changes" class="anchor"></a>Breaking changes</h2>
+<ul>
+<li>
+<code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>, <code><a href="../reference/retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>, and <code><a href="../reference/retrieve_survey.html">retrieve_survey()</a></code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
+<li>The suffix <em>raw</em> and <em>metadata</em> that is appended to the prefix when retrieving survey information is now separated using "_" rather than “-”. This is to more easily distinguish between information encoded in the file name.</li>
+</ul>
+</div>
 <div id="new-features" class="section level2">
 <h2 class="hasAnchor">
 <a href="#new-features" class="anchor"></a>New features</h2>
 <ul>
+<li>The prefix name of surveys is not hard-coded and can be specified in the config file (<code>file_prefix</code> field).</li>
+</ul>
+</div>
+</div>
+    <div id="peskastimordatapipeline-010" class="section level1">
+<h1 class="page-header" data-toc-text="0.1.0">
+<a href="#peskastimordatapipeline-010" class="anchor"></a>peskas.timor.data.pipeline 0.1.0</h1>
+<p>Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings.</p>
+<div id="new-features-1" class="section level2">
+<h2 class="hasAnchor">
+<a href="#new-features-1" class="anchor"></a>New features</h2>
+<ul>
 <li>The ingestion of East Timor Landings is implemented in <code><a href="../reference/ingest_timor_landings.html">ingest_timor_landings()</a></code>.</li>
-<li>The functions <code><a href="../reference/download_survey_data.html">download_survey_data()</a></code> and <code><a href="../reference/download_survey_metadata.html">download_survey_metadata()</a></code> which download data and metadata for an electronic survey hosted by <em>kobo</em>, <em>kobohr</em>, or <em>ona</em>.</li>
+<li>The functions <code>download_survey_data()</code> and <code>download_survey_metadata()</code> which download data and metadata for an electronic survey hosted by <em>kobo</em>, <em>kobohr</em>, or <em>ona</em>.</li>
 <li>
-<code><a href="../reference/download_survey.html">download_survey()</a></code> can be used as a wrapper to download data and metadata in a single call.</li>
+<code>download_survey()</code> can be used as a wrapper to download data and metadata in a single call.</li>
 <li>
 <code><a href="../reference/upload_cloud_file.html">upload_cloud_file()</a></code> can be used to upload a set of files to a cloud storage bucket. Currently only Google Cloud Services (GCS) is supported.</li>
 <li>
