@@ -1,4 +1,4 @@
-# peskas.timor.data.pipeline (development version)
+# peskas.timor.data.pipeline 0.2.0
 
 ## Breaking changes
 
