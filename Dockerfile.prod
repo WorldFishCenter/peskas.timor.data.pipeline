@@ -15,7 +15,7 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
 
 # Install imports
 RUN install2.r --error --skipinstalled \
-    config dplyr git2r httr logger magrittr purrr tidyr rlang
+    config dplyr git2r httr logger magrittr purrr stringr tidyr rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
