@@ -57,7 +57,9 @@ pt_nest_attachments <- function(x){
     dplyr::ungroup() %>%
     dplyr::rename("_attachments" = "data") %>%
     # If there are no attachments empty the nested data frames
-    dplyr::mutate(`_attachments` = purrr::map(.data$`_attachments`,~ dplyr::filter(., !is.na(.data$id))))
+    dplyr::mutate(`_attachments` = purrr::map(
+      .data$`_attachments`,
+      ~ dplyr::filter(., !is.na(.data$id))))
 
   x %>%
     dplyr::select(-dplyr::starts_with("_attachments")) %>%
@@ -156,3 +158,23 @@ pt_nest_species <- function(x){
     dplyr::select(-dplyr::starts_with("species_group")) %>%
     dplyr::left_join(nested_species, by = "_id")
 }
+
+#
+# a <- jsonlite::read_json("timor-landings-v2_raw__20210326051023_40980f7__.json")
+#
+# library(tidyjson)
+# library(tidyverse)
+#
+# a %>%
+#   spread_all(recursive = F)
+#
+# as_tbl_json(a)
+#
+#
+# # read all columns as characters
+# library(tidyverse)
+# b <- readr::read_csv("timor-landings-v2_raw__20210326051023_40980f7__.csv",
+                     # col_types = readr::cols(.default = readr::col_character()))
+
+#
+
