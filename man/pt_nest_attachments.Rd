@@ -2,7 +2,7 @@
 % Please edit documentation in R/pre-process-landings.R
 \name{pt_nest_attachments}
 \alias{pt_nest_attachments}
-\title{Nest survey columns in landings data}
+\title{Nest attachment columns}
 \usage{
 pt_nest_attachments(x)
 }
@@ -16,7 +16,8 @@ tibble for every row. This, attachment tibble has as many rows as there are
 attachments.
 }
 \description{
-\code{pt_nest_attachments()} nests attachment data in a kobo survey.
+Nests attachment columns obtained when reading structured data from the kobo
+landings survey
 }
 \details{
 One of the disadvantages of using structured survey data is that the tables

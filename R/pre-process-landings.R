@@ -1,6 +1,7 @@
-#' Nest survey columns in landings data
+#' Nest attachment columns
 #'
-#' `pt_nest_attachments()` nests attachment data in a kobo survey.
+#' Nests attachment columns obtained when reading structured data from the kobo
+#' landings survey
 #'
 #' One of the disadvantages of using structured survey data is that the tables
 #' can become very wide (many columns). This happens when question groups or
