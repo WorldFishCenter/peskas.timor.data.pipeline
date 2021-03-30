@@ -26,6 +26,7 @@ Imports:
     rlang (>= 0.1.2)
 Suggests: 
     covr,
+    googleAuthR,
     googleCloudStorageR,
     jsonlite,
     RCurl,

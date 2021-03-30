@@ -190,3 +190,51 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
     }
   }
 }
+
+
+#' Download an object from a cloud storage bucket to a local file
+#'
+#' Download object from the cloud storage to a local file
+#'
+#' @param name the name of the object in the storage bucket.
+#' @param provider
+#' @param options
+#' @param file a file-path (character) where the object will be saved. Default
+#'   is the object name.
+#' @inheritParams upload_cloud_file
+#'
+#' @author Fernando Cagua
+#'
+#' @return the file path
+#' @export
+#'
+#' @examples
+#'
+#' # Google Cloud Services
+#' \dontrun{
+#'   authentication_details <- readLines("location_of_json_file.json")
+#'   download_cloud_file(
+#'     name = "timor-landings-v2_metadata__20210326084600_54617b3__.json",
+#'     provider = "gcs",
+#'     options = list(service_account_key = authentication_details,
+#'                    bucket = "my-bucket"))
+#' }
+download_cloud_file <- function(name, provider, options, file = name){
+
+  cloud_storage_authenticate(provider, options)
+
+  if ("gcs" %in% provider) {
+
+    googleCloudStorageR::gcs_get_object(
+      object_name = name,
+      bucket = options$bucket,
+      saveToDisk = file,
+      overwrite = options$overwrite
+    )
+
+  }
+
+  file
+}
+
+
