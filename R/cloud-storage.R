@@ -225,16 +225,18 @@ download_cloud_file <- function(name, provider, options, file = name){
 
   if ("gcs" %in% provider) {
 
-    googleCloudStorageR::gcs_get_object(
-      object_name = name,
-      bucket = options$bucket,
-      saveToDisk = file,
-      overwrite = options$overwrite
+    purrr::map2(
+      name, file,
+      ~ googleCloudStorageR::gcs_get_object(
+        object_name = .x,
+        bucket = options$bucket,
+        saveToDisk = .y,
+        overwrite = ifelse(is.null(options$overwrite), TRUE, options$overwrite)
+      )
     )
 
   }
 
   file
 }
-
 
