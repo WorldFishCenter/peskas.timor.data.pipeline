@@ -68,7 +68,7 @@ jobs:
 
   preprocess-landings:
     name: Preprocess landings
-    needs: ingest-landings
+    needs: [ingest-landings, build-container]
     runs-on: ubuntu-20.04
     container:
       image: ${{needs.build-container.outputs.r-image-name}}
