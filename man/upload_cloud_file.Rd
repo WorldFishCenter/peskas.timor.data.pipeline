@@ -28,10 +28,11 @@ Upload a local file to a cloud storage bucket
 For Google Cloud Services ("gcs") options must be a list with two fields:
 \code{bucket} with the bucketname (character) you are uploading to, and
 \code{service_account_key} with the contents of the authentication json file you
-have downloaded from your Google Project.
+have downloaded from your Google Project (if \link{cloud_storage_authenticate} has
+not been called before).
 
-This function uses \link[googleCloudStorageR:gcs_auth]{googleCloudStorageR::gcs_auth} and
-\link[googleCloudStorageR:gcs_upload]{googleCloudStorageR::gcs_upload} under the hood to upload the file.
+This function uses \link[googleCloudStorageR:gcs_upload]{googleCloudStorageR::gcs_upload} under the hood to upload
+the file.
 }
 }
 \examples{

@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
@@ -15,19 +15,26 @@ Description: This package implements the data and modelling
 License: GPL-3
 Imports:
     config,
+    dplyr,
     git2r,
     httr,
     logger,
     magrittr,
-    purrr
+    purrr,
+    readr,
+    stringr,
+    tidyr,
+    rlang (>= 0.1.2)
 Suggests: 
     covr,
+    googleAuthR,
     googleCloudStorageR,
     jsonlite,
     RCurl,
     remotes,
     sessioninfo,
-    testthat
+    testthat,
+    roxygen2
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

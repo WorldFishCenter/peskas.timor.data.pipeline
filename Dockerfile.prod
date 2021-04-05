@@ -15,11 +15,11 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
 
 # Install imports
 RUN install2.r --error --skipinstalled \
-    config git2r httr logger magrittr purrr
+    config dplyr git2r httr logger magrittr purrr readr stringr tidyr rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
-    covr googleCloudStorageR jsonlite RCurl remotes sessioninfo testthat
+    covr googleCloudStorageR jsonlite RCurl remotes roxygen2 sessioninfo testthat
 
 # Install local package
 COPY . /home
