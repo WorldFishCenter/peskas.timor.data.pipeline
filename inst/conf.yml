@@ -6,11 +6,15 @@ default:
       survey_id: 344563
       token: !expr Sys.getenv('KOBO_TOKEN')
       file_prefix: timor-landings-v2
+      version:
+        preprocess: latest
     landings_legacy:
       api: kobohr
       survey_id:
       token: !expr Sys.getenv('KOBO_TOKEN')
       file_prefix: timor-landings-v1
+      version:
+        preprocess: latest
 
   storage:
     google:
@@ -19,7 +23,6 @@ default:
         project: peskas
         bucket: timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
-
 
 production:
   storage:

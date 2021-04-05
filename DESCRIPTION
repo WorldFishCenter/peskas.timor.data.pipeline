@@ -21,6 +21,7 @@ Imports:
     logger,
     magrittr,
     purrr,
+    readr,
     stringr,
     tidyr,
     rlang (>= 0.1.2)
