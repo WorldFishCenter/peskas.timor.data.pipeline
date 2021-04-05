@@ -1,4 +1,3 @@
-
 #' Nest species columns
 #'
 #' Nests species columns obtained when reading structured data from the kobo
