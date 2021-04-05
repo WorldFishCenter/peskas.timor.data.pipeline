@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.0</span>
       </span>
     </div>
 
@@ -109,21 +109,44 @@
       
     </div>
 
+    <div id="peskastimordatapipeline-030" class="section level1">
+<h1 class="page-header" data-toc-text="0.3.0">
+<a href="#peskastimordatapipeline-030" class="anchor"></a>peskas.timor.data.pipeline 0.3.0</h1>
+<div id="new-features" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-features" class="anchor"></a>New features</h3>
+<ul>
+<li>The preprocessing of East Timor landings is implemented in <code><a href="../reference/preprocess_landings.html">preprocess_landings()</a></code>
+</li>
+<li>Added <code><a href="../reference/pt_nest_attachments.html">pt_nest_attachments()</a></code> to group all attachment columns into a nested column containing data frames.</li>
+<li>Added <code><a href="../reference/pt_nest_species.html">pt_nest_species()</a></code> to group all attachment columns into a nested column containing data frames.</li>
+<li>Added <code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> as a complement to <code><a href="../reference/add_version.html">add_version()</a></code> to return the latest or an specified version of an object in an storage location.</li>
+<li>Added <code><a href="../reference/download_cloud_file.html">download_cloud_file()</a></code> to download files from cloud storage providers.</li>
+</ul>
+</div>
+<div id="improvements" class="section level3">
+<h3 class="hasAnchor">
+<a href="#improvements" class="anchor"></a>Improvements</h3>
+<ul>
+<li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li>
+</ul>
+</div>
+</div>
     <div id="peskastimordatapipeline-020" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.0">
 <a href="#peskastimordatapipeline-020" class="anchor"></a>peskas.timor.data.pipeline 0.2.0</h1>
-<div id="breaking-changes" class="section level2">
-<h2 class="hasAnchor">
-<a href="#breaking-changes" class="anchor"></a>Breaking changes</h2>
+<div id="breaking-changes" class="section level3">
+<h3 class="hasAnchor">
+<a href="#breaking-changes" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>
 <code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>, <code><a href="../reference/retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>, and <code><a href="../reference/retrieve_survey.html">retrieve_survey()</a></code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
 <li>The suffix <em>raw</em> and <em>metadata</em> that is appended to the prefix when retrieving survey information is now separated using "_" rather than “-”. This is to more easily distinguish between information encoded in the file name.</li>
 </ul>
 </div>
-<div id="new-features" class="section level2">
-<h2 class="hasAnchor">
-<a href="#new-features" class="anchor"></a>New features</h2>
+<div id="new-features-1" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-features-1" class="anchor"></a>New features</h3>
 <ul>
 <li>The prefix name of surveys is not hard-coded and can be specified in the config file (<code>file_prefix</code> field).</li>
 </ul>
@@ -133,9 +156,9 @@
 <h1 class="page-header" data-toc-text="0.1.0">
 <a href="#peskastimordatapipeline-010" class="anchor"></a>peskas.timor.data.pipeline 0.1.0</h1>
 <p>Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings.</p>
-<div id="new-features-1" class="section level2">
-<h2 class="hasAnchor">
-<a href="#new-features-1" class="anchor"></a>New features</h2>
+<div id="new-features-2" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-features-2" class="anchor"></a>New features</h3>
 <ul>
 <li>The ingestion of East Timor Landings is implemented in <code><a href="../reference/ingest_timor_landings.html">ingest_timor_landings()</a></code>.</li>
 <li>The functions <code>download_survey_data()</code> and <code>download_survey_metadata()</code> which download data and metadata for an electronic survey hosted by <em>kobo</em>, <em>kobohr</em>, or <em>ona</em>.</li>
@@ -149,9 +172,9 @@
 <code><a href="../reference/get_host_url.html">get_host_url()</a></code> is an utility function that gets the host url of an electronic survey provider API.</li>
 </ul>
 </div>
-<div id="pipeline" class="section level2">
-<h2 class="hasAnchor">
-<a href="#pipeline" class="anchor"></a>Pipeline</h2>
+<div id="pipeline" class="section level3">
+<h3 class="hasAnchor">
+<a href="#pipeline" class="anchor"></a>Pipeline</h3>
 <p>The data pipeline is implemented and run in GitHub Actions on a schedule.</p>
 </div>
 </div>

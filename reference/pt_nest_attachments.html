@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • peskas.timor.data.pipeline</title>
+<title>Nest attachment columns — pt_nest_attachments • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,9 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Nest attachment columns — pt_nest_attachments" />
+<meta property="og:description" content="Nests attachment columns obtained when reading structured data from the kobo
+landings survey" />
 
 
 
@@ -58,7 +60,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -103,114 +105,68 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Nest attachment columns</h1>
+    
+    <div class="hidden name"><code>pt_nest_attachments.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>Nests attachment columns obtained when reading structured data from the kobo
+landings survey</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='fu'>pt_nest_attachments</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="add_version.html">add_version()</a></code> </p>
-        </td>
-        <td><p>Add timestamp and sha string to a file name</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_object_name.html">cloud_object_name()</a></code> </p>
-        </td>
-        <td><p>Get the full name of a versioned cloud object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> </p>
-        </td>
-        <td><p>Authenticate to a storage cloud provider</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="download_cloud_file.html">download_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Download an object from a cloud storage bucket to a local file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="get_host_url.html">get_host_url()</a></code> </p>
-        </td>
-        <td><p>Select server from kobo</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ingest_timor_landings.html">ingest_timor_landings()</a></code> </p>
-        </td>
-        <td><p>Ingest Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="preprocess_landings.html">preprocess_landings()</a></code> </p>
-        </td>
-        <td><p>Pre-process Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_attachments.html">pt_nest_attachments()</a></code> </p>
-        </td>
-        <td><p>Nest attachment columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_species.html">pt_nest_species()</a></code> </p>
-        </td>
-        <td><p>Nest species columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey.html">retrieve_survey()</a></code> </p>
-        </td>
-        <td><p>Download survey</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_data.html">retrieve_survey_data()</a></code> </p>
-        </td>
-        <td><p>Download kobo data in as csv or json</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code> </p>
-        </td>
-        <td><p>Download survey metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="upload_cloud_file.html">upload_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Upload a local file to a cloud storage bucket</p></td>
-      </tr>
-    </tbody>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>x</th>
+      <td><p>A data frame containing raw landings data from the Timor operations.</p></td>
+    </tr>
     </table>
-  </div>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>Landings data in which the information about multiple attachments has
+been nested into a single column (<code>_attachments</code>) this column contains a
+tibble for every row. This, attachment tibble has as many rows as there are
+attachments.</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>One of the disadvantages of using structured survey data is that the tables
+can become very wide (many columns). This happens when question groups or
+other fields can be recorded multiple times. For example in the landings
+survey, for each species captured, about 17 questions are recorded. There is
+no limit to the number of species that can be recorded in the trip. If, for
+example a survey records seven species we will have over a hundred columns in
+the data corresponding to species information.</p>
+<p>To improve that situation an avoid using multiple tables we use <strong>nested data
+frames</strong> (see <a href='https://tidyr.tidyverse.org/reference/nest.html'>tidyr::nest</a>). In nested data frames columns can be lists and
+can contain arbitrary information, like other data frames, lists, vectors, or
+models.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Fernando Cagua</p>
+
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='va'>dummy_landings</span> <span class='op'>&lt;-</span> <span class='fu'>tidyr</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/tibble.html'>tibble</a></span><span class='op'>(</span>
+  `_id` <span class='op'>=</span> <span class='st'>"123"</span>,
+  `_attachments.0.download_url` <span class='op'>=</span> <span class='st'>"http://url-1.com"</span>,
+  `_attachments.0.id` <span class='op'>=</span> <span class='st'>"01"</span>,
+  `_attachments.1.download_url` <span class='op'>=</span> <span class='st'>"http://url-2.com"</span>,
+  `_attachments.1.id` <span class='op'>=</span> <span class='st'>"02"</span>,
+  `_attachments.2.download_url` <span class='op'>=</span> <span class='cn'>NA</span>,
+  `_attachments.2.id` <span class='op'>=</span> <span class='cn'>NA</span><span class='op'>)</span>
+<span class='fu'>pt_nest_attachments</span><span class='op'>(</span><span class='va'>dummy_landings</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 1 x 2</span><span>
+#&gt;   `_id` `_attachments`      
+#&gt;   </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;list&gt;</span><span>              
+#&gt; </span><span style='color: #BCBCBC;'>1</span><span> 123   </span><span style='color: #949494;'>&lt;tibble[,2] [2 × 2]&gt;</span><span></div><div class='input'>
+</div></span></pre>
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>

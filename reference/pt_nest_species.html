@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Upload a local file to a cloud storage bucket — upload_cloud_file • peskas.timor.data.pipeline</title>
+<title>Nest species columns — pt_nest_species • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,9 @@
 
 
 
-<meta property="og:title" content="Upload a local file to a cloud storage bucket — upload_cloud_file" />
-<meta property="og:description" content="Upload a local file to a cloud storage bucket" />
+<meta property="og:title" content="Nest species columns — pt_nest_species" />
+<meta property="og:description" content="Nests species columns obtained when reading structured data from the kobo
+landings survey" />
 
 
 
@@ -106,70 +107,72 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Upload a local file to a cloud storage bucket</h1>
+    <h1>Nest species columns</h1>
     
-    <div class="hidden name"><code>upload_cloud_file.Rd</code></div>
+    <div class="hidden name"><code>pt_nest_species.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Upload a local file to a cloud storage bucket</p>
+    <p>Nests species columns obtained when reading structured data from the kobo
+landings survey</p>
     </div>
 
-    <pre class="usage"><span class='fu'>upload_cloud_file</span><span class='op'>(</span><span class='va'>file</span>, <span class='va'>provider</span>, <span class='va'>options</span>, name <span class='op'>=</span> <span class='va'>file</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>pt_nest_species</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>file</th>
-      <td><p>a file-path (character) to upload. A vector with multiple files
-is also supported.</p></td>
-    </tr>
-    <tr>
-      <th>provider</th>
-      <td><p>cloud provider to use, either "gcs" or "aws"</p></td>
-    </tr>
-    <tr>
-      <th>options</th>
-      <td><p>named list with cloud provider options, see details</p></td>
-    </tr>
-    <tr>
-      <th>name</th>
-      <td><p>What to call the file once uploaded. Default is the filepath</p></td>
+      <th>x</th>
+      <td><p>A data frame containing raw landings data from the Timor operations.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>If <code>provider</code> is "gcs" and if successful a list of medatada objects</p>
+    <p>Landings data in which the information about multiple species has
+been nested into a single column (<code>species_group</code>) this column contains a
+tibble for every row. This, species tibble has as many rows as there are
+species. In turn, the data frames contained in <code>species_group</code> contain a
+column called <code>length_individuals</code> where a data frame with the number of
+individuals per length is stored</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    
-<h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Google Cloud Services</h3>
+    <p>One of the disadvantages of using structured survey data is that the tables
+can become very wide (many columns). This happens when question groups or
+other fields can be recorded multiple times. For example in the landings
+survey, for each species captured, about 17 questions are recorded. There is
+no limit to the number of species that can be recorded in the trip. If, for
+example a survey records seven species we will have over a hundred columns in
+the data corresponding to species information.</p>
+<p>To improve that situation an avoid using multiple tables we use <strong>nested data
+frames</strong> (see <a href='https://tidyr.tidyverse.org/reference/nest.html'>tidyr::nest</a>). In nested data frames columns can be lists and
+can contain arbitrary information, like other data frames, lists, vectors, or
+models.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
-
-<p>For Google Cloud Services ("gcs") options must be a list with two fields:
-<code>bucket</code> with the bucketname (character) you are uploading to, and
-<code>service_account_key</code> with the contents of the authentication json file you
-have downloaded from your Google Project (if <a href='cloud_storage_authenticate.html'>cloud_storage_authenticate</a> has
-not been called before).</p>
-<p>This function uses <a href='https://cloudyr.github.io/googleCloudStorageR//reference/gcs_upload.html'>googleCloudStorageR::gcs_upload</a> under the hood to upload
-the file.</p>
-
+    <p>Fernando Cagua</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='co'># Google Cloud Services</span>
-<span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='va'>authentication_details</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/readLines.html'>readLines</a></span><span class='op'>(</span><span class='st'>"location_of_json_file.json"</span><span class='op'>)</span>
-  <span class='fu'>upload_cloud_file</span><span class='op'>(</span>
-    file <span class='op'>=</span> <span class='st'>"table_to_upload.csv"</span>,
-    provider <span class='op'>=</span> <span class='st'>"gcs"</span>,
-    options <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>service_account_key <span class='op'>=</span> <span class='va'>authentication_details</span>,
-                   bucket <span class='op'>=</span> <span class='st'>"my-bucket"</span><span class='op'>)</span><span class='op'>)</span>
-<span class='op'>}</span>
-
-</div></pre>
+    <pre class="examples"><div class='input'><span class='va'>dummy_landings</span> <span class='op'>&lt;-</span> <span class='fu'>tidyr</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/tibble.html'>tibble</a></span><span class='op'>(</span>
+    `_id` <span class='op'>=</span> <span class='st'>"123"</span>,
+    `species_group.0.species_group/species` <span class='op'>=</span> <span class='st'>"sp01"</span>,
+    `species_group.0.species_group/food_or_sale` <span class='op'>=</span> <span class='st'>"food"</span>,
+    `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` <span class='op'>=</span> <span class='fl'>10</span>,
+    `species_group.0.species_group/no_fish_by_length_group/no_individuals_5_10` <span class='op'>=</span> <span class='fl'>10</span>,
+    `species_group.0.species_group/no_fish_by_length_group/fish_length_over60` <span class='op'>=</span> <span class='fl'>80</span>,
+    `species_group.0.species_group/no_fish_by_length_group/no_individuals_over60` <span class='op'>=</span> <span class='fl'>1</span>,
+    `species_group.1.species_group/species` <span class='op'>=</span> <span class='st'>"sp02"</span>,
+    `species_group.1.species_group/food_or_sale` <span class='op'>=</span> <span class='st'>"sale"</span>,
+    `species_group.1.species_group/no_fish_by_length_group/no_individuals_20_25` <span class='op'>=</span> <span class='fl'>5</span>,
+    `species_group.1.species_group/no_fish_by_length_group/no_individuals_5_10` <span class='op'>=</span> <span class='fl'>20</span>,
+    `species_group.1.species_group/no_fish_by_length_group/fish_length_over60` <span class='op'>=</span> <span class='fl'>70</span>,
+    `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+<span class='fu'>pt_nest_species</span><span class='op'>(</span><span class='va'>dummy_landings</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 1 x 2</span><span>
+#&gt;   `_id` species_group       
+#&gt;   </span><span style='color: #949494;font-style: italic;'>&lt;chr&gt;</span><span> </span><span style='color: #949494;font-style: italic;'>&lt;list&gt;</span><span>              
+#&gt; </span><span style='color: #BCBCBC;'>1</span><span> 123   </span><span style='color: #949494;'>&lt;tibble[,4] [2 × 4]&gt;</span><span></div></span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

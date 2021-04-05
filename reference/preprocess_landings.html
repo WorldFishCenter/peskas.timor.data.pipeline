@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • peskas.timor.data.pipeline</title>
+<title>Pre-process Timor Landings Survey data — preprocess_landings • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,9 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Pre-process Timor Landings Survey data — preprocess_landings" />
+<meta property="og:description" content="Downloads raw structured data from cloud storage services and pre-process
+into a binary format that is easier to deal with in R." />
 
 
 
@@ -58,7 +60,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -103,114 +105,47 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Pre-process Timor Landings Survey data</h1>
+    
+    <div class="hidden name"><code>preprocess_landings.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>Downloads raw structured data from cloud storage services and pre-process
+into a binary format that is easier to deal with in R.</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='fu'>preprocess_landings</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="add_version.html">add_version()</a></code> </p>
-        </td>
-        <td><p>Add timestamp and sha string to a file name</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_object_name.html">cloud_object_name()</a></code> </p>
-        </td>
-        <td><p>Get the full name of a versioned cloud object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> </p>
-        </td>
-        <td><p>Authenticate to a storage cloud provider</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="download_cloud_file.html">download_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Download an object from a cloud storage bucket to a local file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="get_host_url.html">get_host_url()</a></code> </p>
-        </td>
-        <td><p>Select server from kobo</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ingest_timor_landings.html">ingest_timor_landings()</a></code> </p>
-        </td>
-        <td><p>Ingest Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="preprocess_landings.html">preprocess_landings()</a></code> </p>
-        </td>
-        <td><p>Pre-process Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_attachments.html">pt_nest_attachments()</a></code> </p>
-        </td>
-        <td><p>Nest attachment columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_species.html">pt_nest_species()</a></code> </p>
-        </td>
-        <td><p>Nest species columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey.html">retrieve_survey()</a></code> </p>
-        </td>
-        <td><p>Download survey</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_data.html">retrieve_survey_data()</a></code> </p>
-        </td>
-        <td><p>Download kobo data in as csv or json</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code> </p>
-        </td>
-        <td><p>Download survey metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="upload_cloud_file.html">upload_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Upload a local file to a cloud storage bucket</p></td>
-      </tr>
-    </tbody>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>log_threshold</th>
+      <td><p>The (standard Apache logj4) log level used as a
+threshold for the logging infrastructure. See <a href='https://daroczig.github.io/logger/reference/log_levels.html'>logger::log_levels</a> for more
+details</p></td>
+    </tr>
     </table>
-  </div>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>no outputs. This funcrion is used for it's side effects</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>This function downloads the landings data from a given version (specified in
+the config file <code>conf.yml</code>; this file is located in the <em>inst</em> directory of
+the package and can be accessed using
+<code><a href='https://rdrr.io/r/base/system.file.html'>system.file("conf.yml",package="peskas.timor.data.pipeline")</a></code>). The specific
+configuration is determined using the environment variable <code>R_CONFIG_ACTIVE</code>.</p>
+<p>Progress through the function is tracked using the package <em>logger</em>.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Fernando Cagua</p>
+
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>

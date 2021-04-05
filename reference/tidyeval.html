@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • peskas.timor.data.pipeline</title>
+<title>Tidy eval helpers — tidyeval • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,40 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Tidy eval helpers — tidyeval" />
+<meta property="og:description" content="
+
+sym() creates a symbol from a string and
+syms() creates a list of symbols from a
+character vector.
+enquo() and
+enquos() delay the execution of one or
+several function arguments. enquo() returns a single quoted
+expression, which is like a blueprint for the delayed computation.
+enquos() returns a list of such quoted expressions.
+expr() quotes a new expression locally. It
+is mostly useful to build new expressions around arguments
+captured with enquo() or enquos():
+expr(mean(!!enquo(arg), na.rm = TRUE)).
+as_name() transforms a quoted variable name
+into a string. Supplying something else than a quoted variable
+name is an error.
+That's unlike as_label() which also returns
+a single string but supports any kind of R object as input,
+including quoted function calls and vectors. Its purpose is to
+summarise that object into a single label. That label is often
+suitable as a default name.
+If you don't know what a quoted expression contains (for instance
+expressions captured with enquo() could be a variable
+name, a call to a function, or an unquoted constant), then use
+as_label(). If you know you have quoted a simple variable
+name, or would like to enforce this, use as_name().
+
+
+To learn more about tidy eval and how to use these tools, visit
+https://tidyeval.tidyverse.org and the
+Metaprogramming
+section of Advanced R." />
 
 
 
@@ -58,7 +91,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -103,114 +136,53 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Tidy eval helpers</h1>
+    
+    <div class="hidden name"><code>tidyeval.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    
+<ul>
+<li><p><code><a href='https://rlang.r-lib.org/reference/sym.html'>sym</a>()</code> creates a symbol from a string and
+<code><a href='https://rlang.r-lib.org/reference/sym.html'>syms</a>()</code> creates a list of symbols from a
+character vector.</p></li>
+<li><p><code><a href='https://rlang.r-lib.org/reference/nse-defuse.html'>enquo</a>()</code> and
+<code><a href='https://rlang.r-lib.org/reference/nse-defuse.html'>enquos</a>()</code> delay the execution of one or
+several function arguments. <code>enquo()</code> returns a single quoted
+expression, which is like a blueprint for the delayed computation.
+<code>enquos()</code> returns a list of such quoted expressions.</p></li>
+<li><p><code><a href='https://rlang.r-lib.org/reference/nse-defuse.html'>expr</a>()</code> quotes a new expression <em>locally</em>. It
+is mostly useful to build new expressions around arguments
+captured with <code>enquo()</code> or <code>enquos()</code>:
+<code>expr(mean(!!enquo(arg), na.rm = TRUE))</code>.</p></li>
+<li><p><code><a href='https://rlang.r-lib.org/reference/as_name.html'>as_name</a>()</code> transforms a quoted variable name
+into a string. Supplying something else than a quoted variable
+name is an error.</p>
+<p>That's unlike <code><a href='https://rlang.r-lib.org/reference/as_label.html'>as_label</a>()</code> which also returns
+a single string but supports any kind of R object as input,
+including quoted function calls and vectors. Its purpose is to
+summarise that object into a single label. That label is often
+suitable as a default name.</p>
+<p>If you don't know what a quoted expression contains (for instance
+expressions captured with <code>enquo()</code> could be a variable
+name, a call to a function, or an unquoted constant), then use
+<code>as_label()</code>. If you know you have quoted a simple variable
+name, or would like to enforce this, use <code>as_name()</code>.</p></li>
+</ul>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+<p>To learn more about tidy eval and how to use these tools, visit
+<a href='https://tidyeval.tidyverse.org'>https://tidyeval.tidyverse.org</a> and the
+<a href='https://adv-r.hadley.nz/metaprogramming.html'>Metaprogramming
+section</a> of <a href='https://adv-r.hadley.nz'>Advanced R</a>.</p>
+    </div>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="add_version.html">add_version()</a></code> </p>
-        </td>
-        <td><p>Add timestamp and sha string to a file name</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_object_name.html">cloud_object_name()</a></code> </p>
-        </td>
-        <td><p>Get the full name of a versioned cloud object</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> </p>
-        </td>
-        <td><p>Authenticate to a storage cloud provider</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="download_cloud_file.html">download_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Download an object from a cloud storage bucket to a local file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="get_host_url.html">get_host_url()</a></code> </p>
-        </td>
-        <td><p>Select server from kobo</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ingest_timor_landings.html">ingest_timor_landings()</a></code> </p>
-        </td>
-        <td><p>Ingest Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="preprocess_landings.html">preprocess_landings()</a></code> </p>
-        </td>
-        <td><p>Pre-process Timor Landings Survey data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_attachments.html">pt_nest_attachments()</a></code> </p>
-        </td>
-        <td><p>Nest attachment columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pt_nest_species.html">pt_nest_species()</a></code> </p>
-        </td>
-        <td><p>Nest species columns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey.html">retrieve_survey()</a></code> </p>
-        </td>
-        <td><p>Download survey</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_data.html">retrieve_survey_data()</a></code> </p>
-        </td>
-        <td><p>Download kobo data in as csv or json</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code> </p>
-        </td>
-        <td><p>Download survey metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="upload_cloud_file.html">upload_cloud_file()</a></code> </p>
-        </td>
-        <td><p>Upload a local file to a cloud storage bucket</p></td>
-      </tr>
-    </tbody>
-    </table>
+
+
+
   </div>
-
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
