@@ -18,13 +18,14 @@ retrieve_survey(
 \item{prefix}{name to be used as the prefix of the file names to be
 downloaded. Can be a path.}
 
-\item{api}{Either "kobo", "kobohr", or a custom (full) URL. API URLs are made
-available for KoBo Toolbox ("kobo",
+\item{api}{Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
+are made available for KoBo Toolbox ("kobo",
 \url{https://kc.kobotoolbox.org/api/v1/}), KoBo Humanitarian Response
-("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), and Unhcr
-("unhcr", \url{https://kobocat.unhcr.org/api/v1/}) . For your own
-installation, or other installations using the same API but accessed at a
-different URL, enter the full URL.}
+("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), Ona ("ona",
+\url{https://ona.io/api/v1/}) and Unhcr ("unhcr",
+\url{https://kobocat.unhcr.org/api/v1/}) . For your own installation, or
+other installations using the same API but accessed at a different URL,
+enter the full URL.}
 
 \item{id}{survey id. Usually a 6 digit number. See \href{https://support.kobotoolbox.org/pulling_data_into_powerbi.html}{this support page} for
 an example on how this can be obtained}
