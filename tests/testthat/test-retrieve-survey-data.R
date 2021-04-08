@@ -2,7 +2,7 @@
 test_that("host URLs are resolved correctly", {
 
   # All providers should have V1 available
-  c("kobo", "kobohr", "unhcr", "ona") %>%
+  c("kobo", "kobohr", "unhcr") %>%
     purrr::map(get_host_url, version = "v1") %>%
     purrr::map_lgl(RCurl::url.exists) %>%
     all() %>%
