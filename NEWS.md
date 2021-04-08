@@ -1,3 +1,7 @@
+# peskas.timor.data.pipeline 0.3.1
+
+- Skipping RCurl from windows tests
+
 # peskas.timor.data.pipeline 0.3.0
 
 ### New features
