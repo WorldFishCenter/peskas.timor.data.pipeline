@@ -12,14 +12,13 @@ an example on how this can be obtained}
 
 \item{token}{access token for the account e.g. "Token XXXXXXX"}
 
-\item{api}{Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
-are made available for KoBo Toolbox ("kobo",
+\item{api}{Either "kobo", "kobohr", or a custom (full) URL. API URLs are made
+available for KoBo Toolbox ("kobo",
 \url{https://kc.kobotoolbox.org/api/v1/}), KoBo Humanitarian Response
-("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), Ona ("ona",
-\url{https://ona.io/api/v1/}) and Unhcr ("unhcr",
-\url{https://kobocat.unhcr.org/api/v1/}) . For your own installation, or
-other installations using the same API but accessed at a different URL,
-enter the full URL.}
+("kobohr", \url{https://kc.humanitarianresponse.info/api/v1/}), and Unhcr
+("unhcr", \url{https://kobocat.unhcr.org/api/v1/}) . For your own
+installation, or other installations using the same API but accessed at a
+different URL, enter the full URL.}
 }
 \value{
 A list with survey metadata
