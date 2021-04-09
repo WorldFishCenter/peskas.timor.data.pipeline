@@ -21,15 +21,24 @@ uploads it to cloud storage services.
 \details{
 This function downloads the survey metadata (survey information) as well as
 the survey responses. Afterwards it uploads this information to cloud
-services. To improve reproducibility, the file names used contain a
+services. File names used contain a
 versioning string that includes the date-time and, if available, the first 7
 digits of the git commit sha. This is acomplished using \code{\link[=add_version]{add_version()}}
 
-The information about the surveys and the cloud storage is obtained from the
-configuration file \code{conf.yml}. This file is located in the \emph{inst} directory
-of the package and can be accessed using
-\code{system.file("conf.yml",package="peskas.timor.data.pipeline")}. The specific
-configuration is detemined using the environment variable \code{R_CONFIG_ACTIVE}.
+The parameters needed in \code{conf.yml} are:\preformatted{surveys:
+  landings:
+    api:
+    survey_id:
+    token:
+    file_prefix:
+storage:
+  storage_name:
+    key:
+    options:
+      project:
+      bucket:
+      service_account_key:
+}
 
 Progress through the function is tracked using the package \emph{logger}.
 }
