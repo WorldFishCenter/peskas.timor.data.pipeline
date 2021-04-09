@@ -73,7 +73,7 @@ into a binary format that is easier to deal with in R." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
       </span>
     </div>
 
@@ -136,14 +136,24 @@ details</p></td>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>This function downloads the landings data from a given version (specified in
-the config file <code>conf.yml</code>; this file is located in the <em>inst</em> directory of
-the package and can be accessed using
-<code><a href='https://rdrr.io/r/base/system.file.html'>system.file("conf.yml",package="peskas.timor.data.pipeline")</a></code>). The specific
-configuration is determined using the environment variable <code>R_CONFIG_ACTIVE</code>.</p>
-<p>Progress through the function is tracked using the package <em>logger</em>.</p>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+the config file <code>conf.yml</code>. The parameters needed are:</p><pre>surveys:
+  landings:
+    api:
+    survey_id:
+    token:
+    file_prefix:
+  version:
+    preprocess:
+storage:
+  storage_name:
+    key:
+    options:
+      project:
+      bucket:
+      service_account_key:
+</pre>
 
-    <p>Fernando Cagua</p>
+<p>Progress through the function is tracked using the package <em>logger</em>.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

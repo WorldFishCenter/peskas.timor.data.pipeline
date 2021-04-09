@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
       </span>
     </div>
 
@@ -109,12 +109,31 @@
       
     </div>
 
-    <div id="peskastimordatapipeline-031" class="section level1">
-<h1 class="page-header" data-toc-text="0.3.1">
-<a href="#peskastimordatapipeline-031" class="anchor"></a>peskas.timor.data.pipeline 0.3.1</h1>
+    <div id="peskastimordatapipeline-040" class="section level1">
+<h1 class="page-header" data-toc-text="0.4.0">
+<a href="#peskastimordatapipeline-040" class="anchor"></a>peskas.timor.data.pipeline 0.4.0</h1>
+<div id="breaking-changes" class="section level3">
+<h3 class="hasAnchor">
+<a href="#breaking-changes" class="anchor"></a>Breaking changes</h3>
 <ul>
-<li>Skipping RCurl from windows tests</li>
+<li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li>
 </ul>
+</div>
+<div id="improvements" class="section level3">
+<h3 class="hasAnchor">
+<a href="#improvements" class="anchor"></a>Improvements</h3>
+<ul>
+<li>Renamed the job names in the github workflow as the functions that the job calls.</li>
+<li>Improved documentation of the package: particularly the readme and the function reference.</li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level3">
+<h3 class="hasAnchor">
+<a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
+<ul>
+<li>We now skip RCurl from windows tests</li>
+</ul>
+</div>
 </div>
     <div id="peskastimordatapipeline-030" class="section level1">
 <h1 class="page-header" data-toc-text="0.3.0">
@@ -131,9 +150,9 @@
 <li>Added <code><a href="../reference/download_cloud_file.html">download_cloud_file()</a></code> to download files from cloud storage providers.</li>
 </ul>
 </div>
-<div id="improvements" class="section level3">
+<div id="improvements-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements" class="anchor"></a>Improvements</h3>
+<a href="#improvements-1" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li>
 </ul>
@@ -142,9 +161,9 @@
     <div id="peskastimordatapipeline-020" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.0">
 <a href="#peskastimordatapipeline-020" class="anchor"></a>peskas.timor.data.pipeline 0.2.0</h1>
-<div id="breaking-changes" class="section level3">
+<div id="breaking-changes-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#breaking-changes" class="anchor"></a>Breaking changes</h3>
+<a href="#breaking-changes-1" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>
 <code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>, <code><a href="../reference/retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>, and <code><a href="../reference/retrieve_survey.html">retrieve_survey()</a></code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
@@ -167,7 +186,7 @@
 <h3 class="hasAnchor">
 <a href="#new-features-2" class="anchor"></a>New features</h3>
 <ul>
-<li>The ingestion of East Timor Landings is implemented in <code><a href="../reference/ingest_timor_landings.html">ingest_timor_landings()</a></code>.</li>
+<li>The ingestion of East Timor Landings is implemented in <code>ingest_timor_landings()</code>.</li>
 <li>The functions <code>download_survey_data()</code> and <code>download_survey_metadata()</code> which download data and metadata for an electronic survey hosted by <em>kobo</em>, <em>kobohr</em>, or <em>ona</em>.</li>
 <li>
 <code>download_survey()</code> can be used as a wrapper to download data and metadata in a single call.</li>
