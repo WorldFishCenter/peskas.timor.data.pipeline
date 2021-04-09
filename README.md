@@ -69,7 +69,7 @@ commit sha. This approach allow us to trace each artifact to a unique
 run of the pipeline. When retrieving jobs can call `cloud_object_name()`
 to obtain the latest or an specific version of an artifact.
 
-## Parameters for different environments are specified in the config file
+## Environment parameters are specified in the config file
 
 The parameters that determine how the pipeline is run are specified in
 [`inst/conf.yml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/conf.yml).
@@ -80,7 +80,7 @@ configuration file. We use three different environments (see below). To
 determine which environment to use, the config package checks the
 environment variable `R_CONFIG_ACTIVE`.
 
-  - **Remote development environment (default)**: The development
+  - Remote development environment (default): The development
     environment is the “default” configuration. This environment should
     be used when the code is running in the cloud One characteristic of
     this environment is that it uses cloud storage buckets that differ
@@ -94,9 +94,9 @@ environment variable `R_CONFIG_ACTIVE`.
     secrets](https://docs.github.com/en/actions/reference/encrypted-secrets)
     and passes it to R as environment variables.
 
-  - **Local development environment**: The “local” environment is
-    similar to the default environment in that is used for development
-    and therefore uses resources ideal for testing the code. The main
+  - Local development environment: The “local” environment is similar to
+    the default environment in that is used for development and
+    therefore uses resources ideal for testing the code. The main
     difference is that the authentication information is not read from
     environment variables but from local files. Specifically
     authentication files should live in a directory called `auth` which
@@ -107,16 +107,35 @@ environment variable `R_CONFIG_ACTIVE`.
     `R_CONFIG_ACTIVE=local` to the `.Renviron` file in the project
     directory.
 
-  - **Production environment**: The production environment is similar to
-    the default environment in that it’s designed to run in the cloud
-    and read authentication details from the cloud. It differs in that
-    it uses cloud resources that should be used exclusively in
-    production once things have been tested out. This environment is
-    active when `R_CONFIG_ACTIVE=production`; this environment variable
-    is passed by pipeline workflow file when the code executes from the
-    “main” git branch.
+  - Production environment: The production environment is similar to the
+    default environment in that it’s designed to run in the cloud and
+    read authentication details from the cloud. It differs in that it
+    uses cloud resources that should be used exclusively in production
+    once things have been tested out. This environment is active when
+    `R_CONFIG_ACTIVE=production`; this environment variable is passed by
+    pipeline workflow file when the code executes from the “main” git
+    branch.
 
-## Authentication
+## We use docker containers
+
+We use docker containers to make it easier to run and develop code.
+
+  - Development: We use the main
+    [`Dockerfile`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile)
+    for development. It’s based on the rocker/geospatial image and spins
+    up an RStudio server instance with quite a large number of packages.
+    To start an instance of this container you can simply go to the
+    project’s directory and run `docker-compose up -d --build` from the
+    terminal console.
+
+  - Production: We use
+    [`Dockerfile.prod`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile.prod)
+    to run the code in production. This image is based in a more
+    lightweight version of R and only installs the required packages.
+    The first job in the pipeline builds this container and other steps
+    use it to run the code. This allow us to run the code under the same
+    environment regardless of the cloud computing infrastructure that
+    runs it.
 
 ## Installation
 
