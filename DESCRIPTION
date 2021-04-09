@@ -30,6 +30,7 @@ Suggests:
     googleAuthR,
     googleCloudStorageR,
     jsonlite,
+    pkgdown,
     RCurl,
     remotes,
     sessioninfo,
