@@ -115,7 +115,6 @@ upload_cloud_file <- function(file, provider, options, name = file){
 #' @param options
 #' @inheritParams upload_cloud_file
 #'
-#' @author Fernando Cagua
 #'
 #' @details
 #'
@@ -203,7 +202,6 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
 #'   is the object name.
 #' @inheritParams upload_cloud_file
 #'
-#' @author Fernando Cagua
 #'
 #' @return the file path
 #' @export

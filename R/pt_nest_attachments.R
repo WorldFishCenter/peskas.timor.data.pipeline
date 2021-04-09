@@ -23,7 +23,6 @@
 #'   tibble for every row. This, attachment tibble has as many rows as there are
 #'   attachments.
 #'
-#' @author Fernando Cagua
 #' @export
 #' @importFrom rlang .data
 #'

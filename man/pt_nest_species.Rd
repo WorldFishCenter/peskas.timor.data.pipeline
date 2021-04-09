@@ -52,6 +52,3 @@ dummy_landings <- tidyr::tibble(
     `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` = 2)
 pt_nest_species(dummy_landings)
 }
-\author{
-Fernando Cagua
-}

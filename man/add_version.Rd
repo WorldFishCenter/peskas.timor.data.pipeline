@@ -38,6 +38,3 @@ add_version("my_file", "csv")
 }
 
 }
-\author{
-Fernando Cagua
-}

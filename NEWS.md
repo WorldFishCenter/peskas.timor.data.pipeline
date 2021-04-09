@@ -1,6 +1,17 @@
-# peskas.timor.data.pipeline 0.3.1
+# peskas.timor.data.pipeline 0.4.0
 
-- Skipping RCurl from windows tests
+### Breaking changes
+
+- Renamed `ingest_timor_landings()` to `ingest_landings()` for brevity and because all functions relate to Timor anyways. 
+
+### Improvements
+
+- Renamed the job names in the github workflow as the functions that the job calls. 
+- Improved documentation of the package: particularly the readme and the function reference.
+
+### Bug fixes
+
+- We now skip RCurl from windows tests
 
 # peskas.timor.data.pipeline 0.3.0
 
@@ -10,7 +21,7 @@
 - Added `pt_nest_attachments()` to group all attachment columns into a nested column containing data frames.
 - Added `pt_nest_species()` to group all attachment columns into a nested column containing data frames.
 - Added `cloud_object_name()` as a complement to `add_version()` to return the latest or an specified version of an object in an storage location.
-- Added `download_cloud_file()` to download files from cloud storage providers. 
+- Added `download_cloud_file()` to download files from cloud storage providers.
 
 ### Improvements
 

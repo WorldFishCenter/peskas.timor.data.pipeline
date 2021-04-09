@@ -72,6 +72,3 @@ the file.
 }
 
 }
-\author{
-Fernando Cagua
-}

@@ -45,6 +45,3 @@ dummy_landings <- tidyr::tibble(
 pt_nest_attachments(dummy_landings)
 
 }
-\author{
-Fernando Cagua
-}

@@ -34,6 +34,3 @@ Download object from the cloud storage to a local file
                    bucket = "my-bucket"))
 }
 }
-\author{
-Fernando Cagua
-}

@@ -47,6 +47,3 @@ retrieve_survey_data("test.json", id = 753491, format = "json")
 file.remove("test.csv", "test.json")
 
 }
-\author{
-Fernando Cagua
-}

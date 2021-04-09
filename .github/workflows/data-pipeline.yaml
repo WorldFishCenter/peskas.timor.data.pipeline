@@ -47,7 +47,7 @@ jobs:
 
 
   ingest-landings:
-    name: Ingest landings
+    name: ingest_landings()
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -62,12 +62,12 @@ jobs:
     steps:
       - name: Get session info
         run: Rscript -e 'sessioninfo::session_info()'
-      - name: Call ingest_timor_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_timor_landings()'
+      - name: Call ingest_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
 
   preprocess-landings:
-    name: Preprocess landings
+    name: preprocess_landings()
     needs: [ingest-landings, build-container]
     runs-on: ubuntu-20.04
     container:
@@ -82,5 +82,5 @@ jobs:
     steps:
       - name: Get session info
         run: Rscript -e 'sessioninfo::session_info()'
-      - name: Call ingest_timor_landings()
+      - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'

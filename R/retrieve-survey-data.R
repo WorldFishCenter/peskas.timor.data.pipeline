@@ -54,7 +54,6 @@ get_host_url <- function(api, version = "v1") {
 #' @inheritParams get_host_url
 #'
 #' @return The file path
-#' @author Fernando Cagua
 #' @export
 #'
 #' @examples
@@ -86,7 +85,6 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 #' @inheritParams retrieve_survey_data
 #'
 #' @return A list with survey metadata
-#' @author Fernando Cagua
 #' @export
 #'
 #' @examples
@@ -138,7 +136,6 @@ retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
 #' @inheritParams retrieve_survey_data
 #'
 #' @return a character vector with paths of the downloaded files
-#' @author Fernando Cagua
 #' @export
 #'
 #' @examples

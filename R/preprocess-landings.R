@@ -4,18 +4,32 @@
 #' into a binary format that is easier to deal with in R.
 #'
 #' This function downloads the landings data from a given version (specified in
-#' the config file `conf.yml`; this file is located in the *inst* directory of
-#' the package and can be accessed using
-#' `system.file("conf.yml",package="peskas.timor.data.pipeline")`). The specific
-#' configuration is determined using the environment variable `R_CONFIG_ACTIVE`.
+#' the config file `conf.yml`. The parameters needed are:
+#'
+#' ```
+#' surveys:
+#'   landings:
+#'     api:
+#'     survey_id:
+#'     token:
+#'     file_prefix:
+#'   version:
+#'     preprocess:
+#' storage:
+#'   storage_name:
+#'     key:
+#'     options:
+#'       project:
+#'       bucket:
+#'       service_account_key:
+#' ```
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_timor_landings
-#'
+#' @inheritParams ingest_landings
+#' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
-#' @author Fernando Cagua
 #' @export
 #'
 preprocess_landings <- function(log_threshold = logger::DEBUG){
