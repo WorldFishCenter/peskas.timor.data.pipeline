@@ -1,6 +1,17 @@
-# peskas.timor.data.pipeline 0.3.1
+# peskas.timor.data.pipeline 0.4.0
 
-- Skipping RCurl from windows tests
+### Breaking changes
+
+- Renamed `ingest_timor_landings()` to `ingest_landings()` for brevity and because all functions relate to Timor anyways. 
+
+### Improvements
+
+- Renamed the job names in the github workflow as the functions that the job calls. 
+- Improved documentation of the package: particularly the readme and the function reference.
+
+### Bug fixes
+
+- We now skip RCurl from windows tests
 
 # peskas.timor.data.pipeline 0.3.0
 
@@ -10,7 +21,7 @@
 - Added `pt_nest_attachments()` to group all attachment columns into a nested column containing data frames.
 - Added `pt_nest_species()` to group all attachment columns into a nested column containing data frames.
 - Added `cloud_object_name()` as a complement to `add_version()` to return the latest or an specified version of an object in an storage location.
-- Added `download_cloud_file()` to download files from cloud storage providers. 
+- Added `download_cloud_file()` to download files from cloud storage providers.
 
 ### Improvements
 
@@ -33,7 +44,7 @@ Adds infrastructure to download survey data and upload it to cloud storage provi
 
 ### New features
 
-- The ingestion of East Timor Landings is implemented in `ingest_landings()`. 
+- The ingestion of East Timor Landings is implemented in `ingest_timor_landings()`. 
 - The functions `download_survey_data()` and `download_survey_metadata()` which download data and metadata for an electronic survey hosted by *kobo*, *kobohr*, or *ona*. 
 - `download_survey()` can be used as a wrapper to download data and metadata in a single call. 
 - `upload_cloud_file()` can be used to upload a set of files to a cloud storage bucket. Currently only Google Cloud Services (GCS) is supported. 
