@@ -12,7 +12,7 @@
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_timor_landings
+#' @inheritParams ingest_landings
 #' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
 #' @author Fernando Cagua

@@ -1,4 +1,4 @@
-#' Ingest Timor Landings Survey data
+#' Ingest Landings Survey data
 #'
 #' Downloads landings information that has been collected using Kobo Toolbox and
 #' uploads it to cloud storage services.
@@ -28,7 +28,7 @@
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
-ingest_timor_landings <- function(log_threshold = logger::DEBUG){
+ingest_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
 

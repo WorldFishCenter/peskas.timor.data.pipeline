@@ -33,7 +33,7 @@ Adds infrastructure to download survey data and upload it to cloud storage provi
 
 ### New features
 
-- The ingestion of East Timor Landings is implemented in `ingest_timor_landings()`. 
+- The ingestion of East Timor Landings is implemented in `ingest_landings()`. 
 - The functions `download_survey_data()` and `download_survey_metadata()` which download data and metadata for an electronic survey hosted by *kobo*, *kobohr*, or *ona*. 
 - `download_survey()` can be used as a wrapper to download data and metadata in a single call. 
 - `upload_cloud_file()` can be used to upload a set of files to a cloud storage bucket. Currently only Google Cloud Services (GCS) is supported. 
