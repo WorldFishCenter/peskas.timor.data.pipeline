@@ -19,7 +19,7 @@ The goal of peskas.timor.data.pipeline is to implement, deploy, and
 execute the data and modelling pipelines that underpin Peskas-East
 Timor, the small-scale fisheries analytics in East Timor.
 
-## The data pipeline is an R package
+## The pipeline is an R package
 
 peskas.timor.data.pipeline is structured as an R package because it
 makes it easier to write production-grade software. Specifically,
@@ -38,12 +38,13 @@ project setup and deployment.
 For more information about the rationale of structuring the pipeline as
 a package check
 [Chapter 3](https://engineering-shiny.org/structuring-project.html#structuring-your-app_)
-in [Engineering Production-Grade Shiny
-Apps](https://engineering-shiny.org). The book is focused on Shiny
+in [*Engineering Production-Grade Shiny
+Apps*](https://engineering-shiny.org). The book is focused on Shiny
 applications but the rationale also applies to data pipelines and
 production-ready code in general. The best place to learn more about
-package development is probably the [R package book](https://r-pkgs.org)
-by Hadley Wickham and Jenny Brian.
+package development is probably the [*R packages*](https://r-pkgs.org)
+book by Hadley Wickham and Jenny Brian.
+
 ## The pipeline runs on Github Actions
 
 While each step in the pipeline are defined as a function in the
@@ -53,7 +54,7 @@ allow us to take advantages of best practices in continous development
 and integration (CD/CI) and automatically link the code to execution.
 
 Each job in the pipeline is defined in the workflow file:
-[`.github/workflows/data-pipeline.yaml`](.github/workflows/data-pipeline.yaml)
+[`.github/workflows/data-pipeline.yaml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml)
 and can be seen in the figure below. Note that additional workflows
 exist to test the package in multiple environments and build the
 documentation website.
