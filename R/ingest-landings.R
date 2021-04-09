@@ -7,6 +7,8 @@
 #'   threshold for the logging infrastructure. See [logger::log_levels] for more
 #'   details
 #'
+#' @keywords workflow
+#'
 #' @return No output. This funcrion is used for it's side effects
 #' @export
 #'

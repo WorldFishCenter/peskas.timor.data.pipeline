@@ -30,3 +30,4 @@ Progress through the function is tracked using the package \emph{logger}.
 \author{
 Fernando Cagua
 }
+\keyword{workflow}

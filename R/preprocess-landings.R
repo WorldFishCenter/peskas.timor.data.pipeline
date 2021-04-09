@@ -13,7 +13,7 @@
 #'
 #' @param log_threshold
 #' @inheritParams ingest_timor_landings
-#'
+#' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
 #' @author Fernando Cagua
 #' @export

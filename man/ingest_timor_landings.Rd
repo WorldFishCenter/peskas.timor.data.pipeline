@@ -33,3 +33,4 @@ configuration is detemined using the environment variable \code{R_CONFIG_ACTIVE}
 
 Progress through the function is tracked using the package \emph{logger}.
 }
+\keyword{workflow}
