@@ -52,6 +52,8 @@ package, these functions are deployed and integrated using [GitHub
 Actions](https://docs.github.com/en/actions/learn-github-actions). This
 allow us to take advantages of best practices in continous development
 and integration (CD/CI) and automatically link the code to execution.
+However, these workflow functions work almost as scripts because they
+don’t take parameters and are used for their side effects.
 
 Each job in the pipeline is defined in the workflow file:
 [`.github/workflows/data-pipeline.yaml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml)
@@ -73,7 +75,9 @@ to obtain the latest or an specific version of an artifact.
 
 The parameters that determine how the pipeline is run are specified in
 [`inst/conf.yml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/conf.yml).
-Using this file, as opposed to, for example, including them in the code,
+This file can be accessed using
+`system.file("conf.yml",package="peskas.timor.data.pipeline")`. Using
+this file, as opposed to, for example, including them in the code,
 allows us to easily switch parameters depending on the environment. We
 use the [config](https://github.com/rstudio/config) package to read the
 configuration file. We use three different environments (see below). To
@@ -137,12 +141,7 @@ We use docker containers to make it easier to run and develop code.
     environment regardless of the cloud computing infrastructure that
     runs it.
 
-## Installation
+## Logging
 
-You can install the development version from
-[GitHub](https://github.com/) with:
-
-``` r
-# install.packages("remotes")
-remotes::install_github("WorldFishCenter/peskas.timor.data.pipeline")
-```
+We use the [logger](https://daroczig.github.io/logger/) package to log
+events in production.
