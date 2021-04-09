@@ -29,6 +29,6 @@ The goal of peskas.timor.data.pipeline is to implement the data and modelling pi
 You can install the development version from [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("WorldFishCenter/peskas.timor.data.pipeline")
+# install.packages("remotes")
+remotes::install_github("WorldFishCenter/peskas.timor.data.pipeline")
 ```
