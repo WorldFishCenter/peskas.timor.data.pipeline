@@ -15,7 +15,6 @@
 #'   individuals per length is stored
 #'
 #' @export
-#' @author Fernando Cagua
 #' @importFrom rlang .data
 #'
 #' @examples

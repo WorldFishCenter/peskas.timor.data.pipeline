@@ -12,7 +12,6 @@
 #' @param sep Characters separating the version identifier from the file name
 #'
 #' @return A character string with the file name and the version identifier
-#' @author Fernando Cagua
 #' @export
 #'
 #' @details

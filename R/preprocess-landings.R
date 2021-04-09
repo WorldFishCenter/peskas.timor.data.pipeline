@@ -15,7 +15,6 @@
 #' @inheritParams ingest_landings
 #' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
-#' @author Fernando Cagua
 #' @export
 #'
 preprocess_landings <- function(log_threshold = logger::DEBUG){

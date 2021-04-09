@@ -57,6 +57,3 @@ through the function is tracked using the package \emph{logger}.
                   token = "123XXXXXX")
 }
 }
-\author{
-Fernando Cagua
-}
