@@ -17,6 +17,7 @@ Imports:
     config,
     dplyr,
     git2r,
+    googledrive,
     httr,
     logger,
     magrittr,
