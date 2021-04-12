@@ -43,17 +43,12 @@ ingest_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
 
-  logger::log_info("Loading configuration file...")
-  pars <- config::get(
-    config = Sys.getenv("R_CONFIG_ACTIVE", "default"),
-    file = system.file("conf.yml", package = "peskas.timor.data.pipeline"))
-  logger::log_info("Using configutation: {attr(pars, 'config')}")
-  logger::log_debug("Running with parameters {pars}")
+  pars <- read_config()
 
   file_list <- retrieve_survey(pars$surveys$landings$file_prefix,
-                api = pars$surveys$landings$api,
-                id = pars$surveys$landings$survey_id,
-                token = pars$surveys$landings$token)
+                               api = pars$surveys$landings$api,
+                               id = pars$surveys$landings$survey_id,
+                               token = pars$surveys$landings$token)
 
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
