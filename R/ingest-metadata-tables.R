@@ -40,7 +40,7 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
   googledrive::drive_download(
     file = googledrive::as_id(pars$metadata$spreadsheet$id),
-    # path = metadata_filename,
+    path = metadata_filename,
     overwrite = TRUE)
   logger::log_success("Metadata tables download succeded")
 
