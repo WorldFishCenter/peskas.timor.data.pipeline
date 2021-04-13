@@ -1,21 +1,33 @@
 reference:
+
 - title: Workflow
   desc: >
     These are arguably the most important functions in the package. Each of
     these functions executes a step in the data pipeline.
 - contents:
   - has_keyword("workflow")
+
 - title: Cloud
+- subtitle: Cloud storage
   desc: Functions that interact with cloud storage providers.
-- contents:
+  contents:
   - matches("cloud")
   - add_version
+- subtitle: Google Spreadsheets
+  desc: Functions to interact with Google Drive and Spreadsheets
+  contents:
+  - matches("google")
+
 - title: Survey
   desc: Functions that help retrieving survey data
 - contents:
   - matches("survey")
   - get_host_url
+
 - title: Helper functions
 - subtitle: Data preprocessing
   contents:
   - matches("nest")
+- subtitle: Utils
+  contents:
+  - read_config
