@@ -1,5 +1,9 @@
 # peskas.timor.data.pipeline 0.4.0.9000
 
+### New features
+
+- Added `ingest_metadata_tables()` to ingest data about boats, species, municipalities, etc. 
+
 ### Improvements
 
 - We use a single function to read the config.file and load the environment parameters
