@@ -78,11 +78,11 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-      steps:
-        - name: Get session info
-          run: Rscript -e 'sessioninfo::session_info()'
-        - name: Call ingest_metadata_tables()
-          run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
+    steps:
+      - name: Get session info
+        run: Rscript -e 'sessioninfo::session_info()'
+      - name: Call ingest_metadata_tables()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
 
 
   preprocess-landings:
