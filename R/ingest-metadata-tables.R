@@ -35,7 +35,7 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
 
   authenticate_google_drive(pars$metadata$auth)
-  metadata_filename <- add_version("metadata-tables", "xlsx")
+  metadata_filename <- add_version(pars$metadata$spreadsheet$name, "xlsx")
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
   googledrive::drive_download(
