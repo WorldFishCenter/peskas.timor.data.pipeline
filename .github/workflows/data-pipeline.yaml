@@ -66,6 +66,25 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
 
+  ingest-metatata-tables:
+    name: ingest_metadata_tables()
+    needs: build-container
+    runs-on: ubuntu-20.04
+    container:
+      image: ${{needs.build-container.outputs.r-image-name}}
+      env:
+        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      steps:
+        - name: Get session info
+          run: Rscript -e 'sessioninfo::session_info()'
+        - name: Call ingest_metadata_tables()
+          run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
+
+
   preprocess-landings:
     name: preprocess_landings()
     needs: [ingest-landings, build-container]
