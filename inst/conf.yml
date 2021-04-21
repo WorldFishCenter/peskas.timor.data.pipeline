@@ -23,6 +23,8 @@ default:
     auth:
       method: service_account_key
       service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+    version:
+      preprocess: latest
 
   storage:
     google:
