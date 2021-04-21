@@ -23,7 +23,9 @@ Imports:
     magrittr,
     purrr,
     readr,
+    readxl,
     stringr,
+    tibble,
     tidyr,
     rlang (>= 0.1.2)
 Suggests: 
