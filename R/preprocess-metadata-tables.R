@@ -52,7 +52,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Reading {metadata_filename}...")
   metadata_tables <- readxl::excel_sheets(metadata_filename) %>%
-    rlang::set_names(.data$.) %>%
+    rlang::set_names() %>%
     purrr::map(~ readxl::read_excel(path = metadata_filename,
                                     sheet = .))
 
