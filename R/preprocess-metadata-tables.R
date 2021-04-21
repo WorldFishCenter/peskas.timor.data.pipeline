@@ -52,7 +52,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Reading {metadata_filename}...")
   metadata_tables <- readxl::excel_sheets(metadata_filename) %>%
-    rlang::set_names(.) %>%
+    rlang::set_names(.data$.) %>%
     purrr::map(~ readxl::read_excel(path = metadata_filename,
                                     sheet = .))
 
@@ -85,7 +85,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
 #'
 pt_get_devices_table <- function(boats_table){
   imeis <- boats_table$imei %>%
-    na.omit() %>%
+    stats::na.omit() %>%
     unique() %>%
     as.character()
 
@@ -110,8 +110,8 @@ pt_get_devices_table <- function(boats_table){
 pt_validate_flags <- function(flags_table){
 
   f <- flags_table %>%
-    dplyr::filter(!is.na(flag_message)) %>%
-    dplyr::mutate(flag_id = as.character(flag_id))
+    dplyr::filter(!is.na(.data$flag_message)) %>%
+    dplyr::mutate(flag_id = as.character(.data$flag_id))
 
   n_codes <- dplyr::n_distinct(f$flag_id)
   n_flags <- nrow(f)
