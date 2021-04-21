@@ -16,6 +16,16 @@ default:
       version:
         preprocess: latest
 
+  metadata:
+    spreadsheet:
+      name: metadata-tables
+      id: 1ag0FixN0clJMY4OnLHNwEd4w4Xuodn1w4bmJG0mmEaQ
+    auth:
+      method: service_account_key
+      service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+    version:
+      preprocess: latest
+
   storage:
     google:
       key: gcs
@@ -38,6 +48,9 @@ local:
       token: !expr readLines("auth/kobo-token")
     landings_legacy:
       token: !expr readLines("auth/kobo-token")
+  metadata:
+    auth:
+      method: OAuth
   storage:
     google:
       options:
