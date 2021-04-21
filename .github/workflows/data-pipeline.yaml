@@ -33,13 +33,11 @@ jobs:
           password: "${{ secrets.GITHUB_TOKEN }}"
           registry: docker.pkg.github.com
           image_name: r-runner-peskas-timor
-          push_git_tag: true
           dockerfile: Dockerfile.prod
       - name: Set outputs as environment variables
         uses: allenevans/set-env@v2.0.0
         with:
           R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
-
 
   ingest-landings:
     name: ingest_landings()
