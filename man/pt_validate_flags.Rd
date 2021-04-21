@@ -2,16 +2,18 @@
 % Please edit documentation in R/preprocess-metadata-tables.R
 \name{pt_validate_flags}
 \alias{pt_validate_flags}
-\title{Title}
+\title{Validate flags from metadata tables}
 \usage{
 pt_validate_flags(flags_table)
 }
 \arguments{
-\item{flags_table}{}
+\item{flags_table}{the table containing the flags. Must have columns flag_id,
+flag_category, and flag_message}
 }
 \value{
-
+a data frame with columns flag_id, flag_category, and flag_message
 }
 \description{
-Title
+Checks the flags from the metadata tables. Specifically check that flags are
+unique and all flags have an id
 }

@@ -95,7 +95,7 @@ pt_get_devices_table <- function(boats_table){
 }
 
 
-#' Validate flags
+#' Validate flags from metadata tables
 #'
 #' Checks the flags from the metadata tables. Specifically check that flags are
 #' unique and all flags have an id
@@ -103,7 +103,7 @@ pt_get_devices_table <- function(boats_table){
 #' @param flags_table the table containing the flags. Must have columns flag_id,
 #'   flag_category, and flag_message
 #'
-#' @return
+#' @return a data frame with columns flag_id, flag_category, and flag_message
 #' @export
 #'
 #' @examples

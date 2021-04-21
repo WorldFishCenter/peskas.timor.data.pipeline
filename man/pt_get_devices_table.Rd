@@ -2,16 +2,17 @@
 % Please edit documentation in R/preprocess-metadata-tables.R
 \name{pt_get_devices_table}
 \alias{pt_get_devices_table}
-\title{Title}
+\title{Get table containing information about the PDS devices}
 \usage{
-pt_get_devices_table(metadata_tables)
+pt_get_devices_table(boats_table)
 }
 \arguments{
-\item{metadata_tables}{}
+\item{boats_table}{the boat metadata table obtained from Google
+Spreadsheets}
 }
 \value{
-
+a data frame with columns: imei
 }
 \description{
-Title
+Get table containing information about the PDS devices
 }
