@@ -9,10 +9,10 @@
 #' metadata:
 #'   spreadsheet:
 #'     id:
+#'     name:
 #'   auth:
 #'     method:
 #'     service_account_key:
-#'
 #' storage:
 #'   storage_name:
 #'     key:

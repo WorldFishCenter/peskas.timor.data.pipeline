@@ -20,10 +20,10 @@ include information about flags, boats, devices, municipalities, etc.
 The parameters needed in \code{conf.yml} are:\preformatted{metadata:
   spreadsheet:
     id:
+    name:
   auth:
     method:
     service_account_key:
-
 storage:
   storage_name:
     key:
