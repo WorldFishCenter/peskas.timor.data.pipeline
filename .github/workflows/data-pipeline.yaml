@@ -10,9 +10,6 @@ jobs:
   build-container:
     name: Build R container
     runs-on: ubuntu-20.04
-    outputs:
-      r-image-name: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
-      r-config: ${{ steps.setvars.outputs.r-config }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -44,6 +41,11 @@ jobs:
           image_name: r-runner-${{ steps.remove-tag-colon.outputs.tag }}
           push_git_tag: true
           dockerfile: Dockerfile.prod
+      - name: Set outputs as environment variables
+        uses: allenevans/set-env@v2.0.0
+        with:
+          R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
+          R_IMAGE_NAME: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
 
 
   ingest-landings:
@@ -51,9 +53,8 @@ jobs:
     needs: build-container
     runs-on: ubuntu-20.04
     container:
-      image: ${{needs.build-container.outputs.r-image-name}}
+      image: ${{ env.R_IMAGE_NAME}}
       env:
-        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
         KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
       credentials:
