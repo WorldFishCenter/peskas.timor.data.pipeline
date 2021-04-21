@@ -109,6 +109,24 @@
       
     </div>
 
+    <div id="peskastimordatapipeline-0409000" class="section level1">
+<h1 class="page-header" data-toc-text="0.4.0.9000">
+<a href="#peskastimordatapipeline-0409000" class="anchor"></a>peskas.timor.data.pipeline 0.4.0.9000</h1>
+<div id="new-features" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-features" class="anchor"></a>New features</h3>
+<ul>
+<li>Added <code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> to ingest data about boats, species, municipalities, etc.</li>
+</ul>
+</div>
+<div id="improvements" class="section level3">
+<h3 class="hasAnchor">
+<a href="#improvements" class="anchor"></a>Improvements</h3>
+<ul>
+<li>We use a single function to read the config.file and load the environment parameters</li>
+</ul>
+</div>
+</div>
     <div id="peskastimordatapipeline-040" class="section level1">
 <h1 class="page-header" data-toc-text="0.4.0">
 <a href="#peskastimordatapipeline-040" class="anchor"></a>peskas.timor.data.pipeline 0.4.0</h1>
@@ -119,9 +137,9 @@
 <li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li>
 </ul>
 </div>
-<div id="improvements" class="section level3">
+<div id="improvements-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements" class="anchor"></a>Improvements</h3>
+<a href="#improvements-1" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Renamed the job names in the github workflow as the functions that the job calls.</li>
 <li>Improved documentation of the package: particularly the readme and the function reference.</li>
@@ -138,9 +156,9 @@
     <div id="peskastimordatapipeline-030" class="section level1">
 <h1 class="page-header" data-toc-text="0.3.0">
 <a href="#peskastimordatapipeline-030" class="anchor"></a>peskas.timor.data.pipeline 0.3.0</h1>
-<div id="new-features" class="section level3">
+<div id="new-features-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#new-features" class="anchor"></a>New features</h3>
+<a href="#new-features-1" class="anchor"></a>New features</h3>
 <ul>
 <li>The preprocessing of East Timor landings is implemented in <code><a href="../reference/preprocess_landings.html">preprocess_landings()</a></code>
 </li>
@@ -150,9 +168,9 @@
 <li>Added <code><a href="../reference/download_cloud_file.html">download_cloud_file()</a></code> to download files from cloud storage providers.</li>
 </ul>
 </div>
-<div id="improvements-1" class="section level3">
+<div id="improvements-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements-1" class="anchor"></a>Improvements</h3>
+<a href="#improvements-2" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li>
 </ul>
@@ -170,9 +188,9 @@
 <li>The suffix <em>raw</em> and <em>metadata</em> that is appended to the prefix when retrieving survey information is now separated using "_" rather than “-”. This is to more easily distinguish between information encoded in the file name.</li>
 </ul>
 </div>
-<div id="new-features-1" class="section level3">
+<div id="new-features-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#new-features-1" class="anchor"></a>New features</h3>
+<a href="#new-features-2" class="anchor"></a>New features</h3>
 <ul>
 <li>The prefix name of surveys is not hard-coded and can be specified in the config file (<code>file_prefix</code> field).</li>
 </ul>
@@ -182,9 +200,9 @@
 <h1 class="page-header" data-toc-text="0.1.0">
 <a href="#peskastimordatapipeline-010" class="anchor"></a>peskas.timor.data.pipeline 0.1.0</h1>
 <p>Adds infrastructure to download survey data and upload it to cloud storage providers and implements the ingestion of East Timor landings.</p>
-<div id="new-features-2" class="section level3">
+<div id="new-features-3" class="section level3">
 <h3 class="hasAnchor">
-<a href="#new-features-2" class="anchor"></a>New features</h3>
+<a href="#new-features-3" class="anchor"></a>New features</h3>
 <ul>
 <li>The ingestion of East Timor Landings is implemented in <code>ingest_timor_landings()</code>.</li>
 <li>The functions <code>download_survey_data()</code> and <code>download_survey_metadata()</code> which download data and metadata for an electronic survey hosted by <em>kobo</em>, <em>kobohr</em>, or <em>ona</em>.</li>
