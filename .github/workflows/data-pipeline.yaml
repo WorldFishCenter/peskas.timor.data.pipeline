@@ -44,7 +44,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-20.04
     container:
-      image: r-runner-peskas-timor
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
     needs: [ingest-landings]
     runs-on: ubuntu-20.04
     container:
-      image: r-runner-peskas-timor
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
