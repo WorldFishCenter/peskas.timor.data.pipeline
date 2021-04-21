@@ -85,7 +85,7 @@ jobs:
 
 
 
-  ingest-metatata-tables:
+  ingest-metadata-tables:
     name: ingest_metadata_tables()
     needs: build-container
     runs-on: ubuntu-20.04
