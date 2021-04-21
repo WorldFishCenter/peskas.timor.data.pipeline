@@ -5,6 +5,10 @@ on:
   schedule:
     - cron:  '0 0 * * *'
 
+env:
+  KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
+  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+
 jobs:
 
   build-container:
@@ -21,16 +25,6 @@ jobs:
           else
             echo "::set-output name=r-config::default"
           fi
-      - name: Get smart tag for docker image
-        id: get-tag
-        uses: Surgo/docker-smart-tag-action@v1
-      # This step is necessary to remove the colon from the beginning of the tag
-      - name: Remove colon from smart tag
-        id: remove-tag-colon
-        env:
-          IMAGE_TAG: ${{ steps.get-tag.outputs.tag }}
-        run: |
-          echo "::set-output name=tag::${IMAGE_TAG:1}"
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
@@ -38,14 +32,13 @@ jobs:
           username: $GITHUB_ACTOR
           password: "${{ secrets.GITHUB_TOKEN }}"
           registry: docker.pkg.github.com
-          image_name: r-runner-${{ steps.remove-tag-colon.outputs.tag }}
+          image_name: r-runner-peskas-timor
           push_git_tag: true
           dockerfile: Dockerfile.prod
       - name: Set outputs as environment variables
         uses: allenevans/set-env@v2.0.0
         with:
           R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
-          R_IMAGE_NAME: ${{ steps.build-docker.outputs.FULL_IMAGE_NAME }}
 
 
   ingest-landings:
@@ -53,71 +46,61 @@ jobs:
     needs: build-container
     runs-on: ubuntu-20.04
     container:
-      image: ${{ env.R_IMAGE_NAME}}
-      env:
-        KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
-        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      image: r-runner-peskas-timor
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Get session info
-        run: Rscript -e 'sessioninfo::session_info()'
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
   preprocess-landings:
     name: preprocess_landings()
-    needs: [ingest-landings, build-container]
+    needs: [ingest-landings]
     runs-on: ubuntu-20.04
     container:
-      image: ${{needs.build-container.outputs.r-image-name}}
-      env:
-        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
-        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      image: r-runner-peskas-timor
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Get session info
-        run: Rscript -e 'sessioninfo::session_info()'
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
-
-
-  ingest-metadata-tables:
-    name: ingest_metadata_tables()
-    needs: build-container
-    runs-on: ubuntu-20.04
-    container:
-      image: ${{needs.build-container.outputs.r-image-name}}
-      env:
-        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
-        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Get session info
-        run: Rscript -e 'sessioninfo::session_info()'
-      - name: Call ingest_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-
-  preprocess-metadata-tables:
-    name: preprocess_metadata_tables()
-    needs: [ingest-metadata-tables, build-container]
-    runs-on: ubuntu-20.04
-    container:
-      image: ${{needs.build-container.outputs.r-image-name}}
-      env:
-        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
-        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Get session info
-        run: Rscript -e 'sessioninfo::session_info()'
-      - name: Call preprocess_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
+#
+#
+#   ingest-metadata-tables:
+#     name: ingest_metadata_tables()
+#     needs: build-container
+#     runs-on: ubuntu-20.04
+#     container:
+#       image: ${{needs.build-container.outputs.r-image-name}}
+#       env:
+#         R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+#         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+#       credentials:
+#         username: ${{ github.actor }}
+#         password: ${{ secrets.GITHUB_TOKEN }}
+#     steps:
+#       - name: Get session info
+#         run: Rscript -e 'sessioninfo::session_info()'
+#       - name: Call ingest_metadata_tables()
+#         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
+#
+#   preprocess-metadata-tables:
+#     name: preprocess_metadata_tables()
+#     needs: [ingest-metadata-tables, build-container]
+#     runs-on: ubuntu-20.04
+#     container:
+#       image: ${{needs.build-container.outputs.r-image-name}}
+#       env:
+#         R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+#         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+#       credentials:
+#         username: ${{ github.actor }}
+#         password: ${{ secrets.GITHUB_TOKEN }}
+#     steps:
+#       - name: Get session info
+#         run: Rscript -e 'sessioninfo::session_info()'
+#       - name: Call preprocess_landings()
+#         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
