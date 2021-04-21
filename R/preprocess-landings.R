@@ -36,12 +36,7 @@ preprocess_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
 
-  logger::log_info("Loading configuration file...")
-  pars <- config::get(
-    config = Sys.getenv("R_CONFIG_ACTIVE", "default"),
-    file = system.file("conf.yml", package = "peskas.timor.data.pipeline"))
-  logger::log_info("Using configutation: {attr(pars, 'config')}")
-  logger::log_debug("Running with parameters {pars}")
+  pars <- read_config()
 
   landings_csv <- cloud_object_name(prefix = pars$surveys$landings$file_prefix,
                                     provider = pars$storage$google$key,

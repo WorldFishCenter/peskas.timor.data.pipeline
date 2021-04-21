@@ -17,12 +17,15 @@ Imports:
     config,
     dplyr,
     git2r,
+    googledrive,
     httr,
     logger,
     magrittr,
     purrr,
     readr,
+    readxl,
     stringr,
+    tibble,
     tidyr,
     rlang (>= 0.1.2)
 Suggests: 

@@ -65,7 +65,6 @@ jobs:
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
-
   preprocess-landings:
     name: preprocess_landings()
     needs: [ingest-landings, build-container]
@@ -74,7 +73,6 @@ jobs:
       image: ${{needs.build-container.outputs.r-image-name}}
       env:
         R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
-        KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
         GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
       credentials:
         username: ${{ github.actor }}
@@ -84,3 +82,41 @@ jobs:
         run: Rscript -e 'sessioninfo::session_info()'
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
+
+
+
+  ingest-metadata-tables:
+    name: ingest_metadata_tables()
+    needs: build-container
+    runs-on: ubuntu-20.04
+    container:
+      image: ${{needs.build-container.outputs.r-image-name}}
+      env:
+        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Get session info
+        run: Rscript -e 'sessioninfo::session_info()'
+      - name: Call ingest_metadata_tables()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
+
+  preprocess-metadata-tables:
+    name: preprocess_metadata_tables()
+    needs: [ingest-metadata-tables, build-container]
+    runs-on: ubuntu-20.04
+    container:
+      image: ${{needs.build-container.outputs.r-image-name}}
+      env:
+        R_CONFIG_ACTIVE: ${{ needs.build-container.outputs.r-config }}
+        GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Get session info
+        run: Rscript -e 'sessioninfo::session_info()'
+      - name: Call preprocess_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
