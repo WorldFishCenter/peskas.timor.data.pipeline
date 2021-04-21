@@ -93,6 +93,7 @@ jobs:
 
   ingest-pds-trips:
     name: ingest_pds_trips()
+    if: ${{ false }} # Skip for now as it's not been implemented
     needs: build-container
     runs-on: ubuntu-20.04
     container:
