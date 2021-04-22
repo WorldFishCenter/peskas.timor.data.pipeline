@@ -3,10 +3,13 @@
 ### New features
 
 - Added `ingest_metadata_tables()` to ingest data about boats, species, municipalities, etc. 
+- Added `preprocess_metadata_tables()` to preprocess the data from the metadata ingestion. 
+- Added `pt_get_devices_table()` and `pt_validate_flags()` as helper functions for the metadata preprocessing. 
 
 ### Improvements
 
 - We use a single function to read the config.file and load the environment parameters
+- Added an skeleton pipeline to provide guidance to future development. This is now visible in the README.
 
 # peskas.timor.data.pipeline 0.4.0
 
