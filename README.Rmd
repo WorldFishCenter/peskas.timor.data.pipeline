@@ -47,6 +47,8 @@ Each job in the pipeline is defined in the workflow file:  [`.github/workflows/d
 
 ![](man/figures/pipeline.png)
 
+The figure above illustrate the jobs that are part of the pipeline workflow. Note that not all of them are implemented yet. 
+
 Generally, artifacts produced by each job are stored in a cloud storage container and retrieved from the cloud storage by the next job in the pipeline. 
 When storing a job's artifacts are versioned using the function `add_version()`, which generally includes a timestamp and the commit sha. This approach allow us to trace each artifact to a unique run of the pipeline. 
 When retrieving jobs can call `cloud_object_name()` to obtain the latest or an specific version of an artifact. 
