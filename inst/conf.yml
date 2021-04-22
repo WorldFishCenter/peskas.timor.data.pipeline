@@ -18,11 +18,13 @@ default:
 
   metadata:
     spreadsheet:
-      name: peskas-timor-metadata
+      name: metadata-tables
       id: 1ag0FixN0clJMY4OnLHNwEd4w4Xuodn1w4bmJG0mmEaQ
     auth:
       method: service_account_key
-      service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+      service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+    version:
+      preprocess: latest
 
   storage:
     google:

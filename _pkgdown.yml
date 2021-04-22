@@ -28,6 +28,8 @@ reference:
 - subtitle: Data preprocessing
   contents:
   - matches("nest")
+  - pt_get_devices_table
+  - pt_validate_flags
 - subtitle: Utils
   contents:
   - read_config

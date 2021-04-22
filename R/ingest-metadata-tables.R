@@ -9,10 +9,10 @@
 #' metadata:
 #'   spreadsheet:
 #'     id:
+#'     name:
 #'   auth:
 #'     method:
 #'     service_account_key:
-#'
 #' storage:
 #'   storage_name:
 #'     key:
@@ -35,12 +35,12 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
 
   authenticate_google_drive(pars$metadata$auth)
-  metadata_filename <- add_version("metadata-tables", "xlsx")
+  metadata_filename <- add_version(pars$metadata$spreadsheet$name, "xlsx")
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
   googledrive::drive_download(
     file = googledrive::as_id(pars$metadata$spreadsheet$id),
-    # path = metadata_filename,
+    path = metadata_filename,
     overwrite = TRUE)
   logger::log_success("Metadata tables download succeded")
 
