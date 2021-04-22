@@ -34,7 +34,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
       </span>
     </div>
 
@@ -90,6 +90,7 @@
 <p>While each step in the pipeline are defined as a function in the package, these functions are deployed and integrated using <a href="https://docs.github.com/en/actions/learn-github-actions">GitHub Actions</a>. This allow us to take advantages of best practices in continous development and integration (CD/CI) and automatically link the code to execution. However, these workflow functions work almost as scripts because they don’t take parameters and are used for their side effects.</p>
 <p>Each job in the pipeline is defined in the workflow file: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml"><code>.github/workflows/data-pipeline.yaml</code></a> and can be seen in the figure below. Note that additional workflows exist to test the package in multiple environments and build the documentation website.</p>
 <p><img src="reference/figures/pipeline.png"></p>
+<p>The figure above illustrate the jobs that are part of the pipeline workflow. Note that not all of them are implemented yet.</p>
 <p>Generally, artifacts produced by each job are stored in a cloud storage container and retrieved from the cloud storage by the next job in the pipeline. When storing a job’s artifacts are versioned using the function <code><a href="reference/add_version.html">add_version()</a></code>, which generally includes a timestamp and the commit sha. This approach allow us to trace each artifact to a unique run of the pipeline. When retrieving jobs can call <code><a href="reference/cloud_object_name.html">cloud_object_name()</a></code> to obtain the latest or an specific version of an artifact.</p>
 </div>
 <div id="environment-parameters-are-specified-in-the-config-file" class="section level2">

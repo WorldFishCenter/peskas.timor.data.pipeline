@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
       </span>
     </div>
 
@@ -109,14 +109,16 @@
       
     </div>
 
-    <div id="peskastimordatapipeline-0409000" class="section level1">
-<h1 class="page-header" data-toc-text="0.4.0.9000">
-<a href="#peskastimordatapipeline-0409000" class="anchor"></a>peskas.timor.data.pipeline 0.4.0.9000</h1>
+    <div id="peskastimordatapipeline-050" class="section level1">
+<h1 class="page-header" data-toc-text="0.5.0">
+<a href="#peskastimordatapipeline-050" class="anchor"></a>peskas.timor.data.pipeline 0.5.0</h1>
 <div id="new-features" class="section level3">
 <h3 class="hasAnchor">
 <a href="#new-features" class="anchor"></a>New features</h3>
 <ul>
 <li>Added <code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> to ingest data about boats, species, municipalities, etc.</li>
+<li>Added <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> to preprocess the data from the metadata ingestion.</li>
+<li>Added <code><a href="../reference/pt_get_devices_table.html">pt_get_devices_table()</a></code> and <code><a href="../reference/pt_validate_flags.html">pt_validate_flags()</a></code> as helper functions for the metadata preprocessing.</li>
 </ul>
 </div>
 <div id="improvements" class="section level3">
@@ -124,6 +126,7 @@
 <a href="#improvements" class="anchor"></a>Improvements</h3>
 <ul>
 <li>We use a single function to read the config.file and load the environment parameters</li>
+<li>Added an skeleton pipeline to provide guidance to future development. This is now visible in the README.</li>
 </ul>
 </div>
 </div>
