@@ -63,6 +63,9 @@ documentation website.
 
 ![](man/figures/pipeline.png)
 
+The figure above illustrate the jobs that are part of the pipeline
+workflow. Note that not all of them are implemented yet.
+
 Generally, artifacts produced by each job are stored in a cloud storage
 container and retrieved from the cloud storage by the next job in the
 pipeline. When storing a job’s artifacts are versioned using the
