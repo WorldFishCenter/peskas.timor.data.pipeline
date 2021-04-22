@@ -15,11 +15,33 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
 
 # Install imports
 RUN install2.r --error --skipinstalled \
-    config dplyr git2r googledrive httr logger magrittr purrr readr readxl stringr tidyr tibble rlang
+    config \
+    dplyr \
+    git2r \
+    googleAuthR \
+    googleCloudStorageR \
+    googledrive \
+    httr \
+    jsonlite \
+    logger \
+    magrittr \
+    purrr \
+    RCurl \
+    readr \
+    readxl \
+    stringr \
+    tibble \
+    tidyr \
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
-    covr googleCloudStorageR jsonlite RCurl remotes roxygen2 sessioninfo testthat
+    covr \
+    pkgdown \
+    remotes \
+    sessioninfo \
+    testthat \
+    roxygen2
 
 # Install local package
 COPY . /home
