@@ -22,6 +22,7 @@
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # Get all records for the table boats
 #' air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak")
 #'
@@ -31,6 +32,8 @@
 #'
 #' # Get only the first 5 records
 #' air_get_records("boats", "appjEVaN8kBNXAWak", query = list(maxRecords = 5))
+#'
+#' }
 #'
 air_get_records <- function(table, base_id,
                           api_key = Sys.getenv("AIRTABLE_KEY"),
@@ -61,12 +64,24 @@ air_get_records <- function(table, base_id,
 
 #' Format Airtable records to a data frame (tibble)
 #'
+#' Transforms a list of records obtained from the airtable api (for example
+#' using `air_get_records`) into a data frame.
+#'
+#' Fields that have a only one item are stored as a vector while fields that
+#' accept multiple items are stored as a nested list column
+#'
 #' @param records List of records from an airtable table
 #'
 #' @return a tibble
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#' # Get all records for the table boats
+#' air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak") %>%
+#'   air_record_to_tibble()
+#' }
 air_records_to_tibble <- function(records){
   # Determine the maximum length of a record
   max_field_length <- purrr::map_dfr(.x = records$records,
@@ -101,7 +116,7 @@ record_to_data_frame <- function(this_record, max_field_length){
 # If the maximum length of fields is 1 just get the value as a vector, otherwise
 # as a list that can be nested in the tibble
 extract_value <- function(x, y, max_field_length){
-  if (max_field_length[y][[1]] > 1){
+  if (max_field_length[y][[1]] > 1) {
     list(c(unlist(x)))
   } else {
     unlist(x)

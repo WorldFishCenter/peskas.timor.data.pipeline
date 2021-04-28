@@ -38,6 +38,7 @@ been reached.
 }
 \examples{
 
+\dontrun{
 # Get all records for the table boats
 air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak")
 
@@ -47,6 +48,8 @@ air_get_records("boats", "appjEVaN8kBNXAWak",
 
 # Get only the first 5 records
 air_get_records("boats", "appjEVaN8kBNXAWak", query = list(maxRecords = 5))
+
+}
 
 }
 \seealso{
