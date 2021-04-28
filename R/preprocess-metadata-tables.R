@@ -61,7 +61,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     boats = pt_validate_boats(metadata_tables$boats),
     flags = pt_validate_flags(metadata_tables$flags))
 
-  preprocessed_filename <- paste(pars$metadata$spreadsheet$name,
+  preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(x = preprocessed_metadata,
