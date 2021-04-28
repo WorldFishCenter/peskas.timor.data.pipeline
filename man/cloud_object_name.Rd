@@ -9,6 +9,7 @@ cloud_object_name(
   version = "latest",
   extension = "",
   provider,
+  exact_match = FALSE,
   options
 )
 }
@@ -22,6 +23,9 @@ cloud_object_name(
 return all extensions founds}
 
 \item{provider}{cloud provider to use, either "gcs" or "aws"}
+
+\item{exact_match}{logical indicating whether the prefix should be matched
+exactly}
 
 \item{options}{named list with cloud provider options, see details}
 }
