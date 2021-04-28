@@ -39,10 +39,11 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
 
   metadata_filename <- cloud_object_name(
-    prefix = pars$metadata$spreadsheet$name,
+    prefix = pars$metadata$airtable$name,
     provider = pars$storage$google$key,
-    extension = "xlsx",
+    extension = "rds",
     version = pars$metadata$version$preprocess,
+    exact_match = TRUE,
     options = pars$storage$google$options)
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
@@ -51,14 +52,13 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
                       options = pars$storage$google$options)
 
   logger::log_info("Reading {metadata_filename}...")
-  metadata_tables <- readxl::excel_sheets(metadata_filename) %>%
-    rlang::set_names() %>%
-    purrr::map(~ readxl::read_excel(path = metadata_filename,
-                                    sheet = .))
+  metadata_tables <- readr::read_rds(metadata_filename)
 
   logger::log_info("Preprocessing metadata tables...")
   preprocessed_metadata <- list(
-    devices = pt_get_devices_table(metadata_tables$boats),
+    devices = pt_validate_devices(metadata_tables$devices),
+    device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
+    boats = pt_validate_boats(metadata_tables$boats),
     flags = pt_validate_flags(metadata_tables$flags))
 
   preprocessed_filename <- paste(pars$metadata$spreadsheet$name,
@@ -143,7 +143,6 @@ pt_validate_devices <- function(devices_table){
 #' @return a data frame with columns flag_id, flag_category, and flag_message
 #' @export
 #'
-#' @examples
 pt_validate_flags <- function(flags_table){
 
   f <- flags_table %>%
