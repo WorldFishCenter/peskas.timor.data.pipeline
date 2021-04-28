@@ -17,6 +17,10 @@ reference:
   desc: Functions to interact with Google Drive and Spreadsheets
   contents:
   - matches("google")
+- subtitle: Airtable
+  desc: Functions to interact with Airtable
+  contents:
+  - matches("air")
 
 - title: Survey
   desc: Functions that help retrieving survey data
@@ -28,8 +32,7 @@ reference:
 - subtitle: Data preprocessing
   contents:
   - matches("nest")
-  - pt_get_devices_table
-  - pt_validate_flags
+  - matches("pt_validate")
 - subtitle: Utils
   contents:
   - read_config
