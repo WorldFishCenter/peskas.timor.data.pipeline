@@ -90,25 +90,27 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
 pt_validate_vms_installs <- function(vms_installs_table){
 
   v <- vms_installs_table %>%
-    dplyr::mutate(device_event_date = lubridate::as_date(device_event_date),
-                  createdTime = lubridate::ymd_hms(createdTime),
-                  created_date = lubridate::as_date(created_date))
+    dplyr::mutate(device_event_date = lubridate::as_date(.data$device_event_date),
+                  createdTime = lubridate::ymd_hms(.data$createdTime),
+                  created_date = lubridate::as_date(.data$created_date))
 
   # Check that installs are recorded prior to damage
   ok_date_damage <- v %>%
-    dplyr::group_by(device_imei) %>%
-    dplyr::filter(any(device_event_type == "damage recorded")) %>%
-    dplyr::summarise(ok_date_damage =
-                       device_event_date[device_event_type == "damage recorded"] >
-                       device_event_date[device_event_type == "installation"],
+    dplyr::group_by(.data$device_imei) %>%
+    dplyr::filter(any(.data$device_event_type == "damage recorded")) %>%
+    dplyr::summarise(
+      ok_date_damage =
+        .data$device_event_date[.data$device_event_type == "damage recorded"] >
+        .data$device_event_date[.data$device_event_type == "installation"],
                      .groups = "drop")
   if (any(isFALSE(ok_date_damage$ok_date_damage)))
     stop("detected damage recorded in vms prior to vms installation")
 
   # Check that devices are installed in a single boat
   ok_boat_installs <- v %>%
-    dplyr::group_by(device_imei) %>%
-    dplyr::summarise(n_boats = dplyr::n_distinct(boat_id), .groups = "drop")
+    dplyr::group_by(.data$device_imei) %>%
+    dplyr::summarise(n_boats = dplyr::n_distinct(.data$boat_id),
+                     .groups = "drop")
   if (any(ok_boat_installs$n_boats > 1))
     stop("detected a vms device in more than one boat")
 
@@ -127,8 +129,8 @@ pt_validate_vms_installs <- function(vms_installs_table){
 #'
 pt_validate_devices <- function(devices_table){
   devices_table %>%
-    dplyr::mutate(createdTime = lubridate::ymd_hms(createdTime)) %>%
-    dplyr::mutate(device_imei = as.character(device_imei))
+    dplyr::mutate(createdTime = lubridate::ymd_hms(.data$createdTime)) %>%
+    dplyr::mutate(device_imei = as.character(.data$device_imei))
 }
 
 
@@ -170,14 +172,15 @@ pt_validate_flags <- function(flags_table){
 pt_validate_boats <- function(boats_table){
 
   b <- boats_table %>%
-    dplyr::mutate(createdTime = lubridate::ymd_hms(createdTime),
-                  created_date = lubridate::as_date(created_date),
-                  last_modified_time = lubridate::ymd_hms(last_modified_time))
+    dplyr::mutate(createdTime = lubridate::ymd_hms(.data$createdTime),
+                  created_date = lubridate::as_date(.data$created_date),
+                  last_modified_time = lubridate::ymd_hms(.data$last_modified_time))
 
   # Check that boat length is valid
   boat_length_ok <- b %>%
-    dplyr::filter(!is.na(boat_length)) %>%
-    dplyr::mutate(boat_length_ok = boat_length > 0, boat_length < 30)
+    dplyr::filter(!is.na(.data$boat_length)) %>%
+    dplyr::mutate(boat_length_ok = .data$boat_length > 0 &
+                    .data$boat_length < 30)
 
   if (any(isFALSE(boat_length_ok$boat_length_ok)))
     stop("detected boats with unvalid lengths")
