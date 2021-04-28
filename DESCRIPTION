@@ -23,6 +23,7 @@ Imports:
     httr,
     jsonlite,
     logger,
+    lubridate, 
     magrittr,
     purrr,
     RCurl,
