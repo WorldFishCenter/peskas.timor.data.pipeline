@@ -74,7 +74,7 @@ include information about flags, boats, devices, municipalities, etc." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -135,12 +135,13 @@ details</p></td>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The parameters needed in <code>conf.yml</code> are:</p><pre>metadata:
-  spreadsheet:
-    id:
+  airtable:
+    base_id:
     name:
-  auth:
-    method:
-    service_account_key:
+    api_key:
+    tables:
+      -
+      -
 storage:
   storage_name:
     key:

@@ -75,7 +75,7 @@ version, and extension, a vector with all the names is returned." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -126,6 +126,7 @@ version, and extension, a vector with all the names is returned.</p>
   version <span class='op'>=</span> <span class='st'>"latest"</span>,
   extension <span class='op'>=</span> <span class='st'>""</span>,
   <span class='va'>provider</span>,
+  exact_match <span class='op'>=</span> <span class='cn'>FALSE</span>,
   <span class='va'>options</span>
 <span class='op'>)</span></pre>
 
@@ -149,6 +150,11 @@ return all extensions founds</p></td>
     <tr>
       <th>provider</th>
       <td><p>cloud provider to use, either "gcs" or "aws"</p></td>
+    </tr>
+    <tr>
+      <th>exact_match</th>
+      <td><p>logical indicating whether the prefix should be matched
+exactly</p></td>
     </tr>
     <tr>
       <th>options</th>
