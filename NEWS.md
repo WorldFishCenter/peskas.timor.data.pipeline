@@ -1,3 +1,18 @@
+# peskas.timor.data.pipeline 0.6.0
+
+### New features
+
+- Added `air_get_records()` and `air_records_to_tibble()` to retrieve and process records from Airtable
+- Added `pt_validate_boats()`, `pt_validate_devices()`, and `pt_validate_vms_installs()` to perform basic data validation from the metadata tables
+
+### Improvements
+
+- `cloud_object_name()` can now also match files by exact name and not just by prefix
+
+### Breaking changes
+
+- `ingest_metadata_tables()` and `preprocess_metadata_tables()` now use logic to use Airtable instead og Google Sheets
+
 # peskas.timor.data.pipeline 0.5.0
 
 ### New features
