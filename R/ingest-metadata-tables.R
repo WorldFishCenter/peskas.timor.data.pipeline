@@ -7,12 +7,13 @@
 #' The parameters needed in `conf.yml` are:
 #' ```
 #' metadata:
-#'   spreadsheet:
-#'     id:
+#'   airtable:
+#'     base_id:
 #'     name:
-#'   auth:
-#'     method:
-#'     service_account_key:
+#'     api_key:
+#'     tables:
+#'       -
+#'       -
 #' storage:
 #'   storage_name:
 #'     key:
@@ -34,18 +35,22 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
-  authenticate_google_drive(pars$metadata$auth)
-  metadata_filename <- add_version(pars$metadata$spreadsheet$name, "xlsx")
+  metadata_filename <- add_version(pars$metadata$airtable$name, "rds")
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
-  googledrive::drive_download(
-    file = googledrive::as_id(pars$metadata$spreadsheet$id),
-    path = metadata_filename,
-    overwrite = TRUE)
-  logger::log_success("Metadata tables download succeded")
 
-  logger::log_info("Uploading files to cloud...")
+  pars$metadata$airtable$tables %>%
+    rlang::set_names() %>%
+    purrr::map(air_get_records,
+               base_id = pars$metadata$airtable$base_id,
+               api_key = pars$metadata$airtable$api_key) %>%
+    purrr::map(air_records_to_tibble) %>%
+    readr::write_rds(metadata_filename,
+                     compress = "gz")
+
+  logger::log_success("Uploading to the cloud...")
   upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
   logger::log_success("File upload succeded")
+
 
 }

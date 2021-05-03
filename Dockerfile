@@ -11,6 +11,7 @@ RUN install2.r --error --skipinstalled \
     httr \
     jsonlite \
     logger \
+    lubridate \
     magrittr \
     purrr \
     RCurl \

@@ -39,10 +39,11 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
 
   metadata_filename <- cloud_object_name(
-    prefix = pars$metadata$spreadsheet$name,
+    prefix = pars$metadata$airtable$name,
     provider = pars$storage$google$key,
-    extension = "xlsx",
+    extension = "rds",
     version = pars$metadata$version$preprocess,
+    exact_match = TRUE,
     options = pars$storage$google$options)
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
@@ -51,17 +52,16 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
                       options = pars$storage$google$options)
 
   logger::log_info("Reading {metadata_filename}...")
-  metadata_tables <- readxl::excel_sheets(metadata_filename) %>%
-    rlang::set_names() %>%
-    purrr::map(~ readxl::read_excel(path = metadata_filename,
-                                    sheet = .))
+  metadata_tables <- readr::read_rds(metadata_filename)
 
   logger::log_info("Preprocessing metadata tables...")
   preprocessed_metadata <- list(
-    devices = pt_get_devices_table(metadata_tables$boats),
+    devices = pt_validate_devices(metadata_tables$devices),
+    device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
+    boats = pt_validate_boats(metadata_tables$boats),
     flags = pt_validate_flags(metadata_tables$flags))
 
-  preprocessed_filename <- paste(pars$metadata$spreadsheet$name,
+  preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(x = preprocessed_metadata,
@@ -75,23 +75,62 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
 
 }
 
-#' Get table containing information about the PDS devices
+
+#' Parse and validate vms_installs table
 #'
-#' @param boats_table the boat metadata table obtained from Google
-#'   Spreadsheets
+#' Convert date and date-time columns and checks that
+#' * The date of device installations is prior to the date of recorded damage
+#' * The devices are installed in a single boat
 #'
-#' @return a data frame with columns: imei
+#' @param vms_installs_table a data frame with the vms movements
+#'
+#' @return a tibble with the vms_installs
 #' @export
 #'
-pt_get_devices_table <- function(boats_table){
-  imeis <- boats_table$imei %>%
-    stats::na.omit() %>%
-    unique() %>%
-    as.character()
+pt_validate_vms_installs <- function(vms_installs_table){
 
-  tibble::tibble(
-    imei = imeis
-  )
+  v <- vms_installs_table %>%
+    dplyr::mutate(device_event_date = lubridate::as_date(.data$device_event_date),
+                  createdTime = lubridate::ymd_hms(.data$createdTime),
+                  created_date = lubridate::as_date(.data$created_date))
+
+  # Check that installs are recorded prior to damage
+  ok_date_damage <- v %>%
+    dplyr::group_by(.data$device_imei) %>%
+    dplyr::filter(any(.data$device_event_type == "damage recorded")) %>%
+    dplyr::summarise(
+      ok_date_damage =
+        .data$device_event_date[.data$device_event_type == "damage recorded"] >
+        .data$device_event_date[.data$device_event_type == "installation"],
+                     .groups = "drop")
+  if (any(isFALSE(ok_date_damage$ok_date_damage)))
+    stop("detected damage recorded in vms prior to vms installation")
+
+  # Check that devices are installed in a single boat
+  ok_boat_installs <- v %>%
+    dplyr::group_by(.data$device_imei) %>%
+    dplyr::summarise(n_boats = dplyr::n_distinct(.data$boat_id),
+                     .groups = "drop")
+  if (any(ok_boat_installs$n_boats > 1))
+    stop("detected a vms device in more than one boat")
+
+  v
+}
+
+#' Parse and validate devices table
+#'
+#' Convert date and date-time columns and ensures that device_imei is stored as
+#' a character. Currently this table performs no validations.
+#'
+#' @param devices_table a data frame with the devices
+#'
+#' @return a tibble
+#' @export
+#'
+pt_validate_devices <- function(devices_table){
+  devices_table %>%
+    dplyr::mutate(createdTime = lubridate::ymd_hms(.data$createdTime)) %>%
+    dplyr::mutate(device_imei = as.character(.data$device_imei))
 }
 
 
@@ -106,7 +145,6 @@ pt_get_devices_table <- function(boats_table){
 #' @return a data frame with columns flag_id, flag_category, and flag_message
 #' @export
 #'
-#' @examples
 pt_validate_flags <- function(flags_table){
 
   f <- flags_table %>%
@@ -119,4 +157,33 @@ pt_validate_flags <- function(flags_table){
   if (n_codes < n_flags) stop("flag_id are not unique")
 
   f
+}
+
+#' Parse and validate boats table
+#'
+#' Convert date and date-time columns and checks that
+#' * The recorded length of the boats are valid
+#'
+#' @param boats_table a data frame with the boats info
+#'
+#' @return a tibble
+#' @export
+#'
+pt_validate_boats <- function(boats_table){
+
+  b <- boats_table %>%
+    dplyr::mutate(createdTime = lubridate::ymd_hms(.data$createdTime),
+                  created_date = lubridate::as_date(.data$created_date),
+                  last_modified_time = lubridate::ymd_hms(.data$last_modified_time))
+
+  # Check that boat length is valid
+  boat_length_ok <- b %>%
+    dplyr::filter(!is.na(.data$boat_length)) %>%
+    dplyr::mutate(boat_length_ok = .data$boat_length > 0 &
+                    .data$boat_length < 30)
+
+  if (any(isFALSE(boat_length_ok$boat_length_ok)))
+    stop("detected boats with unvalid lengths")
+
+  b
 }
