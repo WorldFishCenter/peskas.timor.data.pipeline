@@ -18,12 +18,13 @@ include information about flags, boats, devices, municipalities, etc.
 }
 \details{
 The parameters needed in \code{conf.yml} are:\preformatted{metadata:
-  spreadsheet:
-    id:
+  airtable:
+    base_id:
     name:
-  auth:
-    method:
-    service_account_key:
+    api_key:
+    tables:
+      -
+      -
 storage:
   storage_name:
     key:

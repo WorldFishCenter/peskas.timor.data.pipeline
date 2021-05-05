@@ -17,12 +17,15 @@ default:
         preprocess: latest
 
   metadata:
-    spreadsheet:
+    airtable:
       name: metadata-tables
-      id: 1ag0FixN0clJMY4OnLHNwEd4w4Xuodn1w4bmJG0mmEaQ
-    auth:
-      method: service_account_key
-      service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+      base_id: appjEVaN8kBNXAWak
+      api_key: !expr Sys.getenv("AIRTABLE_KEY")
+      tables:
+        - boats
+        - devices
+        - vms_installs
+        - flags
     version:
       preprocess: latest
 
@@ -49,8 +52,8 @@ local:
     landings_legacy:
       token: !expr readLines("auth/kobo-token")
   metadata:
-    auth:
-      method: OAuth
+    airtable:
+      api_key: !expr readLines("auth/airtable-key")
   storage:
     google:
       options:

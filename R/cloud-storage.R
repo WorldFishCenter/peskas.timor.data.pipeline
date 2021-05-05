@@ -112,6 +112,8 @@ upload_cloud_file <- function(file, provider, options, name = file){
 #' @param extension extension of the desired file. Use an empty string "" to
 #'   return all extensions founds
 #' @param provider
+#' @param exact_match logical indicating whether the prefix should be matched
+#'   exactly
 #' @param options
 #' @inheritParams upload_cloud_file
 #'
@@ -157,7 +159,7 @@ upload_cloud_file <- function(file, provider, options, name = file){
 #' }
 #'
 cloud_object_name <- function(prefix, version = "latest", extension = "",
-                              provider, options){
+                              provider, exact_match = FALSE, options){
 
   cloud_storage_authenticate(provider, options)
 
@@ -177,16 +179,24 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
       dplyr::filter(stringr::str_detect(.data$ext, paste0(extension, "$"))) %>%
       dplyr::group_by(.data$base_name, .data$ext)
 
-    if (version == "latest") {
-      selected_files <- gcs_files_formatted %>%
-        dplyr::filter(max(.data$timeCreated) == .data$timeCreated)
-      selected_files$name
+    if (isTRUE(exact_match)) {
+      selected_rows <- gcs_files_formatted %>%
+        dplyr::filter(.data$base_name == prefix)
     } else {
-      selected_files <- gcs_files_formatted %>%
+      selected_rows <- gcs_files_formatted
+    }
+
+    if (version == "latest") {
+      selected_rows <- selected_rows %>%
+        dplyr::filter(max(.data$timeCreated) == .data$timeCreated)
+
+    } else {
+      selected_rows <- selected_rows %>%
         dplyr::filter(.data$version == version)
 
-      selected_files$name
     }
+
+    selected_rows$name
   }
 }
 

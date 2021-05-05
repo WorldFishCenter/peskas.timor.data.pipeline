@@ -8,6 +8,7 @@ on:
 env:
   KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+  AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
 
 jobs:
 

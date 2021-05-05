@@ -37,3 +37,9 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 docs
+
+## Data files
+*.rds
+*.xlsx
+*.csv
+*.json
