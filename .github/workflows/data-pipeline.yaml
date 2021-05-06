@@ -150,7 +150,6 @@ jobs:
 
   ingest-legacy-landings:
     name: ingest_legacy_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -160,7 +159,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call ingest_legacy_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_legacy_landings()'
 
   preprocess-legacy-landings:
     name: preprocess_legacy_landings()
