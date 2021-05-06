@@ -72,7 +72,7 @@ ingest_landings <- function(log_threshold = logger::DEBUG){
 #'
 #' ```
 #' surveys:
-#'   landings:
+#'   landings_legacy:
 #'     api:
 #'     survey_id:
 #'     token:

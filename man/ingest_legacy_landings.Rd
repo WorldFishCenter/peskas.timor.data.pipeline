@@ -26,7 +26,7 @@ versioning string that includes the date-time and, if available, the first 7
 digits of the git commit sha. This is acomplished using \code{\link[=add_version]{add_version()}}
 
 The parameters needed in \code{conf.yml} are:\preformatted{surveys:
-  landings:
+  landings_legacy:
     api:
     survey_id:
     token:
