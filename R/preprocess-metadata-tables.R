@@ -58,8 +58,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
   preprocessed_metadata <- list(
     devices = pt_validate_devices(metadata_tables$devices),
     device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
-    boats = pt_validate_boats(metadata_tables$boats),
-    flags = pt_validate_flags(metadata_tables$flags))
+    boats = pt_validate_boats(metadata_tables$boats))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
