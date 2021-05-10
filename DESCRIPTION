@@ -27,7 +27,7 @@ Imports:
     httr,
     jsonlite,
     logger,
-    lubridate, 
+    lubridate,
     magrittr,
     purrr,
     RCurl,
@@ -36,14 +36,16 @@ Imports:
     stringr,
     tibble,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
 Suggests: 
     covr,
     pkgdown,
     remotes,
     sessioninfo,
     testthat,
-    roxygen2
+    roxygen2,
+    textclean,
+    tidyselect
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
