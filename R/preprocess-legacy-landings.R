@@ -28,7 +28,7 @@
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_legacy_landings
 #' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
@@ -53,7 +53,7 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG){
     file = landings_csv,
     col_types = readr::cols(.default = readr::col_character()))
 
-  logger::log_info("Cleaning data structure")
+  logger::log_info("Cleaning and recoding data")
   cleaned_landings_raw <- clean_legacy_landings(landings_raw)
 
   logger::log_info("Nesting landings attachment fields")
