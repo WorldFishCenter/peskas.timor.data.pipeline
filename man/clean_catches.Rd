@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean-legacy-data.R
 \name{clean_catches}
 \alias{clean_catches}
-\title{Clean legacy landings' catches table}
+\title{Clean SFF landings' catches table}
 \usage{
 clean_catches(x)
 }
@@ -14,11 +14,11 @@ A data frame containing species catches information in the same
 syntax as recent landings.
 }
 \description{
-Legacy data include information from different versions of the project. This
-implies that the same information can be associated to a different syntax and
-to different column names. This function converts the information associated
-with species catches into a standard format, the same one used for recent
-landings.
+Legacy data (SFF landings) include catches information from different
+versions of the project. This implies that the same information can be
+associated to a different syntax and to different column names. This function
+converts and recodes the information associated with species catches into the
+same format adopted for recent landings.
 }
 \examples{
 \dontrun{

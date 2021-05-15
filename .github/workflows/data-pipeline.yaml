@@ -163,7 +163,6 @@ jobs:
 
   preprocess-legacy-landings:
     name: preprocess_legacy_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [ingest-legacy-landings]
     runs-on: ubuntu-20.04
     container:
@@ -173,7 +172,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call preprocess_legacy_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
 
   validate-landings:
     name: validate_landings()

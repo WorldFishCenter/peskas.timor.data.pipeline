@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean-legacy-data.R
 \name{clean_legacy_landings}
 \alias{clean_legacy_landings}
-\title{Clean legacy landings data}
+\title{Clean SFF landings data}
 \usage{
 clean_legacy_landings(x)
 }
@@ -14,7 +14,7 @@ Data frame containing legacy landings data in the same syntax as
 recent landings.
 }
 \description{
-Legacy landings data frame has a different structure and use a different
+Legacy landings data frame has a different structure and uses a different
 syntax from recent landings. This function converts legacy raw data into a
 new and mergeable data frame with recent landings.
 }

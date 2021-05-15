@@ -12,18 +12,18 @@ coalist(data, to_coal, return_dat = FALSE)
 \item{to_coal}{List of vectors to coalesce. Coalesced vectors assume the name
 of the element of the list in which they are collected.}
 
-\item{return_dat}{Logical argument indicating whether to return the entire
-data frame plus the new coalesced vectors or a new data frame constituted by
-only the coalesced vectors.}
+\item{return_dat}{Logical argument indicating whether to return the whole
+data frame plus the new coalesced vectors or a new data frame constituted
+only by the coalesced vectors.}
 }
 \value{
 A data frame containing the coalesced vector(s)
 }
 \description{
-This function coalesces vectors from a selected data frame into a new single
-vector. The vectors to coalesce are collected into a list (argument \code{to_coal})
-and the coalesced vector takes the name of the list' element in which it is
-collected.
+This function coalesces vectors (see \link[dplyr:coalesce]{dplyr::coalesce}) from a selected data
+frame into a new single vector. The vectors to coalesce are collected into a
+list (argument \code{to_coal}) and the output vector takes the name of the list'
+element in which it is collected.
 }
 \examples{
 \dontrun{

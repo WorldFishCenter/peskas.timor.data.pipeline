@@ -1,10 +1,10 @@
-#' Clean legacy landings' catches table
+#' Clean SFF landings' catches table
 #'
-#' Legacy data include information from different versions of the project. This
-#' implies that the same information can be associated to a different syntax and
-#' to different column names. This function converts the information associated
-#' with species catches into a standard format, the same one used for recent
-#' landings.
+#' Legacy data (SFF landings) include catches information from different
+#' versions of the project. This implies that the same information can be
+#' associated to a different syntax and to different column names. This function
+#' converts and recodes the information associated with species catches into the
+#' same format adopted for recent landings.
 #'
 #' @param x A data frame containing raw legacy landings (SFF landings).
 #'
@@ -32,7 +32,7 @@
 #' }
 clean_catches <- function(x){
 
-   # split catches data based on species prefixes
+   # split catches data based on version prefixes
    prefix_list <-
       purrr::map(purrr::set_names(c("Spp.", "Species.","group_ob8uk86/Species/","group_ob8uk86/Species.","Species/")),
                  ~dplyr::select(x,tidyselect::starts_with(.x)))
@@ -71,21 +71,27 @@ clean_catches <- function(x){
 
    prefix_list$Spp. <- dplyr::coalesce(fd1,fd2)
 
-   # coalesce new catches columns and drop unused info
-   spe_table_cleaned <- dplyr::coalesce(!!!prefix_list) %>%
+   # coalesce new catches columns and drop unused vars
+   sp_table_cleaned <- dplyr::coalesce(!!!prefix_list) %>%
       dplyr::select(-c(tidyselect::contains("Fish_length",ignore.case = FALSE),
                        tidyselect::contains("_per_Kg_hira"),
                        tidyselect::contains("numeru_ikan"),
-                       tidyselect::ends_with("presu")))
+                       tidyselect::ends_with("presu"))) %>%
+
+   # recode "food or sale"
+      dplyr::mutate(dplyr::across(tidyselect::ends_with("food_or_sale"),
+                                  ~ dplyr::case_when(
+                                     .x == "nain_rua" ~ "both",
+                                     TRUE ~ .x)))
 
    # remove groups' questions prefixes
    remove <- c("group_ob8uk86/","group_st04m70/","group_uw8jh69/")
-   colnames(spe_table_cleaned) <- stringr::str_remove_all(names(spe_table_cleaned),
+   colnames(sp_table_cleaned) <- stringr::str_remove_all(names(sp_table_cleaned),
                                                           paste(remove, collapse = "|"))
 
-   #recode SSF species to peskas codes
+   #recode SSF landings species codes to peskas codes
    recoded_sp <-
-      spe_table_cleaned %>% dplyr::select(tidyselect::ends_with("species")) %>%
+      sp_table_cleaned %>% dplyr::select(tidyselect::ends_with("species")) %>%
       dplyr::mutate(row = dplyr::row_number()) %>%
       tidyr::pivot_longer(cols = -row) %>%
       dplyr::mutate(value = dplyr::case_when(
@@ -144,17 +150,17 @@ clean_catches <- function(x){
       tidyr::pivot_wider(names_from = "name", values_from = "value") %>%
       dplyr::select(-row)
 
-      dplyr::bind_cols(spe_table_cleaned %>% dplyr::select(-tidyselect::ends_with("species")),
+      dplyr::bind_cols(sp_table_cleaned %>% dplyr::select(-tidyselect::ends_with("species")),
                        recoded_sp)
 }
 
 
 #' Coalesce vectors
 #'
-#' This function coalesces vectors from a selected data frame into a new single
-#' vector. The vectors to coalesce are collected into a list (argument `to_coal`)
-#' and the coalesced vector takes the name of the list' element in which it is
-#' collected.
+#' This function coalesces vectors (see [dplyr::coalesce]) from a selected data
+#' frame into a new single vector. The vectors to coalesce are collected into a
+#' list (argument `to_coal`) and the output vector takes the name of the list'
+#' element in which it is collected.
 #'
 #'
 #' @param data Data frame from which vectors are selected.
@@ -162,9 +168,9 @@ clean_catches <- function(x){
 #' @param to_coal List of vectors to coalesce. Coalesced vectors assume the name
 #' of the element of the list in which they are collected.
 #'
-#' @param return_dat Logical argument indicating whether to return the entire
-#' data frame plus the new coalesced vectors or a new data frame constituted by
-#' only the coalesced vectors.
+#' @param return_dat Logical argument indicating whether to return the whole
+#' data frame plus the new coalesced vectors or a new data frame constituted
+#' only by the coalesced vectors.
 #'
 #' @return A data frame containing the coalesced vector(s)
 #' @export
@@ -217,9 +223,9 @@ coalist <- function(data, to_coal, return_dat=FALSE){
    }
 
 
-#' Clean legacy landings data
+#' Clean SFF landings data
 #'
-#' Legacy landings data frame has a different structure and use a different
+#' Legacy landings data frame has a different structure and uses a different
 #' syntax from recent landings. This function converts legacy raw data into a
 #' new and mergeable data frame with recent landings.
 #'
@@ -248,7 +254,7 @@ coalist <- function(data, to_coal, return_dat=FALSE){
 #' }
 clean_legacy_landings <- function(x){
 
-   # store v1 and v2 common columns
+   # select common columns to SFF and peskas landings
    common_cols_table <- x %>% dplyr::select(
       c("__version__","_bamboo_dataset_id","_geolocation.0","_geolocation.1","_id",
         "_status","_submission_time","_submitted_by","_uuid","_validation_status.by_whom",
@@ -256,7 +262,7 @@ clean_legacy_landings <- function(x){
         "_validation_status.uid","_version_","_version__001","_xform_id_string","deviceid",
         "end","formhub/uuid","meta/instanceID","start","today"))
 
-   # rename some v1 variables
+   # select and rename some SFF variables
    renamed_cols_table <- x %>% dplyr::select(c("Ita_kolecta_dadus_husi_activid","Site_name","No_boats",
                                                "TOTAL_folin_ikan_hamutuk","Ema_hira_halo_actividade_peska",
                                                "Tanba_sa_la_iha_atividade_peska_ohin","group_ob8uk86/TOTAL_ORAS_VIAGEM_PESKA")) %>%
@@ -284,11 +290,11 @@ clean_legacy_landings <- function(x){
                                                                   "group_ob8uk86/peskador_naran_sa_fisher_name_",
                                                                   "peskador_naran_sa_fisher_name_")))
 
-   # store coalesced vectors
+   # select coalesced vectors
    coalesced_table <- coalist(x,to_coal,return_dat=FALSE)
-   # store catches
+   # clean and recode catches table
    catches_table <- clean_catches(x)
-   # store attachments
+   # select attachments table
    attachments_table <- x %>% dplyr::select(tidyselect::contains("attachment"))
 
    # bind and recode the new vars
