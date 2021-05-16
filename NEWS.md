@@ -1,3 +1,11 @@
+# peskas.timor.data.pipeline 0.8.0
+
+### New features
+
+- Added `clean_catches()`, `coalist()` and `clean_legacy_landings()` to clean and standardize legacy landings data (SFF landings) to recent data
+- Added `preprocess_legacy_landings()` to perform the preprocessing and ingestion of legacy data 
+
+
 # peskas.timor.data.pipeline 0.7.0
 
 ### New features
