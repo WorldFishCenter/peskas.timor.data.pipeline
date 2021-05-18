@@ -1,10 +1,11 @@
 #' Ingest metadata tables
 #'
-#' Metadata tables are manually updated in a Google Drive spreadsheet. This
-#' function downloads the table and uploads it to a drive location. These tables
-#' include information about flags, boats, devices, municipalities, etc.
+#' Metadata tables are manually updated in a Airtable. This function downloads
+#' the table and uploads it to a drive location. These tables include
+#' information about boats, devices, municipalities, etc.
 #'
 #' The parameters needed in `conf.yml` are:
+#'
 #' ```
 #' metadata:
 #'   airtable:

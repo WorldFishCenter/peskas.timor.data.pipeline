@@ -12,9 +12,9 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \description{
-Metadata tables are manually updated in a Google Drive spreadsheet. This
-function downloads the table and uploads it to a drive location. These tables
-include information about flags, boats, devices, municipalities, etc.
+Metadata tables are manually updated in a Airtable. This function downloads
+the table and uploads it to a drive location. These tables include
+information about boats, devices, municipalities, etc.
 }
 \details{
 The parameters needed in \code{conf.yml} are:\preformatted{metadata:
