@@ -34,9 +34,9 @@ default:
       base_id: appWcjh7unNJudLYk
       api_key: !expr Sys.getenv("AIRTABLE_KEY")
       tables:
-        - flags
+        - flags_dev
         - alerts
-      flags_table: flags
+      flags_table: flags_dev
     version:
       preprocess: latest
 
@@ -53,7 +53,12 @@ production:
     google:
       options:
         bucket: timor
-
+  validation:
+    airtable:
+      tables:
+        - flags
+        - alerts
+      flags_table: flags
 
 local:
   inherits: development
@@ -68,10 +73,6 @@ local:
   validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
-      tables:
-        - flags_dev
-        - alerts
-      flags_table: flags_dev
   storage:
     google:
       options:
