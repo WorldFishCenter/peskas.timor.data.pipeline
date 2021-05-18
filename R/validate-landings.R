@@ -80,7 +80,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   if (nrow(new_flags_to_upload) > 0) {
     logger::log_info("Uploading new flags to Airtable")
     air_tibble_to_records(new_flags_to_upload, link_fields = "alert") %>%
-      air_upload_records(table = "flags", base_id = pars$validation$airtable$base_id,
+      air_upload_records(table = pars$validation$airtable$flags_table,
+                         base_id = pars$validation$airtable$base_id,
                          api_key = pars$validation$airtable$api_key)
   }
 
