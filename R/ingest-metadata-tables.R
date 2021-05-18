@@ -93,15 +93,15 @@ ingest_validation_tables <- function(log_threshold = logger::DEBUG){
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
-  flags_filename <- add_version(pars$flags$airtable$name, "rds")
+  flags_filename <- add_version(pars$validation$airtable$name, "rds")
 
   logger::log_info("Downloading flag tables as {flags_filename}...")
 
-  pars$flags$airtable$tables %>%
+  pars$validation$airtable$tables %>%
     rlang::set_names() %>%
     purrr::map(air_get_records,
-               base_id = pars$flags$airtable$base_id,
-               api_key = pars$flags$airtable$api_key) %>%
+               base_id = pars$validation$airtable$base_id,
+               api_key = pars$validation$airtable$api_key) %>%
     purrr::map(air_records_to_tibble) %>%
     readr::write_rds(flags_filename,
                      compress = "gz")
