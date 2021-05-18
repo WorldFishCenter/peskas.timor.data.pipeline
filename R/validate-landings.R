@@ -80,8 +80,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   if (nrow(new_flags_to_upload) > 0) {
     logger::log_info("Uploading new flags to Airtable")
     air_tibble_to_records(new_flags_to_upload, link_fields = "alert") %>%
-      air_upload_records(table = "flags", base_id = pars$flags$airtable$base_id,
-                         api_key = pars$flags$airtable$api_key)
+      air_upload_records(table = "flags", base_id = pars$validation$airtable$base_id,
+                         api_key = pars$validation$airtable$api_key)
   }
 
   # Determine which flags have been fixed
@@ -94,18 +94,18 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   if (nrow(flags_fixed) > 0) {
     logger::log_info("Updating fixed flags in Airtable")
     air_tibble_to_records(flags_fixed, id_fields = "remote_flag_id") %>%
-      air_upload_records(table = "flags", base_id = pars$flags$airtable$base_id,
-                         api_key = pars$flags$airtable$api_key,
+      air_upload_records(table = "flags", base_id = pars$validation$airtable$base_id,
+                         api_key = pars$validation$airtable$api_key,
                          request_type = "update")
   }
 }
 
 get_validation_tables <- function(pars){
   validation_rds <- cloud_object_name(
-    prefix = paste(pars$flags$airtable$name, sep = "_"),
+    prefix = paste(pars$validation$airtable$name, sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
-    version = pars$flags$version$preprocess,
+    version = pars$validation$version$preprocess,
     options = pars$storage$google$options)
   logger::log_info("Downloading {validation_rds}...")
   download_cloud_file(name = validation_rds,
