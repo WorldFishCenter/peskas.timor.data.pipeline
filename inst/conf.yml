@@ -28,6 +28,18 @@ default:
     version:
       preprocess: latest
 
+  validation:
+    airtable:
+      name: validation-tables
+      base_id: appWcjh7unNJudLYk
+      api_key: !expr Sys.getenv("AIRTABLE_KEY")
+      tables:
+        - flags_dev
+        - alerts
+      flags_table: flags_dev
+    version:
+      preprocess: latest
+
   storage:
     google:
       key: gcs
@@ -41,7 +53,12 @@ production:
     google:
       options:
         bucket: timor
-
+  validation:
+    airtable:
+      tables:
+        - flags
+        - alerts
+      flags_table: flags
 
 local:
   inherits: development
@@ -51,6 +68,9 @@ local:
     landings_legacy:
       token: !expr readLines("auth/kobo-token")
   metadata:
+    airtable:
+      api_key: !expr readLines("auth/airtable-key")
+  validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
   storage:

@@ -122,3 +122,102 @@ extract_value <- function(x, y, max_field_length){
     unlist(x)
   }
 }
+
+#' Format a data frame (tibble) as Airtable records
+#'
+#' Gets a data frame and converts it into a list that can be passed to
+#' `air_upload_records()` to be uploaded to Airtable. This is required because
+#' the Airtable API does not accept tabular data and has certain restrictions
+#' about the format of the body request
+#'
+#' @param this_tibble A data frame with the fields to be uploaded to Airtable
+#' @param id_fields Character vector with the name of the column storing the id
+#' @param link_fields Character vector with the name of the columns that are
+#'   link fields (fields that contain the id of another row's table)
+#' @param max_records Records are grouped into batches of max_records. Defaults
+#'   to 10 which is the current limit imposed by the Airtable API.
+#'
+#' @return a list with records
+#' @export
+#'
+air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = NULL,
+                                  max_records = 10){
+
+  # Convert data frame to list. It it's not a link field, unbox it
+  as_list_air <- function(..., link_fields = NULL){
+    dots <- rlang::list2(...)
+
+    if (!is.null(link_fields)) {
+      purrr::imap(dots, function(x, name){
+        if (name %in% link_fields) {
+          x
+        } else {
+          jsonlite::unbox(x)
+        }
+      })
+    } else {
+      purrr::map(dots, jsonlite::unbox)
+    }
+  }
+  records <- this_tibble %>%
+    dplyr::select(-!!id_fields) %>%
+    purrr::pmap(as_list_air,
+                link_fields = link_fields) %>%
+    purrr::map(~list(fields = .))
+
+  # Fill list with blocks
+  n_partitions <- length(records) %/% max_records + 1
+  body <- purrr::list_along(1:n_partitions)
+  for (i in 1:length(records)) {
+    this_block <- ((i - 1) %/% max_records) + 1
+    this_index <- ifelse(i %% max_records == 0, max_records, i %% max_records)
+    body[[this_block]]$records[[this_index]] <- records[[i]]
+    if (!is.null(id_fields)) {
+      body[[this_block]]$records[[this_index]]$id <- jsonlite::unbox(this_tibble[[id_fields]][i])
+    }
+  }
+
+  body
+}
+
+#' Upload and create Airtable records to a base
+#'
+#' Takes a list created by `tibble_to_air_records()` and uploads it to Airtable.
+#' If `request_type` is set to "update" the body list must have an id field for
+#' each record. Each element of body must be up to 10 records long.
+#'
+#' @param body list with the records, as formatted by `tibble_to_air_records()`
+#' @param table
+#' @param base_id
+#' @param api_key
+#' @param request_type Whether to create a new record or update an existing one.
+#'   If updating an existing one, an `id_field` needs to be specified when
+#'   calling `tibble_to_air_records()`
+#' @inheritParams air_get_records
+#' @return List of request responses
+#' @export
+air_upload_records <- function(body, table, base_id,
+                               api_key = Sys.getenv("AIRTABLE_KEY"),
+                               request_type = c("create", "update")){
+
+  if (request_type[1] == "create") {
+    curl_fun <- httr::POST
+  } else if (request_type[1] == "update") {
+    curl_fun <- httr::PATCH
+  }
+
+  post_request <- function(this_body){
+    Sys.sleep(1/4)
+    response <- curl_fun(url = "https://api.airtable.com",
+                           path = c("v0", base_id, table),
+                           httr::add_headers(Authorization = api_key),
+                           body = jsonlite::toJSON(this_body),
+                           httr::content_type("application/json"))
+    logger::log_info("Uploading records. Status code: ",
+                     httr::status_code(response))
+    response
+  }
+
+  purrr::map(body, post_request)
+
+}

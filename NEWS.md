@@ -1,3 +1,20 @@
+# peskas.timor.data.pipeline 0.8.0
+
+## New features
+
+- Added `validate_landings()` and `ingest_validation_tables()` to get validation data, check the ladings and upload flags to Airtable. 
+- Added `air_tibble_to_records()` and `air_upload_records()` to create and update records in Airtable
+- Added logic to validate IMEIs in the landing data
+- Added a script in *inst/airtable/edit-submission-link.js* which can be used in Airtable to generate a link to the editable submission form
+
+### Improvements
+
+- Deactivated check of uniqueness of IMEI per boat in `pt_`
+
+### Breaking changes
+
+- Landings pre-processing now renames a few columns in the data: specifically *submission_id* (used to be *_id*) and *landing_date* (used to be *date*)
+
 # peskas.timor.data.pipeline 0.7.0
 
 ### New features
