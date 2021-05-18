@@ -185,10 +185,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Call validate_landings()
-        run: |
-          Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
-          Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
+      - name: Ingest validation tables
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
+      - name: Validate landings
+        run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
 
   merge-landings:
     name: merge_landings()
