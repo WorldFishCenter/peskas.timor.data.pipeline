@@ -173,10 +173,12 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call preprocess_legacy_landings()
-        run: echo 'Feature not implemented yet'
+        run: |
+          Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
+          Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
 
   validate-landings:
-    name: validate_landings()
+    name: Validate landings
     if: ${{ false }} # Skip for now as it's not been implemented
     needs: [preprocess-landings, preprocess-metadata-tables]
     runs-on: ubuntu-20.04
