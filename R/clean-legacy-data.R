@@ -1,10 +1,10 @@
 #' Clean SFF landings' catches table
 #'
 #' Legacy data (SFF landings) include catches information from different
-#' versions of the project. This implies that the same information can be
-#' associated to a different syntax and to different column names. This function
+#' versions of the project. This implies that the same information (same variables)
+#' can show a different syntax and/or different column names. This function
 #' converts and recodes the information associated with species catches into the
-#' same format adopted for recent landings.
+#' same format adopted for more recent landings.
 #'
 #' @param x A data frame containing raw legacy landings (SFF landings).
 #'
@@ -163,13 +163,13 @@ clean_catches <- function(x){
 #' element in which it is collected.
 #'
 #'
-#' @param data Data frame from which vectors are selected.
+#' @param data Data frame from which select vectors to coalesce.
 #'
 #' @param to_coal List of vectors to coalesce. Coalesced vectors assume the name
 #' of the element of the list in which they are collected.
 #'
 #' @param return_dat Logical argument indicating whether to return the whole
-#' data frame plus the new coalesced vectors or a new data frame constituted
+#' data frame plus the new coalesced vectors, or a new data frame constituted
 #' only by the coalesced vectors.
 #'
 #' @return A data frame containing the coalesced vector(s)
@@ -226,8 +226,8 @@ coalist <- function(data, to_coal, return_dat=FALSE){
 #' Clean SFF landings data
 #'
 #' Legacy landings data frame has a different structure and uses a different
-#' syntax from recent landings. This function converts legacy raw data into a
-#' new and mergeable data frame with recent landings.
+#' syntax from recent landings. This function restructures legacy raw data to
+#' the same format and syntax as recent landings.
 #'
 #' @param x Data frame containing raw data from legacy landings (SSF landings).
 #'
@@ -254,7 +254,7 @@ coalist <- function(data, to_coal, return_dat=FALSE){
 #' }
 clean_legacy_landings <- function(x){
 
-   # select common columns to SFF and peskas landings
+   # select common vars to SFF and peskas landings
    common_cols_table <- x %>% dplyr::select(
       c("__version__","_bamboo_dataset_id","_geolocation.0","_geolocation.1","_id",
         "_status","_submission_time","_submitted_by","_uuid","_validation_status.by_whom",
@@ -262,7 +262,7 @@ clean_legacy_landings <- function(x){
         "_validation_status.uid","_version_","_version__001","_xform_id_string","deviceid",
         "end","formhub/uuid","meta/instanceID","start","today"))
 
-   # select and rename some SFF variables
+   # select and rename some SFF vars
    renamed_cols_table <- x %>% dplyr::select(c("Ita_kolecta_dadus_husi_activid","Site_name","No_boats",
                                                "TOTAL_folin_ikan_hamutuk","Ema_hira_halo_actividade_peska",
                                                "Tanba_sa_la_iha_atividade_peska_ohin","group_ob8uk86/TOTAL_ORAS_VIAGEM_PESKA")) %>%
@@ -274,7 +274,7 @@ clean_legacy_landings <- function(x){
              "reason_for_zero_boats"="Tanba_sa_la_iha_atividade_peska_ohin",
              "trip_group/duration"="group_ob8uk86/TOTAL_ORAS_VIAGEM_PESKA")
 
-   # list vectors to coalesce
+   # list of vectors to coalesce
    to_coal <- list("date" = x %>% dplyr::select("Data","Date"),
                    "trip_group/gear_type" = x %>% dplyr::select(tidyselect::contains("gear")),
                    "trip_group/habitat_boat" = x %>% dplyr::select(tidyselect::contains("habitat")),
