@@ -163,7 +163,6 @@ jobs:
 
   preprocess-legacy-landings:
     name: preprocess_legacy_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [ingest-legacy-landings]
     runs-on: ubuntu-20.04
     container:
