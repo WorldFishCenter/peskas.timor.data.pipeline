@@ -94,7 +94,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   if (nrow(flags_fixed) > 0) {
     logger::log_info("Updating fixed flags in Airtable")
     air_tibble_to_records(flags_fixed, id_fields = "remote_flag_id") %>%
-      air_upload_records(table = "flags", base_id = pars$validation$airtable$base_id,
+      air_upload_records(table = pars$validation$airtable$flags_table,
+                         base_id = pars$validation$airtable$base_id,
                          api_key = pars$validation$airtable$api_key,
                          request_type = "update")
   }

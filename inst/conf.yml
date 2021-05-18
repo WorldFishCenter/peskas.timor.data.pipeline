@@ -36,6 +36,7 @@ default:
       tables:
         - flags
         - alerts
+      flags_table: flags
     version:
       preprocess: latest
 
@@ -64,9 +65,13 @@ local:
   metadata:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
-  flags:
+  validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
+      tables:
+        - flags_dev
+        - alerts
+      flags_table: flags_dev
   storage:
     google:
       options:
