@@ -19,7 +19,7 @@
 #'
 #' @examples
 #' dummy_landings <- tidyr::tibble(
-#'     `_id` = "123",
+#'     `submission_id` = "123",
 #'     `species_group.0.species_group/species` = "sp01",
 #'     `species_group.0.species_group/food_or_sale` = "food",
 #'     `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` = 10,
@@ -38,10 +38,10 @@ pt_nest_species <- function(x){
   # Nest species
   nested_species <- x %>%
     # Using the .data pronoun to avoid RMD check notes
-    dplyr::select(.data$`_id`, dplyr::starts_with("species_group")) %>%
+    dplyr::select(.data$submission_id, dplyr::starts_with("species_group")) %>%
     dplyr::mutate_all(as.character) %>%
     # Column names follow the form "species_group.3.species_group/food_or_sale"
-    tidyr::pivot_longer(cols = -.data$`_id`,
+    tidyr::pivot_longer(cols = -.data$submission_id,
                         names_to = c("dummy", "n", "var"),
                         names_sep = "\\.") %>%
     # We want one specis per row
@@ -52,7 +52,7 @@ pt_nest_species <- function(x){
     dplyr::rename_all(~stringr::str_remove(., "species_group/")) %>%
     # We want one row per length class
     tidyr::pivot_longer(cols = dplyr::starts_with("no_fish_by_length_group")) %>%
-    dplyr::group_by(.data$`_id`, .data$n) %>%
+    dplyr::group_by(.data$submission_id, .data$n) %>%
     # If individuals were larger than 60cm the length is recorded in the
     # "no_fish_by_length_group/fish_length_over60" column. Then instead of
     # length categories we estimate the mean point for each category which allow
@@ -72,21 +72,23 @@ pt_nest_species <- function(x){
     # the others we don't need that col anymore
     dplyr::filter(.data$name != "no_fish_by_length_group/fish_length_over60") %>%
     dplyr::select(-.data$name, -.data$value, -.data$length_over_60) %>%
-    dplyr::group_by(.data$`_id`, .data$n) %>%
+    dplyr::group_by(.data$submission_id, .data$n) %>%
     # Back to one row per species
     tidyr::nest(length_individuals = c(.data$mean_length, .data$n_individuals)) %>%
-    dplyr::group_by(.data$`_id`) %>%
+    dplyr::group_by(.data$submission_id) %>%
     # Back to one row per trip
     tidyr::nest() %>%
     dplyr::rename("species_group" = "data") %>%
     # Remove rows in the nested column that are empty (no species recorded)
     dplyr::mutate(species_group = purrr::map(
       .data$species_group,
-      ~ dplyr::filter(., !is.na(.data$species))))
+      ~ dplyr::filter(., !is.na(.data$species))),
+      submission_id = as.integer(.data$submission_id))
 
   x %>%
     dplyr::select(-dplyr::starts_with("species_group")) %>%
-    dplyr::left_join(nested_species, by = "_id")
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::left_join(nested_species, by = "submission_id")
 }
 
 
