@@ -10,9 +10,11 @@
 #'To avoid synchronisation problems always is recommended that this called
 #'together with `ingest_validation_tables()`
 #'
-#'@param log_threshold
-#'@inheritParams ingest_landings
-#'@export
+#' @param log_threshold
+#' @inheritParams ingest_landings
+#' @keywords workflow
+#' @return no outputs. This funcrion is used for it's side effects
+#' @export
 #'
 validate_landings <- function(log_threshold = logger::DEBUG){
 

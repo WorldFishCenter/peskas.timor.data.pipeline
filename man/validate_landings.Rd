@@ -11,6 +11,9 @@ validate_landings(log_threshold = logger::DEBUG)
 threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
 details}
 }
+\value{
+no outputs. This funcrion is used for it's side effects
+}
 \description{
 Downloads the preprocessed cersion of the data from cloud storage services and
 validates a range of information so that it can be safely used for analysis.
@@ -23,3 +26,4 @@ The parameters needed in the config file are those required for
 To avoid synchronisation problems always is recommended that this called
 together with \code{ingest_validation_tables()}
 }
+\keyword{workflow}
