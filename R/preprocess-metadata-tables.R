@@ -110,8 +110,8 @@ pt_validate_vms_installs <- function(vms_installs_table){
     dplyr::group_by(.data$device_imei) %>%
     dplyr::summarise(n_boats = dplyr::n_distinct(.data$boat_id),
                      .groups = "drop")
-  if (any(ok_boat_installs$n_boats > 1))
-    stop("detected a vms device in more than one boat")
+  # if (any(ok_boat_installs$n_boats > 1))
+    # stop("detected a vms device in more than one boat")
 
   v
 }

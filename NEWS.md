@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.7.0
+
+### New features
+
+- Added `ingest_legacy_landings` to retrieve data from legacy data (SFF landings)
+
 # peskas.timor.data.pipeline 0.6.0
 
 ### New features

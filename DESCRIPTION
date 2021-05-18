@@ -1,13 +1,17 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
              role = c("aut", "cre"),
              email = "f.cagua@cgiar.org",
              comment = c(ORCID = "0000-0001-5867-3687")),
+      person(given = "Lorenzo",
+             family = "Longobardi",
+             role = c("aut"),
+             email = "l.longobardi@cgiar.org"),
       person(given = "WorldFish",
              role = "cph"))
 Description: This package implements the data and modelling
