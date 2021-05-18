@@ -213,7 +213,7 @@ air_upload_records <- function(body, table, base_id,
                            httr::add_headers(Authorization = api_key),
                            body = jsonlite::toJSON(this_body),
                            httr::content_type("application/json"))
-    logger::log_info("Uploafing records. Status code: ",
+    logger::log_info("Uploading records. Status code: ",
                      httr::status_code(response))
     response
   }
