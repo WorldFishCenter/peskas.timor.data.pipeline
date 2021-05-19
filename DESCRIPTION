@@ -43,7 +43,9 @@ Suggests:
     remotes,
     sessioninfo,
     testthat,
-    roxygen2
+    roxygen2,
+    textclean,
+    tidyselect
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
