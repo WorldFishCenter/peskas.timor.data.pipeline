@@ -30,7 +30,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Validating IMEIs...")
   imei_alerts <- landings$`trip_group/IMEI` %>%
-    rlang::set_names(landings$submission_id) %>%
+    rlang::set_names(landings$`_id`) %>%
     purrr::imap(validate_this_imei,
              deployed_imeis) %>%
     purrr::map_dfr(tibble::as_tibble)
@@ -58,6 +58,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
+    dplyr::rename(submission_id = .data$`_id`, landing_date = .data$date) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
     dplyr::select(.data$submission_id, .data$landing_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%

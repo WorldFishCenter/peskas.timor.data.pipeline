@@ -28,7 +28,7 @@
 #'
 #' @examples
 #' dummy_landings <- tidyr::tibble(
-#'   `submission_id` = "123",
+#'   `_id` = "123",
 #'   `_attachments.0.download_url` = "http://url-1.com",
 #'   `_attachments.0.id` = "01",
 #'   `_attachments.1.download_url` = "http://url-2.com",
@@ -41,9 +41,9 @@ pt_nest_attachments <- function(x){
 
   nested_attachments <- x %>%
     # Using the .data pronoun to avoid RMD check notes
-    dplyr::select(.data$submission_id, dplyr::starts_with("_attachments")) %>%
+    dplyr::select(.data$`_id`, dplyr::starts_with("_attachments")) %>%
     # Column names follow the form "_attachments.0.download_large_url"
-    tidyr::pivot_longer(cols = -.data$submission_id,
+    tidyr::pivot_longer(cols = -.data$`_id`,
                         names_to = c("n", "field"),
                         names_prefix = "_attachments.",
                         names_sep = "\\.") %>%
@@ -51,7 +51,7 @@ pt_nest_attachments <- function(x){
     tidyr::pivot_wider(names_from = "field", values_from = "value") %>%
     # Attachments already have id and this column is superfluous
     dplyr::select(-.data$n) %>%
-    dplyr::group_by(.data$submission_id) %>%
+    dplyr::group_by(.data$`_id`) %>%
     tidyr::nest() %>%
     dplyr::ungroup() %>%
     dplyr::rename("_attachments" = "data") %>%
@@ -62,5 +62,5 @@ pt_nest_attachments <- function(x){
 
   x %>%
     dplyr::select(-dplyr::starts_with("_attachments")) %>%
-    dplyr::left_join(nested_attachments, by = "submission_id")
+    dplyr::left_join(nested_attachments, by = "_id")
 }
