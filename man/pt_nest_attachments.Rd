@@ -35,7 +35,7 @@ models.
 }
 \examples{
 dummy_landings <- tidyr::tibble(
-  `submission_id` = "123",
+  `_id` = "123",
   `_attachments.0.download_url` = "http://url-1.com",
   `_attachments.0.id` = "01",
   `_attachments.1.download_url` = "http://url-2.com",

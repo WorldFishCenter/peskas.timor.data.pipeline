@@ -37,7 +37,7 @@ models.
 }
 \examples{
 dummy_landings <- tidyr::tibble(
-    `submission_id` = "123",
+    `_id` = "123",
     `species_group.0.species_group/species` = "sp01",
     `species_group.0.species_group/food_or_sale` = "food",
     `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` = 10,
