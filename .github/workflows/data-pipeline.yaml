@@ -5,6 +5,11 @@ on:
   schedule:
     - cron:  '0 0 * * *'
 
+env:
+  KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
+  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+  AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
+
 jobs:
 
   build-container:
@@ -30,13 +35,19 @@ jobs:
           registry: docker.pkg.github.com
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
-      - name: Set outputs as environment variables
-        uses: allenevans/set-env@v2.0.0
-        with:
-          R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
-          KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
-          GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
-          AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
+
+  test-env:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/bug-env-variables')
+        run: |
+          echo "R_CONFIG_ACTIVE=developmentoo" >> $GITHUB_ENV
+          echo "TEST_VAR=production" >> $GITHUB_ENV
+      - name: Check environment bug-env-variables
+        run: |
+          echo $R_CONFIG_ACTIVE
+          echo $TEST_VAR
 
   ingest-landings:
     name: ingest_landings()
