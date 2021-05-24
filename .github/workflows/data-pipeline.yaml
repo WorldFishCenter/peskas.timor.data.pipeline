@@ -29,7 +29,7 @@ jobs:
           dockerfile: Dockerfile.prod
 
   ingest-landings:
-    name: ingest_landings()
+    name: Ingest landings
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -43,25 +43,11 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
-
-  preprocess-landings:
-    name: preprocess_landings()
-    needs: [ingest-landings]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
   ingest-metadata-tables:
-    name: ingest_metadata_tables()
+    name: Ingest metadata tables
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -75,20 +61,6 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-
-  preprocess-metadata-tables:
-    name: preprocess_metadata_tables()
-    needs: [ingest-metadata-tables]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
 
