@@ -5,11 +5,6 @@ on:
   schedule:
     - cron:  '0 0 * * *'
 
-env:
-  KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
-  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
-  AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
-
 jobs:
 
   build-container:
@@ -39,6 +34,9 @@ jobs:
         uses: allenevans/set-env@v2.0.0
         with:
           R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
+          KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
+          GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+          AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
 
   ingest-landings:
     name: ingest_landings()
