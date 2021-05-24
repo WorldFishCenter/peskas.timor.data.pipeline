@@ -41,13 +41,10 @@ jobs:
     steps:
       - name: Set env to production
         if: endsWith(github.ref, '/bug-env-variables')
-        run: |
-          echo "R_CONFIG_ACTIVE=developmentoo" >> $GITHUB_ENV
-          echo "TEST_VAR=production" >> $GITHUB_ENV
+        run: echo "R_CONFIG_ACTIVE=developmentoo" >> $GITHUB_ENV
       - name: Check environment bug-env-variables
         run: |
           echo $R_CONFIG_ACTIVE
-          echo $TEST_VAR
 
   ingest-landings:
     name: ingest_landings()
