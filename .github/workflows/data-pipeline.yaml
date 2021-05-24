@@ -28,7 +28,7 @@ jobs:
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
 
-  ingest-landings:
+  ingest-preprocess-landings:
     name: Ingest landings
     needs: build-container
     runs-on: ubuntu-20.04
@@ -46,7 +46,7 @@ jobs:
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
-  ingest-metadata-tables:
+  ingest-preprocess-metadata-tables:
     name: Ingest metadata tables
     needs: build-container
     runs-on: ubuntu-20.04
@@ -167,7 +167,7 @@ jobs:
 
   validate-landings:
     name: Validate landings
-    needs: [preprocess-landings, preprocess-metadata-tables]
+    needs: [ingest-preprocess-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
