@@ -1,3 +1,13 @@
+# peskas.timor.data.pipeline 0.8.1
+
+## Improvements
+
+- Simplified jobs in the pipeline workflow
+
+## Bug fixes
+
+- Fixed workflow so that runs that are supposed to run in production actuallt do so
+
 # peskas.timor.data.pipeline 0.8.0
 
 ## New features
