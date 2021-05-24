@@ -18,14 +18,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Set variables
-        id: setvars
-        run: |
-          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
-            echo "::set-output name=r-config::production"
-          else
-            echo "::set-output name=r-config::default"
-          fi
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
@@ -35,16 +27,6 @@ jobs:
           registry: docker.pkg.github.com
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
-
-  test-env:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/bug-env-variables')
-        run: echo "R_CONFIG_ACTIVE=developmentoo" >> $GITHUB_ENV
-      - name: Check environment bug-env-variables
-        run: |
-          echo $R_CONFIG_ACTIVE
 
   ingest-landings:
     name: ingest_landings()
@@ -56,6 +38,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
@@ -69,6 +54,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
@@ -82,6 +70,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
 
@@ -95,6 +86,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
 
@@ -109,6 +103,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_trips()
         run: echo 'Feature not implemented yet'
 
@@ -123,6 +120,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_pds_trips()
         run: echo 'Feature not implemented yet'
 
@@ -137,6 +137,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_tracks()
         run: echo 'Feature not implemented yet'
 
@@ -151,6 +154,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_pds_tracks()
         run: echo 'Feature not implemented yet'
 
@@ -164,6 +170,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_legacy_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_legacy_landings()'
 
@@ -178,6 +187,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_legacy_landings()
         run: echo 'Feature not implemented yet'
 
@@ -191,6 +203,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Ingest validation tables
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
       - name: Validate landings
@@ -207,6 +222,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_landings()
         run: echo 'Feature not implemented yet'
 
@@ -221,6 +239,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_trips()
         run: echo 'Feature not implemented yet'
 
@@ -235,6 +256,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_trips()
         run: echo 'Feature not implemented yet'
 
