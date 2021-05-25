@@ -33,6 +33,8 @@ reference:
   contents:
   - matches("nest")
   - matches("pt_validate")
+  - matches("clean")
+  - coalist
 - subtitle: Utils
   contents:
   - read_config
