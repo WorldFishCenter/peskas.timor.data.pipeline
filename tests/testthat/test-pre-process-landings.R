@@ -1,7 +1,7 @@
 test_that("attachments are being nested properly", {
 
   dummy_landings <- tidyr::tibble(
-    `submission_id` = "123",
+    `_id` = "123",
     `_attachments.0.download_url` = "http://url-1.com",
     `_attachments.0.id` = "01",
     `_attachments.1.download_url` = "http://url-2.com",
@@ -20,7 +20,7 @@ test_that("attachments are being nested properly", {
 test_that("species are being nested properly", {
 
   dummy_landings <- tidyr::tibble(
-    `submission_id` = "123",
+    `_id` = "123",
     `species_group.0.species_group/species` = "sp01",
     `species_group.0.species_group/food_or_sale` = "food",
     `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` = 10,
