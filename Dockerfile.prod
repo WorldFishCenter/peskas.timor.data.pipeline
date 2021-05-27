@@ -42,7 +42,9 @@ RUN install2.r --error --skipinstalled \
     remotes \
     sessioninfo \
     testthat \
-    roxygen2
+    roxygen2 \
+    tidyselect \
+    textclean
 
 # Install local package
 COPY . /home
