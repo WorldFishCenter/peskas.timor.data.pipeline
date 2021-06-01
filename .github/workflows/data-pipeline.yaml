@@ -9,6 +9,9 @@ env:
   KOBO_TOKEN: ${{ secrets.PESKAS_KOBO_TOKEN }}
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
+  PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
+  PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
+
 
 jobs:
 
@@ -94,7 +97,6 @@ jobs:
 
   ingest-pds-trips:
     name: ingest_pds_trips()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -104,7 +106,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call ingest_pds_trips()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
 
   preprocess-pds-trips:
     name: preprocess_pds_trips()
@@ -122,7 +124,6 @@ jobs:
 
   ingest-pds-tracks:
     name: ingest_pds_tracks()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: preprocess-pds-trips
     runs-on: ubuntu-20.04
     container:
@@ -132,7 +133,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call ingest_pds_tracks()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
 
   preprocess-pds-tracks:
     name: preprocess_pds_tracks()
