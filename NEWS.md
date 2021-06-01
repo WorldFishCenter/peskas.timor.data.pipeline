@@ -1,3 +1,14 @@
+# peskas.timor.data.pipeline 0.10.0
+
+## New features
+
+- Added `retrieve_pds_trips_data()`, `retrieve_pds_trips()`,  `retrieve_pds_tracks_data()` and `retrieve_pds_tracks()` to 
+download trips and tracks from Pelagic Data System API. 
+- Added function `get_pds_res()` to convert Pelagic Data System API responses to data frames and merge trips and tracks data in a unique file.
+- Added `ingest_trips()` and `ingest_tracks()` to upload Pelagic Data System data into cloud.
+- Created a new bucket (pds-timor-dev) to store pds data.
+
+
 # peskas.timor.data.pipeline 0.9.0
 
 ## New features
