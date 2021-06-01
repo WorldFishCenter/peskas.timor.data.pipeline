@@ -124,7 +124,7 @@ jobs:
 
   ingest-pds-tracks:
     name: ingest_pds_tracks()
-    needs: preprocess-pds-trips
+    needs: build-container
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
