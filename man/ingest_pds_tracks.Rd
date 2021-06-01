@@ -15,9 +15,9 @@ details}
 No output. This funcrion is used for it's side effects
 }
 \description{
-This function read Pelagic Data System (pds) tracks data, merge them with
-trips information by their id, then uploads it to cloud storage services as
-a csv data frame.
+This function read Pelagic Data System (pds) tracks data, merge tracks with
+trips information by each id, then uploads the merged file to cloud storage
+services as a csv data frame.
 }
 \details{
 The function  downloads and uploads only the tracks data that are not yet
