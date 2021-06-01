@@ -108,7 +108,6 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 
   # extract unique trip identifiers
   trips_ID <- unique(pds_trips_mat$Trip)
-  some_trips <- trips_ID[1:7]
 
   # autenticate
   googleCloudStorageR::gcs_auth(pars$pds_storage$google$options$service_account_key)
@@ -123,8 +122,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
-    file_list <- NULL
-  for(i in some_trips){
+  for(i in trips_ID){
 
     # check if id is alredy in the bucket
     file_exists <- i %in% file_list_id
@@ -142,12 +140,10 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       readr::write_csv(x = merge_pds,
                        file = merged_filename)
 
-      file_list <- c(file_list, merged_filename)
+      logger::log_info("Uploading files to cloud...")
+      # Iterate over multiple storage providers if there are more than one
+      purrr::map(pars$pds_storage, ~ upload_cloud_file(merged_filename, .$key, .$options))
+      logger::log_success("File upload succeded")
     }
   }
-
-  logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$pds_storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
 }
