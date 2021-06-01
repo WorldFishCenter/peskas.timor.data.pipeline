@@ -58,9 +58,9 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG){
 
 #' Ingest Pelagic Data System tracks data
 #'
-#' This function read Pelagic Data System (pds) tracks data, merge them with
-#' trips information by their id, then uploads it to cloud storage services as
-#' a csv data frame.
+#' This function read Pelagic Data System (pds) tracks data, merge tracks with
+#' trips information by each id, then uploads the merged file to cloud storage
+#' services as a csv data frame.
 #'
 #' The function  downloads and uploads only the tracks data that are not yet
 #' stored in the bucket.
@@ -128,10 +128,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     # check if id is alredy in the bucket
     file_exists <- i %in% file_list_id
 
-    if (isTRUE(file_exists)){
-      message("Object already exists in the bucket. It has not been rewritten.")
-    } else {
-
+    if (isFALSE(file_exists)){
       pds_tracks_mat <- get_pds_resp(data="tracks",
                                  secret = pars$pds$trips$secret,
                                  token = pars$pds$trips$token,
@@ -145,7 +142,6 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
                        file = merged_filename)
 
       file_list <- c(file_list, merged_filename)
-      file_list
     }
   }
 
