@@ -108,7 +108,6 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 
   # extract unique trip identifiers
   trips_ID <- unique(pds_trips_mat$Trip)
-  some_trips <- trips_ID[1:7]
 
   # autenticate
   googleCloudStorageR::gcs_auth(pars$pds_storage$google$options$service_account_key)
@@ -124,7 +123,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     as.character()
 
     file_list <- NULL
-  for(i in some_trips){
+  for(i in trips_ID){
 
     # check if id is alredy in the bucket
     file_exists <- i %in% file_list_id
