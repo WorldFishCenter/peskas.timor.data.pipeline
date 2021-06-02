@@ -144,6 +144,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       # Iterate over multiple storage providers if there are more than one
       purrr::map(pars$pds_storage, ~ upload_cloud_file(merged_filename, .$key, .$options))
       logger::log_success("File upload succeded")
+      file.remove(merged_filename)
     }
   }
 }
