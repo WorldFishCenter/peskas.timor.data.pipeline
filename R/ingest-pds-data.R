@@ -140,11 +140,11 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       readr::write_csv(x = merge_pds,
                        file = merged_filename)
 
+      googleCloudStorageR::gcs_auth(pars$pds_storage$google$options$service_account_key)
       logger::log_info("Uploading files to cloud...")
       # Iterate over multiple storage providers if there are more than one
       purrr::map(pars$pds_storage, ~ upload_cloud_file(merged_filename, .$key, .$options))
       logger::log_success("File upload succeded")
-      file.remove(merged_filename)
     }
   }
 }
