@@ -191,7 +191,6 @@ jobs:
 
   merge-landings:
     name: merge_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [validate-landings, preprocess-legacy-landings]
     runs-on: ubuntu-20.04
     container:
@@ -201,7 +200,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call merge_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::merge_landings()'
 
   merge-trips:
     name: merge_trips()

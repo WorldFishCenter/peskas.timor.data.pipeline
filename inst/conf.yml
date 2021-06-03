@@ -15,6 +15,9 @@ default:
       file_prefix: timor-landings-v1
       version:
         preprocess: latest
+    merged_landings:
+      file_prefix: timor-landings-merged
+      version: latest
 
   metadata:
     airtable:
