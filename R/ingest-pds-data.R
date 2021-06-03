@@ -103,14 +103,16 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 
   # get trips data frame
   pds_trips_mat <- get_pds_resp(data="trips",
-                            secret = pars$pds$trips$secret,
-                            token = pars$pds$trips$token)
+                                secret = pars$pds$trips$secret,
+                                token = pars$pds$trips$token)
 
   # extract unique trip identifiers
   trips_ID <- unique(pds_trips_mat$Trip)
 
   # autenticate
-  googleCloudStorageR::gcs_auth(pars$pds_storage$google$options$service_account_key)
+  cloud_storage_authenticate("gcs", option=list(
+    service_account_key = pars$pds_storage$google$options$service_account_key,
+    bucket = pars$pds_storage$google$options$bucket))
 
   # list id tracks already in bucket
   file_list_id <-
@@ -129,10 +131,14 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     file_exists <- i %in% file_list_id
 
     if (isFALSE(file_exists)){
+      cloud_storage_authenticate(pars, option=list(
+        service_account_key = pars$pds_storage$google$options$service_account_key,
+        bucket = pars$pds_storage$google$options$bucket))
+
       pds_tracks_mat <- get_pds_resp(data="tracks",
-                                 secret = pars$pds$trips$secret,
-                                 token = pars$pds$trips$token,
-                                 id=i)
+                                     secret = pars$pds$trips$secret,
+                                     token = pars$pds$trips$token,
+                                     id=i)
 
       # merge pds tracks and trips
       merge_pds <- dplyr::full_join(dplyr::filter(pds_trips_mat, .data$Trip==i),pds_tracks_mat)
@@ -145,8 +151,28 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     }
   }
 
-  # reautenticate
-  googleCloudStorageR::gcs_auth(pars$pds_storage$google$options$service_account_key)
+  purrr::insistently(upload_tracks(file_list=file_list),
+                     rate = purrr::rate_backoff(
+                       pause_cap = 60*5,
+                       max_times = 10),
+                     quiet = F)
+}
+
+#' Upload tracks files
+#'
+#' This function takes a vector of tracks files as argument and upload them to
+#' the cloud.
+#'
+#' @param file_list Vector of files to upload
+#'
+#' @return No output. This function is used for it's side effects
+#' @export
+#'
+#' @examples
+upload_tracks <- function(file_list){
+
+  pars <- read_config()
+
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
   purrr::map(pars$pds_storage, ~ upload_cloud_file(file_list, .$key, .$options))
