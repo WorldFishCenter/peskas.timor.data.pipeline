@@ -47,7 +47,7 @@ merge_landings <- function(log_threshold = logger::DEBUG){
                       version = pars$surveys$landings$version$preprocess,
                       options = pars$storage$google$options)
 
-  logger::log_info("Retrieving {preprocessed_data}")
+  logger::log_info("Retrieving preprocessed data")
   purrr::map(c(preprocessed_landings,preprocessed_legacy_landings),
              download_cloud_file,
              provider = pars$storage$google$key,
