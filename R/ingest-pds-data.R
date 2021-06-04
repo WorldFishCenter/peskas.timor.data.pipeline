@@ -124,7 +124,6 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
-  file_list <- NULL
   for(i in trips_ID){
 
     # check if id is alredy in the bucket
@@ -147,34 +146,37 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       readr::write_csv(x = merge_pds,
                        file = merged_filename)
 
-      file_list <- c(file_list,merged_filename)
+      logger::log_info("Uploading {merged_filename} to cloud...")
+      # Iterate over multiple storage providers if there are more than one
+      purrr::map(pars$pds_storage, ~ purrr::walk(
+        .x = merged_filename,
+        .f = ~ upload_tracks(
+          file = .,
+          provider = pars$pds_storage$google$key,
+          options = pars$pds_storage$google$options)))
+      logger::log_success("File upload succeded")
+
+      file.remove(merged_filename)
     }
   }
-
-  purrr::insistently(upload_tracks(file_list=file_list),
-                     rate = purrr::rate_backoff(
-                       pause_cap = 60*5,
-                       max_times = 10),
-                     quiet = F)
 }
 
 #' Upload tracks files
 #'
 #' This function takes a vector of tracks files as argument and upload them to
-#' the cloud.
+#' the cloud. The function uses [purrr::insistently] in order to continue to
+#' upload files despite stale OAuth token.
 #'
-#' @param file_list Vector of files to upload
+#' @param delay he time interval to suspend execution for, in seconds.
 #'
 #' @return No output. This function is used for it's side effects
 #' @export
 #'
-#' @examples
-upload_tracks <- function(file_list){
-
-  pars <- read_config()
-
-  logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$pds_storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
+upload_tracks <- function(..., delay = 3){
+  purrr::insistently(upload_cloud_file,
+                     rate = purrr::rate_backoff(
+                       pause_cap = 60*5,
+                       max_times = 10),
+                     quiet = F)(...)
+  Sys.sleep(delay)
 }

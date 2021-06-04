@@ -4,15 +4,16 @@
 \alias{upload_tracks}
 \title{Upload tracks files}
 \usage{
-upload_tracks(file_list)
+upload_tracks(..., delay = 3)
 }
 \arguments{
-\item{file_list}{Vector of files to upload}
+\item{delay}{he time interval to suspend execution for, in seconds.}
 }
 \value{
 No output. This function is used for it's side effects
 }
 \description{
 This function takes a vector of tracks files as argument and upload them to
-the cloud.
+the cloud. The function uses \link[purrr:insistently]{purrr::insistently} in order to continue to
+upload files despite stale OAuth token.
 }
