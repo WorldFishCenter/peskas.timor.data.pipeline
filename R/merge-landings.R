@@ -55,9 +55,9 @@ merge_landings <- function(log_threshold = logger::DEBUG){
 
   # adding a column "survey_version"
   prep_landings <- readRDS(preprocessed_landings)
-  prep_landings <- dplyr::mutate(prep_landings,survey_version=rep("v1",nrow(prep_landings)))
+  prep_landings <- dplyr::mutate(prep_landings,survey_version=rep("v2",nrow(prep_landings)))
   prep_legacy_landings <- readRDS(preprocessed_legacy_landings)
-  prep_legacy_landings <- dplyr::mutate(prep_legacy_landings,survey_version=rep("v2",nrow(prep_legacy_landings)))
+  prep_legacy_landings <- dplyr::mutate(prep_legacy_landings,survey_version=rep("v1",nrow(prep_legacy_landings)))
 
 
   merged_landings <-
