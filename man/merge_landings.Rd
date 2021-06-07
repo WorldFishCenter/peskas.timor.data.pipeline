@@ -20,9 +20,17 @@ merge in a rds-format file using the function \link[dplyr:mutate-joins]{dplyr::f
 }
 \details{
 The merged file is then uploaded to the cloud. The parameters needed are:\preformatted{surveys:
+  landings:
+    file_prefix:
+    version:
+      preprocess:
+  landings_legacy:
+    file_prefix:
+    version:
+      preprocess:
   merged_landings:
     file_prefix:
-  version:
+    version:
 storage:
   storage_name:
     key:

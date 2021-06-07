@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.10.1
+
+## Bug fixes
+
+- Fixed the bug in survey retrieve process. Before the survey upload there is a check of the file size
+
 # peskas.timor.data.pipeline 0.10.0
 
 ## New features
