@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Preprocess metadata tables — preprocess_metadata_tables • peskas.timor.data.pipeline</title>
+<title>Merge recent and legacy pre-processed landings — merge_landings • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,10 +39,9 @@
 
 
 
-<meta property="og:title" content="Preprocess metadata tables — preprocess_metadata_tables" />
-<meta property="og:description" content="Takes ingested metadata tables, validates them, and processes them into
-artefacts (devices information, flags) to be used further down in the
-pipeline." />
+<meta property="og:title" content="Merge recent and legacy pre-processed landings — merge_landings" />
+<meta property="og:description" content="Downloads pre-processed versions of recent and legacy landings from cloud and
+merge in a rds-format file using the function dplyr::full_join." />
 
 
 
@@ -108,18 +107,17 @@ pipeline." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Preprocess metadata tables</h1>
+    <h1>Merge recent and legacy pre-processed landings</h1>
     
-    <div class="hidden name"><code>preprocess_metadata_tables.Rd</code></div>
+    <div class="hidden name"><code>merge_landings.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Takes ingested metadata tables, validates them, and processes them into
-artefacts (devices information, flags) to be used further down in the
-pipeline.</p>
+    <p>Downloads pre-processed versions of recent and legacy landings from cloud and
+merge in a rds-format file using the function <a href='https://dplyr.tidyverse.org/reference/mutate-joins.html'>dplyr::full_join</a>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>preprocess_metadata_tables</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>merge_landings</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -132,19 +130,15 @@ details</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>No outputs. This function is used for it's side effects</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Specifically this function:</p><ul>
-<li><p>Validates the flags table containing the columns: flag_id, flag_category, flag_message</p></li>
-<li><p>Constructs a devices table containing the columns: imei</p></li>
-</ul>
-
-<p>This function requires no arguments because it retrieves the parameters from
-<code>conf.yml</code>. The fields required are:</p><pre>metadata:
-  spreadsheet:
-    name:
+    <p>The merged file is then uploaded to the cloud. The parameters needed are:</p><pre>surveys:
+  merged_landings:
+    file_prefix:
   version:
-    preprocess:
 storage:
   storage_name:
     key:
@@ -154,6 +148,7 @@ storage:
       service_account_key:
 </pre>
 
+<p>Progress through the function is tracked using the package <em>logger</em>.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
