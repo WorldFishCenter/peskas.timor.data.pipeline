@@ -63,7 +63,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-
+        
   ingest-pds-trips:
     name: ingest_pds_trips()
     if: ${{ false }} # Skip for now as it's not been implemented
@@ -132,8 +132,8 @@ jobs:
       - name: Call preprocess_pds_tracks()
         run: echo 'Feature not implemented yet'
 
-  ingest-legacy-landings:
-    name: ingest_legacy_landings()
+  ingest-preprocess-legacy-landings:
+    name: Ingest legacy landings
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -147,22 +147,8 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_legacy_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_legacy_landings()'
-
-  preprocess-legacy-landings:
-    name: preprocess_legacy_landings()
-    needs: [ingest-legacy-landings]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_legacy_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'      
 
   validate-landings:
     name: Validate landings
@@ -184,8 +170,7 @@ jobs:
 
   merge-landings:
     name: merge_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
-    needs: [validate-landings, preprocess-legacy-landings]
+    needs: [validate-landings, ingest-preprocess-legacy-landings]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -197,7 +182,7 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::merge_landings()'
 
   merge-trips:
     name: merge_trips()
