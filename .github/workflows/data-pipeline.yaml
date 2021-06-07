@@ -150,7 +150,6 @@ jobs:
 
   preprocess-legacy-landings:
     name: preprocess_legacy_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [ingest-legacy-landings]
     runs-on: ubuntu-20.04
     container:
@@ -163,7 +162,7 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_legacy_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
 
   validate-landings:
     name: Validate landings
