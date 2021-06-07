@@ -9,7 +9,7 @@
 #' surveys:
 #'   merged_landings:
 #'     file_prefix:
-#'   version:
+#'     version:
 #' storage:
 #'   storage_name:
 #'     key:
