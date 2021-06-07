@@ -15,6 +15,9 @@ default:
       file_prefix: timor-landings-v1
       version:
         preprocess: latest
+    merged_landings:
+      file_prefix: timor-landings-merged
+      version: latest
   pds:
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
@@ -65,13 +68,15 @@ default:
         bucket: pds-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
-
-
 production:
   storage:
     google:
       options:
         bucket: timor
+  pds_storage:
+    google:
+      options:
+        bucket: pds-timor
   validation:
     airtable:
       tables:

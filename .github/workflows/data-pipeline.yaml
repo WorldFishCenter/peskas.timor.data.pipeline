@@ -21,14 +21,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Set variables
-        id: setvars
-        run: |
-          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
-            echo "::set-output name=r-config::production"
-          else
-            echo "::set-output name=r-config::default"
-          fi
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
@@ -38,13 +30,9 @@ jobs:
           registry: docker.pkg.github.com
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
-      - name: Set outputs as environment variables
-        uses: allenevans/set-env@v2.0.0
-        with:
-          R_CONFIG_ACTIVE: ${{ steps.setvars.outputs.r-config }}
 
-  ingest-landings:
-    name: ingest_landings()
+  ingest-preprocess-landings:
+    name: Ingest landings
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -53,24 +41,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
-
-  preprocess-landings:
-    name: preprocess_landings()
-    needs: [ingest-landings]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
-  ingest-metadata-tables:
-    name: ingest_metadata_tables()
+  ingest-preprocess-metadata-tables:
+    name: Ingest metadata tables
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -79,22 +59,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-
-  preprocess-metadata-tables:
-    name: preprocess_metadata_tables()
-    needs: [ingest-metadata-tables]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-
+        
   ingest-pds-trips:
     name: ingest_pds_trips()
     needs: build-container
@@ -105,6 +77,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
 
@@ -119,6 +94,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_pds_trips()
         run: echo 'Feature not implemented yet'
 
@@ -132,6 +110,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
 
@@ -146,11 +127,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_pds_tracks()
         run: echo 'Feature not implemented yet'
 
-  ingest-legacy-landings:
-    name: ingest_legacy_landings()
+  ingest-preprocess-legacy-landings:
+    name: Ingest legacy landings
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -159,25 +143,17 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_legacy_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_legacy_landings()'
-
-  preprocess-legacy-landings:
-    name: preprocess_legacy_landings()
-    needs: [ingest-legacy-landings]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
       - name: Call preprocess_legacy_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'      
 
   validate-landings:
     name: Validate landings
-    needs: [preprocess-landings, preprocess-metadata-tables]
+    needs: [ingest-preprocess-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -185,6 +161,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Ingest validation tables
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
       - name: Validate landings
@@ -192,8 +171,7 @@ jobs:
 
   merge-landings:
     name: merge_landings()
-    if: ${{ false }} # Skip for now as it's not been implemented
-    needs: [validate-landings, preprocess-legacy-landings]
+    needs: [validate-landings, ingest-preprocess-legacy-landings]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -201,8 +179,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_landings()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::merge_landings()'
 
   merge-trips:
     name: merge_trips()
@@ -215,6 +196,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_trips()
         run: echo 'Feature not implemented yet'
 
@@ -229,6 +213,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_trips()
         run: echo 'Feature not implemented yet'
 

@@ -141,7 +141,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
                                      id=i)
 
       # merge pds tracks and trips
-      merge_pds <- dplyr::full_join(dplyr::filter(pds_trips_mat, .data$Trip==i),pds_tracks_mat)
+      merge_pds <- dplyr::bind_rows(dplyr::filter(pds_trips_mat, .data$Trip==i),pds_tracks_mat)
 
       merged_filename <- paste(pars$pds$tracks$file_prefix, i,".csv",sep = "_")
       readr::write_csv(x = merge_pds,
@@ -160,7 +160,6 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       provider = pars$pds_storage$google$key,
       options = pars$pds_storage$google$options)))
   logger::log_success("File upload succeded")
-
 }
 
 #' Upload tracks files
