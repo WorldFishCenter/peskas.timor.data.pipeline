@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.10.0
+
+## New features
+
+- Added `merge_landings()` to merge and upload pre-processed recent and legacy landings data.
+
 # peskas.timor.data.pipeline 0.9.1
 
 ## Improvements
