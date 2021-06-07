@@ -60,8 +60,7 @@ merge_landings <- function(log_threshold = logger::DEBUG){
   prep_legacy_landings <- dplyr::mutate(prep_legacy_landings,survey_version=rep("v1",nrow(prep_legacy_landings)))
 
 
-  merged_landings <-
-    dplyr::full_join(prep_landings,prep_legacy_landings)
+  merged_landings <- dplyr::bind_rows(prep_landings,prep_legacy_landings)
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%
     add_version(extension = "rds")
