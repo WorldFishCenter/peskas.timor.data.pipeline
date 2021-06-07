@@ -7,6 +7,14 @@
 #'
 #' ```
 #' surveys:
+#'   landings:
+#'     file_prefix:
+#'     version:
+#'       preprocess:
+#'   landings_legacy:
+#'     file_prefix:
+#'     version:
+#'       preprocess:
 #'   merged_landings:
 #'     file_prefix:
 #'     version:
