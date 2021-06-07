@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.1</span>
       </span>
     </div>
 
@@ -109,6 +109,24 @@
       
     </div>
 
+    <div id="peskastimordatapipeline-081" class="section level1">
+<h1 class="page-header" data-toc-text="0.8.1">
+<a href="#peskastimordatapipeline-081" class="anchor"></a>peskas.timor.data.pipeline 0.8.1</h1>
+<div id="improvements" class="section level2">
+<h2 class="hasAnchor">
+<a href="#improvements" class="anchor"></a>Improvements</h2>
+<ul>
+<li>Simplified jobs in the pipeline workflow</li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level2">
+<h2 class="hasAnchor">
+<a href="#bug-fixes" class="anchor"></a>Bug fixes</h2>
+<ul>
+<li>Fixed workflow so that runs that are supposed to run in production actually do so</li>
+</ul>
+</div>
+</div>
     <div id="peskastimordatapipeline-090" class="section level1">
 <h1 class="page-header" data-toc-text="0.9.0">
 <a href="#peskastimordatapipeline-090" class="anchor"></a>peskas.timor.data.pipeline 0.9.0</h1>
@@ -133,9 +151,9 @@
 <li>Added logic to validate IMEIs in the landing data</li>
 <li>Added a script in <em>inst/airtable/edit-submission-link.js</em> which can be used in Airtable to generate a link to the editable submission form</li>
 </ul>
-<div id="improvements" class="section level3">
+<div id="improvements-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements" class="anchor"></a>Improvements</h3>
+<a href="#improvements-1" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Deactivated check of uniqueness of IMEI per boat in <code>pt_</code>
 </li>
@@ -172,9 +190,9 @@
 <li>Added <code><a href="../reference/pt_validate_boats.html">pt_validate_boats()</a></code>, <code><a href="../reference/pt_validate_devices.html">pt_validate_devices()</a></code>, and <code><a href="../reference/pt_validate_vms_installs.html">pt_validate_vms_installs()</a></code> to perform basic data validation from the metadata tables</li>
 </ul>
 </div>
-<div id="improvements-1" class="section level3">
+<div id="improvements-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements-1" class="anchor"></a>Improvements</h3>
+<a href="#improvements-2" class="anchor"></a>Improvements</h3>
 <ul>
 <li>
 <code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> can now also match files by exact name and not just by prefix</li>
@@ -201,9 +219,9 @@
 <li>Added <code>pt_get_devices_table()</code> and <code><a href="../reference/pt_validate_flags.html">pt_validate_flags()</a></code> as helper functions for the metadata preprocessing.</li>
 </ul>
 </div>
-<div id="improvements-2" class="section level3">
+<div id="improvements-3" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements-2" class="anchor"></a>Improvements</h3>
+<a href="#improvements-3" class="anchor"></a>Improvements</h3>
 <ul>
 <li>We use a single function to read the config.file and load the environment parameters</li>
 <li>Added an skeleton pipeline to provide guidance to future development. This is now visible in the README.</li>
@@ -220,17 +238,17 @@
 <li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li>
 </ul>
 </div>
-<div id="improvements-3" class="section level3">
+<div id="improvements-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements-3" class="anchor"></a>Improvements</h3>
+<a href="#improvements-4" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Renamed the job names in the github workflow as the functions that the job calls.</li>
 <li>Improved documentation of the package: particularly the readme and the function reference.</li>
 </ul>
 </div>
-<div id="bug-fixes" class="section level3">
+<div id="bug-fixes-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>We now skip RCurl from windows tests</li>
 </ul>
@@ -251,9 +269,9 @@
 <li>Added <code><a href="../reference/download_cloud_file.html">download_cloud_file()</a></code> to download files from cloud storage providers.</li>
 </ul>
 </div>
-<div id="improvements-4" class="section level3">
+<div id="improvements-5" class="section level3">
 <h3 class="hasAnchor">
-<a href="#improvements-4" class="anchor"></a>Improvements</h3>
+<a href="#improvements-5" class="anchor"></a>Improvements</h3>
 <ul>
 <li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li>
 </ul>
