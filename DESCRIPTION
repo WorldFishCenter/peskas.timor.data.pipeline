@@ -27,7 +27,7 @@ Imports:
     httr,
     jsonlite,
     logger,
-    lubridate, 
+    lubridate,
     magrittr,
     purrr,
     RCurl,
@@ -36,7 +36,8 @@ Imports:
     stringr,
     tibble,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
+    furrr
 Suggests: 
     covr,
     pkgdown,

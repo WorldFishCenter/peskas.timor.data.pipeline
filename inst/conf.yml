@@ -28,6 +28,9 @@ default:
       secret: !expr Sys.getenv('PDS_SECRET')
       file_prefix: pds-track
       compress: true
+      multisession:
+        parallel: true
+        n_sessions: 32
 
   metadata:
     airtable:

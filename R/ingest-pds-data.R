@@ -129,36 +129,47 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
-  for(i in trips_ID){
+  process_track <- function(id, pars){
 
-    # check if id is alredy in the bucket
-    file_exists <- i %in% file_list_id
+    path <- paste0(pars$pds$tracks$file_prefix, "-", id) %>%
+      add_version(extension = "csv")
+    on.exit(file.remove(path))
 
-    if (isFALSE(file_exists)){
+    logger::log_info("Downloading and merging id {id} with trips info...")
+    retrieve_pds_tracks_data(path,
+                             secret = pars$pds$trips$secret,
+                             token = pars$pds$trips$token,
+                             id = id)
+    logger::log_success("id {id} correctly downloaded and merged.")
 
-      path <- paste0(pars$pds$tracks$file_prefix, "-", i) %>%
-        add_version(extension = "csv")
-
-      logger::log_info("Downloading and merging id {i} with trips info...")
-      retrieve_pds_tracks_data(path,
-                               secret = pars$pds$trips$secret,
-                               token = pars$pds$trips$token,
-                               id = i)
-      logger::log_success("id {i} correctly downloaded and merged.")
-
-      logger::log_info("Uploading {path} to cloud...")
-      # Iterate over multiple storage providers if there are more than one
-      purrr::map(pars$pds_storage, ~ purrr::walk(
-        .x = path,
-        .f = ~ upload_tracks(
-          file = .,
-          provider = pars$pds_storage$google$key,
-          options = pars$pds_storage$google$options)))
-      logger::log_success("File upload succeded")
-
-      file.remove(path)
+    if (isTRUE(pars$pds$tracks$compress)) {
+      logger::log_info("Compressing file...")
+      csv_path <- path
+      path <- paste0(path, ".gz")
+      readr::read_csv(csv_path,
+                      col_types = readr::cols(.default = readr::col_character())) %>%
+        readr::write_csv(path)
+      on.exit(file.remove(csv_path, path))
     }
+
+    logger::log_info("Uploading {path} to cloud...")
+    # Iterate over multiple storage providers if there are more than one
+    purrr::map(pars$pds_storage, ~ purrr::walk(
+      .x = path,
+      .f = ~ upload_tracks(
+        file = .,
+        provider = pars$pds_storage$google$key,
+        options = pars$pds_storage$google$options)))
+    logger::log_success("File upload succeded")
+
   }
+
+  tracks_to_download <- trips_ID[!(trips_ID %in% file_list_id)]
+  if (isTRUE(pars$pds$tracks$multisession$parallel)) {
+    future::plan(future::multisession,
+                 workers = pars$pds$tracks$multisession$n_sessions)
+  }
+  furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
 }
 
 #' Upload tracks files

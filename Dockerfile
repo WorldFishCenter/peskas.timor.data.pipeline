@@ -20,7 +20,8 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang
+    rlang \
+    furrr
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
