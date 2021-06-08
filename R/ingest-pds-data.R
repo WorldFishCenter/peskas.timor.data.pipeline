@@ -119,18 +119,11 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     magrittr::extract2("Trip") %>%
     unique()
 
-  # autenticate
-  cloud_storage_authenticate("gcs", option=list(
-    service_account_key = pars$pds_storage$google$options$service_account_key,
-    bucket = pars$pds_storage$google$options$bucket))
-
   # list id tracks already in bucket
-  file_list_id <-
-    googleCloudStorageR::gcs_list_objects(
-      bucket = pars$pds_storage$google$options$bucket,
-      detail = "summary",
-      prefix = NULL,
-      delimiter = NULL)$name %>%
+  file_list_id <- cloud_object_name(prefix = pars$pds$tracks$file_prefix,
+                    provider = pars$pds_storage$google$key,
+                    extension = "csv",
+                    options = pars$pds_storage$google$options) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
