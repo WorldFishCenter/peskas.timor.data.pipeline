@@ -144,7 +144,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
                                id = i)
       logger::log_success("id {i} correctly downloaded and merged.")
 
-      logger::log_info("Uploading {merged_filename} to cloud...")
+      logger::log_info("Uploading {path} to cloud...")
       # Iterate over multiple storage providers if there are more than one
       purrr::map(pars$pds_storage, ~ purrr::walk(
         .x = path,
