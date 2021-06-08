@@ -50,7 +50,7 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$pds_storage, ~ upload_cloud_file(file_list, .$key, .$options))
+  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
 
   logger::log_success("File upload succeded")
 
