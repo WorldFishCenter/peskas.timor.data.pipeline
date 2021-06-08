@@ -70,10 +70,14 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
                                 end_date=NULL, overwrite = TRUE){
 
   request_url <- paste("https://analytics.pelagicdata.com/api",token,
-                       "v1/trips",start_date, end_date, "?deviceInfo=true", sep = "/")
+                       "v1/trips",start_date, end_date, sep = "/")
 
   httr::GET(url = request_url,
             config = httr::add_headers('X-API-SECRET' = secret),
+            query = list(
+              deviceInfo = TRUE,
+              withLastSeen = TRUE
+            ),
             httr::write_disk(path, overwrite = overwrite))
   path
 }
