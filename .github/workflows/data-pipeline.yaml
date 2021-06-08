@@ -103,7 +103,7 @@ jobs:
   ingest-pds-tracks:
     name: ingest_pds_tracks()
     needs: [ingest-pds-trips]
-    runs-on: macos-10.15 # Run on mac so it's faster (as it has three cores)
+    runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
