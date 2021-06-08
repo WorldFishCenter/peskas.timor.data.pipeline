@@ -133,33 +133,28 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     file_exists <- i %in% file_list_id
 
     if (isFALSE(file_exists)){
-      cloud_storage_authenticate(pars, option=list(
-        service_account_key = pars$pds_storage$google$options$service_account_key,
-        bucket = pars$pds_storage$google$options$bucket))
+
+      path <- paste0(pars$pds$tracks$file_prefix, "-", i) %>%
+        add_version(extension = "csv")
 
       logger::log_info("Downloading and merging id {i} with trips info...")
-      pds_tracks_mat <- get_pds_resp(data="tracks",
-                                     secret = pars$pds$trips$secret,
-                                     token = pars$pds$trips$token,
-                                     id=i)
-
-      merge_pds <- dplyr::bind_rows(dplyr::filter(pds_trips_mat, .data$Trip==i),pds_tracks_mat)
-
-      merged_filename <- paste(pars$pds$tracks$file_prefix, i,".csv",sep = "_")
-      readr::write_csv(x = merge_pds,file = merged_filename)
+      retrieve_pds_tracks_data(path,
+                               secret = pars$pds$trips$secret,
+                               token = pars$pds$trips$token,
+                               id = i)
       logger::log_success("id {i} correctly downloaded and merged.")
 
       logger::log_info("Uploading {merged_filename} to cloud...")
       # Iterate over multiple storage providers if there are more than one
       purrr::map(pars$pds_storage, ~ purrr::walk(
-        .x = merged_filename,
+        .x = path,
         .f = ~ upload_tracks(
           file = .,
           provider = pars$pds_storage$google$key,
           options = pars$pds_storage$google$options)))
       logger::log_success("File upload succeded")
 
-      file.remove(merged_filename)
+      file.remove(path)
     }
   }
 }
