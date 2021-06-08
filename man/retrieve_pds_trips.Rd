@@ -10,7 +10,6 @@ retrieve_pds_trips(
   token = NULL,
   start_date = "2018-07-01",
   end_date = Sys.Date(),
-  format = c("csv", "json"),
   append_version = TRUE
 )
 }
@@ -25,8 +24,6 @@ downloaded. Can be a path.}
 \item{start_date}{Start date from which download trips information}
 
 \item{end_date}{Last date to download trips information}
-
-\item{format}{Either "csv" or "json"}
 
 \item{append_version}{whether to append versioning information to the
 filename using \link{add_version}.}

@@ -57,7 +57,6 @@ get_pds_resp <- function(data, secret = NULL, token = NULL, id=NULL){
 #' @param token Access token for the account
 #' @param start_date Start date from which download trips information
 #' @param end_date Last date to download trips information
-#' @param format Either "csv" or "json"
 #' @param overwrite Will only overwrite existing path if TRUE.
 #'
 #' @return The file path
@@ -65,18 +64,16 @@ get_pds_resp <- function(data, secret = NULL, token = NULL, id=NULL){
 #'
 #' @examples
 #' retrieve_pds_trips_data("test.csv")
-#' retrieve_pds_trips_data("test.json", format = "json")
-#' file.remove("test.csv", "test.json")
+#' file.remove("test.csv")
 #'
 retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_date= NULL,
-                                end_date=NULL, format = "csv",overwrite = TRUE){
+                                end_date=NULL, overwrite = TRUE){
 
   request_url <- paste("https://analytics.pelagicdata.com/api",token,
                        "v1/trips",start_date, end_date, "?deviceInfo=true", sep = "/")
 
   httr::GET(url = request_url,
             config = httr::add_headers('X-API-SECRET' = secret),
-            query = list(format = format),
             httr::write_disk(path, overwrite = overwrite))
   path
 }
@@ -89,7 +86,6 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
 #' @param token
 #' @param start_date
 #' @param end_date
-#' @param format
 #' @param append_version whether to append versioning information to the
 #'   filename using [add_version].
 #' @inheritParams retrieve_pds_trips_data
@@ -109,37 +105,24 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
 #'                   end_date=Sys.Date())
 #' }
 retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date= "2018-07-01",
-                           end_date=Sys.Date(), format = c("csv", "json"),
+                           end_date=Sys.Date(),
                            append_version = TRUE){
 
   data_filename <- paste(prefix, sep = "_")
 
   if (isTRUE(append_version)) {
     csv_filename <- add_version(data_filename, "csv")
-    json_filename <- add_version(data_filename, "json")
   } else {
     csv_filename <- paste0(data_filename, ".csv")
-    json_filename <- paste0(data_filename, ".json")
   }
 
-  filenames <- character()
 
-  if ("csv" %in% format) {
-    logger::log_info("Downloading trips csv data as {csv_filename}...")
-    retrieve_pds_trips_data(csv_filename, secret, token,
-                        start_date, end_date, format = "csv")
-    logger::log_success("Trips csv data download succeeded")
-    filenames <- c(filenames, csv_filename)
-  }
+  logger::log_info("Downloading trips csv data as {csv_filename}...")
+  retrieve_pds_trips_data(csv_filename, secret, token,
+                          start_date, end_date)
+  logger::log_success("Trips csv data download succeeded")
 
-  if ("json" %in% format) {
-    logger::log_info("Downloading trips json data as {json_filename}...")
-    retrieve_pds_trips_data(json_filename, secret, token,
-                        start_date, end_date, format = "json")
-    logger::log_success("Trips json data download succeeded")
-    filenames <- c(filenames, json_filename)
-  }
-  filenames
+  csv_filename
 }
 
 

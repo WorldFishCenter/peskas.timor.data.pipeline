@@ -10,7 +10,6 @@ retrieve_pds_trips_data(
   token = NULL,
   start_date = NULL,
   end_date = NULL,
-  format = "csv",
   overwrite = TRUE
 )
 }
@@ -25,8 +24,6 @@ retrieve_pds_trips_data(
 
 \item{end_date}{Last date to download trips information}
 
-\item{format}{Either "csv" or "json"}
-
 \item{overwrite}{Will only overwrite existing path if TRUE.}
 }
 \value{
@@ -37,7 +34,6 @@ Download pelagic data system trips in as csv or json
 }
 \examples{
 retrieve_pds_trips_data("test.csv")
-retrieve_pds_trips_data("test.json", format = "json")
-file.remove("test.csv", "test.json")
+file.remove("test.csv")
 
 }
