@@ -169,6 +169,10 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
       bucket = options$bucket,
       prefix = prefix)
 
+    if (nrow(gcs_files) == 0) {
+      return(character(0))
+    }
+
     gcs_files_formatted <- gcs_files %>%
       tidyr::separate(col = .data$name,
                       into = c("base_name", "version", "ext"),
