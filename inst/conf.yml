@@ -27,6 +27,7 @@ default:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
       file_prefix: pds-track
+      compress: true
 
   metadata:
     airtable:

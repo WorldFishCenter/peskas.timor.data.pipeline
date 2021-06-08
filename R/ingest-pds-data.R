@@ -115,14 +115,16 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
   # extract unique trip identifiers
   trips_ID <- readr::read_csv(
     pds_trips_mat,
-    col_types = readr::cols(readr::col_character())) %>%
+    col_types = readr::cols_only(Trip = readr::col_character())) %>%
     magrittr::extract2("Trip") %>%
     unique()
+
+  if (isTRUE(pars$pds$tracks$compress)) ext <- "csv.gz" else ext <- "csv"
 
   # list id tracks already in bucket
   file_list_id <- cloud_object_name(prefix = pars$pds$tracks$file_prefix,
                     provider = pars$pds_storage$google$key,
-                    extension = "csv",
+                    extension = ext,
                     options = pars$pds_storage$google$options) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
