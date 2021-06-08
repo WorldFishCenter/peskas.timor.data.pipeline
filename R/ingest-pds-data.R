@@ -101,10 +101,16 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 
   pars <- read_config()
 
+  pds_trips_csv <-
+    cloud_object_name(prefix = pars$pds$trips$file_prefix,
+                      provider = pars$pds_storage$google$key,
+                      extension = "csv",
+                      options = pars$storage$google$options)
+  logger::log_info("Retrieving {landings_csv}")
   # get trips data frame
-  pds_trips_mat <- get_pds_resp(data="trips",
-                                secret = pars$pds$trips$secret,
-                                token = pars$pds$trips$token)
+  pds_trips_mat <- download_cloud_file(name = pds_trips_csv,
+                                       provider = pars$storage$google$key,
+                                       options = pars$storage$google$options)
 
   # extract unique trip identifiers
   trips_ID <- unique(pds_trips_mat$Trip)
