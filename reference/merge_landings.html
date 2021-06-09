@@ -73,7 +73,7 @@ merge in a rds-format file using the function dplyr::full_join." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.10.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.10.1</span>
       </span>
     </div>
 
@@ -136,9 +136,17 @@ details</p></td>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The merged file is then uploaded to the cloud. The parameters needed are:</p><pre>surveys:
+  landings:
+    file_prefix:
+    version:
+      preprocess:
+  landings_legacy:
+    file_prefix:
+    version:
+      preprocess:
   merged_landings:
     file_prefix:
-  version:
+    version:
 storage:
   storage_name:
     key:
