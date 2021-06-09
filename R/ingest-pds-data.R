@@ -156,7 +156,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     # Iterate over multiple storage providers if there are more than one
     purrr::map(pars$pds_storage, ~ purrr::walk(
       .x = path,
-      .f = ~ upload_tracks(
+      .f = ~ insistent_upload_cloud_file(
         file = .,
         provider = pars$pds_storage$google$key,
         options = pars$pds_storage$google$options)))
@@ -172,18 +172,20 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
   furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
 }
 
-#' Upload tracks files
+#' Insistent version of `upload_cloud_file()`
 #'
-#' This function takes a vector of tracks files as argument and upload them to
-#' the cloud. The function uses [purrr::insistently] in order to continue to
-#' upload files despite stale OAuth token.
+#' Just like `upload_cloud_file()`, this function takes a vector of tracks files
+#' as argument and upload them to the cloud. The function uses
+#' [purrr::insistently] in order to continue to upload files despite stale OAuth
+#' token.
 #'
 #' @param delay he time interval to suspend execution for, in seconds.
+#' @param ... Inputs to `upload_cloud_file()`
 #'
 #' @return No output. This function is used for it's side effects
 #' @export
 #'
-upload_tracks <- function(..., delay = 3){
+insistent_upload_cloud_file <- function(..., delay = 3){
   purrr::insistently(upload_cloud_file,
                      rate = purrr::rate_backoff(
                        pause_cap = 60*5,

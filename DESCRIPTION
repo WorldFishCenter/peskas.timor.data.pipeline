@@ -37,7 +37,8 @@ Imports:
     tibble,
     tidyr,
     rlang (>= 0.1.2),
-    furrr
+    furrr, 
+    future
 Suggests: 
     covr,
     pkgdown,
