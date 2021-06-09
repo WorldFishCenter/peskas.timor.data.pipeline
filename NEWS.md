@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.10.1
+
+## Bug fixes
+
+- Fixed the bug in survey retrieve process. Integrating a server response status check in `retrieve_survey_data()`
+
 # peskas.timor.data.pipeline 0.10.0
 
 ## New features
