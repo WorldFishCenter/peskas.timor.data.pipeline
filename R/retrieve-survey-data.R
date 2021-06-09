@@ -69,12 +69,14 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
   request_url <- paste(get_host_url(api),
                        "data", as.character(id), sep = "/")
 
+  resp <-
   httr::GET(url = request_url,
             config = httr::add_headers(Authorization = token),
             query = list(format = format),
             httr::write_disk(path, overwrite = overwrite))
 
-  path
+  if(resp$status_code %in% 200:299){path}
+  else{stop("Unsuccessful response from server")}
 }
 
 #' Download survey metadata
