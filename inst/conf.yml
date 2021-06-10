@@ -18,6 +18,19 @@ default:
     merged_landings:
       file_prefix: timor-landings-merged
       version: latest
+  pds:
+    trips:
+      token: !expr Sys.getenv('PDS_TOKEN')
+      secret: !expr Sys.getenv('PDS_SECRET')
+      file_prefix: pds-trips
+    tracks:
+      token: !expr Sys.getenv('PDS_TOKEN')
+      secret: !expr Sys.getenv('PDS_SECRET')
+      file_prefix: pds-track
+      compress: true
+      multisession:
+        parallel: true
+        n_sessions: 32
 
   metadata:
     airtable:
@@ -51,11 +64,23 @@ default:
         bucket: timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
+  pds_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: pds-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
 production:
   storage:
     google:
       options:
         bucket: timor
+  pds_storage:
+    google:
+      options:
+        bucket: pds-timor
   validation:
     airtable:
       tables:
@@ -76,7 +101,20 @@ local:
   validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
+  pds:
+    trips:
+      token: !expr readLines("auth/pds-token")
+      secret: !expr readLines("auth/pds-secret")
+    tracks:
+      token: !expr readLines("auth/pds-token")
+      secret: !expr readLines("auth/pds-secret")
   storage:
     google:
       options:
         service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+  pds_storage:
+    google:
+      options:
+        service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+
+
