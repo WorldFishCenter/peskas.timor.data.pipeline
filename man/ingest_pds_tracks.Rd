@@ -15,12 +15,11 @@ details}
 No output. This funcrion is used for it's side effects
 }
 \description{
-This function read Pelagic Data System (pds) tracks data, merge tracks with
-trips information by each id, then uploads the merged file to cloud storage
-services as a csv data frame.
+Downloads Pelagic Data System (pds) trips information and uploads it to cloud
+storage services.
 }
 \details{
-The function  downloads and uploads only the tracks data that are not yet
+The function  downloads and uploads only tracks data that are not yet
 stored in the bucket.
 
 The parameters needed in \code{conf.yml} are:\preformatted{pds:

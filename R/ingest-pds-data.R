@@ -58,11 +58,10 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG){
 
 #' Ingest Pelagic Data System tracks data
 #'
-#' This function read Pelagic Data System (pds) tracks data, merge tracks with
-#' trips information by each id, then uploads the merged file to cloud storage
-#' services as a csv data frame.
+#' Downloads Pelagic Data System (pds) trips information and uploads it to cloud
+#' storage services.
 #'
-#' The function  downloads and uploads only the tracks data that are not yet
+#' The function  downloads and uploads only tracks data that are not yet
 #' stored in the bucket.
 #'
 #' The parameters needed in `conf.yml` are:
@@ -135,12 +134,10 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       add_version(extension = "csv")
     on.exit(file.remove(path))
 
-    logger::log_info("Downloading and merging id {id} with trips info...")
     retrieve_pds_tracks_data(path,
                              secret = pars$pds$trips$secret,
                              token = pars$pds$trips$token,
                              id = id)
-    logger::log_success("id {id} correctly downloaded and merged.")
 
     if (isTRUE(pars$pds$tracks$compress)) {
       logger::log_info("Compressing file...")
