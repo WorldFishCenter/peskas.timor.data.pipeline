@@ -193,3 +193,58 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
   filenames
 
 }
+
+# Convert a Kobo survey in json format to a csv format that respects the
+# conventions from the data that could have been downloaded using the csv
+# request in the API v1
+survey_json_to_csv <- function(json_path, csv_path) {
+  survey <- jsonlite::read_json(json_path)
+  survey_df <- purrr::map_dfr(survey, flatten_row)
+  readr::write_csv(survey_df, csv_path)
+  csv_path
+}
+
+flatten_row <- function(x){
+  x %>%
+    # Each row is composed of several fields
+    purrr::imap(flatten_field) %>%
+    rlang::squash(.) %>%
+    tibble::as_tibble()
+}
+
+flatten_field <- function(x, p){
+  # If the field is a simple vector do nothing but if the field is a list we
+  # need more logic
+  if (class(x) == "list") {
+    if (length(x) > 0) {
+      if (purrr::vec_depth(x) == 2) {
+        # If the field-list has named elements is we just need to rename the list
+        x <- list(x) %>% rlang::set_names(p) %>% unlist() %>% as.list()
+      } else {
+        # If the field-list is an "array" we need to iterate over its children
+        x <- purrr::imap(x, rename_child, p = p)
+      }
+    }
+  } else {
+    if (is.null(x)) x <- NA
+  }
+  x
+}
+
+# Appends parent name or number to element
+rename_child <- function(x, i, p){
+  if (length(x) == 0) {
+    if (is.null(x)) x <- NA
+    x <- list(x)
+    x <- rlang::set_names(x, paste(p, i - 1, sep = "."))
+  } else {
+    if (class(i) == "character") {
+      x <-  rlang::set_names(x, paste(p, i, sep = "."))
+    } else if (class(i) == "integer") {
+      x <-  rlang::set_names(x, paste(p, i - 1, names(x), sep = "."))
+    }
+  }
+  x
+}
+
+
