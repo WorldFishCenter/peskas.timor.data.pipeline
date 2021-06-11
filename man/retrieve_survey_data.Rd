@@ -2,14 +2,13 @@
 % Please edit documentation in R/retrieve-survey-data.R
 \name{retrieve_survey_data}
 \alias{retrieve_survey_data}
-\title{Download kobo data in as csv or json}
+\title{Download kobo data in as json using the v2 API}
 \usage{
 retrieve_survey_data(
   path,
   id = NULL,
   token = NULL,
   api = "kobohr",
-  format = "csv",
   overwrite = TRUE
 )
 }
@@ -30,20 +29,17 @@ are made available for KoBo Toolbox ("kobo",
 other installations using the same API but accessed at a different URL,
 enter the full URL.}
 
-\item{format}{Either "csv" or "json"}
-
 \item{overwrite}{Will only overwrite existing path if TRUE.}
 }
 \value{
 The file path
 }
 \description{
-Download kobo data in as csv or json
+Download kobo data in as json using the v2 API
 }
 \examples{
 
-retrieve_survey_data("test.csv", id = 753491)
-retrieve_survey_data("test.json", id = 753491, format = "json")
-file.remove("test.csv", "test.json")
+retrieve_survey_data("test.json", id = 753491)
+file.remove("test.json")
 
 }

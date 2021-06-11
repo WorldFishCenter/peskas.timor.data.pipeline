@@ -40,7 +40,7 @@ get_host_url <- function(api, version = "v1") {
   }
 }
 
-#' Download kobo data in as csv or json
+#' Download kobo data in as json using the v2 API
 #'
 #' @param path string with path to file where API request should be saved
 #' @param id survey id. Usually a 6 digit number. See [this support
@@ -48,8 +48,8 @@ get_host_url <- function(api, version = "v1") {
 #'   an example on how this can be obtained
 #' @param token access token for the account e.g. "Token XXXXXXX"
 #' @param api
-#' @param format Either "csv" or "json"
 #' @param overwrite Will only overwrite existing path if TRUE.
+
 #'
 #' @inheritParams get_host_url
 #'
@@ -58,25 +58,56 @@ get_host_url <- function(api, version = "v1") {
 #'
 #' @examples
 #'
-#' retrieve_survey_data("test.csv", id = 753491)
-#' retrieve_survey_data("test.json", id = 753491, format = "json")
-#' file.remove("test.csv", "test.json")
+#' retrieve_survey_data("test.json", id = 753491)
+#' file.remove("test.json")
 #'
 retrieve_survey_data <- function(path, id = NULL, token = NULL,
-                               api = "kobohr", format = "csv",
+                               api = "kobohr",
                                overwrite = TRUE){
 
-  request_url <- paste(get_host_url(api),
-                       "data", as.character(id), sep = "/")
+  api_limit <- 30000
 
-  resp <-
-  httr::GET(url = request_url,
-            config = httr::add_headers(Authorization = token),
-            query = list(format = format),
-            httr::write_disk(path, overwrite = overwrite))
+  id_string <- retrieve_basic_survey_metadata(id, token, api)$id_string
+  request_url <- paste(get_host_url(api, "v2"),
+                       "assets", id_string, "data", sep = "/")
 
-  if(resp$status_code %in% 200:299){path}
-  else{stop("Unsuccessful response from server")}
+  # Function to get a page of survey
+  retrieve_survey_page <- function(start = 0){
+    resp <- httr::GET(url = request_url,
+                      config = httr::add_headers(Authorization = token),
+                      query = list(start = start,
+                                   limit = 30000))
+
+    if (!(resp$status_code %in% 200:299))
+      stop("Unsuccessful response from server")
+
+    resp
+  }
+
+  first_page <- retrieve_survey_page() %>%
+    httr::content()
+
+  # If there are more pages
+  if (first_page$count >= api_limit) {
+    batch_start <- seq(api_limit, first_page$count, by = api_limit)
+    other_results <- purrr::map(batch_start, retrieve_survey_page) %>%
+      purrr::map(httr::content) %>%
+      purrr::map(magrittr::extract2, "results")
+
+    other_results <- purrr::lift_dl(c)(other_results)
+    results <- c(first_page$results, other_results)
+  } else {
+    results <- first_page$results
+  }
+
+  # Check that submissions are unique in case there is overlap in the pagination
+  if (dplyr::n_distinct(purrr::map_dbl(results, ~ .$`_id`)) != length(results)) {
+    stop("Number of submission ids not the same as number of records")
+  }
+
+  jsonlite::write_json(results, path, auto_unbox = TRUE)
+  path
+
 }
 
 #' Download survey metadata
@@ -137,7 +168,7 @@ retrieve_basic_survey_metadata <- function(id, token, api){
 #' @param api
 #' @param id
 #' @param token
-#' @param format
+#' @param format Either "csv" or "json"
 #' @param metadata whether to download metadata as well as data
 #' @param append_version whether to append versioning information to the
 #'   filename using [add_version].
@@ -182,18 +213,21 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
     filenames <- c(filenames, metadata_filename)
   }
 
+  logger::log_info("Downloading survey json data as {json_filename}...")
+  retrieve_survey_data(json_filename, id, token, api )
+  logger::log_success("Survey json data download succeeded")
+
   if ("csv" %in% format) {
-    logger::log_info("Downloading survey csv data as {csv_filename}...")
-    retrieve_survey_data(path = csv_filename, id, token, format = "csv")
-    logger::log_success("Survey csv data download succeeded")
+    logger::log_info("Converting json data to CSV as {csv_filename}...")
+    survey_json_to_csv(json_filename, csv_filename)
     filenames <- c(filenames, csv_filename)
   }
 
   if ("json" %in% format) {
-    logger::log_info("Downloading survey json data as {json_filename}...")
-    retrieve_survey_data(json_filename, id, token, format = "json")
-    logger::log_success("Survey json data download succeeded")
     filenames <- c(filenames, json_filename)
+  } else {
+    logger::log_info("Removing temporary json {json_filename}...")
+    file.remove(json_filename)
   }
 
   filenames
