@@ -38,8 +38,8 @@ The file path
 Download kobo data in as json using the v2 API
 }
 \examples{
-
-retrieve_survey_data("test.json", id = 753491)
+\dontrun{
+retrieve_survey_data("test.json", id = 753491, token = "XXX")
 file.remove("test.json")
-
+}
 }

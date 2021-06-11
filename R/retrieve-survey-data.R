@@ -57,10 +57,10 @@ get_host_url <- function(api, version = "v1") {
 #' @export
 #'
 #' @examples
-#'
-#' retrieve_survey_data("test.json", id = 753491)
+#' \dontrun{
+#' retrieve_survey_data("test.json", id = 753491, token = "XXX")
 #' file.remove("test.json")
-#'
+#' }
 retrieve_survey_data <- function(path, id = NULL, token = NULL,
                                api = "kobohr",
                                overwrite = TRUE){
