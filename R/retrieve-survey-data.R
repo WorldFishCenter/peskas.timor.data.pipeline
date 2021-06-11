@@ -104,12 +104,7 @@ retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
     stop("Token is required")
   }
 
-  assets_v1_raw <- httr::GET(
-    url = paste(get_host_url(api, version = "v1"), "data", sep = "/"),
-    config = httr::add_headers(Authorization = token))
-
-  survey_basic_metadata <- purrr::keep(httr::content(assets_v1_raw),
-                                       ~.$id == id)[[1]]
+  survey_basic_metadata <- retrieve_basic_survey_metadata(id, token, api)
 
   # the version 2 of the api returns much richer information about the surveys
   httr::GET(
@@ -118,6 +113,17 @@ retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
     config = httr::add_headers(Authorization = token)) %>%
     httr::content() %>%
     c(survey_basic_metadata)
+}
+
+# Help function to retrieve basic metadata from the v1 api - Same params as in
+# retrieve_survey_metadata
+retrieve_basic_survey_metadata <- function(id, token, api){
+
+   assets_v1_raw <- httr::GET(
+    url = paste(get_host_url(api, version = "v1"), "data", sep = "/"),
+    config = httr::add_headers(Authorization = token))
+
+   purrr::keep(httr::content(assets_v1_raw), ~.$id == id)[[1]]
 }
 
 
