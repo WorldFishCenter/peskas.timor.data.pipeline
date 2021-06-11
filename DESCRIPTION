@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 0.8.0
+Version: 0.11.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
@@ -27,7 +27,7 @@ Imports:
     httr,
     jsonlite,
     logger,
-    lubridate, 
+    lubridate,
     magrittr,
     purrr,
     RCurl,
@@ -36,14 +36,18 @@ Imports:
     stringr,
     tibble,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
+    furrr, 
+    future
 Suggests: 
     covr,
     pkgdown,
     remotes,
     sessioninfo,
     testthat,
-    roxygen2
+    roxygen2,
+    tidyselect,
+    textclean
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

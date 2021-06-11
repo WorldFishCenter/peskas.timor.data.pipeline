@@ -167,8 +167,11 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
 
     gcs_files <- googleCloudStorageR::gcs_list_objects(
       bucket = options$bucket,
-      detail = "more",
       prefix = prefix)
+
+    if (nrow(gcs_files) == 0) {
+      return(character(0))
+    }
 
     gcs_files_formatted <- gcs_files %>%
       tidyr::separate(col = .data$name,
@@ -188,7 +191,7 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
 
     if (version == "latest") {
       selected_rows <- selected_rows %>%
-        dplyr::filter(max(.data$timeCreated) == .data$timeCreated)
+        dplyr::filter(max(.data$updated) == .data$updated)
 
     } else {
       selected_rows <- selected_rows %>%

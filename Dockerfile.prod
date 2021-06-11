@@ -33,7 +33,9 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang
+    rlang \
+    furrr \
+    future
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -42,7 +44,9 @@ RUN install2.r --error --skipinstalled \
     remotes \
     sessioninfo \
     testthat \
-    roxygen2
+    roxygen2 \
+    tidyselect \
+    textclean
 
 # Install local package
 COPY . /home

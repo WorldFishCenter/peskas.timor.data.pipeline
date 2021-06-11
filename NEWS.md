@@ -1,3 +1,46 @@
+# peskas.timor.data.pipeline 0.11.0
+
+## New features
+
+- Added `retrieve_pds_trips_data()`, `retrieve_pds_trips()`,  `retrieve_pds_tracks_data()` and `retrieve_pds_tracks()` to 
+download trips and tracks from Pelagic Data System API. 
+- Added function `get_pds_res()` to convert Pelagic Data System API responses to data frames and merge trips and tracks data in a unique file.
+- Added `ingest_pds_trips()` and `ingest_pds_tracks()` to upload Pelagic Data System data into cloud.
+- Created a new bucket (pds-timor-dev) to store pds data.
+
+## Bug fixes
+
+- `cloud_object_name()` returns an empty vector when the bucket is empty
+
+# peskas.timor.data.pipeline 0.10.1
+
+## Bug fixes
+
+- Fixed the bug in survey retrieve process. Integrating a server response status check in `retrieve_survey_data()`
+
+# peskas.timor.data.pipeline 0.10.0
+
+## New features
+
+- Added `merge_landings()` to merge and upload pre-processed recent and legacy landings data.
+
+# peskas.timor.data.pipeline 0.9.1
+
+## Improvements
+
+- Simplified jobs in the pipeline workflow
+
+## Bug fixes
+
+- Fixed workflow so that runs that are supposed to run in production actually do so
+
+# peskas.timor.data.pipeline 0.9.0
+
+## New features
+
+- Added `clean_catches()`, `coalist()` and `clean_legacy_landings()` to restructure legacy landings to recent landings.
+- Added `preprocess_legacy_landings()` to clean and ingest preprocessed legacy data.
+
 # peskas.timor.data.pipeline 0.8.0
 
 ## New features

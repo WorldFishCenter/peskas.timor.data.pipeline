@@ -22,17 +22,24 @@ reference:
   contents:
   - matches("air")
 
-- title: Survey
+- title: Data
+- subtitle: Survey
   desc: Functions that help retrieving survey data
 - contents:
   - matches("survey")
   - get_host_url
+- subtitle: PDS
+  desc: Functions that help retrieving Pelagic Data System data
+- contents:
+  - matches("pds")
 
 - title: Helper functions
 - subtitle: Data preprocessing
   contents:
   - matches("nest")
   - matches("pt_validate")
+  - matches("clean")
+  - coalist
 - subtitle: Utils
   contents:
   - read_config

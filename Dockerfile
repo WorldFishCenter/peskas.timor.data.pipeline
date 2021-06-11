@@ -20,7 +20,9 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang
+    rlang \
+    furrr \
+    future
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -29,7 +31,9 @@ RUN install2.r --error --skipinstalled \
     remotes \
     sessioninfo \
     testthat \
-    roxygen2
+    roxygen2 \
+    tidyselect \
+    textclean
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

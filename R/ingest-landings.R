@@ -54,7 +54,6 @@ ingest_landings <- function(log_threshold = logger::DEBUG){
   # Iterate over multiple storage providers if there are more than one
   purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
   logger::log_success("File upload succeded")
-
 }
 
 #' Ingest legacy Landings Survey data
@@ -109,10 +108,8 @@ ingest_legacy_landings <- function(log_threshold = logger::DEBUG){
                                id = pars$surveys$landings_legacy$survey_id,
                                token = pars$surveys$landings_legacy$token)
 
-  logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
-
+    logger::log_info("Uploading files to cloud...")
+    # Iterate over multiple storage providers if there are more than one
+    purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
+    logger::log_success("File upload succeded")
 }
-
