@@ -134,6 +134,20 @@ get_preprocessed_landings <- function(pars){
   readr::read_rds(file = landings_rds)
 }
 
+get_merged_landings <- function(pars){
+  landings_rds <- cloud_object_name(
+    prefix = paste(pars$surveys$merged_landings$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$surveys$merged_landings$version,
+    options = pars$storage$google$options)
+  logger::log_info("Downloading {landings_rds}...")
+  download_cloud_file(name = landings_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = landings_rds)
+}
+
 get_preprocessed_metadata <- function(pars){
   metadata_rds <- cloud_object_name(
     prefix = paste(pars$metadata$airtable$name, 'preprocessed', sep = "_"),

@@ -1,0 +1,133 @@
+
+# Get a vector with imeis deployed in the field
+get_deployed_imeis <- function(metadata){
+  metadata$devices %>%
+    dplyr::right_join(metadata$device_installs,
+                      by = c("id" = "device_imei")) %>%
+    dplyr::filter(!is.na(.data$device_imei)) %>%
+    magrittr::extract2("device_imei")
+}
+
+# Perform tests for a single imei and return the corrected value and the flag
+validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
+
+  this_id <- as.integer(this_id)
+
+  # If imei is NA there is nothing to validate
+  if (is.na(this_imei)) {
+    out <- list(imei = NA_character_, alert_number = NA_integer_, submission_id = this_id)
+    return(out)
+  }
+
+  # Zero seems to be used for no IMEI as well
+  if (this_imei == "0") {
+    out <- list(imei = NA_character_, alert_number = NA_integer_, submission_id = this_id)
+    return(out)
+  }
+
+  # If the IMEI is negative it was probably a typo
+  this_imei <- as.numeric(this_imei)
+  if (this_imei < 0) this_imei <- this_imei * -1
+
+  # Optimistically we need at least 5 digits to work with and that might be
+  if (this_imei < 9999) {
+    out <- list(imei = NA_character_, alert_number = 1, submission_id = this_id)
+    return(out)
+  }
+
+  # If a valid IMEI is found replace it
+  imei_regex <- paste0(as.character(this_imei), "$")
+  imei_matches <- stringr::str_detect(valid_imeis, imei_regex)
+  n_matches <- sum(imei_matches)
+  if (n_matches == 1) {
+    list(imei = valid_imeis[imei_matches], alert_number = NA_integer_, submission_id = this_id)
+  } else if (n_matches > 1) {
+    list(imei = NA_character_, alert_number = 2, submission_id = this_id)
+  } else if (n_matches == 0) {
+    list(imei = NA_character_, alert_number = 3, submission_id = this_id)
+  }
+}
+
+
+#' Validate surveys' temporal info
+#'
+#' This function takes a preprocessed landings' matrix and validate temporal
+#' info associated to each survey.
+#'
+#' @param data A preprocessed data frame
+#' @param hrs Limit of trip duration in hours to be considered a standard
+#' catch session.
+#'
+#' @return A list containing data frames with validated catch dates and
+#' catch duration.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   pars <- read_config()
+#'   landings <- get_merged_landings(pars)
+#'   validate_surveys_time(landings,hrs =18)
+#' }
+validate_surveys_time <- function(data, hrs =18){
+
+  validated_time <- list(
+
+    validated_dates = landings %>%
+      dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
+      dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
+      dplyr::transmute(date=dplyr::case_when(.$date > .$`_submission_time` ~ NA_character_,TRUE ~ .$date),#test if submission date is prior catch date
+                       alert_number=dplyr::case_when(.$date > .$`_submission_time` ~ 4,TRUE ~ NA_real_),
+                       submission_id=as.integer(.$`_id`)),
+
+    validated_duration = landings %>%
+      dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
+      dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
+      dplyr::transmute(trip_duration=dplyr::case_when(.$`trip_group/duration` >  hrs ~ NA_real_ ,TRUE ~ .$`trip_group/duration`),#test if catch duration is longer than n hours
+                       alert_number=dplyr::case_when(.$`trip_group/duration` >  hrs ~ 5 ,TRUE ~ NA_real_),
+                       submission_id=as.integer(.$`_id`))
+  )
+  validated_time
+}
+
+#' Validate surveys' total catch values
+#'
+#' This function takes a preprocessed landings' matrix and uses univariate
+#' techniques (see [univOutl::LocScaleB]) for the identification of outliers in
+#' the distribution of the total catch values associated to surveys. By default
+#' the function uses the method of the median absolute deviation (MAD) for
+#' outliers identification.
+#'
+#' @param data A preprocessed data frame
+#' @inheritParams univOutl::LocScaleB
+#'
+#' @return A data frame containing validated catch values.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   pars <- read_config()
+#'   landings <- get_merged_landings(pars)
+#'   validate_catch_value(landings,method="MAD",k=13)
+#' }
+#'
+validate_catch_value <- function(data,method="MAD",k=13){
+
+  # extract lower and upper bounds for outliers identification
+  bounds <-
+    landings %>% dplyr::select(`_id`,total_catch_value,species_group) %>%
+    dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
+    .$total_catch_value %>%
+    univOutl::LocScaleB(method=method,k=k) %>%
+    magrittr::extract2(2)
+
+  validated_price = landings %>%
+    dplyr::select(`_id`,total_catch_value,species_group) %>%
+    dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
+    dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 ~ NA_real_, TRUE ~ .$total_catch_value,
+                                                        .$total_catch_value > bounds[2] ~ NA_real_, TRUE ~ .$total_catch_value),
+                     alert_number=dplyr::case_when(.$total_catch_value < 0 ~ 6,TRUE ~ NA_real_),
+                     alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 7,TRUE ~ NA_real_),
+                     submission_id=as.integer(.$`_id`))
+
+  validated_price
+}
