@@ -22,7 +22,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
-  landings <- get_preprocessed_landings(pars)
+  landings <- get_merged_landings(pars)
 
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
