@@ -83,7 +83,8 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
       config = httr::add_headers(Authorization = token),
       query = list(start = start,
                    limit = api_limit),
-      times = 8)
+      times = 12,
+      pause_cap = 180)
 
     if (!(resp$status_code %in% 200:299))
       stop("Unsuccessful response from server")
