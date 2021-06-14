@@ -67,9 +67,10 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 
   api_limit <- 30000
 
-  id_string <- retrieve_basic_survey_metadata(id, token, api)$id_string
-  request_url <- paste(get_host_url(api, "v2"),
-                       "assets", id_string, "data", sep = "/")
+  request_url <- paste(get_host_url(api, "v1"),
+                       "data", id, sep = "/")
+
+  message(request_url)
 
   # Function to get a page of survey
   retrieve_survey_page <- function(start = 0){
@@ -81,23 +82,23 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
     if (!(resp$status_code %in% 200:299))
       stop("Unsuccessful response from server")
 
-    resp
+    content <- httr::content(resp)
+    if ("results" %in% names(content)) content <- content$results
+    content
   }
 
-  first_page <- retrieve_survey_page() %>%
-    httr::content()
+  results <- list()
+  get_next <- TRUE
+  start <- 0
 
-  # If there are more pages
-  if (first_page$count >= api_limit) {
-    batch_start <- seq(api_limit, first_page$count, by = api_limit)
-    other_results <- purrr::map(batch_start, retrieve_survey_page) %>%
-      purrr::map(httr::content) %>%
-      purrr::map(magrittr::extract2, "results")
-
-    other_results <- purrr::lift_dl(c)(other_results)
-    results <- c(first_page$results, other_results)
-  } else {
-    results <- first_page$results
+  while (get_next) {
+    this_page <- retrieve_survey_page(start)
+    results <- c(results, this_page)
+    if (length(this_page) < api_limit) {
+      get_next <- FALSE
+    } else {
+      start <- start + api_limit
+    }
   }
 
   # Check that submissions are unique in case there is overlap in the pagination
