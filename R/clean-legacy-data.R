@@ -256,7 +256,7 @@ clean_legacy_landings <- function(x){
 
   # select common vars to SFF and peskas landings
   common_cols_table <- x %>% dplyr::select(
-    c("__version__","_bamboo_dataset_id","_geolocation.0","_geolocation.1","_id",
+    c("__version__","_bamboo_dataset_id","_id",
       "_status","_submission_time","_submitted_by","_uuid","_validation_status.by_whom",
       "_validation_status.color","_validation_status.label","_validation_status.timestamp",
       "_validation_status.uid","_version_","_version__001","_xform_id_string","deviceid",
@@ -265,8 +265,11 @@ clean_legacy_landings <- function(x){
   # select and rename some SFF vars
   renamed_cols_table <- x %>% dplyr::select(c("Ita_kolecta_dadus_husi_activid","Site_name","No_boats",
                                               "TOTAL_folin_ikan_hamutuk","Ema_hira_halo_actividade_peska",
-                                              "Tanba_sa_la_iha_atividade_peska_ohin","group_ob8uk86/TOTAL_ORAS_VIAGEM_PESKA")) %>%
-    dplyr::rename("Ita_koleta_dadus_husi_atividad" = "Ita_kolecta_dadus_husi_activid",
+                                              "Tanba_sa_la_iha_atividade_peska_ohin","group_ob8uk86/TOTAL_ORAS_VIAGEM_PESKA",
+                                              "_geolocation1", "_geolocation2")) %>%
+    dplyr::rename("_geolocation.0" = "_geolocation1",
+                  "_geolocation.1" = "_geolocation2",
+                  "Ita_koleta_dadus_husi_atividad" = "Ita_kolecta_dadus_husi_activid",
                   "landing_site_name"="Site_name",
                   "no_boats"="No_boats",
                   "total_catch_value"="TOTAL_folin_ikan_hamutuk",
