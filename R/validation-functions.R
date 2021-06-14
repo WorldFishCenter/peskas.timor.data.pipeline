@@ -125,9 +125,76 @@ validate_catch_value <- function(data,method="MAD",k=13){
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
     dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 ~ NA_real_, TRUE ~ .$total_catch_value,
                                                         .$total_catch_value > bounds[2] ~ NA_real_, TRUE ~ .$total_catch_value),
-                     alert_number=dplyr::case_when(.$total_catch_value < 0 ~ 6,TRUE ~ NA_real_),
-                     alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 7,TRUE ~ NA_real_),
+                     alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 6,TRUE ~ NA_real_),
                      submission_id=as.integer(.$`_id`))
 
   validated_price
+}
+
+
+# Validate and replace catches length and n° individuals
+validate_length <- function(data,method="MAD",k=13){
+
+  catches_dat_unnested <-  landings %>%
+    dplyr::select(`_id`,species_group) %>%
+    tidyr::unnest(.,species_group) %>%
+    tidyr::unnest(.,length_individuals) %>%
+    dplyr::select(`_id`,n,species,mean_length,n_individuals) %>%
+    dplyr::mutate(dplyr::across(c(mean_length,n_individuals),.fns = as.numeric))
+
+  length_dat <- NULL
+  individuals_dat <- NULL
+  for(i in unique(catches_dat_unnested$species)){
+
+    if(i %in% c("0","300")){next}
+    else{
+      spe_code <- i
+      limits_length <-
+        dplyr::filter(catches_dat_unnested,species %in% i & n_individuals>0)  %>%
+        .$mean_length %>%
+        univOutl::LocScaleB(method=method,k=k) %>%
+        magrittr::extract2(2) %>%t() %>%
+        dplyr::as_tibble() %>%
+        dplyr::rename(length_low=lower.low,length_up=upper.up) %>%
+        dplyr::mutate(species=i,length_low=case_when(length_low<=0~0,TRUE~length_low))
+
+      limits_individuals <-
+        dplyr::filter(catches_dat_unnested,species %in% i & n_individuals>0)  %>%
+        .$n_individuals %>%
+        univOutl::LocScaleB(method=method,k=k) %>%
+        magrittr::extract2(2) %>% t() %>%
+        dplyr::as_tibble() %>%
+        dplyr::rename(inds_low=lower.low,inds_up=upper.up) %>%
+        dplyr:: mutate(species=i,inds_low=case_when(inds_low<=0~0,TRUE~inds_low))
+
+    }
+    length_dat <- rbind(length_dat,limits_length)
+    individuals_dat <- rbind(individuals_dat,limits_individuals)
+  }
+
+  limits <- dplyr::full_join(length_dat,individuals_dat) %>%
+    dplyr::select(species,tidyr::everything())
+
+  validated_length <-
+    dplyr::left_join(catches_dat_unnested,limits) %>%
+    dplyr::transmute(n_individuals=
+                       dplyr::case_when(.$n_individuals < 0 ~ .$n_individuals * -1,
+                                        .$n_individuals > 0 & .$n_individuals < .$inds_low ~ NA_real_,
+                                        .$n_individuals > .$inds_up ~ NA_real_,
+                                        .$n_individuals >0 & .$mean_length < .$length_low |
+                                          .$n_individuals >0 & .$mean_length > .$length_up ~ NA_real_,
+                                        TRUE ~ .$n_individuals),
+                     alert_number=
+                       dplyr::case_when(.$n_individuals > 0 & .$n_individuals < .$inds_low |
+                                          .$n_individuals > .$inds_up |
+                                          .$n_individuals >0 & .$mean_length < .$length_low |
+                                          .$n_individuals >0 & .$mean_length > .$length_up ~ 7,
+                                        TRUE ~ NA_real_),
+                     mean_length=.$mean_length,
+                     submission_id=as.integer(.$`_id`),
+                     n=.$n,
+                     species=.$species) %>%
+    dplyr::select(submission_id,n,species,mean_length,n_individuals,alert_number)
+
+  validated_length
 }
