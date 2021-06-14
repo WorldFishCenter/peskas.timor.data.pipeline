@@ -255,7 +255,7 @@ flatten_row <- function(x){
   x %>%
     # Each row is composed of several fields
     purrr::imap(flatten_field) %>%
-    rlang::squash(.) %>%
+    rlang::squash() %>%
     tibble::as_tibble()
 }
 
