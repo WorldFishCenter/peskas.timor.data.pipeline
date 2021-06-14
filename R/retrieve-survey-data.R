@@ -74,10 +74,16 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 
   # Function to get a page of survey
   retrieve_survey_page <- function(start = 0){
-    resp <- httr::GET(url = request_url,
-                      config = httr::add_headers(Authorization = token),
-                      query = list(start = start,
-                                   limit = 30000))
+
+    message("Retrieving survey. Starting at record ", start)
+
+    resp <- httr::RETRY(
+      verb = "GET",
+      url = request_url,
+      config = httr::add_headers(Authorization = token),
+      query = list(start = start,
+                   limit = api_limit),
+      times = 8)
 
     if (!(resp$status_code %in% 200:299))
       stop("Unsuccessful response from server")
