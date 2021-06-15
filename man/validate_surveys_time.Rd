@@ -2,14 +2,14 @@
 % Please edit documentation in R/validation-functions.R
 \name{validate_surveys_time}
 \alias{validate_surveys_time}
-\title{Validate surveys' temporal info}
+\title{Validate surveys' temporal parameters}
 \usage{
 validate_surveys_time(data, hrs = 18)
 }
 \arguments{
 \item{data}{A preprocessed data frame}
 
-\item{hrs}{Limit of trip duration in hours to be considered a standard
+\item{hrs}{Limit of trip duration in hours to be considered a valid
 catch session.}
 }
 \value{
