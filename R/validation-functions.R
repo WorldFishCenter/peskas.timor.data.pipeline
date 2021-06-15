@@ -121,16 +121,16 @@ validate_catch_value <- function(data,method="MAD",k=13){
     magrittr::extract2(2)
 
   validated_price = landings %>%
-    dplyr::select(`_id`,total_catch_value,species_group) %>%
+    dplyr::select(`_id`,total_catch_value) %>%
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
-    dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 ~ NA_real_, TRUE ~ .$total_catch_value,
-                                                        .$total_catch_value > bounds[2] ~ NA_real_, TRUE ~ .$total_catch_value),
+    dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 |
+                                                          .$total_catch_value > bounds[2] ~ NA_real_,
+                                                        TRUE ~ .$total_catch_value),
                      alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 6,TRUE ~ NA_real_),
                      submission_id=as.integer(.$`_id`))
 
   validated_price
 }
-
 
 #' Validate surveys' catch parameters
 #'
@@ -239,7 +239,8 @@ validate_catch_params <- function(data,method="MAD",k=13){
     tidyr::nest() %>%
     dplyr::rename("species_group" = "data") %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(alert_number=alert_number$alert_number)
+    dplyr::mutate(alert_number=alert_number$alert_number,
+                  submission_id=as.integer(submission_id))
 
   validated_catch_params
 }
