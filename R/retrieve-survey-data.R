@@ -40,7 +40,7 @@ get_host_url <- function(api, version = "v1") {
   }
 }
 
-#' Download kobo data in as json using the v2 API
+#' Download kobo data in as json using the v1 API
 #'
 #' @param path string with path to file where API request should be saved
 #' @param id survey id. Usually a 6 digit number. See [this support

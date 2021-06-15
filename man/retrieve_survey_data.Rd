@@ -2,7 +2,7 @@
 % Please edit documentation in R/retrieve-survey-data.R
 \name{retrieve_survey_data}
 \alias{retrieve_survey_data}
-\title{Download kobo data in as json using the v2 API}
+\title{Download kobo data in as json using the v1 API}
 \usage{
 retrieve_survey_data(
   path,
@@ -35,7 +35,7 @@ enter the full URL.}
 The file path
 }
 \description{
-Download kobo data in as json using the v2 API
+Download kobo data in as json using the v1 API
 }
 \examples{
 \dontrun{
