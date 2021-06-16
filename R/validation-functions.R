@@ -72,14 +72,14 @@ validate_surveys_time <- function(data, hrs =18){
 
   validated_time <- list(
 
-    validated_dates = landings %>%
+    validated_dates = data %>%
       dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
       dplyr::transmute(date=dplyr::case_when(.$date > .$`_submission_time` ~ NA_character_,TRUE ~ .$date),#test if submission date is prior catch date
                        alert_number=dplyr::case_when(.$date > .$`_submission_time` ~ 4,TRUE ~ NA_real_),
                        submission_id=as.integer(.$`_id`)),
 
-    validated_duration = landings %>%
+    validated_duration = data %>%
       dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
       dplyr::transmute(trip_duration=dplyr::case_when(.$`trip_group/duration` >  hrs ~ NA_real_ ,TRUE ~ .$`trip_group/duration`),#test if catch duration is longer than n hours
@@ -114,17 +114,17 @@ validate_catch_value <- function(data,method="MAD",k=13){
 
   # extract lower and upper bounds for outliers identification
   bounds <-
-    landings %>% dplyr::select(`_id`,total_catch_value,species_group) %>%
+    data %>% dplyr::select(`_id`,total_catch_value,species_group) %>%
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
     .$total_catch_value %>%
     univOutl::LocScaleB(method=method,k=k) %>%
     magrittr::extract2(2)
 
-  validated_price = landings %>%
+  validated_price = data %>%
     dplyr::select(`_id`,total_catch_value) %>%
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
     dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 |
-                                                          .$total_catch_value > bounds[2] ~ NA_real_,
+                                                          .$total_catch_value > bounds[2] ~ NA_real_,#test if price is higher than upper bound
                                                         TRUE ~ .$total_catch_value),
                      alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 6,TRUE ~ NA_real_),
                      submission_id=as.integer(.$`_id`))
@@ -157,7 +157,7 @@ validate_catch_value <- function(data,method="MAD",k=13){
 #'
 validate_catch_params <- function(data,method="MAD",k=13){
 
-  catches_dat_unnested <-  landings %>%
+  catches_dat_unnested <-  data %>%
     dplyr::select(`_id`,species_group) %>%
     tidyr::unnest(.,species_group,keep_empty = TRUE) %>%
     tidyr::unnest(.,length_individuals,keep_empty = TRUE) %>%
@@ -168,8 +168,10 @@ validate_catch_params <- function(data,method="MAD",k=13){
   individuals_dat <- NULL
   for(i in unique(catches_dat_unnested$species)){
 
+    # exclude unidentified fishes catches
     if(i %in% c("0","300",NA)){next}
     else{
+      # retrieve n individuals and length bounds for each fish
       spe_code <- i
       limits_length <-
         dplyr::filter(catches_dat_unnested,species %in% i & n_individuals>0)  %>%
@@ -222,16 +224,15 @@ validate_catch_params <- function(data,method="MAD",k=13){
     dplyr::filter(dplyr::row_number() ==1)
 
   # nest validated data
-  validated_length_nested <-# sembra ok
+  validated_length_nested <-
     validated_length %>%
     dplyr::select(-alert_number) %>%
     dplyr::group_by(submission_id,n,species) %>%
     tidyr::nest(length_individuals = c(mean_length,n_individuals))
 
-  # replace with validated catches params
-  validated_catch_params <- landings %>%
+  # replace validated catches params in original data
+  validated_catch_params <- data %>%
     dplyr::rename(submission_id=`_id`) %>%
-    #dplyr::mutate(submission_id=as.integer(submission_id)) %>%
     dplyr::select(submission_id,species_group) %>%
     tidyr::unnest(species_group,keep_empty = TRUE) %>%
     dplyr::mutate(length_individuals=validated_length_nested$length_individuals)%>%
