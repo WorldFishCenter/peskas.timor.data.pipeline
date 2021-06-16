@@ -18,7 +18,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
 
 
   logger::log_info("Validating pds trips...")
-  navigation_alerts <- validate_pds_navigation(pds_trips)
+  navigation_alerts <- validate_pds_navigation(pds_trips,hrs=hrs, km=km)
 
   validated_trips <-
     list(navigation_alerts$validated_pds_duration,
@@ -62,7 +62,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
 #'   validate_pds_navigation(pds_trips)
 #' }
 #'
-validate_pds_navigation <- function(data){
+validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
 
   validated_duration <- list(
 

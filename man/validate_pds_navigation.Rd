@@ -4,10 +4,16 @@
 \alias{validate_pds_navigation}
 \title{Validate pds trips duration and distance}
 \usage{
-validate_pds_navigation(data)
+validate_pds_navigation(data, hrs = NULL, km = NULL)
 }
 \arguments{
 \item{data}{A data frame containing pds trips}
+
+\item{hrs}{Limit of trip duration in hours to be considered a valid
+catch session.}
+
+\item{km}{Limit of trip distance traveled in Km to be considered a valid
+catch session.}
 }
 \value{
 A list containing data frames with validated catch duration and
