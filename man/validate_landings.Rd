@@ -4,19 +4,54 @@
 \alias{validate_landings}
 \title{Validate landings}
 \usage{
-validate_landings(log_threshold = logger::DEBUG)
+validate_landings(
+  log_threshold = logger::DEBUG,
+  method = "MAD",
+  k = 13,
+  hrs = 18
+)
 }
 \arguments{
 \item{log_threshold}{The (standard Apache logj4) log level used as a
 threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
 details}
+
+\item{method}{
+		character identifying how to estimate the scale of the distribution. Available choices are:
+		
+   	   \code{method='IQR'} for using the Inter-Quartile Range, i.e. Q3-Q1; 
+ 
+  	   \code{method='IDR'} for using the Inter-Decile Range; i.e. P90-P10 
+		 		   	   
+		\code{method='MAD'} for using the Median Absolute Deviation;
+
+		\code{method='Gini'} robust scale estimate based on Gini's Mean Difference (see  \code{\link[Hmisc]{GiniMd}}); 
+		
+		\code{method='ScaleTau2'} robust tau-estimate of univariate scale, as proposed by Maronna and Zamar (2002) (see also\code{\link[robustbase]{scaleTau2}}); 
+		
+		\code{method='Qn'} for using the Qn estimator proposed by Rousseeuw and Croux (1993) (see also \code{\link[robustbase]{Qn}}); 
+		
+		\code{method='Sn'} for using the Sn estimator proposed by Rousseeuw and Croux (1993) (see also \code{\link[robustbase]{Sn}}). 
+		
+		When \code{method='dQ'} the estimated scale for the left tail is (Q2-Q1)/0.6745, while for the right tail it is considered (Q3-Q2)/0.6745 (Q2 is the median); this double estimate should be able to account for slight skewness.
+		
+		When \code{method='dD'} the estimated scale for the left tail is (P50-P10)/1.2816, while for the right tail it is considered (P90-P50)/1.2816 (P50 is the median); this double estimate should be able to account for skewness.
+		
+		 Finally, when \code{method='AdjOut'}, bounds are based on the adjusted outlyingness method as proposed by Hubert and Van der Veeken (2008).
+}
+
+\item{k}{
+		Nonnegative constant that determines the extension of bounds. Commonly used values are 2, 2.5 and 3 (default).
+}
 }
 \value{
 no outputs. This funcrion is used for it's side effects
 }
 \description{
-Downloads the preprocessed cersion of the data from cloud storage services and
+Downloads the preprocessed version of the data from cloud storage services and
 validates a range of information so that it can be safely used for analysis.
+By default the function uses the method of the median absolute deviation (MAD)
+for outliers identification.
 }
 \details{
 The parameters needed in the config file are those required for

@@ -4,7 +4,7 @@
 \alias{validate_catch_value}
 \title{Validate surveys' total catch values}
 \usage{
-validate_catch_value(data, method = "MAD", k = 13)
+validate_catch_value(data, method = NULL, k = NULL)
 }
 \arguments{
 \item{data}{A preprocessed data frame}
@@ -43,9 +43,7 @@ A data frame containing validated catch values.
 \description{
 This function takes a preprocessed landings' matrix and uses univariate
 techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) for the identification of outliers in
-the distribution of the total catch values associated to surveys. By default
-the function uses the method of the median absolute deviation (MAD) for
-outliers identification.
+the distribution of the total catch values associated to surveys.
 }
 \examples{
 \dontrun{

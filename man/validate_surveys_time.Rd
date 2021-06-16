@@ -4,7 +4,7 @@
 \alias{validate_surveys_time}
 \title{Validate surveys' temporal parameters}
 \usage{
-validate_surveys_time(data, hrs = 18)
+validate_surveys_time(data, hrs = NULL)
 }
 \arguments{
 \item{data}{A preprocessed data frame}

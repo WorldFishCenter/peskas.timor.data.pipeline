@@ -1,7 +1,9 @@
 #'Validate landings
 #'
-#'Downloads the preprocessed cersion of the data from cloud storage services and
+#'Downloads the preprocessed version of the data from cloud storage services and
 #'validates a range of information so that it can be safely used for analysis.
+#'By default the function uses the method of the median absolute deviation (MAD)
+#'for outliers identification.
 #'
 #'The parameters needed in the config file are those required for
 #'`preprocess_landings()`, `preprocess_metadata_tables()`, and
@@ -12,11 +14,13 @@
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
+#' @inheritParams univOutl::LocScaleB
 #' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-validate_landings <- function(log_threshold = logger::DEBUG){
+validate_landings <- function(log_threshold = logger::DEBUG,
+                              method="MAD",k=13,hrs =18){
 
   logger::log_threshold(log_threshold)
   pars <- read_config()
@@ -36,10 +40,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map_dfr(tibble::as_tibble)
 
   logger::log_info("Validating surveys trips...")
-  surveys_time_alerts <- validate_surveys_time(landings)
+  surveys_time_alerts <- validate_surveys_time(landings,hrs =hrs)
   logger::log_info("Validating surveys catches...")
-  surveys_price_alerts <- validate_catch_value(landings)
-  surveys_catch_alerts <- validate_catch_params(landings)
+  surveys_price_alerts <- validate_catch_value(landings,method=method,k=k)
+  surveys_catch_alerts <- validate_catch_params(landings,method=method,k=k)
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
@@ -154,7 +158,8 @@ get_merged_landings <- function(pars){
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$surveys$merged_landings$version,
-    options = pars$storage$google$options)
+    options = pars$storage$google$options,
+    exact_match = TRUE)
   logger::log_info("Downloading {landings_rds}...")
   download_cloud_file(name = landings_rds,
                       provider = pars$storage$google$key,

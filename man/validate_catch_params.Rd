@@ -4,7 +4,7 @@
 \alias{validate_catch_params}
 \title{Validate surveys' catch parameters}
 \usage{
-validate_catch_params(data, method = "MAD", k = 13)
+validate_catch_params(data, method = NULL, k = NULL)
 }
 \arguments{
 \item{data}{A preprocessed data frame}
@@ -45,9 +45,7 @@ This function takes a preprocessed landings' matrix and uses univariate
 techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) for the identification of outliers in
 the distribution of the number of individuals per catch and their size. The
 function returns a data frame with the survey id, the alert number and
-a nested column \code{species_group} containing validated catches parameters. By
-default the function uses the method of the median absolute deviation (MAD)
-for outliers identification.
+a nested column \code{species_group} containing validated catches parameters.
 }
 \examples{
 \dontrun{

@@ -68,7 +68,7 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
 #'   landings <- get_merged_landings(pars)
 #'   validate_surveys_time(landings,hrs =18)
 #' }
-validate_surveys_time <- function(data, hrs =18){
+validate_surveys_time <- function(data, hrs =NULL){
 
   validated_time <- list(
 
@@ -93,12 +93,10 @@ validate_surveys_time <- function(data, hrs =18){
 #'
 #' This function takes a preprocessed landings' matrix and uses univariate
 #' techniques (see [univOutl::LocScaleB]) for the identification of outliers in
-#' the distribution of the total catch values associated to surveys. By default
-#' the function uses the method of the median absolute deviation (MAD) for
-#' outliers identification.
+#' the distribution of the total catch values associated to surveys.
 #'
 #' @param data A preprocessed data frame
-#' @inheritParams univOutl::LocScaleB
+#' @inheritParams validate_landings
 #'
 #' @return A data frame containing validated catch values.
 #' @export
@@ -110,7 +108,7 @@ validate_surveys_time <- function(data, hrs =18){
 #'   validate_catch_value(landings,method="MAD",k=13)
 #' }
 #'
-validate_catch_value <- function(data,method="MAD",k=13){
+validate_catch_value <- function(data,method=NULL,k=NULL){
 
   # extract lower and upper bounds for outliers identification
   bounds <-
@@ -138,12 +136,10 @@ validate_catch_value <- function(data,method="MAD",k=13){
 #' techniques (see [univOutl::LocScaleB]) for the identification of outliers in
 #' the distribution of the number of individuals per catch and their size. The
 #' function returns a data frame with the survey id, the alert number and
-#' a nested column `species_group` containing validated catches parameters. By
-#' default the function uses the method of the median absolute deviation (MAD)
-#' for outliers identification.
+#' a nested column `species_group` containing validated catches parameters.
 #'
 #' @param data A preprocessed data frame
-#' @inheritParams univOutl::LocScaleB
+#' @inheritParams validate_landings
 #'
 #' @return A data frame containing the validated catches parameters.
 #' @export
@@ -155,7 +151,7 @@ validate_catch_value <- function(data,method="MAD",k=13){
 #'   validate_catch_params(landings,method="MAD",k=13)
 #' }
 #'
-validate_catch_params <- function(data,method="MAD",k=13){
+validate_catch_params <- function(data,method=NULL,k=NULL){
 
   catches_dat_unnested <-  data %>%
     dplyr::select(`_id`,species_group) %>%
@@ -244,53 +240,4 @@ validate_catch_params <- function(data,method="MAD",k=13){
                   submission_id=as.integer(submission_id))
 
   validated_catch_params
-}
-
-
-
-#' Validate pds trips duration and distance
-#'
-#' This function takes pds trips information to return validated data frames of
-#' trip duration and distance.
-#'
-#' @param data A  data frame
-#' @param hrs Limit of trip duration in hours to be considered a valid
-#' catch session.
-#' @param km Limit of trip distance traveled in Km to be considered a valid
-#' catch session.
-#'
-#' @return A list containing data frames with validated catch duration and
-#' catch distance traveled
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#'   pars <- read_config()
-#'   pds_trips <- retrieve_pds_trips(prefix = pars$pds$trips$file_prefix,
-#'                                   secret = pars$pds$trips$secret,
-#'                                   token = pars$pds$trips$token)%>%
-#'  readr::read_csv(col_types = readr::cols(.default = readr::col_character()))
-#'
-#'   validate_pds_navigation(pds_trips)
-#' }
-validate_pds_navigation <- function(data, hrs =18, km=60){
-
-  validated_duration <- list(
-
-    validated_pds_duration = pds_trips %>%
-      dplyr::mutate(`Duration (Seconds)` = as.numeric(`Duration (Seconds)`)) %>%
-      dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),
-                       `Duration (Seconds)`=
-                         dplyr::case_when(.$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .$`Duration (Seconds)`),
-                       Trip=.$Trip),
-
-    validated_pds_distance = pds_trips %>%
-      dplyr::mutate(`Distance (Meters)` = as.numeric(`Distance (Meters)`)) %>%
-      dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),
-                       `Distance (Meters)`=
-                         dplyr::case_when(.$`Distance (Meters)` > km*1000 ~ NA_real_,TRUE ~ .$`Distance (Meters)`),
-                       Trip=.$Trip))
-  validated_duration
 }
