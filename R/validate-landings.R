@@ -35,12 +35,25 @@ validate_landings <- function(log_threshold = logger::DEBUG){
              deployed_imeis) %>%
     purrr::map_dfr(tibble::as_tibble)
 
+  logger::log_info("Validating surveys trips...")
+  surveys_time_alerts <- validate_surveys_time(landings)
+  logger::log_info("Validating surveys catches...")
+  surveys_price_alerts <- validate_catch_value(landings)
+  surveys_catch_alerts <- validate_catch_params(landings)
+
+
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
-  validated_landings <- dplyr::select(imei_alerts,
-                                      .data$submission_id, .data$imei)
+  validated_landings <-
+    list(imei_alerts,
+         surveys_time_alerts$validated_dates,
+         surveys_time_alerts$validated_duration,
+         surveys_price_alerts,
+         surveys_catch_alerts) %>%
+    purrr::map(~ dplyr::select(.x,-alert_number)) %>%
+    purrr::reduce(dplyr::left_join)
 
-  validated_landings_filename <- paste(pars$surveys$landings$file_prefix,
+  validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(x = validated_landings,
@@ -51,6 +64,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
 
+  return()
   # HANDLE FLAGS ------------------------------------------------------------
 
   alerts <- imei_alerts %>%
