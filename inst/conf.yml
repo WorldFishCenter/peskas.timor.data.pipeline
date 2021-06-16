@@ -23,6 +23,8 @@ default:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
       file_prefix: pds-trips
+      version:
+        preprocess: latest
     tracks:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
