@@ -15,6 +15,8 @@
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
+#' @inheritParams validate_surveys_time
+#' @inheritParams validate_catch_price
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export
