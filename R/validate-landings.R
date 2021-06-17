@@ -7,26 +7,31 @@
 #'
 #'The parameters needed in the config file are those required for
 #'`preprocess_landings()`, `preprocess_metadata_tables()`, and
-#'`ingest_validation_tables()` combined.
+#'`ingest_validation_tables()` combined, as well as parameters needed to
+#'outliers identification that are  `hrs`, `method` and `k`.
 #'
 #'To avoid synchronisation problems always is recommended that this called
 #'together with `ingest_validation_tables()`
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
-#' @inheritParams univOutl::LocScaleB
 #' @keywords workflow
-#' @return no outputs. This funcrion is used for it's side effects
+#' @return no outputs. This function is used for it's side effects
 #' @export
 #'
-validate_landings <- function(log_threshold = logger::DEBUG,
-                              method="MAD",k=13,hrs =18){
+validate_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
   landings <- get_merged_landings(pars)
+
+  # read arguments for outliers identification
+  hrs <-  pars$validation$landings$trips_hours
+  method <-  pars$validation$landings$method
+  k <-  pars$validation$landings$k
+
 
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
@@ -40,9 +45,9 @@ validate_landings <- function(log_threshold = logger::DEBUG,
     purrr::map_dfr(tibble::as_tibble)
 
   logger::log_info("Validating surveys trips...")
-  surveys_time_alerts <- validate_surveys_time(landings,hrs =hrs)
+  surveys_time_alerts <- validate_surveys_time(landings,hrs=hrs)
   logger::log_info("Validating surveys catches...")
-  surveys_price_alerts <- validate_catch_value(landings,method=method,k=k)
+  surveys_price_alerts <- validate_catch_price(landings,method=method,k=k)
   surveys_catch_alerts <- validate_catch_params(landings,method=method,k=k)
 
 
@@ -67,16 +72,20 @@ validate_landings <- function(log_threshold = logger::DEBUG,
   upload_cloud_file(file = validated_landings_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
-
-  return()
   # HANDLE FLAGS ------------------------------------------------------------
 
-  alerts <- imei_alerts %>%
-    dplyr::select(.data$alert_number, .data$submission_id)
+  alerts <-
+  list(imei_alerts,
+       surveys_time_alerts$validated_dates,
+       surveys_time_alerts$validated_duration,
+       surveys_price_alerts,
+       surveys_catch_alerts) %>%
+    purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
+    purrr::reduce(dplyr::bind_rows)
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
-    dplyr::rename(submission_id = .data$`_id`, landing_date = .data$date) %>%
+    dplyr::rename(submission_id = .data$`_id`, landing_date = .data$`_submission_time`) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
     dplyr::select(.data$submission_id, .data$landing_date)
   remote_alerts <- validation$alerts %>%
@@ -152,6 +161,19 @@ get_preprocessed_landings <- function(pars){
   readr::read_rds(file = landings_rds)
 }
 
+get_preprocessed_metadata <- function(pars){
+  metadata_rds <- cloud_object_name(
+    prefix = paste(pars$metadata$airtable$name, 'preprocessed', sep = "_"),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    options = pars$storage$google$options)
+  logger::log_info("Downloading {metadata_rds}...")
+  download_cloud_file(name = metadata_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = metadata_rds)
+}
+
 get_merged_landings <- function(pars){
   landings_rds <- cloud_object_name(
     prefix = paste(pars$surveys$merged_landings$file_prefix),
@@ -165,17 +187,4 @@ get_merged_landings <- function(pars){
                       provider = pars$storage$google$key,
                       options = pars$storage$google$options)
   readr::read_rds(file = landings_rds)
-}
-
-get_preprocessed_metadata <- function(pars){
-  metadata_rds <- cloud_object_name(
-    prefix = paste(pars$metadata$airtable$name, 'preprocessed', sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    options = pars$storage$google$options)
-  logger::log_info("Downloading {metadata_rds}...")
-  download_cloud_file(name = metadata_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
-  readr::read_rds(file = metadata_rds)
 }

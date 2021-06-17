@@ -74,13 +74,14 @@ validate_surveys_time <- function(data, hrs =NULL){
 
     validated_dates = data %>%
       dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
-      dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
+      dplyr::mutate(`_submission_time`=as.character(lubridate::ymd_hms(`_submission_time`,tz="Asia/Dili")),
+                    date=as.character(lubridate::as_date(date))) %>%
       dplyr::transmute(date=dplyr::case_when(.$date > .$`_submission_time` ~ NA_character_,TRUE ~ .$date),#test if submission date is prior catch date
                        alert_number=dplyr::case_when(.$date > .$`_submission_time` ~ 4,TRUE ~ NA_real_),
                        submission_id=as.integer(.$`_id`)),
 
     validated_duration = data %>%
-      dplyr::select(`_id`,date,`_submission_time`,start,end,`trip_group/duration`) %>%
+      dplyr::select(`_id`,date,`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = as.numeric(`trip_group/duration`)) %>%
       dplyr::transmute(trip_duration=dplyr::case_when(.$`trip_group/duration` >  hrs ~ NA_real_ ,TRUE ~ .$`trip_group/duration`),#test if catch duration is longer than n hours
                        alert_number=dplyr::case_when(.$`trip_group/duration` >  hrs ~ 5 ,TRUE ~ NA_real_),
@@ -96,7 +97,7 @@ validate_surveys_time <- function(data, hrs =NULL){
 #' the distribution of the total catch values associated to surveys.
 #'
 #' @param data A preprocessed data frame
-#' @inheritParams validate_landings
+#' @inheritParams univOutl::LocScaleB
 #'
 #' @return A data frame containing validated catch values.
 #' @export
@@ -108,11 +109,10 @@ validate_surveys_time <- function(data, hrs =NULL){
 #'   validate_catch_value(landings,method="MAD",k=13)
 #' }
 #'
-validate_catch_value <- function(data,method=NULL,k=NULL){
-
+validate_catch_price <- function(data,method=NULL,k=NULL){
   # extract lower and upper bounds for outliers identification
   bounds <-
-    data %>% dplyr::select(`_id`,total_catch_value,species_group) %>%
+    data %>% dplyr::select(`_id`,total_catch_value) %>%
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
     .$total_catch_value %>%
     univOutl::LocScaleB(method=method,k=k) %>%
@@ -121,7 +121,7 @@ validate_catch_value <- function(data,method=NULL,k=NULL){
   validated_price = data %>%
     dplyr::select(`_id`,total_catch_value) %>%
     dplyr::mutate(total_catch_value=as.numeric(total_catch_value)) %>%
-    dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 |
+    dplyr::transmute(total_catch_value=dplyr::case_when(.$total_catch_value < 0 |#test if price is negative
                                                           .$total_catch_value > bounds[2] ~ NA_real_,#test if price is higher than upper bound
                                                         TRUE ~ .$total_catch_value),
                      alert_number=dplyr::case_when(.$total_catch_value > bounds[2] ~ 6,TRUE ~ NA_real_),
@@ -139,7 +139,7 @@ validate_catch_value <- function(data,method=NULL,k=NULL){
 #' a nested column `species_group` containing validated catches parameters.
 #'
 #' @param data A preprocessed data frame
-#' @inheritParams validate_landings
+#' @inheritParams univOutl::LocScaleB
 #'
 #' @return A data frame containing the validated catches parameters.
 #' @export
@@ -167,7 +167,7 @@ validate_catch_params <- function(data,method=NULL,k=NULL){
     # exclude unidentified fishes catches
     if(i %in% c("0","300",NA)){next}
     else{
-      # retrieve n individuals and length bounds for each fish
+      # retrieve n individuals and length bounds for each fish category
       spe_code <- i
       limits_length <-
         dplyr::filter(catches_dat_unnested,species %in% i & n_individuals>0)  %>%
@@ -204,10 +204,11 @@ validate_catch_params <- function(data,method=NULL,k=NULL){
                                      .$n_individuals >0 & .$mean_length > .$length_up ~ 7,
                                      TRUE ~ NA_real_),
                   n_individuals=
-                    dplyr::case_when(.$n_individuals < 0 ~ .$n_individuals * -1,
-                                     .$n_individuals > .$inds_up  |
-                                     .$n_individuals >0 & .$mean_length < .$length_low |
-                                     .$n_individuals >0 & .$mean_length > .$length_up ~ NA_real_,
+                    dplyr::case_when(.$n_individuals < 0 ~ .$n_individuals * -1,#convert negative values to positive
+                                      abs(.$n_individuals) < .$inds_low |#test if n_ind. is lower than lower bound
+                                     .$n_individuals > .$inds_up  |#test if n_ind. is higher than upper bound
+                                     .$n_individuals >0 & .$mean_length < .$length_low |#test if length is lower than lower bound
+                                     .$n_individuals >0 & .$mean_length > .$length_up ~ NA_real_,#test if length is higher than higher bound
                                      TRUE ~ .$n_individuals),
                   submission_id=.$`_id`) %>%
     dplyr::select(submission_id,n,species,mean_length,n_individuals,alert_number)
