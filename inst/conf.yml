@@ -45,6 +45,10 @@ default:
       preprocess: latest
 
   validation:
+    landings:
+      method: MAD
+      k: 15
+      trips_hours: 20
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk
