@@ -20,17 +20,13 @@ A list containing data frames with validated catch duration and
 catch distance traveled
 }
 \description{
-This function takes pds trips information to return validated data frames of
+This function takes pds trips data and returns validated
 trip duration and distance.
 }
 \examples{
 \dontrun{
   pars <- read_config()
-  pds_trips <- retrieve_pds_trips(prefix = pars$pds$trips$file_prefix,
-                                  secret = pars$pds$trips$secret,
-                                  token = pars$pds$trips$token)\%>\%
- readr::read_csv(col_types = readr::cols(.default = readr::col_character()))
-
+  pds_trips <- get_preprocessed_trips()
   validate_pds_navigation(pds_trips)
 }
 

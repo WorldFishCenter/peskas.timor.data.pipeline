@@ -1,21 +1,26 @@
 #' Validate Pelagic Data System trips
 #'
-#' @param log_threshold
-#' @param hrs Limit of trip duration in hours to be considered a valid
-#' catch session.
-#' @param km Limit of trip distance traveled in Km to be considered a valid
-#' catch session.
+#'Downloads the preprocessed version of pds trips from cloud storage services and
+#'validates a range of information so that it can be safely used for analysis.
 #'
-#' @return
+#'The parameters needed in the config file are those required for
+#'`preprocess_pds_trips()`, as well as parameters needed to identify anomalous
+#'trips, that are  `hrs`and `km`.
+#'
+#' @param log_threshold
+#' @inheritParams validate_pds_navigation
+#'
+#' @return no outputs. This function is used for it's side effects
 #' @export
 #'
-#' @examples
-validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
+validate_pds_trips <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
   pars <- read_config()
   pds_trips <- get_preprocessed_trips(pars)
 
+  hrs <- pars$validation$pds_trips$trip_hours
+  km <- pars$validation$pds_trips$trip_km
 
   logger::log_info("Validating pds trips...")
   navigation_alerts <- validate_pds_navigation(pds_trips,hrs=hrs, km=km)
@@ -26,7 +31,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join)
 
-  validated_trips_filename <- paste(pars$pds$file_prefix,
+  validated_trips_filename <- paste(pars$pds$trips$file_prefix,
                                        "validated", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(x = validated_trips,
@@ -36,16 +41,20 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
   upload_cloud_file(file = validated_trips_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
+  logger::log_success("File upload succeded")
   }
 
 
 #' Validate pds trips duration and distance
 #'
-#' This function takes pds trips information to return validated data frames of
+#' This function takes pds trips data and returns validated
 #' trip duration and distance.
 #'
 #' @param data A data frame containing pds trips
-#' @inheritParams validate_pds_trips
+#' @param hrs Limit of trip duration in hours to be considered a valid
+#' catch session.
+#' @param km Limit of trip distance traveled in Km to be considered a valid
+#' catch session.
 #'
 #' @return A list containing data frames with validated catch duration and
 #' catch distance traveled
@@ -54,11 +63,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG, hrs =18, km=60){
 #' @examples
 #' \dontrun{
 #'   pars <- read_config()
-#'   pds_trips <- retrieve_pds_trips(prefix = pars$pds$trips$file_prefix,
-#'                                   secret = pars$pds$trips$secret,
-#'                                   token = pars$pds$trips$token)%>%
-#'  readr::read_csv(col_types = readr::cols(.default = readr::col_character()))
-#'
+#'   pds_trips <- get_preprocessed_trips()
 #'   validate_pds_navigation(pds_trips)
 #' }
 #'
@@ -69,7 +74,7 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
     validated_pds_duration = data %>%
       dplyr::mutate(`Duration (Seconds)` = as.numeric(`Duration (Seconds)`)) %>%
       dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),
+                         dplyr::case_when(.$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
                        `Duration (Seconds)`=
                          dplyr::case_when(.$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .$`Duration (Seconds)`),
                        Trip=.$Trip),
@@ -77,7 +82,7 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
     validated_pds_distance = data %>%
       dplyr::mutate(`Distance (Meters)` = as.numeric(`Distance (Meters)`)) %>%
       dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),
+                         dplyr::case_when(.$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),#test if trip distance is longer than n km
                        `Distance (Meters)`=
                          dplyr::case_when(.$`Distance (Meters)` > km*1000 ~ NA_real_,TRUE ~ .$`Distance (Meters)`),
                        Trip=.$Trip))

@@ -4,18 +4,17 @@
 \alias{validate_pds_trips}
 \title{Validate Pelagic Data System trips}
 \usage{
-validate_pds_trips(log_threshold = logger::DEBUG, hrs = 18, km = 60)
-}
-\arguments{
-\item{hrs}{Limit of trip duration in hours to be considered a valid
-catch session.}
-
-\item{km}{Limit of trip distance traveled in Km to be considered a valid
-catch session.}
+validate_pds_trips(log_threshold = logger::DEBUG)
 }
 \value{
-
+no outputs. This function is used for it's side effects
 }
 \description{
-Validate Pelagic Data System trips
+Downloads the preprocessed version of pds trips from cloud storage services and
+validates a range of information so that it can be safely used for analysis.
+}
+\details{
+The parameters needed in the config file are those required for
+\code{preprocess_pds_trips()}, as well as parameters needed to identify anomalous
+trips, that are  \code{hrs}and \code{km}.
 }
