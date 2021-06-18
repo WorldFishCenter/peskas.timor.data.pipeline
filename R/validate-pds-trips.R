@@ -30,7 +30,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   ready_cols <- pds_trips %>%
     dplyr::select(.data$`Last Seen`,
                   .data$IMEI,
-                  .data$Trip)
+                  .data$Trip,
+                  .data$Ended)
 
   validated_trips <-
     list(navigation_alerts$validated_pds_duration,
