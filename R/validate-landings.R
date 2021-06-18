@@ -19,6 +19,8 @@
 #' @inheritParams validate_catch_price
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
+#'
+#' @importFrom rlang .data
 #' @export
 #'
 validate_landings <- function(log_threshold = logger::DEBUG){
@@ -57,6 +59,19 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
+  # take ready (?) columns
+
+  ready_cols <- landings %>%
+    dplyr::select(dplyr::ends_with("_fishers"),
+                  .data$landing_site_name,
+                  .data$happiness_rating,
+                  .data$`trip_group/gear_type`,
+                  .data$`trip_group/habitat_boat`,
+                  .data$`trip_group/habitat_boat`,
+                  .data$`_id`) %>%
+    dplyr::mutate(submission_id=as.integer(.data$`_id`))
+
+
   validated_landings <-
     list(imei_alerts,
          surveys_time_alerts$validated_dates,
@@ -64,7 +79,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          surveys_price_alerts,
          surveys_catch_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
-    purrr::reduce(dplyr::left_join)
+    purrr::reduce(dplyr::left_join) %>%
+    dplyr::left_join(ready_cols)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%

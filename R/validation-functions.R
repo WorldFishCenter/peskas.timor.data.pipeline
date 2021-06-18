@@ -236,7 +236,7 @@ validate_catch_params <- function(data,method=NULL,k=NULL){
     tidyr::nest(length_individuals = c(.data$mean_length,.data$n_individuals))
 
   # replace validated catches params in original data
-  validated_catch_params <- landings %>%
+  validated_catch_params <- data %>%
     dplyr::rename(submission_id=.data$`_id`) %>%
     dplyr::select(.data$submission_id,.data$species_group) %>%
     tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
