@@ -24,6 +24,7 @@
 validate_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
+
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
@@ -48,8 +49,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Validating surveys trips...")
   surveys_time_alerts <- validate_surveys_time(landings,hrs=hrs)
-  logger::log_info("Validating surveys catches...")
+  logger::log_info("Validating catches values...")
   surveys_price_alerts <- validate_catch_price(landings,method=method,k=k)
+  logger::log_info("Validating catches parameters...")
   surveys_catch_alerts <- validate_catch_params(landings,method=method,k=k)
 
 
