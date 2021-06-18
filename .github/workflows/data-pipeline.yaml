@@ -68,7 +68,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
 
   ingest-pds-trips:
-    name: ingest_pds_trips()
+    name: Ingest pds trips
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -84,7 +84,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
 
   preprocess-pds-trips:
-    name: preprocess_pds_trips()
+    name: Preprocess pds trips
     needs: ingest-pds-trips
     runs-on: ubuntu-20.04
     container:
@@ -100,7 +100,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
 
   ingest-pds-tracks:
-    name: ingest_pds_tracks()
+    name: Ingest pds tracks()
     needs: [ingest-pds-trips]
     runs-on: ubuntu-20.04
     container:
@@ -168,8 +168,24 @@ jobs:
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
 
+  validate-trips:
+    name: Validate pds trips
+    needs: preprocess-pds-trips
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call validate_pds_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
+
   merge-landings:
-    name: merge_landings()
+    name: Merge landings
     needs: [validate-landings, ingest-preprocess-legacy-landings]
     runs-on: ubuntu-20.04
     container:
