@@ -8,7 +8,7 @@
 #'trips, that are  `hrs`and `km`.
 #'
 #' @param log_threshold
-#' @inheritParams validate_pds_navigation
+#' @inheritParams ingest_pds_trips
 #'
 #' @return no outputs. This function is used for it's side effects
 #' @export
@@ -58,7 +58,9 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 #'
 #' @return A list containing data frames with validated catch duration and
 #' catch distance traveled
+#'
 #' @export
+#' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
@@ -72,20 +74,20 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
   validated_duration <- list(
 
     validated_pds_duration = data %>%
-      dplyr::mutate(`Duration (Seconds)` = as.numeric(`Duration (Seconds)`)) %>%
+      dplyr::mutate(`Duration (Seconds)` = as.numeric(.data$`Duration (Seconds)`)) %>%
       dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
+                         dplyr::case_when(.data$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
                        `Duration (Seconds)`=
-                         dplyr::case_when(.$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .$`Duration (Seconds)`),
-                       Trip=.$Trip),
+                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .data$`Duration (Seconds)`),
+                       Trip=.data$Trip),
 
     validated_pds_distance = data %>%
-      dplyr::mutate(`Distance (Meters)` = as.numeric(`Distance (Meters)`)) %>%
+      dplyr::mutate(`Distance (Meters)` = as.numeric(.data$`Distance (Meters)`)) %>%
       dplyr::transmute(alert_number=
-                         dplyr::case_when(.$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),#test if trip distance is longer than n km
+                         dplyr::case_when(.data$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),#test if trip distance is longer than n km
                        `Distance (Meters)`=
-                         dplyr::case_when(.$`Distance (Meters)` > km*1000 ~ NA_real_,TRUE ~ .$`Distance (Meters)`),
-                       Trip=.$Trip))
+                         dplyr::case_when(.data$`Distance (Meters)` > km*1000 ~ NA_real_,TRUE ~ .data$`Distance (Meters)`),
+                       Trip=.data$.$Trip))
   validated_duration
 }
 
