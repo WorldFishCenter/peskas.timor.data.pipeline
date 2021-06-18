@@ -12,6 +12,7 @@
 #'
 #' @return no outputs. This function is used for it's side effects
 #' @export
+#' @importFrom rlang .data
 #'
 validate_pds_trips <- function(log_threshold = logger::DEBUG){
 
@@ -25,11 +26,18 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   logger::log_info("Validating pds trips...")
   navigation_alerts <- validate_pds_navigation(pds_trips,hrs=hrs, km=km)
 
+  # take ready (?) columns
+  ready_cols <- pds_trips %>%
+    dplyr::select(.data$`Last Seen`,
+                  .data$IMEI,
+                  .data$Trip)
+
   validated_trips <-
     list(navigation_alerts$validated_pds_duration,
          navigation_alerts$validated_pds_distance) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
-    purrr::reduce(dplyr::left_join)
+    purrr::reduce(dplyr::left_join) %>%
+    dplyr::left_join(ready_cols)
 
   validated_trips_filename <- paste(pars$pds$trips$file_prefix,
                                        "validated", sep = "_") %>%
@@ -87,7 +95,7 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
                          dplyr::case_when(.data$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),#test if trip distance is longer than n km
                        `Distance (Meters)`=
                          dplyr::case_when(.data$`Distance (Meters)` > km*1000 ~ NA_real_,TRUE ~ .data$`Distance (Meters)`),
-                       Trip=.data$.$Trip))
+                       Trip=.data$Trip))
   validated_duration
 }
 
