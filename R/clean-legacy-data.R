@@ -114,7 +114,7 @@ clean_catches <- function(x){
       value %in% c(122,123,124,125,126,"mamila_matamouk") ~ "18",
       value %in% c(75) ~ "19",
       value %in% c(4,101,102) ~ "20",
-      value %in% c(133,134,135,213) ~ "21",
+      value %in% c(133,134,135,136,213) ~ "21",
       value %in% c(10) ~ "22",
       value %in% c(105,106) ~ "23",
       value %in% c(153) ~ "24",
@@ -144,7 +144,7 @@ clean_catches <- function(x){
       value %in% c(77,78,82) ~ "49",
       value %in% c(218) ~ "50",
       value %in% c("budu_tasi") ~ "58",
-      value %in% c(136,139,209,300,"babuti","ikan_kulu","kabosu","kalepa_makerek",
+      value %in% c(139,209,300,"babuti","ikan_kulu","kabosu","kalepa_makerek",
                    "lea","lepulai","pakulai","teura_marubi") ~ "300",
       TRUE ~ value )) %>%
     tidyr::pivot_wider(names_from = "name", values_from = "value") %>%
