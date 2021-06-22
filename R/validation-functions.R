@@ -138,6 +138,7 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
     dplyr::transmute(
       # Need to check alert before changing the total_catch_value column
       alert_number = dplyr::case_when(
+        .data$total_catch_value < 0 ~ 8,
         .data$total_catch_value > bounds[2] ~ 6,
         TRUE ~ NA_real_),
       total_catch_value = dplyr::case_when(
