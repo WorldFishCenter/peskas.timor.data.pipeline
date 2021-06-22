@@ -76,11 +76,20 @@ validate_surveys_time <- function(data, hrs =NULL){
 
     validated_dates = data %>%
       dplyr::select(.data$`_id`,.data$date,.data$`_submission_time`) %>%
-      dplyr::mutate(`_submission_time`=as.character(lubridate::ymd_hms(.data$`_submission_time`,tz="Asia/Dili")),
-                    date=as.character(lubridate::as_date(.data$date))) %>%
-      dplyr::transmute(date=dplyr::case_when(.data$date > .data$`_submission_time` ~ NA_character_,TRUE ~ .data$date),#test if submission date is prior catch date
-                       alert_number=dplyr::case_when(.data$date > .data$`_submission_time` ~ 4,TRUE ~ NA_real_),
-                       submission_id=as.integer(.data$`_id`)),
+      dplyr::mutate(
+        `_submission_time` = as.character(
+          lubridate::ymd_hms(.data$`_submission_time`,tz = "Asia/Dili")),
+        date = as.character(lubridate::as_date(.data$date))) %>%
+      dplyr::transmute(
+        # Alert needs to be checked before editing the date column
+        alert_number = dplyr::case_when(
+          # test if submission date is prior catch date
+          .data$date > .data$`_submission_time` ~ 4,
+          TRUE ~ NA_real_),
+        date = dplyr::case_when(
+          .data$date > .data$`_submission_time` ~ NA_character_,
+          TRUE ~ .data$date),
+        submission_id = as.integer(.data$`_id`)),
 
     validated_duration = data %>%
       dplyr::select(.data$`_id`,.data$`trip_group/duration`) %>%
