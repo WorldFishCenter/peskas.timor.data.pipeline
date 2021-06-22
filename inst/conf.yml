@@ -46,9 +46,14 @@ default:
 
   validation:
     landings:
-      method: MAD
-      k: 15
-      trips_hours: 20
+      default:
+        method: MAD
+        k: 15
+        max: 20
+        min: 0
+      prices:
+        k: 3
+      duration:
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk

@@ -33,9 +33,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   landings <- get_merged_landings(pars)
 
   # read arguments for outliers identification
-  hrs <-  pars$validation$landings$trips_hours
-  method <-  pars$validation$landings$method
-  k <-  pars$validation$landings$k
+  default_max_limit <-  pars$validation$landings$default$max
+  default_method <-  pars$validation$landings$default$method
+  default_k <-  pars$validation$landings$default$k
 
 
   # deployed_imeis <- get_deployed_imeis(metadata)
@@ -50,11 +50,20 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map_dfr(tibble::as_tibble)
 
   logger::log_info("Validating surveys trips...")
-  surveys_time_alerts <- validate_surveys_time(landings,hrs=hrs)
+  surveys_time_alerts <- validate_surveys_time(
+    data = landings,
+    hrs = pars$validation$landings$duration$max %||% default_max_limit)
+
   logger::log_info("Validating catches values...")
-  surveys_price_alerts <- validate_catch_price(landings,method=method,k=k)
+  surveys_price_alerts <- validate_catch_price(
+    data = landings,
+    method = pars$validation$landings$prices$method %||% default_method,
+    k = pars$validation$landings$prices$k %||% default_k)
   logger::log_info("Validating catches parameters...")
-  surveys_catch_alerts <- validate_catch_params(landings,method=method,k=k)
+  surveys_catch_alerts <- validate_catch_params(
+    landings,
+    method = pars$validation$landings$catch$method %||% default_method,
+    k = pars$validation$catch$prices$k %||% default_k)
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
