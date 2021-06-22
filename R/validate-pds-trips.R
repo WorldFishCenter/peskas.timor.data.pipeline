@@ -20,6 +20,14 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
   pds_trips <- get_preprocessed_trips(pars)
 
+  # remove duplicated trips
+  pds_trips <- dplyr::distinct(pds_trips, .data$Started, .data$Ended,.data$Boat,
+                               .data$`Boat Name`,.data$`Boat Gear`,.data$Community,
+                               .data$`Duration (Seconds)`,.data$`Range (Meters)`,
+                               .data$`Distance (Meters)`,.data$IMEI,
+                               .data$`Device Id`,.data$`Last Seen`,
+                               .keep_all = TRUE)
+
   hrs <- pars$validation$pds_trips$trip_hours
   km <- pars$validation$pds_trips$trip_km
 
@@ -31,7 +39,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     dplyr::select(.data$`Last Seen`,
                   .data$IMEI,
                   .data$Trip,
-                  .data$Ended)
+                  .data$Ended,
+                  .data$`Device Id`)
 
   validated_trips <-
     list(navigation_alerts$validated_pds_duration,
@@ -41,11 +50,12 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     dplyr::left_join(ready_cols)
 
   validated_trips_filename <- paste(pars$pds$trips$file_prefix,
-                                       "validated", sep = "_") %>%
+                                    "validated", sep = "_") %>%
     add_version(extension = "rds")
+
   readr::write_rds(x = validated_trips,
-                   file = validated_trips_filename,
-                   compress = "gz")
+                   file = validated_trips_filename,compress = "gz")
+
   logger::log_info("Uploading {validated_trips_filename} to cloud sorage")
   upload_cloud_file(file = validated_trips_filename,
                     provider = pars$storage$google$key,
@@ -88,6 +98,10 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
                          dplyr::case_when(.data$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
                        `Duration (Seconds)`=
                          dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .data$`Duration (Seconds)`),
+                       Started=
+                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_character_,TRUE ~ .data$Started),
+                       Ended=
+                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_character_,TRUE ~ .data$Ended),
                        Trip=.data$Trip),
 
     validated_pds_distance = data %>%
