@@ -127,9 +127,9 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
   # extract lower and upper bounds for outliers identification
   bounds <-
     data %>% dplyr::select(.data$`_id`,.data$total_catch_value) %>%
-    dplyr::transmute(total_catch_value=as.numeric(.data$total_catch_value)) %>%
+    dplyr::transmute(total_catch_value = as.numeric(.data$total_catch_value)) %>%
     magrittr::extract2(1) %>%
-    univOutl::LocScaleB(method=method,k=k) %>%
+    univOutl::LocScaleB(method = method, k = k, logt = TRUE) %>%
     magrittr::extract2(2)
 
   validated_price = data %>%
