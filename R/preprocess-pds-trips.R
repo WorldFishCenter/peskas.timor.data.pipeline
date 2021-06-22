@@ -47,7 +47,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG){
                       options = pars$storage$google$options)
   pds_trips_raw <- readr::read_csv(
     file = pds_trips_csv,
-    col_types = readr::cols(.default = readr::col_character()))
+    col_types = "iTTicccdddccc")
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
