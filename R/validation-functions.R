@@ -135,11 +135,16 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
   validated_price = data %>%
     dplyr::select(.data$`_id`,.data$total_catch_value) %>%
     dplyr::mutate(total_catch_value=as.numeric(.data$total_catch_value)) %>%
-    dplyr::transmute(total_catch_value=dplyr::case_when(.data$total_catch_value < 0 |#test if price is negative
-                                                          .data$total_catch_value > bounds[2] ~ NA_real_,#test if price is higher than upper bound
-                                                        TRUE ~ .data$total_catch_value),
-                     alert_number=dplyr::case_when(.data$total_catch_value > bounds[2] ~ 6,TRUE ~ NA_real_),
-                     submission_id=as.integer(.data$`_id`))
+    dplyr::transmute(
+      # Need to check alert before changing the total_catch_value column
+      alert_number = dplyr::case_when(
+        .data$total_catch_value > bounds[2] ~ 6,
+        TRUE ~ NA_real_),
+      total_catch_value = dplyr::case_when(
+        .data$total_catch_value < 0 ~ NA_real_,
+        .data$total_catch_value > bounds[2] ~ NA_real_,
+        TRUE ~ .data$total_catch_value),
+      submission_id = as.integer(.data$`_id`))
 
   validated_price
 }
