@@ -21,12 +21,9 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   pds_trips <- get_preprocessed_trips(pars)
 
   # remove duplicated trips
-  pds_trips <- dplyr::distinct(pds_trips, .data$Started, .data$Ended,.data$Boat,
-                               .data$`Boat Name`,.data$`Boat Gear`,.data$Community,
-                               .data$`Duration (Seconds)`,.data$`Range (Meters)`,
-                               .data$`Distance (Meters)`,.data$IMEI,
-                               .data$`Device Id`,.data$`Last Seen`,
-                               .keep_all = TRUE)
+  pds_trips <- pds_trips %>%
+    dplyr::arrange(dplyr::desc(Trip)) %>%
+    dplyr::distinct(pds_trips, dplyr::across(-Trip), .keep_all = TRUE)
 
   hrs <- pars$validation$pds_trips$trip_hours
   km <- pars$validation$pds_trips$trip_km
