@@ -47,7 +47,9 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG){
                       options = pars$storage$google$options)
   pds_trips_raw <- readr::read_csv(
     file = pds_trips_csv,
-    col_types = "iTTicccdddccc")
+    col_types = "iTTicccdddccc") %>%
+    dplyr::mutate(Started=lubridate::with_tz(.data$Started, "Asia/Dili"),
+                  Ended=lubridate::with_tz(.data$Ended, "Asia/Dili"))
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
