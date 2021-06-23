@@ -92,13 +92,11 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
     validated_pds_duration = data %>%
       dplyr::transmute(alert_number=
                          dplyr::case_when(.data$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
-                       `Duration (Seconds)`=
-                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .data$`Duration (Seconds)`),
-                       Started=
-                         dplyr::case_when(.data$`Duration (Seconds)` > 20*60^2 ~ NA_character_,TRUE ~ as.character(.data$Started)),
-                       Ended=
-                         dplyr::case_when(.data$`Duration (Seconds)` > 20*60^2 ~ NA_character_,TRUE ~ as.character(.data$Ended)),
-                       Trip=.data$Trip),
+                       across(.cols = c(`Duration (Seconds)`, Started, Ended),
+                              .fns = ~ dplyr::case_when(
+                                is.na(.data$alert_number) ~ .,
+                                TRUE ~ NA_real_)),
+                       .data$Trip),
 
     validated_pds_distance = data %>%
       dplyr::transmute(alert_number=
