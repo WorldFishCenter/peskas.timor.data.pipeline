@@ -22,8 +22,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 
   # remove duplicated trips
   pds_trips <- pds_trips %>%
-    dplyr::arrange(dplyr::desc(Trip)) %>%
-    dplyr::distinct(pds_trips, dplyr::across(-Trip), .keep_all = TRUE)
+    dplyr::arrange(dplyr::desc(.data$Trip)) %>%
+    dplyr::distinct(pds_trips, dplyr::across(-.data$Trip), .keep_all = TRUE)
 
   hrs <- pars$validation$pds_trips$trip_hours
   km <- pars$validation$pds_trips$trip_km
@@ -91,7 +91,9 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
     validated_pds_duration = data %>%
       dplyr::transmute(alert_number=
                          dplyr::case_when(.data$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
-                       across(.cols = c(`Duration (Seconds)`, Started, Ended),
+                       dplyr::across(.cols = c(.data$`Duration (Seconds)`,
+                                               .data$Started,
+                                               .data$Ended),
                               .fns = ~ dplyr::case_when(
                                 is.na(.data$alert_number) ~ .,
                                 TRUE ~ NA_real_)),

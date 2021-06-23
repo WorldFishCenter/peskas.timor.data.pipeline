@@ -51,7 +51,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG){
     dplyr::mutate(
       Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
-      `Last Seen` = lubridate::as_datetime(`Last Seen`,
+      `Last Seen` = lubridate::as_datetime(.data$`Last Seen`,
                                            format = "%a %b %d %X UTC %Y",
                                            tz = "UTC"))
 
