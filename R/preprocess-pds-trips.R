@@ -48,8 +48,12 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG){
   pds_trips_raw <- readr::read_csv(
     file = pds_trips_csv,
     col_types = "iTTicccdddccc") %>%
-    dplyr::mutate(Started=lubridate::with_tz(.data$Started, "Asia/Dili"),
-                  Ended=lubridate::with_tz(.data$Ended, "Asia/Dili"))
+    dplyr::mutate(
+      Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
+      Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
+      `Last Seen` = lubridate::as_datetime(`Last Seen`,
+                                           format = "%a %b %d %X UTC %Y",
+                                           tz = "UTC"))
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
