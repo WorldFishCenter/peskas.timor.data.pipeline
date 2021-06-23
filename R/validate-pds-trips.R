@@ -99,9 +99,9 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
                        `Duration (Seconds)`=
                          dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_real_,TRUE ~ .data$`Duration (Seconds)`),
                        Started=
-                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_character_,TRUE ~ .data$Started),
+                         dplyr::case_when(.data$`Duration (Seconds)` > 20*60^2 ~ NA_character_,TRUE ~ as.character(.data$Started)),
                        Ended=
-                         dplyr::case_when(.data$`Duration (Seconds)` > hrs*60^2 ~ NA_character_,TRUE ~ .data$Ended),
+                         dplyr::case_when(.data$`Duration (Seconds)` > 20*60^2 ~ NA_character_,TRUE ~ as.character(.data$Ended)),
                        Trip=.data$Trip),
 
     validated_pds_distance = data %>%
