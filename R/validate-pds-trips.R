@@ -90,7 +90,6 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
   validated_duration <- list(
 
     validated_pds_duration = data %>%
-      dplyr::mutate(`Duration (Seconds)` = as.numeric(.data$`Duration (Seconds)`)) %>%
       dplyr::transmute(alert_number=
                          dplyr::case_when(.data$`Duration (Seconds)`> hrs*60^2 ~8 ,TRUE ~ NA_real_),#test if trip duration is longer than n hours
                        `Duration (Seconds)`=
@@ -102,7 +101,6 @@ validate_pds_navigation <- function(data,hrs =NULL, km=NULL){
                        Trip=.data$Trip),
 
     validated_pds_distance = data %>%
-      dplyr::mutate(`Distance (Meters)` = as.numeric(.data$`Distance (Meters)`)) %>%
       dplyr::transmute(alert_number=
                          dplyr::case_when(.data$`Distance (Meters)`> km*1000 ~ 9 ,TRUE ~ NA_real_),#test if trip distance is longer than n km
                        `Distance (Meters)`=
