@@ -36,7 +36,6 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     dplyr::select(.data$`Last Seen`,
                   .data$IMEI,
                   .data$Trip,
-                  .data$Ended,
                   .data$`Device Id`)
 
   validated_trips <-
