@@ -156,6 +156,34 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
   validated_price
 }
 
+#' Generate an alert vector based on the `univOutl::LocScaleB()` function
+#'
+#' @param x numeric vector where outliers will be checked
+#' @param alert_if_larger alert for when x is above the bounds found by `univOutl::LocScaleB()`
+#' @param alert_if_smaller alert for when x is below the bounds found by `univOutl::LocScaleB()`
+#' @param no_alert_value value to put in the output when there is no alert (x is within bounds)
+#' @param ... arguments for `univOutl::LocScaleB()`
+#'
+#' @return a vector of the same lenght as x
+#'
+alert_outlier <- function(x, alert_if_larger,
+                          alert_if_smaller = alert_if_larger,
+                          no_alert_value = NA_real_,
+                          ...){
+  algo_args <- list(...)
+
+  bounds <- univOutl::LocScaleB(x, ...) %>%
+    magrittr::extract2("bounds")
+
+  if (isTRUE(algo_args$logt)) bounds <- exp(bounds) - 1
+
+  dplyr::case_when(
+    x < bounds[1] ~ alert_if_smaller,
+    x > bounds[2] ~ alert_if_larger,
+    TRUE ~ no_alert_value
+  )
+}
+
 #' Validate surveys' catch parameters
 #'
 #' This function takes a preprocessed landings' matrix and uses univariate
