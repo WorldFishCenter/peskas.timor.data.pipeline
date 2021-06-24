@@ -4,17 +4,20 @@
 \alias{validate_surveys_time}
 \title{Validate surveys' temporal parameters}
 \usage{
-validate_surveys_time(data, hrs = NULL)
+validate_surveys_time(data, hrs = NULL, submission_delay)
 }
 \arguments{
 \item{data}{A preprocessed data frame}
 
-\item{hrs}{Limit of trip duration in hours to be considered a valid
-catch session.}
+\item{hrs}{Limit of trip duration in hours to be considered a valid catch
+session.}
+
+\item{submission_delay}{Limit for maximum difference (in days) between the
+survey submission date and the recorded landing datw}
 }
 \value{
-A list containing data frames with validated catch dates and
-catch duration.
+A list containing data frames with validated catch dates and catch
+duration.
 }
 \description{
 This function takes a preprocessed landings' matrix and validate temporal

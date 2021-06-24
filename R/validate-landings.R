@@ -37,7 +37,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   default_method <-  pars$validation$landings$default$method
   default_k <-  pars$validation$landings$default$k
 
-
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
   deployed_imeis <- metadata$devices$device_imei
@@ -52,7 +51,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   logger::log_info("Validating surveys trips...")
   surveys_time_alerts <- validate_surveys_time(
     data = landings,
-    hrs = pars$validation$landings$duration$max %||% default_max_limit)
+    hrs = pars$validation$landings$survey_time$max_duration %||% default_max_limit,
+    submission_delay = pars$validation$landings$survey_time$submission_delay)
 
   logger::log_info("Validating catches values...")
   surveys_price_alerts <- validate_catch_price(

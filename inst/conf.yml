@@ -53,7 +53,9 @@ default:
         min: 0
       prices:
         k: 3
-      duration:
+      survey_time:
+        max_duration: 20
+        submission_delay: 28
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk

@@ -55,11 +55,13 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
 #' info associated to each survey.
 #'
 #' @param data A preprocessed data frame
-#' @param hrs Limit of trip duration in hours to be considered a valid
-#' catch session.
+#' @param hrs Limit of trip duration in hours to be considered a valid catch
+#'   session.
+#' @param submission_delay Limit for maximum difference (in days) between the
+#'   survey submission date and the recorded landing datw
 #'
-#' @return A list containing data frames with validated catch dates and
-#' catch duration.
+#' @return A list containing data frames with validated catch dates and catch
+#'   duration.
 #'
 #' @importFrom rlang .data
 #' @export
@@ -70,7 +72,7 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
 #'   landings <- get_merged_landings(pars)
 #'   validate_surveys_time(landings,hrs =18)
 #' }
-validate_surveys_time <- function(data, hrs =NULL){
+validate_surveys_time <- function(data, hrs = NULL, submission_delay){
 
   validated_time <- list(
 
@@ -80,16 +82,18 @@ validate_surveys_time <- function(data, hrs =NULL){
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
         submission_date = lubridate::with_tz(`_submission_time`, "Asia/Dili"),
         submission_date = lubridate::as_date(submission_date),
-        date = lubridate::as_date(.data$date)) %>%
+        date = lubridate::as_date(.data$date),
+        d = date - submission_date) %>%
       dplyr::transmute(
         # Alert needs to be checked before editing the date column
         alert_number = dplyr::case_when(
           # test if submission date is prior catch date
           .data$date > .data$submission_date ~ 4,
+          .data$date < .data$submission_date - submission_delay ~ 10,
           TRUE ~ NA_real_),
         date = dplyr::case_when(
-          .data$date > .data$submission_date ~ NA_character_,
-          TRUE ~ .data$date),
+          is.na(alert_number) ~ .data$date,
+          TRUE ~ NA_real_),
         submission_id = as.integer(.data$`_id`)),
 
     validated_duration = data %>%
