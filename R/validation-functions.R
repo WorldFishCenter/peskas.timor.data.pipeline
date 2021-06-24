@@ -128,29 +128,19 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay){
 #' }
 #'
 validate_catch_price <- function(data,method=NULL,k=NULL){
-  # extract lower and upper bounds for outliers identification
-  bounds <-
-    data %>% dplyr::select(.data$`_id`,.data$total_catch_value) %>%
-    dplyr::transmute(total_catch_value = as.numeric(.data$total_catch_value)) %>%
-    magrittr::extract2(1) %>%
-    univOutl::LocScaleB(method = method, k = k, logt = TRUE) %>%
-    magrittr::extract2(2)
 
   validated_price = data %>%
     dplyr::select(.data$`_id`,.data$total_catch_value) %>%
-    dplyr::mutate(total_catch_value=as.numeric(.data$total_catch_value)) %>%
+    dplyr::mutate(total_catch_value = as.numeric(.data$total_catch_value)) %>%
     dplyr::transmute(
-      # Need to check alert before changing the total_catch_value column
-      alert_number = dplyr::case_when(
-        .data$total_catch_value < 0 ~ 8,
-        .data$total_catch_value < bounds[1] ~ 9,
-        .data$total_catch_value > bounds[2] ~ 6,
-        TRUE ~ NA_real_),
+      alert_number = alert_outlier(
+        x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
+        logt = TRUE, k = k, method = method),
+      alert_number = dplyr::case_when(.data$total_catch_value < 0 ~ 8,
+                                      TRUE ~ .data$alert_number),
       total_catch_value = dplyr::case_when(
-        .data$total_catch_value < 0 ~ NA_real_,
-        .data$total_catch_value < bounds[1] ~ NA_real_,
-        .data$total_catch_value > bounds[2] ~ NA_real_,
-        TRUE ~ .data$total_catch_value),
+        is.na(.data$alert_number) ~ .data$total_catch_value,
+        TRUE ~ NA_real_),
       submission_id = as.integer(.data$`_id`))
 
   validated_price
