@@ -6,20 +6,20 @@
 \usage{
 alert_outlier(
   x,
-  alert_if_larger,
-  alert_if_smaller = alert_if_larger,
   no_alert_value = NA_real_,
+  alert_if_larger = no_alert_value,
+  alert_if_smaller = no_alert_value,
   ...
 )
 }
 \arguments{
 \item{x}{numeric vector where outliers will be checked}
 
+\item{no_alert_value}{value to put in the output when there is no alert (x is within bounds)}
+
 \item{alert_if_larger}{alert for when x is above the bounds found by \code{univOutl::LocScaleB()}}
 
 \item{alert_if_smaller}{alert for when x is below the bounds found by \code{univOutl::LocScaleB()}}
-
-\item{no_alert_value}{value to put in the output when there is no alert (x is within bounds)}
 
 \item{...}{arguments for \code{univOutl::LocScaleB()}}
 }

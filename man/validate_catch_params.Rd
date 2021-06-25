@@ -4,7 +4,7 @@
 \alias{validate_catch_params}
 \title{Validate surveys' catch parameters}
 \usage{
-validate_catch_params(data, method = NULL, k = NULL)
+validate_catch_params(data, method = NULL, k_ind = NULL, k_length = NULL)
 }
 \arguments{
 \item{data}{A preprocessed data frame}
@@ -33,9 +33,9 @@ validate_catch_params(data, method = NULL, k = NULL)
 		 Finally, when \code{method='AdjOut'}, bounds are based on the adjusted outlyingness method as proposed by Hubert and Van der Veeken (2008).
 }
 
-\item{k}{
-		Nonnegative constant that determines the extension of bounds. Commonly used values are 2, 2.5 and 3 (default).
-}
+\item{k_ind}{Extension of bounds for the number of individuals}
+
+\item{k_length}{Extension of bounds for the catch length}
 }
 \value{
 A data frame containing the validated catches parameters.
