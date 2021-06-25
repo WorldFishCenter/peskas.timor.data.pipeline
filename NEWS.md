@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.12.0
+
+## New features
+
+- Added functions to process and validate pds trips. Namely, `preprocess_pds_trips()` and `validate_pds_trips()`. These functions make sure the data types are appropriate, check for trip duplicates and perform basic checks for trip duration and distance.
+
 # peskas.timor.data.pipeline 0.11.0
 
 ## New features
