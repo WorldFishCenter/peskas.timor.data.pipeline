@@ -23,6 +23,8 @@ default:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
       file_prefix: pds-trips
+      version:
+        preprocess: latest
     tracks:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
@@ -45,6 +47,9 @@ default:
       preprocess: latest
 
   validation:
+    pds_trips:
+      trip_hours: 18
+      trip_km: 60
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk
