@@ -149,18 +149,33 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
 #' Generate an alert vector based on the `univOutl::LocScaleB()` function
 #'
 #' @param x numeric vector where outliers will be checked
+#' @param no_alert_value value to put in the output when there is no alert (x is within bounds)
 #' @param alert_if_larger alert for when x is above the bounds found by `univOutl::LocScaleB()`
 #' @param alert_if_smaller alert for when x is below the bounds found by `univOutl::LocScaleB()`
-#' @param no_alert_value value to put in the output when there is no alert (x is within bounds)
 #' @param ... arguments for `univOutl::LocScaleB()`
 #'
 #' @return a vector of the same lenght as x
 #'
-alert_outlier <- function(x, alert_if_larger,
-                          alert_if_smaller = alert_if_larger,
+alert_outlier <- function(x,
                           no_alert_value = NA_real_,
+                          alert_if_larger = no_alert_value,
+                          alert_if_smaller = no_alert_value,
                           ...){
+
   algo_args <- list(...)
+
+  # Helper function to check if everything is NA or zero
+  all_na_or_zero <- function(x){
+    isTRUE(all(is.na(x) | x == 0))
+  }
+
+  # If everything is NA or zero there is nothing to compute
+  if (all_na_or_zero(x)) return(NA_real_)
+  # If the median absolute deviation is zero we shouldn't be using this algo
+  if (mad(x, na.rm = T) <= 0) return(NA_real_)
+  # If weights are specified and they are all NA or zero
+  if (!is.null(algo_args$weights))
+    if (all_na_or_zero(algo_args$weights)) return(NA_real_)
 
   bounds <- univOutl::LocScaleB(x, ...) %>%
     magrittr::extract2("bounds")
