@@ -48,14 +48,15 @@ default:
     landings:
       default:
         method: MAD
-        k: 15
+        k: 3
         max: 20
         min: 0
-      prices:
-        k: 3
       survey_time:
         max_duration: 20
         submission_delay: 28
+      catch:
+        n_individuals:
+          k: 7
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk

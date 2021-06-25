@@ -63,7 +63,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   surveys_catch_alerts <- validate_catch_params(
     landings,
     method = pars$validation$landings$catch$method %||% default_method,
-    k = pars$validation$catch$prices$k %||% default_k)
+    k_ind = pars$validation$catch$n_individuals$k %||% default_k,
+    k_length = pars$validation$catch$length$k %||% default_k)
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------

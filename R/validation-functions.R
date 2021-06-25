@@ -198,6 +198,8 @@ alert_outlier <- function(x,
 #' a nested column `species_group` containing validated catches parameters.
 #'
 #' @param data A preprocessed data frame
+#' @param k_ind Extension of bounds for the number of individuals
+#' @param k_length Extension of bounds for the catch length
 #' @inheritParams univOutl::LocScaleB
 #'
 #' @return A data frame containing the validated catches parameters.
@@ -210,7 +212,7 @@ alert_outlier <- function(x,
 #'   validate_catch_params(landings,method="MAD",k=13)
 #' }
 #'
-validate_catch_params <- function(data,method=NULL,k=NULL){
+validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL){
 
   catches_dat_unnested <-  data %>%
     dplyr::select(.data$`_id`,.data$species_group) %>%
@@ -220,62 +222,30 @@ validate_catch_params <- function(data,method=NULL,k=NULL){
                   .data$mean_length,.data$n_individuals) %>%
     dplyr::mutate(dplyr::across(c(.data$mean_length,.data$n_individuals),.fns = as.numeric))
 
-  length_dat <- NULL
-  individuals_dat <- NULL
-  for(i in unique(catches_dat_unnested$species)){
-
-    # exclude unidentified fishes catches
-    if(i %in% c("0","300",NA)){next}
-    else{
-      # retrieve n individuals and length bounds for each fish category
-      spe_code <- i
-      limits_length <-
-        dplyr::filter(catches_dat_unnested,.data$species %in% i & .data$n_individuals>0)  %>%
-        magrittr::extract2("mean_length") %>%
-        univOutl::LocScaleB(method=method,k=k) %>%
-        magrittr::extract2(2) %>%t() %>%
-        dplyr::as_tibble() %>%
-        dplyr::rename(length_low=.data$lower.low,length_up=.data$upper.up) %>%
-        dplyr::mutate(species=i,length_low=dplyr::case_when(
-          .data$length_low<=0~0,TRUE~.data$length_low))
-
-      limits_individuals <-
-        dplyr::filter(catches_dat_unnested,.data$species %in% i & .data$n_individuals>0)  %>%
-        magrittr::extract2("n_individuals") %>%
-        univOutl::LocScaleB(method=method,k=k) %>%
-        magrittr::extract2(2) %>% t() %>%
-        dplyr::as_tibble() %>%
-        dplyr::rename(inds_low=.data$lower.low,inds_up=.data$upper.up) %>%
-        dplyr:: mutate(species=i,inds_low=dplyr::case_when(
-          .data$inds_low<=0~0,TRUE~.data$inds_low))
-
-    }
-    length_dat <- rbind(length_dat,limits_length)
-    individuals_dat <- rbind(individuals_dat,limits_individuals)
-  }
-
-  limits <- dplyr::full_join(length_dat,individuals_dat) %>%
-    dplyr::select(.data$species,tidyr::everything())
-
-  validated_length <-
-    dplyr::left_join(catches_dat_unnested,limits) %>%
-    dplyr::mutate(alert_number=
-                    dplyr::case_when(abs(.data$n_individuals) < .data$inds_low |
-                                     .data$n_individuals > .data$inds_up |
-                                     .data$n_individuals >0 & .data$mean_length < .data$length_low |
-                                     .data$n_individuals >0 & .data$mean_length > .data$length_up ~ 7,
-                                     TRUE ~ NA_real_),
-                  n_individuals=
-                    dplyr::case_when(.data$n_individuals < 0 ~ .data$n_individuals * -1,#convert negative values to positive
-                                      abs(.data$n_individuals) < .data$inds_low |#test if n_ind. is lower than lower bound
-                                     .data$n_individuals > .data$inds_up  |#test if n_ind. is higher than upper bound
-                                     .data$n_individuals >0 & .data$mean_length < .data$length_low |#test if length is lower than lower bound
-                                     .data$n_individuals >0 & .data$mean_length > .data$length_up ~ NA_real_,#test if length is higher than higher bound
-                                     TRUE ~ .data$n_individuals),
-                  submission_id=.data$`_id`) %>%
-    dplyr::select(.data$submission_id,.data$n,.data$species,
-                  .data$mean_length,.data$n_individuals,.data$alert_number)
-
+  validated_length <- catches_dat_unnested %>%
+    dplyr::group_by(species) %>%
+    dplyr::mutate(
+      n_individuals = dplyr::case_when(
+        .data$n_individuals == 0 ~ NA_real_,
+        .data$n_individuals < 0 ~ .data$n_individuals * -1,
+        TRUE ~ n_individuals),
+      alert_n_individuals = alert_outlier(
+        x = .data$n_individuals,
+        alert_if_larger = 11, logt = TRUE, k = k_ind),
+      n_individuals = dplyr::case_when(
+        is.na(.data$n_individuals) & !is.na(.data$species) ~ 0,
+        is.na(.data$alert_n_individuals) ~ .data$n_individuals,
+        TRUE ~ NA_real_),
+      alert_length = alert_outlier(
+        x = .data$mean_length,
+        alert_if_larger = 7, logt = TRUE, k = k_length),
+      mean_length = dplyr::case_when(
+        is.na(.data$alert_length) ~ .data$mean_length,
+        TRUE ~ NA_real_),
+      alert_number = dplyr::coalesce(alert_n_individuals, alert_length),
+      submission_id = .data$`_id`) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
   # extract alert number
   alert_number <- validated_length %>%
