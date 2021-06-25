@@ -91,19 +91,19 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
-    mutate(
-      species_group = map(
-        .x = .data$species_group, .f = modify_at,
+    dplyr::mutate(
+      species_group = purrr::map(
+        .x = .data$species_group, .f = purrr::modify_at,
         .at = "length_individuals",
-        map, dplyr::select,
+        purrr::map, dplyr::select,
         length = .data$mean_length,
         frequency = .data$n_individuals),
-      species_group = map(
+      species_group = purrr::map(
         .x = species_group, .f = dplyr::select,
         catch_taxon = .data$species,
         catch_purpose = .data$food_or_sale,
         length_frequency = .data$length_individuals)) %>%
-    select(
+    dplyr::select(
       landing_id = .data$submission_id,
       landing_date = .data$date,
       trip_duration = .data$trip_duration,
