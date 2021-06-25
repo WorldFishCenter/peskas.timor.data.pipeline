@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Parse and validate boats table — pt_validate_boats • peskas.timor.data.pipeline</title>
+<title>Pre-process Pelagic Data System trips — preprocess_pds_trips • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,11 +39,9 @@
 
 
 
-<meta property="og:title" content="Parse and validate boats table — pt_validate_boats" />
-<meta property="og:description" content="Convert date and date-time columns and checks that
-The recorded length of the boats are valid
-
-" />
+<meta property="og:title" content="Pre-process Pelagic Data System trips — preprocess_pds_trips" />
+<meta property="og:description" content="Downloads raw structured data from cloud storage services and pre-process
+into a binary format that is easier to deal with in R." />
 
 
 
@@ -109,32 +107,52 @@ The recorded length of the boats are valid
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Parse and validate boats table</h1>
+    <h1>Pre-process Pelagic Data System trips</h1>
     
-    <div class="hidden name"><code>pt_validate_boats.Rd</code></div>
+    <div class="hidden name"><code>preprocess_pds_trips.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Convert date and date-time columns and checks that</p><ul>
-<li><p>The recorded length of the boats are valid</p></li>
-</ul>
-
+    <p>Downloads raw structured data from cloud storage services and pre-process
+into a binary format that is easier to deal with in R.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>pt_validate_boats</span><span class='op'>(</span><span class='va'>boats_table</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>preprocess_pds_trips</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>boats_table</th>
-      <td><p>a data frame with the boats info</p></td>
+      <th>log_threshold</th>
+      <td><p>The (standard Apache logj4) log level used as a
+threshold for the logging infrastructure. See <a href='https://daroczig.github.io/logger/reference/log_levels.html'>logger::log_levels</a> for more
+details</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a tibble</p>
+    <p>no outputs. This function is used for it's side effects</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>This function downloads the landings data from a given version (specified in
+the config file <code>conf.yml</code>. The parameters needed are:</p><pre>pds:
+  trips:
+    token:
+    secret:
+    file_prefix:
+  version:
+    preprocess:
+storage:
+  storage_name:
+    key:
+    options:
+      project:
+      bucket:
+      service_account_key:
+</pre>
+
+<p>Progress through the function is tracked using the package <em>logger</em>.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
