@@ -134,10 +134,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
     dplyr::rename(submission_id = .data$`_id`,
-                  landing_date = .data$`_submission_time`) %>%
+                  submission_date = .data$`_submission_time`) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id),
-                  landing_date = lubridate::as_date(landing_date)) %>%
-    dplyr::select(.data$submission_id, .data$landing_date)
+                  submission_date = lubridate::as_date(submission_date)) %>%
+    dplyr::select(.data$submission_id, .data$submission_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%
     dplyr::rename(alert = .data$id)
@@ -155,7 +155,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   !is.na(.data$alert_number)) %>%
     dplyr::left_join(remote_alerts, by = "alert_number") %>%
     dplyr::left_join(landings_info, by = "submission_id") %>%
-    dplyr::select(.data$submission_id, .data$alert, .data$landing_date) %>%
+    dplyr::select(.data$submission_id, .data$alert, .data$submission_date) %>%
     dplyr::mutate(flag_date = lubridate::today("GMT"))
   # If there are new flags, upload them
   if (nrow(new_flags_to_upload) > 0) {
