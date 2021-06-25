@@ -81,15 +81,16 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay){
       dplyr::mutate(
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
         submission_date = lubridate::with_tz(`_submission_time`, "Asia/Dili"),
-        submission_date = lubridate::as_date(submission_date),
-        date = lubridate::as_date(.data$date),
+        # submission_date = lubridate::as_date(submission_date),
+        date = lubridate::ymd(.data$date, tz = "Asia/Dili"),
+        # date = lubridate::as_date(date),
         d = date - submission_date) %>%
       dplyr::transmute(
         # Alert needs to be checked before editing the date column
         alert_number = dplyr::case_when(
           # test if submission date is prior catch date
           .data$date > .data$submission_date ~ 4,
-          .data$date < .data$submission_date - submission_delay ~ 10,
+          .data$date < .data$submission_date - lubridate::duration(submission_delay, units = "days") ~ 10,
           TRUE ~ NA_real_),
         date = dplyr::case_when(
           is.na(alert_number) ~ .data$date,
