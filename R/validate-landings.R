@@ -133,8 +133,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
-    dplyr::rename(submission_id = .data$`_id`, landing_date = .data$`_submission_time`) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::rename(submission_id = .data$`_id`,
+                  landing_date = .data$`_submission_time`) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id),
+                  landing_date = lubridate::as_date(landing_date)) %>%
     dplyr::select(.data$submission_id, .data$landing_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%
