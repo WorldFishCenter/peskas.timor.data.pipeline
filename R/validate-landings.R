@@ -81,7 +81,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   # .data$`_id`) %>%
     dplyr::transmute(submission_id=as.integer(.data$`_id`))
 
-
+  logger::log_info("Renaming data fields")
   validated_landings <-
     list(imei_alerts,
          surveys_time_alerts$validated_dates,
@@ -89,8 +89,26 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          surveys_price_alerts,
          surveys_catch_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
-    purrr::reduce(dplyr::left_join) %>%
-    dplyr::left_join(ready_cols)
+    purrr::reduce(dplyr::left_join, by = "submission_id") %>%
+    dplyr::left_join(ready_cols, by = "submission_id") %>%
+    mutate(
+      species_group = map(
+        .x = .data$species_group, .f = modify_at,
+        .at = "length_individuals",
+        map, dplyr::select,
+        length = .data$mean_length,
+        frequency = .data$n_individuals),
+      species_group = map(
+        .x = species_group, .f = dplyr::select,
+        catch_taxon = .data$species,
+        catch_purpose = .data$food_or_sale,
+        length_frequency = .data$length_individuals)) %>%
+    select(
+      landing_id = .data$submission_id,
+      landing_date = .data$date,
+      trip_duration = .data$trip_duration,
+      landed_catch = .data$species_group,
+      landed_value = .data$total_catch_value)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
