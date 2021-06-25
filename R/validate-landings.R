@@ -72,14 +72,14 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   # take ready (?) columns
 
   ready_cols <- landings %>%
-    dplyr::select(dplyr::ends_with("_fishers"),
-                  .data$landing_site_name,
-                  .data$happiness_rating,
-                  .data$`trip_group/gear_type`,
-                  .data$`trip_group/habitat_boat`,
-                  .data$`trip_group/habitat_boat`,
-                  .data$`_id`) %>%
-    dplyr::mutate(submission_id=as.integer(.data$`_id`))
+    # dplyr::select(#dplyr::ends_with("_fishers"),
+                  # .data$landing_site_name,
+                  # .data$happiness_rating,
+                  # .data$`trip_group/gear_type`,
+                  # .data$`trip_group/habitat_boat`,
+                  # .data$`trip_group/habitat_boat`,
+                  # .data$`_id`) %>%
+    dplyr::transmute(submission_id=as.integer(.data$`_id`))
 
 
   validated_landings <-
