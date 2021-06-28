@@ -105,6 +105,7 @@ record_to_data_frame <- function(this_record, max_field_length){
   from_fields <- purrr::imap(.x = this_record$fields,
                              .f = extract_value,
                              max_field_length) %>%
+    purrr::compact() %>%
     tibble::as_tibble()
   # But record also contain information not visible as fields
   from_others <- purrr::discard(this_record, ~ length(.) > 1) %>%
