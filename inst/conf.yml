@@ -43,10 +43,23 @@ default:
         - boats
         - devices
         - vms_installs
+        - catch_types
     version:
       preprocess: latest
 
   validation:
+    landings:
+      default:
+        method: MAD
+        k: 3
+        max: 20
+        min: 0
+      survey_time:
+        max_duration: 20
+        submission_delay: 28
+      catch:
+        n_individuals:
+          k: 7
     pds_trips:
       trip_hours: 18
       trip_km: 60

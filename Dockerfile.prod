@@ -35,7 +35,8 @@ RUN install2.r --error --skipinstalled \
     tidyr \
     rlang \
     furrr \
-    future
+    future \
+    univOutl
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
