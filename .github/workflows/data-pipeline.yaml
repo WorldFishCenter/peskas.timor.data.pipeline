@@ -12,7 +12,6 @@ env:
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
 
-
 jobs:
 
   build-container:
@@ -172,10 +171,6 @@ jobs:
       - name: Call preprocess_pds_tracks()
         run: echo 'Feature not implemented yet'
 
-
-
-
-
   merge-trips:
     name: merge_trips()
     if: ${{ false }} # Skip for now as it's not been implemented
@@ -209,4 +204,3 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_trips()
         run: echo 'Feature not implemented yet'
-
