@@ -43,6 +43,7 @@ default:
         - boats
         - devices
         - vms_installs
+        - catch_types
     version:
       preprocess: latest
 
