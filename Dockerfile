@@ -22,7 +22,9 @@ RUN install2.r --error --skipinstalled \
     tidyr \
     rlang \
     furrr \
-    future
+    future \
+    rfishbase \
+    taxize
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
