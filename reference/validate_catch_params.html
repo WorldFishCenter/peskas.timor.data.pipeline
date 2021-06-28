@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Download survey — retrieve_survey • peskas.timor.data.pipeline</title>
+<title>Validate surveys' catch parameters — validate_catch_params • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,12 @@
 
 
 
-<meta property="og:title" content="Download survey — retrieve_survey" />
-<meta property="og:description" content="Download multiple survey artefacts (data and metadata) at once. Progress
-through the function is tracked using the package logger." />
+<meta property="og:title" content="Validate surveys' catch parameters — validate_catch_params" />
+<meta property="og:description" content="This function takes a preprocessed landings' matrix and uses univariate
+techniques (see univOutl::LocScaleB) for the identification of outliers in
+the distribution of the number of individuals per catch and their size. The
+function returns a data frame with the survey id, the alert number and
+a nested column species_group containing validated catches parameters." />
 
 
 
@@ -107,83 +110,63 @@ through the function is tracked using the package logger." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Download survey</h1>
+    <h1>Validate surveys' catch parameters</h1>
     
-    <div class="hidden name"><code>retrieve_survey.Rd</code></div>
+    <div class="hidden name"><code>validate_catch_params.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Download multiple survey artefacts (data and metadata) at once. Progress
-through the function is tracked using the package <em>logger</em>.</p>
+    <p>This function takes a preprocessed landings' matrix and uses univariate
+techniques (see <a href='https://rdrr.io/pkg/univOutl/man/LocScaleB.html'>univOutl::LocScaleB</a>) for the identification of outliers in
+the distribution of the number of individuals per catch and their size. The
+function returns a data frame with the survey id, the alert number and
+a nested column <code>species_group</code> containing validated catches parameters.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>retrieve_survey</span><span class='op'>(</span>
-  <span class='va'>prefix</span>,
-  <span class='va'>api</span>,
-  <span class='va'>id</span>,
-  <span class='va'>token</span>,
-  format <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"csv"</span>, <span class='st'>"json"</span><span class='op'>)</span>,
-  metadata <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  append_version <span class='op'>=</span> <span class='cn'>TRUE</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>validate_catch_params</span><span class='op'>(</span><span class='va'>data</span>, method <span class='op'>=</span> <span class='cn'>NULL</span>, k_ind <span class='op'>=</span> <span class='cn'>NULL</span>, k_length <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>prefix</th>
-      <td><p>name to be used as the prefix of the file names to be
-downloaded. Can be a path.</p></td>
+      <th>data</th>
+      <td><p>A preprocessed data frame</p></td>
     </tr>
     <tr>
-      <th>api</th>
-      <td><p>Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
-are made available for KoBo Toolbox ("kobo",
-<a href='https://kc.kobotoolbox.org/api/v1/'>https://kc.kobotoolbox.org/api/v1/</a>), KoBo Humanitarian Response
-("kobohr", <a href='https://kc.humanitarianresponse.info/api/v1/'>https://kc.humanitarianresponse.info/api/v1/</a>), Ona ("ona",
-<a href='https://ona.io/api/v1/'>https://ona.io/api/v1/</a>) and Unhcr ("unhcr",
-<a href='https://kobocat.unhcr.org/api/v1/'>https://kobocat.unhcr.org/api/v1/</a>) . For your own installation, or
-other installations using the same API but accessed at a different URL,
-enter the full URL.</p></td>
+      <th>method</th>
+      <td><p>character identifying how to estimate the scale of the distribution. Available choices are:</p>		
+<p><code>method='IQR'</code> for using the Inter-Quartile Range, i.e. Q3-Q1;</p> 
+<p><code>method='IDR'</code> for using the Inter-Decile Range; i.e. P90-P10</p>		 		   	   
+<p><code>method='MAD'</code> for using the Median Absolute Deviation;</p>
+<p><code>method='Gini'</code> robust scale estimate based on Gini's Mean Difference (see  <code><a href='https://rdrr.io/pkg/Hmisc/man/GiniMd.html'>GiniMd</a></code>);</p>		
+<p><code>method='ScaleTau2'</code> robust tau-estimate of univariate scale, as proposed by Maronna and Zamar (2002) (see also<code><a href='https://rdrr.io/pkg/robustbase/man/scaleTau2.html'>scaleTau2</a></code>);</p>		
+<p><code>method='Qn'</code> for using the Qn estimator proposed by Rousseeuw and Croux (1993) (see also <code><a href='https://rdrr.io/pkg/robustbase/man/Qn.html'>Qn</a></code>);</p>		
+<p><code>method='Sn'</code> for using the Sn estimator proposed by Rousseeuw and Croux (1993) (see also <code><a href='https://rdrr.io/pkg/robustbase/man/Sn.html'>Sn</a></code>).</p>		
+<p>When <code>method='dQ'</code> the estimated scale for the left tail is (Q2-Q1)/0.6745, while for the right tail it is considered (Q3-Q2)/0.6745 (Q2 is the median); this double estimate should be able to account for slight skewness.</p>		
+<p>When <code>method='dD'</code> the estimated scale for the left tail is (P50-P10)/1.2816, while for the right tail it is considered (P90-P50)/1.2816 (P50 is the median); this double estimate should be able to account for skewness.</p>		
+<p>Finally, when <code>method='AdjOut'</code>, bounds are based on the adjusted outlyingness method as proposed by Hubert and Van der Veeken (2008).</p></td>
     </tr>
     <tr>
-      <th>id</th>
-      <td><p>survey id. Usually a 6 digit number. See <a href='https://support.kobotoolbox.org/pulling_data_into_powerbi.html'>this support page</a> for
-an example on how this can be obtained</p></td>
+      <th>k_ind</th>
+      <td><p>Extension of bounds for the number of individuals</p></td>
     </tr>
     <tr>
-      <th>token</th>
-      <td><p>access token for the account e.g. "Token XXXXXXX"</p></td>
-    </tr>
-    <tr>
-      <th>format</th>
-      <td><p>Either "csv" or "json"</p></td>
-    </tr>
-    <tr>
-      <th>metadata</th>
-      <td><p>whether to download metadata as well as data</p></td>
-    </tr>
-    <tr>
-      <th>append_version</th>
-      <td><p>whether to append versioning information to the
-filename using <a href='add_version.html'>add_version</a>.</p></td>
+      <th>k_length</th>
+      <td><p>Extension of bounds for the catch length</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a character vector with paths of the downloaded files</p>
+    <p>A data frame containing the validated catches parameters.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='co'># It's only possible to donwload survey metadata with the account Token</span>
-  <span class='fu'>retrieve_survey</span><span class='op'>(</span>prefix <span class='op'>=</span> <span class='st'>"my-survey"</span>, api <span class='op'>=</span> <span class='st'>"kobohr"</span>, id <span class='op'>=</span> <span class='fl'>753491</span>,
-                  token <span class='op'>=</span> <span class='st'>"123XXXXXX"</span><span class='op'>)</span>
-  <span class='co'># To download in a different path</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='st'>"my-data-dir"</span><span class='op'>)</span>
-  <span class='fu'>retrieve_survey</span><span class='op'>(</span>prefix <span class='op'>=</span> <span class='st'>"my-data-dir/my-survey"</span>, api <span class='op'>=</span> <span class='st'>"kobohr"</span>, id <span class='op'>=</span> <span class='fl'>753491</span>,
-                  token <span class='op'>=</span> <span class='st'>"123XXXXXX"</span><span class='op'>)</span>
+  <span class='va'>pars</span> <span class='op'>&lt;-</span> <span class='fu'><a href='read_config.html'>read_config</a></span><span class='op'>(</span><span class='op'>)</span>
+  <span class='va'>landings</span> <span class='op'>&lt;-</span> <span class='fu'>get_merged_landings</span><span class='op'>(</span><span class='va'>pars</span><span class='op'>)</span>
+  <span class='fu'>validate_catch_params</span><span class='op'>(</span><span class='va'>landings</span>,method<span class='op'>=</span><span class='st'>"MAD"</span>,k<span class='op'>=</span><span class='fl'>13</span><span class='op'>)</span>
 <span class='op'>}</span>
+
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

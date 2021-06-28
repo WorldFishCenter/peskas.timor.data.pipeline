@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Download survey — retrieve_survey • peskas.timor.data.pipeline</title>
+<title>Generate an alert vector based on the univOutl::LocScaleB() function — alert_outlier • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,8 @@
 
 
 
-<meta property="og:title" content="Download survey — retrieve_survey" />
-<meta property="og:description" content="Download multiple survey artefacts (data and metadata) at once. Progress
-through the function is tracked using the package logger." />
+<meta property="og:title" content="Generate an alert vector based on the univOutl::LocScaleB() function — alert_outlier" />
+<meta property="og:description" content="Generate an alert vector based on the univOutl::LocScaleB() function" />
 
 
 
@@ -107,84 +106,52 @@ through the function is tracked using the package logger." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Download survey</h1>
+    <h1>Generate an alert vector based on the <code>univOutl::LocScaleB()</code> function</h1>
     
-    <div class="hidden name"><code>retrieve_survey.Rd</code></div>
+    <div class="hidden name"><code>alert_outlier.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Download multiple survey artefacts (data and metadata) at once. Progress
-through the function is tracked using the package <em>logger</em>.</p>
+    <p>Generate an alert vector based on the <code><a href='https://rdrr.io/pkg/univOutl/man/LocScaleB.html'>univOutl::LocScaleB()</a></code> function</p>
     </div>
 
-    <pre class="usage"><span class='fu'>retrieve_survey</span><span class='op'>(</span>
-  <span class='va'>prefix</span>,
-  <span class='va'>api</span>,
-  <span class='va'>id</span>,
-  <span class='va'>token</span>,
-  format <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"csv"</span>, <span class='st'>"json"</span><span class='op'>)</span>,
-  metadata <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  append_version <span class='op'>=</span> <span class='cn'>TRUE</span>
+    <pre class="usage"><span class='fu'>alert_outlier</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  no_alert_value <span class='op'>=</span> <span class='cn'>NA_real_</span>,
+  alert_if_larger <span class='op'>=</span> <span class='va'>no_alert_value</span>,
+  alert_if_smaller <span class='op'>=</span> <span class='va'>no_alert_value</span>,
+  <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>prefix</th>
-      <td><p>name to be used as the prefix of the file names to be
-downloaded. Can be a path.</p></td>
+      <th>x</th>
+      <td><p>numeric vector where outliers will be checked</p></td>
     </tr>
     <tr>
-      <th>api</th>
-      <td><p>Either "kobo", "kobohr", "ona", or a custom (full) URL. API URLs
-are made available for KoBo Toolbox ("kobo",
-<a href='https://kc.kobotoolbox.org/api/v1/'>https://kc.kobotoolbox.org/api/v1/</a>), KoBo Humanitarian Response
-("kobohr", <a href='https://kc.humanitarianresponse.info/api/v1/'>https://kc.humanitarianresponse.info/api/v1/</a>), Ona ("ona",
-<a href='https://ona.io/api/v1/'>https://ona.io/api/v1/</a>) and Unhcr ("unhcr",
-<a href='https://kobocat.unhcr.org/api/v1/'>https://kobocat.unhcr.org/api/v1/</a>) . For your own installation, or
-other installations using the same API but accessed at a different URL,
-enter the full URL.</p></td>
+      <th>no_alert_value</th>
+      <td><p>value to put in the output when there is no alert (x is within bounds)</p></td>
     </tr>
     <tr>
-      <th>id</th>
-      <td><p>survey id. Usually a 6 digit number. See <a href='https://support.kobotoolbox.org/pulling_data_into_powerbi.html'>this support page</a> for
-an example on how this can be obtained</p></td>
+      <th>alert_if_larger</th>
+      <td><p>alert for when x is above the bounds found by <code><a href='https://rdrr.io/pkg/univOutl/man/LocScaleB.html'>univOutl::LocScaleB()</a></code></p></td>
     </tr>
     <tr>
-      <th>token</th>
-      <td><p>access token for the account e.g. "Token XXXXXXX"</p></td>
+      <th>alert_if_smaller</th>
+      <td><p>alert for when x is below the bounds found by <code><a href='https://rdrr.io/pkg/univOutl/man/LocScaleB.html'>univOutl::LocScaleB()</a></code></p></td>
     </tr>
     <tr>
-      <th>format</th>
-      <td><p>Either "csv" or "json"</p></td>
-    </tr>
-    <tr>
-      <th>metadata</th>
-      <td><p>whether to download metadata as well as data</p></td>
-    </tr>
-    <tr>
-      <th>append_version</th>
-      <td><p>whether to append versioning information to the
-filename using <a href='add_version.html'>add_version</a>.</p></td>
+      <th>...</th>
+      <td><p>arguments for <code><a href='https://rdrr.io/pkg/univOutl/man/LocScaleB.html'>univOutl::LocScaleB()</a></code></p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a character vector with paths of the downloaded files</p>
+    <p>a vector of the same lenght as x</p>
 
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-  <span class='co'># It's only possible to donwload survey metadata with the account Token</span>
-  <span class='fu'>retrieve_survey</span><span class='op'>(</span>prefix <span class='op'>=</span> <span class='st'>"my-survey"</span>, api <span class='op'>=</span> <span class='st'>"kobohr"</span>, id <span class='op'>=</span> <span class='fl'>753491</span>,
-                  token <span class='op'>=</span> <span class='st'>"123XXXXXX"</span><span class='op'>)</span>
-  <span class='co'># To download in a different path</span>
-  <span class='fu'><a href='https://rdrr.io/r/base/files2.html'>dir.create</a></span><span class='op'>(</span><span class='st'>"my-data-dir"</span><span class='op'>)</span>
-  <span class='fu'>retrieve_survey</span><span class='op'>(</span>prefix <span class='op'>=</span> <span class='st'>"my-data-dir/my-survey"</span>, api <span class='op'>=</span> <span class='st'>"kobohr"</span>, id <span class='op'>=</span> <span class='fl'>753491</span>,
-                  token <span class='op'>=</span> <span class='st'>"123XXXXXX"</span><span class='op'>)</span>
-<span class='op'>}</span>
-</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
