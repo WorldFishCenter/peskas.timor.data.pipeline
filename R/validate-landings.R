@@ -53,7 +53,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     data = landings,
     hrs = pars$validation$landings$survey_time$max_duration %||% default_max_limit,
     submission_delay = pars$validation$landings$survey_time$submission_delay)
-
   logger::log_info("Validating catches values...")
   surveys_price_alerts <- validate_catch_price(
     data = landings,
@@ -81,6 +80,11 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   # .data$`_id`) %>%
     dplyr::transmute(submission_id=as.integer(.data$`_id`))
 
+  catch_codes <- metadata$catch_types %>%
+    dplyr::transmute(species = as.character(.data$catch_number),
+                     catch_taxon = .data$interagency_code) %>%
+    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
+
   logger::log_info("Renaming data fields")
   validated_landings <-
     list(imei_alerts,
@@ -91,6 +95,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
+    dplyr::slice(1:100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
@@ -99,10 +104,13 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         length = .data$mean_length,
         individuals = .data$n_individuals),
       species_group = purrr::map(
+        .x = species_group, .f = dplyr::left_join,
+        catch_codes, by = c("species")),
+      species_group = purrr::map(
         .x = species_group, .f = dplyr::select,
-        catch_taxon = .data$species,
+        catch_taxon,
         catch_purpose = .data$food_or_sale,
-        length_frequency = .data$length_individuals)) %>%
+        length_frequency = .data$length_individuals), ) %>%
     dplyr::select(
       landing_id = .data$submission_id,
       landing_date = .data$date,
