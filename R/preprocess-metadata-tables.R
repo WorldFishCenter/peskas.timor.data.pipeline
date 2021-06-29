@@ -58,7 +58,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
   preprocessed_metadata <- list(
     devices = pt_validate_devices(metadata_tables$devices),
     device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
-    boats = pt_validate_boats(metadata_tables$boats))
+    boats = pt_validate_boats(metadata_tables$boats),
+    catch_types = pt_validate_catch_types(metadata_tables$catch_types))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
@@ -185,4 +186,16 @@ pt_validate_boats <- function(boats_table){
     stop("detected boats with unvalid lengths")
 
   b
+}
+
+#' Parse and validate catch types table
+#'
+#' Currently this function does not perform anything and is a placeholder
+#'
+#' @param catch_type_table a data frame with the catch type info
+#'
+#' @return a tibble
+#'
+pt_validate_catch_types <- function(catch_type_table){
+  catch_type_table
 }

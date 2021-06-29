@@ -12,16 +12,19 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \value{
-no outputs. This funcrion is used for it's side effects
+no outputs. This function is used for it's side effects
 }
 \description{
-Downloads the preprocessed cersion of the data from cloud storage services and
+Downloads the preprocessed version of the data from cloud storage services and
 validates a range of information so that it can be safely used for analysis.
+By default the function uses the method of the median absolute deviation (MAD)
+for outliers identification.
 }
 \details{
 The parameters needed in the config file are those required for
 \code{preprocess_landings()}, \code{preprocess_metadata_tables()}, and
-\code{ingest_validation_tables()} combined.
+\code{ingest_validation_tables()} combined, as well as parameters needed to
+outliers identification that are  \code{hrs}, \code{method} and \code{k}.
 
 To avoid synchronisation problems always is recommended that this called
 together with \code{ingest_validation_tables()}

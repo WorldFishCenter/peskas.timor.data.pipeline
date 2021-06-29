@@ -1,28 +1,41 @@
 #'Validate landings
 #'
-#'Downloads the preprocessed cersion of the data from cloud storage services and
+#'Downloads the preprocessed version of the data from cloud storage services and
 #'validates a range of information so that it can be safely used for analysis.
+#'By default the function uses the method of the median absolute deviation (MAD)
+#'for outliers identification.
 #'
 #'The parameters needed in the config file are those required for
 #'`preprocess_landings()`, `preprocess_metadata_tables()`, and
-#'`ingest_validation_tables()` combined.
+#'`ingest_validation_tables()` combined, as well as parameters needed to
+#'outliers identification that are  `hrs`, `method` and `k`.
 #'
 #'To avoid synchronisation problems always is recommended that this called
 #'together with `ingest_validation_tables()`
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
+#' @inheritParams validate_surveys_time
+#' @inheritParams validate_catch_price
 #' @keywords workflow
-#' @return no outputs. This funcrion is used for it's side effects
+#' @return no outputs. This function is used for it's side effects
+#'
+#' @importFrom rlang .data
 #' @export
 #'
 validate_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
+
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
-  landings <- get_preprocessed_landings(pars)
+  landings <- get_merged_landings(pars)
+
+  # read arguments for outliers identification
+  default_max_limit <-  pars$validation$landings$default$max
+  default_method <-  pars$validation$landings$default$method
+  default_k <-  pars$validation$landings$default$k
 
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
@@ -35,12 +48,77 @@ validate_landings <- function(log_threshold = logger::DEBUG){
              deployed_imeis) %>%
     purrr::map_dfr(tibble::as_tibble)
 
+  logger::log_info("Validating surveys trips...")
+  surveys_time_alerts <- validate_surveys_time(
+    data = landings,
+    hrs = pars$validation$landings$survey_time$max_duration %||% default_max_limit,
+    submission_delay = pars$validation$landings$survey_time$submission_delay)
+  logger::log_info("Validating catches values...")
+  surveys_price_alerts <- validate_catch_price(
+    data = landings,
+    method = pars$validation$landings$prices$method %||% default_method,
+    k = pars$validation$landings$prices$k %||% default_k)
+  logger::log_info("Validating catches parameters...")
+  surveys_catch_alerts <- validate_catch_params(
+    landings,
+    method = pars$validation$landings$catch$method %||% default_method,
+    k_ind = pars$validation$catch$n_individuals$k %||% default_k,
+    k_length = pars$validation$catch$length$k %||% default_k)
+
+
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
-  validated_landings <- dplyr::select(imei_alerts,
-                                      .data$submission_id, .data$imei)
+  # take ready (?) columns
 
-  validated_landings_filename <- paste(pars$surveys$landings$file_prefix,
+  ready_cols <- landings %>%
+    # dplyr::select(#dplyr::ends_with("_fishers"),
+                  # .data$landing_site_name,
+                  # .data$happiness_rating,
+                  # .data$`trip_group/gear_type`,
+                  # .data$`trip_group/habitat_boat`,
+                  # .data$`trip_group/habitat_boat`,
+                  # .data$`_id`) %>%
+    dplyr::transmute(submission_id=as.integer(.data$`_id`))
+
+  catch_codes <- metadata$catch_types %>%
+    dplyr::transmute(species = as.character(.data$catch_number),
+                     catch_taxon = .data$interagency_code) %>%
+    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
+
+  logger::log_info("Renaming data fields")
+  validated_landings <-
+    list(imei_alerts,
+         surveys_time_alerts$validated_dates,
+         surveys_time_alerts$validated_duration,
+         surveys_price_alerts,
+         surveys_catch_alerts) %>%
+    purrr::map(~ dplyr::select(.x,-alert_number)) %>%
+    purrr::reduce(dplyr::left_join, by = "submission_id") %>%
+    dplyr::left_join(ready_cols, by = "submission_id") %>%
+    dplyr::slice(1:100) %>%
+    dplyr::mutate(
+      species_group = purrr::map(
+        .x = .data$species_group, .f = purrr::modify_at,
+        .at = "length_individuals",
+        purrr::map, dplyr::select,
+        length = .data$mean_length,
+        individuals = .data$n_individuals),
+      species_group = purrr::map(
+        .x = species_group, .f = dplyr::left_join,
+        catch_codes, by = c("species")),
+      species_group = purrr::map(
+        .x = species_group, .f = dplyr::select,
+        catch_taxon,
+        catch_purpose = .data$food_or_sale,
+        length_frequency = .data$length_individuals), ) %>%
+    dplyr::select(
+      landing_id = .data$submission_id,
+      landing_date = .data$date,
+      trip_duration = .data$trip_duration,
+      landed_catch = .data$species_group,
+      landed_value = .data$total_catch_value)
+
+  validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(x = validated_landings,
@@ -50,17 +128,24 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   upload_cloud_file(file = validated_landings_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
-
   # HANDLE FLAGS ------------------------------------------------------------
 
-  alerts <- imei_alerts %>%
-    dplyr::select(.data$alert_number, .data$submission_id)
+  alerts <-
+  list(imei_alerts,
+       surveys_time_alerts$validated_dates,
+       surveys_time_alerts$validated_duration,
+       surveys_price_alerts,
+       surveys_catch_alerts) %>%
+    purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
+    purrr::reduce(dplyr::bind_rows)
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
-    dplyr::rename(submission_id = .data$`_id`, landing_date = .data$date) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
-    dplyr::select(.data$submission_id, .data$landing_date)
+    dplyr::rename(submission_id = .data$`_id`,
+                  submission_date = .data$`_submission_time`) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id),
+                  submission_date = lubridate::as_date(submission_date)) %>%
+    dplyr::select(.data$submission_id, .data$submission_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%
     dplyr::rename(alert = .data$id)
@@ -78,7 +163,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   !is.na(.data$alert_number)) %>%
     dplyr::left_join(remote_alerts, by = "alert_number") %>%
     dplyr::left_join(landings_info, by = "submission_id") %>%
-    dplyr::select(.data$submission_id, .data$alert, .data$landing_date) %>%
+    dplyr::select(.data$submission_id, .data$alert, .data$submission_date) %>%
     dplyr::mutate(flag_date = lubridate::today("GMT"))
   # If there are new flags, upload them
   if (nrow(new_flags_to_upload) > 0) {
@@ -145,4 +230,19 @@ get_preprocessed_metadata <- function(pars){
                       provider = pars$storage$google$key,
                       options = pars$storage$google$options)
   readr::read_rds(file = metadata_rds)
+}
+
+get_merged_landings <- function(pars){
+  landings_rds <- cloud_object_name(
+    prefix = paste(pars$surveys$merged_landings$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$surveys$merged_landings$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE)
+  logger::log_info("Downloading {landings_rds}...")
+  download_cloud_file(name = landings_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = landings_rds)
 }

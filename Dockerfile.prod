@@ -35,7 +35,8 @@ RUN install2.r --error --skipinstalled \
     tidyr \
     rlang \
     furrr \
-    future
+    future \
+    univOutl \
     rfishbase \
     taxize
 
