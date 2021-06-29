@@ -4,12 +4,14 @@
 \alias{retrieve_lengths}
 \title{Retrieve body-length parameters}
 \usage{
-retrieve_lengths(data, country_code = 626, get_one = FALSE)
+retrieve_lengths(data, country_code = c(626, 360), get_one = FALSE)
 }
 \arguments{
 \item{data}{A table returned from \code{get_catch_types}}
 
-\item{country_code}{The code of the country associated to FishBase database.}
+\item{country_code}{The code of the country associated to FishBase database, default
+code include Timor-Leste and Indonesia. Full list at
+\url{https://www.fishbase.se/country/ListOfCountryCodes.php}.}
 
 \item{get_one}{Logical, indicating wether the user wants to get length data
 from the most recorded species.}
@@ -26,4 +28,5 @@ This function download body-length parameters from a table returned by
 rank_tab <- get_catch_types()
 retrieve_lengths(rank_tab)
 }
+
 }
