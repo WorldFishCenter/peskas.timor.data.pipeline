@@ -44,6 +44,7 @@ default:
         - devices
         - vms_installs
         - catch_types
+        - fao_catch
     version:
       preprocess: latest
 
