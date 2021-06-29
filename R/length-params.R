@@ -36,7 +36,7 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
     purrr::map_dfr(~ dplyr::mutate_all(.x, as.character)) %>%
     dplyr::rename(taxa_rank = value) %>%
     dplyr::bind_cols(spp, .) %>%
-    dplyr::mutate(name = name_scientific) %>%
+    dplyr::mutate(name = gsub(" spp", "",name_scientific)) %>%
     dplyr::mutate(
       name = dplyr::case_when(
         name == "Thunnini" ~ "Tuna",
