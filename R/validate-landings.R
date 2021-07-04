@@ -32,6 +32,22 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   metadata <- get_preprocessed_metadata(pars)
   landings <- get_merged_landings(pars)
 
+  rfish_table <-
+    get_catch_types() %>%
+    retrieve_lengths()
+
+  weight_table <- rfish_table %>% dplyr::filter(.data$CoeffDetermination > 0.95 & is.na(.data$EsQ))
+
+  weight_table <- weight_table %>%
+    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "MSD" & is.na(.data$EsQ))) %>%
+    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "MHL" & is.na(.data$EsQ))) %>%
+    dplyr:: bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "SFA" & is.na(.data$EsQ))) %>%
+    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin, .data$LengthMax, .data$a, .data$b) %>%
+    dplyr::group_by(.data$interagency_code) %>%
+    dplyr::summarise(dplyr::across(.cols = c(.data$LengthMin:.data$b), ~ mean(.x, na.rm = TRUE))) %>%
+    dplyr::rename(catch_taxon = .data$interagency_code)
+
+
   # read arguments for outliers identification
   default_max_limit <-  pars$validation$landings$default$max
   default_method <-  pars$validation$landings$default$method
@@ -95,7 +111,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
-    dplyr::slice(1:100) %>%
+    #dplyr::slice(1:100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
@@ -104,10 +120,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         length = .data$mean_length,
         individuals = .data$n_individuals),
       species_group = purrr::map(
-        .x = species_group, .f = dplyr::left_join,
+        .x = .data$species_group, .f = dplyr::left_join,
         catch_codes, by = c("species")),
       species_group = purrr::map(
-        .x = species_group, .f = dplyr::select,
+        .x = .data$species_group, .f = dplyr::select,
         catch_taxon,
         catch_purpose = .data$food_or_sale,
         length_frequency = .data$length_individuals), ) %>%
@@ -116,7 +132,21 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_date = .data$date,
       trip_duration = .data$trip_duration,
       landed_catch = .data$species_group,
-      landed_value = .data$total_catch_value)
+      landed_value = .data$total_catch_value) %>%
+    dplyr::select(-.data$landed_catch, tidyselect::everything()) %>%
+    tidyr::unnest(.data$landed_catch, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_frequency, keep_empty = TRUE) %>%
+    dplyr::left_join(weight_table) %>%
+    dplyr::mutate(tot_weight = (.data$a * .data$length^.data$b) * individuals) %>%
+    tidyr::nest(length_frequency = c(.data$length:.data$tot_weight)) %>%
+    dplyr::mutate(tot_weight = purrr::map_dbl(.data$length_frequency, ~ {
+      sum(.x$tot_weight, na.rm = TRUE)
+    })) %>%
+    tidyr::nest(landed_catch = c(.data$catch_taxon:.data$tot_weight)) %>%
+    dplyr::mutate(tot_weight = purrr::map_dbl(.data$landed_catch, ~ {
+      sum(.x$tot_weight, na.rm = TRUE)
+    }))
+
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
@@ -144,7 +174,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     dplyr::rename(submission_id = .data$`_id`,
                   submission_date = .data$`_submission_time`) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id),
-                  submission_date = lubridate::as_date(submission_date)) %>%
+                  submission_date = lubridate::as_date(.data$submission_date)) %>%
     dplyr::select(.data$submission_id, .data$submission_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%
@@ -238,6 +268,24 @@ get_merged_landings <- function(pars){
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$surveys$merged_landings$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE)
+  logger::log_info("Downloading {landings_rds}...")
+  download_cloud_file(name = landings_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = landings_rds)
+}
+
+
+get_validated_landings <- function(log_threshold = logger::DEBUG){
+  pars <- read_config()
+
+  landings_rds <- cloud_object_name(
+    prefix = paste(pars$surveys$validated_landings$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$surveys$validated_landings$version,
     options = pars$storage$google$options,
     exact_match = TRUE)
   logger::log_info("Downloading {landings_rds}...")
