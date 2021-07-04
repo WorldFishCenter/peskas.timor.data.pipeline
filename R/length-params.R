@@ -6,7 +6,7 @@
 #'   threshold for the logging infrastructure. See [logger::log_levels] for more
 #'   details
 #'
-#' @return
+#' @return No output. This funcrion is used for it's side effects
 #' @export
 #'
 get_catch_types <- function(log_threshold = logger::DEBUG) {
@@ -21,11 +21,11 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
 
   spp <- catches_tab %>%
     dplyr::select(
-      interagency_code, isscaap_taxocode.x, name_scientific,
-      catch_family, catch_name_en, taxo_name_en
+      .data$interagency_code, .data$isscaap_taxocode.x, .data$name_scientific,
+      .data$catch_family, .data$catch_name_en, .data$taxo_name_en
     )
 
-  logger::log_info("Getting taxa rank...")
+  logger::log_info("Getting taxa ranks...")
   ranks <- taxize::tax_rank(spp$name_scientific, db = "gbif", rows = 1)
 
 
@@ -34,13 +34,16 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
     purrr::map(~ stringr::str_to_title(.x)) %>%
     purrr::map(~ tidyr::as_tibble(.x)) %>%
     purrr::map_dfr(~ dplyr::mutate_all(.x, as.character)) %>%
-    dplyr::rename(taxa_rank = value) %>%
-    dplyr::bind_cols(spp, .) %>%
-    dplyr::mutate(name = gsub(" spp", "",name_scientific)) %>%
+    dplyr::rename(taxa_rank = .data$value) %>%
+    dplyr::bind_cols(spp) %>%
+    dplyr::mutate(name = gsub(" spp", "", .data$name_scientific)) %>%
+    dplyr::mutate(name = gsub("\\s*\\([^\\)]+\\)", "", .data$name)) %>%
     dplyr::mutate(
       name = dplyr::case_when(
         name == "Thunnini" ~ "Tuna",
-        name == "Rajiformes" ~ "Manta",
+        name == "Selachimorpha" ~ "Shark",
+        name == "Hyporhamphus quoyi" ~ "Garfish",
+        name == "Abudefduf vaigiensis" ~ "Sergeant",
         catch_name_en == "Unicornfish" ~ "Unicornfish",
         catch_name_en == "Surgeonfish" ~ "Surgeonfish",
         catch_name_en == "Butterflyfish" ~ "Butterflyfish",
@@ -49,7 +52,9 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
       ),
       taxa_rank = dplyr::case_when(
         name == "Tuna" ~ "comm_name",
-        name == "Manta" ~ "comm_name",
+        name == "Shark" ~ "comm_name",
+        name == "Garfish" ~ "comm_name",
+        name == "Sergeant" ~ "comm_name",
         name == "Unicornfish" ~ "comm_name",
         name == "Surgeonfish" ~ "comm_name",
         name == "Butterflyfish" ~ "comm_name",
@@ -57,7 +62,7 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
         TRUE ~ .data$taxa_rank
       )
     ) %>%
-    dplyr::filter(!catch_name_en %in% c(
+    dplyr::filter(!.data$catch_name_en %in% c(
       "No catch", "Sea cucumber",
       "Other", "Unknown", "Lobster",
       "Herring"
@@ -96,7 +101,7 @@ get_fish_length <- function(taxa,
                             get_one = NULL) {
   take_one <- function(specs_length) {
     specs_length %>%
-      dplyr::arrange(desc(Number)) %>%
+      dplyr::arrange(dplyr::desc(.data$CoeffDetermination)) %>%
       dplyr::slice(1)
   }
 
@@ -110,9 +115,9 @@ get_fish_length <- function(taxa,
   }
   specs <- sp_list %>%
     rfishbase::country() %>%
-    dplyr::filter(C_Code %in% country_code) %>%
+    dplyr::filter(.data$C_Code %in% country_code) %>%
     magrittr::extract2("Species")
-  specs_length <- rfishbase::length_length(specs)
+  specs_length <- rfishbase::length_weight(specs)
 
   if (isFALSE(get_one)) {
     return(specs_length)
@@ -140,7 +145,7 @@ get_fish_length <- function(taxa,
 retrieve_lengths <- function(data, country_code = c(626, 360), get_one = FALSE) {
   res <- NULL
   for (i in unique(data$interagency_code)) {
-    dat <- dplyr::filter(data, interagency_code %in% i)
+    dat <- dplyr::filter(data,interagency_code %in% i)
     int_code <- unique(i)
 
     sp_len <-
