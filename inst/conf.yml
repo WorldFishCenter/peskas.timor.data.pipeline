@@ -18,6 +18,9 @@ default:
     merged_landings:
       file_prefix: timor-landings-merged
       version: latest
+    validated_landings:
+      file_prefix: timor-landings-merged_validated
+      version: latest
   pds:
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
