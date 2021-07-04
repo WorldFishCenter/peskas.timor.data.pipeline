@@ -80,11 +80,11 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay){
       dplyr::select(.data$`_id`,.data$date,.data$`_submission_time`) %>%
       dplyr::mutate(
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
-        submission_date = lubridate::with_tz(`_submission_time`, "Asia/Dili"),
+        submission_date = lubridate::with_tz(.data$`_submission_time`, "Asia/Dili"),
         # submission_date = lubridate::as_date(submission_date),
         date = lubridate::ymd(.data$date, tz = "Asia/Dili"),
         # date = lubridate::as_date(date),
-        d = date - submission_date) %>%
+        d = date - .data$submission_date) %>%
       dplyr::transmute(
         # Alert needs to be checked before editing the date column
         alert_number = dplyr::case_when(
@@ -224,7 +224,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     dplyr::mutate(dplyr::across(c(.data$mean_length,.data$n_individuals),.fns = as.numeric))
 
   validated_length <- catches_dat_unnested %>%
-    dplyr::group_by(species) %>%
+    dplyr::group_by(.data$species) %>%
     dplyr::mutate(
       n_individuals = dplyr::case_when(
         .data$n_individuals == 0 ~ NA_real_,
@@ -243,7 +243,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
       mean_length = dplyr::case_when(
         is.na(.data$alert_length) ~ .data$mean_length,
         TRUE ~ NA_real_),
-      alert_number = dplyr::coalesce(alert_n_individuals, alert_length),
+      alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`) %>%
     dplyr::ungroup() %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
