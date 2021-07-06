@@ -42,23 +42,11 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
       name = dplyr::case_when(
         name == "Thunnini" ~ "Tuna",
         name == "Selachimorpha" ~ "Shark",
-        name == "Hyporhamphus quoyi" ~ "Garfish",
-        name == "Abudefduf vaigiensis" ~ "Sergeant",
-        catch_name_en == "Unicornfish" ~ "Unicornfish",
-        catch_name_en == "Surgeonfish" ~ "Surgeonfish",
-        catch_name_en == "Butterflyfish" ~ "Butterflyfish",
-        catch_name_en == "Bannerfish" ~ "Bannerfish",
         TRUE ~ .data$name
       ),
       taxa_rank = dplyr::case_when(
         name == "Tuna" ~ "comm_name",
         name == "Shark" ~ "comm_name",
-        name == "Garfish" ~ "comm_name",
-        name == "Sergeant" ~ "comm_name",
-        name == "Unicornfish" ~ "comm_name",
-        name == "Surgeonfish" ~ "comm_name",
-        name == "Butterflyfish" ~ "comm_name",
-        name == "Bannerfish" ~ "comm_name",
         TRUE ~ .data$taxa_rank
       )
     ) %>%
@@ -68,7 +56,9 @@ get_catch_types <- function(log_threshold = logger::DEBUG) {
       "Herring"
     ))
 
-  ranks_tab
+  ranks_tab %>%
+    dplyr::group_by(.data$interagency_code) %>%
+    dplyr::filter(dplyr::row_number()==1)
 }
 
 
@@ -111,7 +101,7 @@ get_fish_length <- function(taxa,
   } else {
     sp_list <- list(taxa) %>%
       rlang::set_names(rank) %>%
-      do.call(rfishbase::species_list, .)
+      do.call(rfishbase::species_list,.)
   }
   specs <- sp_list %>%
     rfishbase::country() %>%

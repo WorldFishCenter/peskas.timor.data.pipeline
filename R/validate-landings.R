@@ -32,19 +32,24 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   metadata <- get_preprocessed_metadata(pars)
   landings <- get_merged_landings(pars)
 
+  # get length-weight tab
   rfish_table <-
     get_catch_types() %>%
     retrieve_lengths()
 
-  weight_table <- rfish_table %>% dplyr::filter(.data$CoeffDetermination > 0.95 & is.na(.data$EsQ))
+  # drop questionable records
+  weight_table <- rfish_table %>% dplyr::filter(.data$CoeffDetermination > 0.95 &
+                                                  is.na(.data$EsQ))
 
+  # add manually verified records and prepare length-weight table
   weight_table <- weight_table %>%
-    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "MSD" & is.na(.data$EsQ))) %>%
-    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "MHL" & is.na(.data$EsQ))) %>%
-    dplyr:: bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code == "SFA" & is.na(.data$EsQ))) %>%
-    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin, .data$LengthMax, .data$a, .data$b) %>%
+    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code %in%  c("MSD","MHL","SFA") &
+                                           is.na(.data$EsQ))) %>%
+    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin,
+                  .data$LengthMax, .data$a, .data$b) %>%
     dplyr::group_by(.data$interagency_code) %>%
-    dplyr::summarise(dplyr::across(.cols = c(.data$LengthMin:.data$b), ~ mean(.x, na.rm = TRUE))) %>%
+    dplyr::summarise(dplyr::across(.cols = c(.data$LengthMin:.data$b),
+                                   ~ median(.x, na.rm = TRUE))) %>%
     dplyr::rename(catch_taxon = .data$interagency_code)
 
 
@@ -133,19 +138,14 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       trip_duration = .data$trip_duration,
       landed_catch = .data$species_group,
       landed_value = .data$total_catch_value) %>%
+    # add weight info by catch
     dplyr::select(-.data$landed_catch, tidyselect::everything()) %>%
     tidyr::unnest(.data$landed_catch, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = TRUE) %>%
     dplyr::left_join(weight_table) %>%
     dplyr::mutate(tot_weight = (.data$a * .data$length^.data$b) * individuals) %>%
     tidyr::nest(length_frequency = c(.data$length:.data$tot_weight)) %>%
-    dplyr::mutate(tot_weight = purrr::map_dbl(.data$length_frequency, ~ {
-      sum(.x$tot_weight, na.rm = TRUE)
-    })) %>%
-    tidyr::nest(landed_catch = c(.data$catch_taxon:.data$tot_weight)) %>%
-    dplyr::mutate(tot_weight = purrr::map_dbl(.data$landed_catch, ~ {
-      sum(.x$tot_weight, na.rm = TRUE)
-    }))
+    tidyr::nest(landed_catch = c(.data$catch_taxon:.data$length_frequency))
 
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
