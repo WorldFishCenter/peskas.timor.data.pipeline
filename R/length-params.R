@@ -221,6 +221,8 @@ get_rfish_table <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 join_weights <- function(data) {
+  pars <- read_config()
+
   catch_codes <- get_preprocessed_metadata(pars)$catch_types %>%
     dplyr::transmute(
       species = as.character(.data$catch_number),
