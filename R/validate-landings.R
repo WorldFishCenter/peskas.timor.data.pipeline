@@ -32,27 +32,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   metadata <- get_preprocessed_metadata(pars)
   landings <- get_merged_landings(pars)
 
-  # get length-weight tab
-  rfish_table <-
-    get_catch_types() %>%
-    retrieve_lengths()
-
-  # drop questionable records
-  weight_table <- rfish_table %>% dplyr::filter(.data$CoeffDetermination > 0.95 &
-                                                  is.na(.data$EsQ))
-
-  # add manually verified records and prepare length-weight table
-  weight_table <- weight_table %>%
-    dplyr::bind_rows(rfish_table %>% dplyr::filter(.data$interagency_code %in%  c("MSD","MHL","SFA") &
-                                           is.na(.data$EsQ))) %>%
-    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin,
-                  .data$LengthMax, .data$a, .data$b) %>%
-    dplyr::group_by(.data$interagency_code) %>%
-    dplyr::summarise(dplyr::across(.cols = c(.data$LengthMin:.data$b),
-                                   ~ median(.x, na.rm = TRUE))) %>%
-    dplyr::rename(catch_taxon = .data$interagency_code)
-
-
   # read arguments for outliers identification
   default_max_limit <-  pars$validation$landings$default$max
   default_method <-  pars$validation$landings$default$method
@@ -101,11 +80,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   # .data$`_id`) %>%
     dplyr::transmute(submission_id=as.integer(.data$`_id`))
 
-  catch_codes <- metadata$catch_types %>%
-    dplyr::transmute(species = as.character(.data$catch_number),
-                     catch_taxon = .data$interagency_code) %>%
-    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
-
   logger::log_info("Renaming data fields")
   validated_landings <-
     list(imei_alerts,
@@ -116,37 +90,25 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
-    #dplyr::slice(1:100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
         .at = "length_individuals",
         purrr::map, dplyr::select,
         length = .data$mean_length,
-        individuals = .data$n_individuals),
-      species_group = purrr::map(
-        .x = .data$species_group, .f = dplyr::left_join,
-        catch_codes, by = c("species")),
+        individuals = .data$n_individuals,
+        .data$weight),
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::select,
-        catch_taxon,
+        catch_taxon=.data$species,
         catch_purpose = .data$food_or_sale,
-        length_frequency = .data$length_individuals), ) %>%
+        length_frequency = .data$length_individuals)) %>%
     dplyr::select(
       landing_id = .data$submission_id,
       landing_date = .data$date,
       trip_duration = .data$trip_duration,
       landed_catch = .data$species_group,
-      landed_value = .data$total_catch_value) %>%
-    # add weight info by catch
-    dplyr::select(-.data$landed_catch, tidyselect::everything()) %>%
-    tidyr::unnest(.data$landed_catch, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_frequency, keep_empty = TRUE) %>%
-    dplyr::left_join(weight_table) %>%
-    dplyr::mutate(tot_weight = (.data$a * .data$length^.data$b) * individuals) %>%
-    tidyr::nest(length_frequency = c(.data$length:.data$tot_weight)) %>%
-    tidyr::nest(landed_catch = c(.data$catch_taxon:.data$length_frequency))
-
+      landed_value = .data$total_catch_value)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%

@@ -218,10 +218,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
   catches_dat_unnested <-  data %>%
     dplyr::select(.data$`_id`,.data$species_group) %>%
     tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals,keep_empty = TRUE) %>%
-    dplyr::select(.data$`_id`,.data$n,.data$species,
-                  .data$mean_length,.data$n_individuals) %>%
-    dplyr::mutate(dplyr::across(c(.data$mean_length,.data$n_individuals),.fns = as.numeric))
+    tidyr::unnest(.data$length_individuals,keep_empty = TRUE)
 
   validated_length <- catches_dat_unnested %>%
     dplyr::group_by(.data$species) %>%
@@ -259,7 +256,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     validated_length %>%
     dplyr::select(-.data$alert_number) %>%
     dplyr::group_by(.data$submission_id,.data$n,.data$species) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length,.data$n_individuals))
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$weight))
 
   # replace validated catches params in original data
   validated_catch_params <- data %>%

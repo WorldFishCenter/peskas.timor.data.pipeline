@@ -50,6 +50,9 @@ default:
         - fao_catch
     version:
       preprocess: latest
+    rfishtable:
+      file_prefix: rfish_table
+      version: latest
 
   validation:
     landings:

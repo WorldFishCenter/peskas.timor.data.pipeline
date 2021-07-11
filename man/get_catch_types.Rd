@@ -4,16 +4,15 @@
 \alias{get_catch_types}
 \title{Download metadata catch types}
 \usage{
-get_catch_types(log_threshold = logger::DEBUG)
+get_catch_types(pars)
 }
 \arguments{
-\item{log_threshold}{The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
-details}
+\item{pars}{The configuration file}
 }
 \value{
-No output. This funcrion is used for it's side effects
+A dataframe containing taxonomic info and common names associated to
+species groups.
 }
 \description{
-This function download airtable tables containing metadata of catch types.
+This function downloads airtable tables containing catches metadata.
 }

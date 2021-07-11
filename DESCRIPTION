@@ -41,7 +41,8 @@ Imports:
     future,
     rfishbase,
     taxize,
-    univOutl
+    univOutl,
+    gsheet
 Suggests: 
     covr,
     pkgdown,

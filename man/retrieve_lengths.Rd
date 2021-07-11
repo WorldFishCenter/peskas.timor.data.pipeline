@@ -2,9 +2,9 @@
 % Please edit documentation in R/length-params.R
 \name{retrieve_lengths}
 \alias{retrieve_lengths}
-\title{Retrieve body-length parameters}
+\title{Retrieve weight-length parameters}
 \usage{
-retrieve_lengths(data, country_code = c(626, 360), get_one = FALSE)
+retrieve_lengths(data, country_code = c(626, 360))
 }
 \arguments{
 \item{data}{A table returned from \code{get_catch_types}}
@@ -12,20 +12,17 @@ retrieve_lengths(data, country_code = c(626, 360), get_one = FALSE)
 \item{country_code}{The code of the country associated to FishBase database, default
 code include Timor-Leste and Indonesia. Full list at
 \url{https://www.fishbase.se/country/ListOfCountryCodes.php}.}
-
-\item{get_one}{Logical, indicating wether the user wants to get length data
-from the most recorded species.}
 }
 \value{
 A data frame containing species length parameters
 }
 \description{
-This function download body-length parameters from a table returned by
-\code{get_catch_types} function.
+This function takes a table returned from \code{get_catch_types} and returns detailed
+weight-length parameters from each species group.
 }
 \examples{
 \dontrun{
-rank_tab <- get_catch_types()
+rank_tab <- get_catch_types(pars)
 retrieve_lengths(rank_tab)
 }
 

@@ -4,7 +4,7 @@
 \alias{get_fish_length}
 \title{Download species body-length parameters}
 \usage{
-get_fish_length(taxa, rank = NULL, country_code = NULL, get_one = NULL)
+get_fish_length(taxa, rank = NULL, country_code = NULL)
 }
 \arguments{
 \item{taxa}{The name of the species/groups from which retrieve lengths parameters.}
@@ -15,21 +15,18 @@ get_fish_length(taxa, rank = NULL, country_code = NULL, get_one = NULL)
 \item{country_code}{The code of the country associated to FishBase database, default
 code include Timor-Leste and Indonesia. Full list at
 \url{https://www.fishbase.se/country/ListOfCountryCodes.php}.}
-
-\item{get_one}{Logical, indicating wether the user wants to get length data
-from the most recorded species.}
 }
 \value{
 A data frame containing species length parameters
 }
 \description{
 This function takes species, group of species or common names as arguments and
-return a data frame containing body-length parameters associated to the
+returns a data frame containing weigth-length parameters from
 FishBase database.
 }
 \examples{
 get_fish_length(
   taxa = "Sardine", rank = "comm_name",
-  country_code = 626, get_one = FALSE
+  country_code = 626
 )
 }
