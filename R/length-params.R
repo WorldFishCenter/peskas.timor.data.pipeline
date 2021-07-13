@@ -243,7 +243,8 @@ join_weights <- function(data) {
     dplyr::filter(.data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
                     .data$ interagency_code %in% c("IAX","OCZ") & is.na(.data$EsQ) &.data$Type %in% "ML"|
                     .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) &.data$Type %in% "CW"|
-                    .data$ interagency_code !=   c("COZ","IAX","OCZ","CRA") &
+                    .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) &.data$Type %in% "CL"|
+                    .data$ interagency_code !=   c("COZ","IAX","OCZ","CRA","LOX") &
                     is.na(.data$EsQ) & .data$Type %in% c("TL","WD")|
                     .data$interagency_code %in% "RAB" & is.na(.data$EsQ)) %>%
     dplyr::select(
