@@ -95,7 +95,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
-    dplyr::slice(1:100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
