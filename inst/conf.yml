@@ -48,6 +48,7 @@ default:
         - vms_installs
         - catch_types
         - fao_catch
+        - morphometric_table
     version:
       preprocess: latest
     rfishtable:

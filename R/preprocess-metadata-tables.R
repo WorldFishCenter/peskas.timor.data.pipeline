@@ -60,7 +60,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
     boats = pt_validate_boats(metadata_tables$boats),
     catch_types = pt_validate_catch_types(metadata_tables$catch_types),
-    fao_catch = pt_validate_fao_catch(metadata_tables$fao_catch))
+    fao_catch = pt_validate_fao_catch(metadata_tables$fao_catch),
+    morphometric_table = pt_validate_morphometric_table(metadata_tables$morphometric_table))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
@@ -213,3 +214,12 @@ pt_validate_fao_catch <- function(fao_catch_table){
   fao_catch_table
 }
 
+
+#' Parse and validate morphometric table
+#'
+#' @param morphometric_table a data frame with morphometric info
+#'
+#' @return a tibble
+pt_validate_morphometric_table <- function(morphometric_table){
+  morphometric_table
+}
