@@ -230,23 +230,19 @@ join_weights <- function(data) {
     ) %>%
     dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
 
-  # download complete length-weight table
-  rfish_tab <- get_rfish_table()
-
-  # download manually filled length-weight info (groups not present in fishbase)
-  manual_lw <-
-    gsheet::gsheet2tbl("https://docs.google.com/spreadsheets/d/1vaS0jYz4NGJbHFXV8A6YjLegmRpIOOAbi3TL38_seps/edit#gid=0") %>%
-    dplyr::select(-.data$DataRef)
+  rfish_tab <- get_preprocessed_metadata(pars)$morphometric_table
 
   # filter by length type and exclude doubtful measurements (EsQ column)
-  rfish_tab <- dplyr::bind_rows(rfish_tab, manual_lw) %>%
-    dplyr::filter(.data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
+  rfish_tab <-
+    rfish_tab %>%
+    dplyr::filter(!.data$ interagency_code %in%   c("COZ","IAX","OCZ","CRA","LOX") &
+                    is.na(.data$EsQ) & .data$Type %in% c("TL","WD")|
+                    .data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
                     .data$ interagency_code %in% c("IAX","OCZ") & is.na(.data$EsQ) &.data$Type %in% "ML"|
                     .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) &.data$Type %in% "CW"|
                     .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) &.data$Type %in% "CL"|
-                    .data$ interagency_code !=   c("COZ","IAX","OCZ","CRA","LOX") &
-                    is.na(.data$EsQ) & .data$Type %in% c("TL","WD")|
-                    .data$interagency_code %in% "RAB" & is.na(.data$EsQ)) %>%
+                    .data$interagency_code %in% "RAB" & is.na(.data$EsQ)|
+                    .data$interagency_code %in% "FLY" & is.na(.data$EsQ)) %>%
     dplyr::select(
       .data$interagency_code, .data$LengthMin,
       .data$LengthMax, .data$a, .data$b
