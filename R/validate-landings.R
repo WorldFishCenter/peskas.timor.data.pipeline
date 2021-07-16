@@ -109,10 +109,11 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         .x = species_group, .f = dplyr::select,
         catch_taxon,
         catch_purpose = .data$food_or_sale,
-        length_frequency = .data$length_individuals), ) %>%
+        length_frequency = .data$length_individuals)) %>%
     dplyr::select(
       landing_id = .data$submission_id,
       landing_date = .data$date,
+      tracker_imei = .data$imei,
       trip_duration = .data$trip_duration,
       landed_catch = .data$species_group,
       landed_value = .data$total_catch_value)
