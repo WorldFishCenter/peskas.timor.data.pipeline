@@ -47,7 +47,8 @@ RUN install2.r --error --skipinstalled \
     testthat \
     roxygen2 \
     tidyselect \
-    textclean
+    textclean \
+    dataverse
 
 # Install local package
 COPY . /home
