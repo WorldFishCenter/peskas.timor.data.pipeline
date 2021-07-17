@@ -177,7 +177,6 @@ jobs:
 
   merge-trips:
     name: merge_trips()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [validate-landings, ingest-pds-trips]
     runs-on: ubuntu-20.04
     container:
@@ -190,7 +189,9 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_trips()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
+      - name: Test validated landings
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
 
   export-trips:
     name: export_trips()
