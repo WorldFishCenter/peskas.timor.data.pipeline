@@ -43,7 +43,16 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
          navigation_alerts$validated_pds_distance) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join) %>%
-    dplyr::left_join(ready_cols)
+    dplyr::left_join(ready_cols) %>%
+    # rename columns that better align with the ontology terms
+    dplyr::rename(tracker_trip_duration = .data$`Duration (Seconds)`,
+                  tracker_trip_start = .data$Started,
+                  tracker_trip_end = .data$Ended,
+                  tracker_trip_id = .data$Trip,
+                  tracker_imei = .data$IMEI,
+                  tracker_device_id = .data$`Device Id`,
+                  tracker_last_seen = .data$`Last Seen`,
+                  tracker_trip_distance = .data$`Distance (Meters)`)
 
   validated_trips_filename <- paste(pars$pds$trips$file_prefix,
                                     "validated", sep = "_") %>%
