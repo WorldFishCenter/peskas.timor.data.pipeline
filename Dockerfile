@@ -23,7 +23,8 @@ RUN install2.r --error --skipinstalled \
     rlang \
     furrr \
     future \
-    univOutl
+    univOutl \
+    tinytest
 
 # Install suggests
 RUN install2.r --error --skipinstalled \

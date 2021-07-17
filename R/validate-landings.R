@@ -115,8 +115,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_date = .data$date,
       tracker_imei = .data$imei,
       trip_duration = .data$trip_duration,
-      landed_catch = .data$species_group,
-      landed_value = .data$total_catch_value)
+      landing_catch = .data$species_group,
+      landing_value = .data$total_catch_value)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
