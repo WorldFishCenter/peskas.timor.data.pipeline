@@ -1,3 +1,4 @@
+library(peskas.timor.data.pipeline)
 
 logger::log_threshold(logger::ERROR)
 # Adjust the working directory so that when running localy the authentication
