@@ -118,7 +118,7 @@ jobs:
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
       - name: Test validated landings
-        run: Rscript -e 'tinytest::run_test_file("inst/tinytest/test_validated_landings.R")'
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
 
   ingest-pds-trips:
     name: Ingest pds trips
