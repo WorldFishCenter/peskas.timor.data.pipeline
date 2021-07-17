@@ -178,7 +178,7 @@ jobs:
   merge-trips:
     name: merge_trips()
     if: ${{ false }} # Skip for now as it's not been implemented
-    needs: [merge-landings, ingest-pds-trips]
+    needs: [validate-landings, ingest-pds-trips]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
