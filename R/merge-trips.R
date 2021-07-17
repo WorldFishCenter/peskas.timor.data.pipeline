@@ -19,10 +19,12 @@
 merge_trips <- function(){
 
   pars <- read_config()
-
+  logger::log_info("Retrieving validated landings...")
   validated_landings <- get_validated_landings(pars)
+  logger::log_info("Retrieving validated pds trips...")
   validated_pds_trips <- get_validated_pds_trips(pars)
 
+  logger::log_info("Preparing datasets...")
   landings <- validated_landings %>%
     dplyr::group_by(.data$landing_date, .data$tracker_imei) %>%
     dplyr::mutate(unique_trip_per_day = dplyr::n() == 1) %>%
@@ -37,6 +39,7 @@ merge_trips <- function(){
     dplyr::ungroup() %>%
     split(.$unique_trip_per_day)
 
+  logger::log_info("Merging datasets datasets...")
   # Only join when we have one landing and one tracking per day, otherwise we
   # cannot do guarantee that the landing corresponds to a trip
   merged_trips <- dplyr::full_join(
@@ -49,6 +52,7 @@ merge_trips <- function(){
 
   merged_trips_filename <-pars$merged_trips$file_prefix %>%
     add_version(extension = "rds")
+  logger::log_info("Uploading {merged_trips_filename} to cloud...")
 
   readr::write_rds(x = merged_trips,
                    file = merged_trips_filename,
