@@ -236,7 +236,7 @@ join_weights <- function(data) {
   rfish_tab <-
     rfish_tab %>%
     dplyr::filter(!.data$ interagency_code %in%   c("COZ","IAX","OCZ","CRA","LOX") &
-                    is.na(.data$EsQ) & .data$Type %in% c("TL","WD")|
+                    is.na(.data$EsQ) & .data$Type %in% c("TL","FL","WD")|
                     .data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
                     .data$ interagency_code %in% c("IAX","OCZ") & is.na(.data$EsQ) &.data$Type %in% "ML"|
                     .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) &.data$Type %in% "CW"|
@@ -244,11 +244,11 @@ join_weights <- function(data) {
                     .data$interagency_code %in% "RAB" & is.na(.data$EsQ)|
                     .data$interagency_code %in% "FLY" & is.na(.data$EsQ)) %>%
     dplyr::select(
-      .data$interagency_code, .data$LengthMin,
+      .data$interagency_code, .data$Type, .data$LengthMin,
       .data$LengthMax, .data$a, .data$b
     ) %>%
     dplyr::rename(species = .data$interagency_code) %>%
-    dplyr::group_by(.data$species) %>%
+    dplyr::group_by(.data$species,.data$Type) %>%
     dplyr::summarise_all(median, na.rm = TRUE)
 
   data <-
@@ -277,6 +277,7 @@ join_weights <- function(data) {
       .data$n_individuals,
       .data$LengthMin,
       .data$LengthMax,
+      .data$Type,
       .data$a,
       .data$b,
       .data$weight
