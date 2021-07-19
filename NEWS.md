@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.14.0
+
+## New features
+
+- We test validated data to ensure its integrity
+
 # peskas.timor.data.pipeline 0.13.0
 
 ## New features
