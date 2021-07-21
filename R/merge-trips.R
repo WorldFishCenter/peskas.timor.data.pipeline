@@ -52,12 +52,11 @@ merge_trips <- function(){
 
   merged_trips_filename <-pars$merged_trips$file_prefix %>%
     add_version(extension = "rds")
-  logger::log_info("Uploading {merged_trips_filename} to cloud...")
 
   readr::write_rds(x = merged_trips,
                    file = merged_trips_filename,
                    compress = "gz")
-  logger::log_info("Uploading {merged_trips_filename} to cloud sorage")
+  logger::log_info("Uploading {merged_trips_filename} to cloud storage")
   upload_cloud_file(file = merged_trips_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
