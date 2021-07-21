@@ -82,24 +82,45 @@ get_fish_length <- function(taxa,
                             country_code = NULL) {
   if (rank == "comm_name") {
     sp_list <- rfishbase::common_to_sci(taxa) %>%
-      magrittr::extract2("Species")
+      magrittr::extract2("Species") %>%
+      unique()
   } else {
     sp_list <- list(taxa) %>%
       rlang::set_names(rank) %>%
-      do.call(rfishbase::species_list, .)
+      do.call(rfishbase::species_list, .) %>%
+      unique()
   }
 
-  if (taxa == "Abudefduf vaigiensis" | taxa == "Hyporhamphus quoyi") {
-    specs_length <- rfishbase::length_weight(taxa)
-    return(specs_length)
+  if (taxa == "Hyporhamphus quoyi") {
+    specs_weigth <- rfishbase::length_weight(taxa)
+
+    specs_length <- rfishbase::length_length(taxa) %>%
+      dplyr::filter(.data$Length1 %in% c("TL", "FL") &
+        .data$Length2 %in% c("TL", "FL")) %>%
+      dplyr::select(.data$Species, .data$Length1, .data$Length2,
+        aL = .data$a, bL = .data$b
+      )
+
+    specs_lw <- dplyr::left_join(specs_weigth, specs_length)
+    return(specs_lw)
   }
   specs <- sp_list %>%
     rfishbase::country() %>%
     dplyr::filter(.data$C_Code %in% country_code) %>%
     magrittr::extract2("Species")
-  specs_length <- rfishbase::length_weight(specs)
 
-  specs_length
+  specs_weigth <- rfishbase::length_weight(specs)
+
+  specs_length <- rfishbase::length_length(specs) %>%
+    dplyr::filter(.data$Length1 %in% c("TL", "FL") &
+      .data$Length2 %in% c("TL", "FL")) %>%
+    dplyr::select(.data$Species, .data$Length1, .data$Length2,
+      aL = .data$a, bL = .data$b
+    )
+
+  specs_lw <- dplyr::left_join(specs_weigth, specs_length)
+
+  specs_lw
 }
 
 #' Retrieve weight-length parameters
@@ -235,21 +256,37 @@ join_weights <- function(data) {
   # filter by length type and exclude doubtful measurements (EsQ column)
   rfish_tab <-
     rfish_tab %>%
-    dplyr::filter(!.data$ interagency_code %in%   c("COZ","IAX","OCZ","CRA","LOX") &
-                    is.na(.data$EsQ) & .data$Type %in% c("TL","FL","WD")|
-                    .data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
-                    .data$ interagency_code %in% c("IAX","OCZ") & is.na(.data$EsQ) &.data$Type %in% "ML"|
-                    .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) &.data$Type %in% "CW"|
-                    .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) &.data$Type %in% "CL"|
-                    .data$interagency_code %in% "RAB" & is.na(.data$EsQ)|
-                    .data$interagency_code %in% "FLY" & is.na(.data$EsQ)) %>%
+    dplyr::filter(!.data$ interagency_code %in% c("COZ", "IAX", "OCZ", "CRA", "LOX") &
+      is.na(.data$EsQ) & .data$Type %in% c("TL", "FL", "WD") |
+      .data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
+      .data$ interagency_code %in% c("IAX", "OCZ") & is.na(.data$EsQ) & .data$Type %in% "ML" |
+      .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) & .data$Type %in% "CW" |
+      .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) & .data$Type %in% "CL") %>%
+    dplyr::rename(species = .data$interagency_code)
+
+  # join weight-length and length-length tables in wl_tab. The length
+  # conversion formula is Length2 = aL + mean_length x bL
+
+  w_tab <-
+    rfish_tab %>%
     dplyr::select(
-      .data$interagency_code, .data$Type, .data$LengthMin,
-      .data$LengthMax, .data$a, .data$b
+      .data$species,
+      .data$Type,
+      .data$a,
+      .data$b
     ) %>%
-    dplyr::rename(species = .data$interagency_code) %>%
-    dplyr::group_by(.data$species,.data$Type) %>%
+    dplyr::group_by(species, .data$Type) %>%
     dplyr::summarise_all(median, na.rm = TRUE)
+
+  l_tab <-
+    rfish_tab %>%
+    dplyr::select(.data$species, .data$aL, .data$bL, .data$Length1, .data$Length2) %>%
+    dplyr::group_by(.data$species, .data$Length1, .data$Length2) %>%
+    dplyr::summarise_all(median, na.rm = TRUE) %>%
+    dplyr::rename(Type = .data$Length1)
+
+
+  wl_tab <- dplyr::left_join(w_tab, l_tab)
 
   data <-
     data %>%
@@ -269,18 +306,17 @@ join_weights <- function(data) {
     ) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
-    dplyr::left_join(rfish_tab) %>%
-    dplyr::mutate(weight = (.data$a * .data$mean_length^.data$b) * .data$n_individuals) %>%
+    dplyr::left_join(wl_tab) %>%
+    # dplyr::mutate(weight = (.data$a * .data$mean_length^.data$b) * .data$n_individuals) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
-      .data$n_individuals,
-      .data$LengthMin,
-      .data$LengthMax,
       .data$Type,
       .data$a,
       .data$b,
-      .data$weight
+      .data$Length2,
+      .data$aL,
+      .data$bL
     )) %>%
     tidyr::nest(species_group = c(
       .data$n,

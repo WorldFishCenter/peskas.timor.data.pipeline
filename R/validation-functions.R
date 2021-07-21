@@ -256,7 +256,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     validated_length %>%
     dplyr::select(-.data$alert_number) %>%
     dplyr::group_by(.data$submission_id,.data$n,.data$species) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length:.data$weight))
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$bL))
 
   # replace validated catches params in original data
   validated_catch_params <- data %>%
