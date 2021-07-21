@@ -139,7 +139,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
       - name: Call validate_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
-      - name: Test validated landings
+      - name: Test validated PDS trips
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
 
   ingest-pds-tracks:
@@ -176,7 +176,7 @@ jobs:
         run: echo 'Feature not implemented yet'
 
   merge-trips:
-    name: merge_trips()
+    name: Merge trips
     needs: [validate-landings, ingest-pds-trips]
     runs-on: ubuntu-20.04
     container:
