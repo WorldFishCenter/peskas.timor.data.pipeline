@@ -235,6 +235,13 @@ get_rfish_table <- function(log_threshold = logger::DEBUG) {
 #' surveys data and convert catch labels according to the FAO nomenclature
 #' (\url{http://www.fao.org/fishery/statistics/global-production/3/en}).
 #'
+#' The length types used to calculate weight in fish catches include total length
+#' (TL) in survey version 1 and fork length (FL) in survey version 2 with the
+#' exception of the group SRX (Myliobatiformes), which uses disk width (WD).
+#' Weights of Non-fish groups are calculated according to carapace width (CW) in
+#' crabs, mantel length (ML) in Cephalopoda and shell length (ShL) in Bivalvia,
+#' carapace length (CL) in lobsters.
+#'
 #'
 #' @param data The survey landings data frame
 #'
@@ -248,8 +255,7 @@ join_weights <- function(data) {
     dplyr::transmute(
       species = as.character(.data$catch_number),
       catch_taxon = .data$interagency_code
-    ) %>%
-    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
+    )
 
   rfish_tab <- get_preprocessed_metadata(pars)$morphometric_table
 
@@ -264,9 +270,7 @@ join_weights <- function(data) {
       .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) & .data$Type %in% "CL") %>%
     dplyr::rename(species = .data$interagency_code)
 
-  # join weight-length and length-length tables in wl_tab. The length
-  # conversion formula is Length2 = aL + mean_length x bL
-
+  # summarize weight and length parameters using median
   w_tab <-
     rfish_tab %>%
     dplyr::select(
@@ -275,7 +279,7 @@ join_weights <- function(data) {
       .data$a,
       .data$b
     ) %>%
-    dplyr::group_by(species, .data$Type) %>%
+    dplyr::group_by(.data$species, .data$Type) %>%
     dplyr::summarise_all(median, na.rm = TRUE)
 
   l_tab <-
@@ -285,6 +289,8 @@ join_weights <- function(data) {
     dplyr::summarise_all(median, na.rm = TRUE) %>%
     dplyr::rename(Type = .data$Length1)
 
+  # join weight-length and length-length tables . The length
+  # conversion formula is Length2 = aL + mean_length x bL
 
   wl_tab <- dplyr::left_join(w_tab, l_tab)
 
@@ -307,7 +313,14 @@ join_weights <- function(data) {
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::left_join(wl_tab) %>%
-    # dplyr::mutate(weight = (.data$a * .data$mean_length^.data$b) * .data$n_individuals) %>%
+    # Excluding FL and TL for weight calculation in legacy and recent landings
+    # respectively. Keep group DRZ as it has FL=TL.
+    dplyr::mutate(weight = dplyr::case_when(
+      .data$survey_version == "v1" & !.data$Type == "FL" | .data$species == "DRZ" ~
+      (.data$a * .data$mean_length^.data$b) * .data$n_individuals,
+      .data$survey_version == "v2" & !.data$Type == "TL" | .data$species == "DRZ" ~
+      (.data$a * .data$mean_length^.data$b) * .data$n_individuals
+    )) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
@@ -316,7 +329,8 @@ join_weights <- function(data) {
       .data$b,
       .data$Length2,
       .data$aL,
-      .data$bL
+      .data$bL,
+      .data$weight
     )) %>%
     tidyr::nest(species_group = c(
       .data$n,
