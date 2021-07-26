@@ -180,7 +180,7 @@ jobs:
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
 
   export-trips:
-    name: export_trips()
+    name: Export trips
     if: ${{ false }} # Skip for now as it's not been implemented
     needs: [merge-trips]
     runs-on: ubuntu-20.04
@@ -193,5 +193,5 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call export_trips()
-        run: echo 'Feature not implemented yet'
+      - name: Call format_public_data()
+        run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
