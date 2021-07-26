@@ -27,22 +27,25 @@
 format_public_data <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
-
   pars <- read_config()
+
+  logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
 
+  logger::log_info("Calculating summary fields")
   merged_trips_with_addons <- add_calculated_fields(merged_trips)
 
-  # Separate trips from catch so that we can have tabular data for export
+  logger::log_info("Creating trips table")
   trips_table <- get_trips_table(merged_trips_with_addons)
+  logger::log_info("Creating catch table")
   catch_table <- get_catch_table(merged_trips_with_addons)
 
-  # Aggregated version of the data
+  logger::log_info("Aggregating data")
   aggregated <- c("day", "week", "month", "year") %>%
     rlang::set_names() %>%
     purrr::map(summarise_trips)
 
-  # Save files as tsv for maximum interoperability
+  logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- c("day", "week", "month", "year") %>%
     paste0("aggregated-", .) %>%
     c('trips', "catch", .) %>%
@@ -56,7 +59,7 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                 provider = pars$public_storage$google$key,
                 options = pars$public_storage$google$options)
 
-  # Save files as rds for fast access into R
+  logger::log_info("Saving and exporting public data as rds")
   c('trips', "catch", "aggregated") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
