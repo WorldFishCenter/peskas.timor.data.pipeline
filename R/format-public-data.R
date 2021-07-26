@@ -20,6 +20,7 @@
 #'  file_prefix:
 #'```
 #'@param log_threshold
+#' @inheritParams ingest_landings
 #'@keywords workflow
 #'@return no outputs. This function is used for it's side effects
 #'@export
@@ -43,7 +44,7 @@ format_public_data <- function(log_threshold = logger::DEBUG){
   logger::log_info("Aggregating data")
   aggregated <- c("day", "week", "month", "year") %>%
     rlang::set_names() %>%
-    purrr::map(summarise_trips)
+    purrr::map(summarise_trips, merged_trips_with_addons)
 
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- c("day", "week", "month", "year") %>%
@@ -71,7 +72,9 @@ format_public_data <- function(log_threshold = logger::DEBUG){
 
 }
 
-#'@importFrom rlang .data
+#' @importFrom rlang .data
+#' @importFrom digest digest
+#' @importFrom stats na.omit
 add_calculated_fields <- function(merged_trips){
 
   # Helper functions
@@ -97,7 +100,7 @@ add_calculated_fields <- function(merged_trips){
     dplyr::ungroup() %>%
     dplyr::mutate(n_taxa = purrr::map_int(.data$landing_catch, count_taxa)) %>%
     dplyr::mutate(taxa = purrr::map_chr(.data$landing_catch, collapse_taxa)) %>%
-    dplyr::mutate(landing_date = lubridate::as_date(landing_date))
+    dplyr::mutate(landing_date = lubridate::as_date(.data$landing_date))
 }
 
 #'@importFrom rlang .data
@@ -125,7 +128,7 @@ get_catch_table <- function(merged_trips_with_addons){
 }
 
 #'@importFrom rlang .data
-summarise_trips <- function(bin_unit = "month"){
+summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
 
   # We need to count landings and tracks separately because they have different
   # base dates
