@@ -181,7 +181,6 @@ jobs:
 
   export-trips:
     name: Export trips
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: [merge-trips]
     runs-on: ubuntu-20.04
     container:
