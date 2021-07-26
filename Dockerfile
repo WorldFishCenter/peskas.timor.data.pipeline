@@ -26,7 +26,8 @@ RUN install2.r --error --skipinstalled \
     univOutl \
     rfishbase \
     taxize \
-    gsheet
+    gsheet \
+    tinytest
 
 # Install suggests
 RUN install2.r --error --skipinstalled \

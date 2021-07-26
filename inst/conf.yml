@@ -21,6 +21,7 @@ default:
     validated_landings:
       file_prefix: timor-landings-merged_validated
       version: latest
+
   pds:
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
@@ -81,6 +82,9 @@ default:
       flags_table: flags_dev
     version:
       preprocess: latest
+
+  merged_trips:
+    file_prefix: all_trips
 
   storage:
     google:

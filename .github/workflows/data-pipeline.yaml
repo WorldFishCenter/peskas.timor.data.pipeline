@@ -117,9 +117,11 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
+      - name: Test validated landings
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
 
   ingest-pds-trips:
-    name: Ingest pds trips
+    name: Ingest pds trips and tracks
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -137,27 +139,15 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
       - name: Call validate_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
-
-  ingest-pds-tracks:
-    name: Ingest pds tracks
-    needs: [ingest-pds-trips]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Test validated PDS trips
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
       - name: Call ingest_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
 
   preprocess-pds-tracks:
     name: preprocess_pds_tracks()
     if: ${{ false }} # Skip for now as it's not been implemented
-    needs: ingest-pds-tracks
+    needs: ingest-pds-trips
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -172,9 +162,8 @@ jobs:
         run: echo 'Feature not implemented yet'
 
   merge-trips:
-    name: merge_trips()
-    if: ${{ false }} # Skip for now as it's not been implemented
-    needs: [merge-landings, ingest-pds-trips]
+    name: Merge trips
+    needs: [validate-landings, ingest-pds-trips]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -186,7 +175,9 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_trips()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
+      - name: Test validated landings
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
 
   export-trips:
     name: export_trips()
