@@ -156,7 +156,7 @@ retrieve_lengths <- function(data, country_code = c(626, 360)) {
       )
 
     sp_len <- dplyr::mutate(sp_len, interagency_code = rep(int_code, nrow(sp_len))) %>%
-      dplyr::select(interagency_code, tidyselect::everything())
+      dplyr::select(.data$interagency_code, tidyselect::everything())
 
     rfish_tab <- rbind(rfish_tab, sp_len)
   }
@@ -172,62 +172,6 @@ retrieve_lengths <- function(data, country_code = c(626, 360)) {
   rfish_tab <- dplyr::add_row(rfish_tab, miss_groups)
   rfish_tab
 }
-
-
-#' Ingest species weight-length info
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @return No output. This function is used for it's side effects
-#' @export
-#'
-ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
-  pars <- read_config()
-
-  rfish_tab <- get_catch_types(pars) %>%
-    retrieve_lengths()
-
-  rfish_table_filename <- paste(pars$metadata$rfishtable$file_prefix,
-    sep = "_"
-  ) %>%
-    add_version(extension = "rds")
-  readr::write_rds(
-    x = rfish_tab,
-    file = rfish_table_filename,
-    compress = "gz"
-  )
-  logger::log_info("Uploading {rfish_table_filename} to cloud storage")
-  upload_cloud_file(
-    file = rfish_table_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-}
-
-
-# get weight-length table from google cloud
-get_rfish_table <- function(log_threshold = logger::DEBUG) {
-  pars <- read_config()
-
-  rfish_rds <- cloud_object_name(
-    prefix = paste(pars$metadata$rfishtable$file_prefix),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$metadata$rfishtable$version,
-    options = pars$storage$google$options,
-    exact_match = TRUE
-  )
-  logger::log_info("Downloading {rfish_rds}...")
-  download_cloud_file(
-    name = rfish_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = rfish_rds)
-}
-
 
 #' Join length-weights info to preprocessed landings
 #'
@@ -339,5 +283,68 @@ join_weights <- function(data) {
       .data$other_species_name,
       .data$photo,
       .data$length_individuals
-    ))
+    )) %>%
+    dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
+}
+
+# Helper function useful to calculate total catch weight associated to join_weights
+calc_total_weight <- function(x) {
+  x$length_individuals %>%
+    purrr::map_dbl(~ sum(.$weight, na.rm = T)) %>%
+    sum()
+}
+
+
+#' Ingest species weight-length info
+#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more
+#'   details
+#'
+#' @return No output. This function is used for it's side effects
+#' @export
+#'
+ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
+  pars <- read_config()
+
+  rfish_tab <- get_catch_types(pars) %>%
+    retrieve_lengths()
+
+  rfish_table_filename <- paste(pars$metadata$rfishtable$file_prefix,
+    sep = "_"
+  ) %>%
+    add_version(extension = "rds")
+  readr::write_rds(
+    x = rfish_tab,
+    file = rfish_table_filename,
+    compress = "gz"
+  )
+  logger::log_info("Uploading {rfish_table_filename} to cloud storage")
+  upload_cloud_file(
+    file = rfish_table_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
+}
+
+
+# get weight-length table from google cloud
+get_rfish_table <- function(log_threshold = logger::DEBUG) {
+  pars <- read_config()
+
+  rfish_rds <- cloud_object_name(
+    prefix = paste(pars$metadata$rfishtable$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$metadata$rfishtable$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE
+  )
+  logger::log_info("Downloading {rfish_rds}...")
+  download_cloud_file(
+    name = rfish_rds,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
+  readr::read_rds(file = rfish_rds)
 }
