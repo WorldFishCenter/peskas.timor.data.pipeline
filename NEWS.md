@@ -3,6 +3,7 @@
 ## New features
 
 - We test validated data to ensure its integrity
+- Added `merge_trips()` which integrates data from the landings and tracking together
 
 # peskas.timor.data.pipeline 0.13.0
 
