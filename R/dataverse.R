@@ -30,7 +30,7 @@
 #' )
 #' }
 #'
-export_dataverse <- function(token, dataverse, upfile, metadat, server = "dataverse.harvard.edu") {
+export_dataverse <- function(token, dataverse, upfile, metadat, server) {
   ds <- dataverse::initiate_sword_dataset(
     dataverse = dataverse,
     body = metadat,
@@ -57,9 +57,66 @@ export_dataverse <- function(token, dataverse, upfile, metadat, server = "datave
   )
 
   httr::POST(
-    url = "https://dataverse.harvard.edu/api/datasets/:persistentId/add",
+    url = paste0("https://", server, "/api/datasets/:persistentId/add"),
     httr::add_headers(`X-Dataverse-key` = token),
     query = params,
     body = files
+  )
+}
+
+
+# publish a dataverse
+publish_dataverse <- function(token, dataverse, server) {
+  url <- paste0("https://", server, "/api/dataverses/", dataverse, "/actions/:publish")
+  res <- httr::POST(
+    url = url,
+    httr::add_headers(`X-Dataverse-key` = token)
+  )
+  res
+}
+
+# add file to the latest dataset created
+add_file <- function(file, token, dataverse, server) {
+  dataverse_content <-
+    dataverse::dataverse_contents(
+      dataverse = dataverse,
+      key = token,
+      server = server
+    )
+
+  last_dataset <- dataverse_content[length(dataverse_content)][[1]]
+  PID <- paste0(
+    last_dataset$protocol, ":",
+    last_dataset$authority, "/",
+    last_dataset$identifier
+  )
+
+
+  dataverse::add_dataset_file(
+    file = files,
+    dataset = PID,
+    key = token,
+    description = "",
+    server = server
+  )
+}
+
+
+# publish the last dataset of a specific dataverse repository
+release_last_dataset <- function(token, dataverse, server) {
+  dataverse_content <-
+    dataverse::dataverse_contents(
+      dataverse = dataverse,
+      key = token,
+      server = server
+    )
+
+  last_data <- dataverse_content[length(dataverse_content)][[1]]
+
+  dataverse::publish_dataset(
+    dataset = last_data,
+    minor = FALSE,
+    key = token,
+    server = server
   )
 }

@@ -4,13 +4,7 @@
 \alias{export_dataverse}
 \title{Export file to Dataverse}
 \usage{
-export_dataverse(
-  token,
-  dataverse,
-  upfile,
-  metadat,
-  server = "dataverse.harvard.edu"
-)
+export_dataverse(token, dataverse, upfile, metadat, server)
 }
 \arguments{
 \item{token}{API token associated to Dataverse account.}
