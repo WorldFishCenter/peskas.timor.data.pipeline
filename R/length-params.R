@@ -231,10 +231,11 @@ join_weights <- function(data) {
     dplyr::select(.data$species, .data$aL, .data$bL, .data$Length1, .data$Length2) %>%
     dplyr::group_by(.data$species, .data$Length1, .data$Length2) %>%
     dplyr::summarise_all(median, na.rm = TRUE) %>%
-    dplyr::rename(Type = .data$Length1)
+    dplyr::rename(Type = .data$Length2)
 
+  # Length1 = unknown length, Length2 = known length
   # join weight-length and length-length tables . The length
-  # conversion formula is Length2 = aL + mean_length x bL
+  # conversion formula is Length1 = aL + Length2 x bL
 
   wl_tab <- dplyr::left_join(w_tab, l_tab)
 
@@ -271,7 +272,7 @@ join_weights <- function(data) {
       .data$Type,
       .data$a,
       .data$b,
-      .data$Length2,
+      .data$Length1,
       .data$aL,
       .data$bL,
       .data$weight
