@@ -115,7 +115,7 @@ get_fish_length <- function(taxa,
       aL = .data$a, bL = .data$b
     )
 
-  specs_lw <- dplyr::left_join(specs_weigth, specs_length)
+  specs_lw <- dplyr::left_join(specs_weigth, specs_length, by = "Species")
 
   specs_lw
 }
