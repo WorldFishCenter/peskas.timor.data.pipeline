@@ -83,6 +83,8 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
       - name: Call preprocess_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
+      - name: Call ingest_rfish_table()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
 
   merge-landings:
     name: Merge landings
