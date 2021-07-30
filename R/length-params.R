@@ -137,7 +137,7 @@ get_fish_length <- function(taxa,
 #' retrieve_lengths(rank_tab)
 #' }
 #'
-retrieve_lengths <- function(data, country_code = c(626, 360)) {
+retrieve_lengths <- function(data, country_code) {
 
   rfish_tab <- NULL
 
@@ -306,7 +306,7 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   rfish_tab <- get_catch_types(pars) %>%
-    retrieve_lengths()
+    retrieve_lengths(country_code = pars$metadata$rfishtable$country_codes)
 
   rfish_table_filename <- paste(pars$metadata$rfishtable$file_prefix,
     sep = "_"

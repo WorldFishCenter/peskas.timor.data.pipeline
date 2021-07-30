@@ -55,6 +55,9 @@ default:
     rfishtable:
       file_prefix: rfish_table
       version: latest
+      country_codes:
+        - 626
+        - 360
 
   validation:
     landings:
