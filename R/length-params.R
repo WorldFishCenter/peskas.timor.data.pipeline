@@ -89,23 +89,22 @@ get_fish_length <- function(taxa,
       unique()
   }
 
-  if (taxa == "Hyporhamphus quoyi") {
-    specs_weigth <- rfishbase::length_weight(taxa)
+  country_table <- sp_list %>%
+    rfishbase::country()
 
-    specs_length <- rfishbase::length_length(taxa) %>%
-      dplyr::filter(.data$Length1 %in% c("TL", "FL") &
-        .data$Length2 %in% c("TL", "FL")) %>%
-      dplyr::select(.data$Species, .data$Length1, .data$Length2,
-        aL = .data$a, bL = .data$b
-      )
-
-    specs_lw <- dplyr::left_join(specs_weigth, specs_length)
-    return(specs_lw)
-  }
-  specs <- sp_list %>%
-    rfishbase::country() %>%
+  specs <- country_table %>%
     dplyr::filter(.data$C_Code %in% country_code) %>%
-    magrittr::extract2("Species")
+    magrittr::extract2("Species") %>%
+    unique()
+
+  # If its not found in the country just get them all. THis is because it's
+  # likely the species is present but there are no museum records in the
+  # FishBase database
+  if (length(specs) == 0) {
+    specs <- country_table %>%
+      magrittr::extract2("Species") %>%
+      unique()
+  }
 
   specs_weigth <- rfishbase::length_weight(specs)
 
