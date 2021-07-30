@@ -24,7 +24,6 @@ get_catch_types <- function(pars) {
 
   ranks <- taxize::tax_rank(spp$name_scientific, db = "gbif", rows = 1)
 
-
   ranks_tab <-
     ranks %>%
     purrr::map(~ stringr::str_to_title(.x)) %>%
@@ -38,14 +37,12 @@ get_catch_types <- function(pars) {
       name = dplyr::case_when(
         name == "Thunnini" ~ "Tuna",
         name == "Selachimorpha" ~ "Shark",
-        name == "Reptantia" ~ "Nephropidae",
         name == "Rajiformes" ~ "Myliobatiformes",
         TRUE ~ .data$name
       ),
       taxa_rank = dplyr::case_when(
         name == "Tuna" ~ "comm_name",
         name == "Shark" ~ "comm_name",
-        name == "Nephropidae" ~ "Family",
         TRUE ~ .data$taxa_rank
       )
     )
