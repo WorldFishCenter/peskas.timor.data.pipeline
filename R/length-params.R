@@ -14,7 +14,8 @@ get_catch_types <- function(pars) {
   catch_types <- metadata$catch_types
   fao_records <- metadata$fao_catch
 
-  catches_tab <- dplyr::left_join(fao_records, catch_types, by = "interagency_code")
+  catches_tab <- dplyr::left_join(catch_types, fao_records, by = "interagency_code") %>%
+    dplyr::filter(!is.na(interagency_code))
 
   spp <- catches_tab %>%
     dplyr::select(
