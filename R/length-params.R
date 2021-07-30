@@ -138,9 +138,9 @@ get_fish_length <- function(taxa,
 #' }
 #'
 retrieve_lengths <- function(data, country_code = c(626, 360)) {
-  pars <- read_config()
 
   rfish_tab <- NULL
+
   for (i in unique(data$interagency_code)) {
     dat <- dplyr::filter(data, interagency_code %in% i)
     int_code <- unique(i)
@@ -159,7 +159,7 @@ retrieve_lengths <- function(data, country_code = c(626, 360)) {
   }
   miss_groups <-
     dplyr::setdiff(
-      get_preprocessed_metadata(pars)$catch_types$interagency_code,
+      data$interagency_code,
       rfish_tab$interagency_code
     ) %>%
     dplyr::as_tibble() %>%
