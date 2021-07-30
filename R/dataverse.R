@@ -75,8 +75,34 @@ publish_dataverse <- function(token, dataverse, server) {
   res
 }
 
-# add file to the latest dataset created
-add_file <- function(file, token, dataverse, server) {
+# get metadata information from landings
+get_metadata_info <- function(pars) {
+  landings <- get_merged_landings(pars)
+  extent <- paste(min(landings$date), max(landings$date), sep = "-")
+
+  landings_metadata <- list(extent = extent)
+  landings_metadata
+}
+
+# generate a list of metadata information to append to data upload
+generate_metadata <- function() {
+  pars <- read_config()
+  landings_metadata <- get_metadata_info(pars)
+
+  metadat <- list(
+    title = paste("Project test"),
+    creator = "The cat",
+    created = as.character(Sys.Date()),
+    description = "This is an incredible dataset, full of incredible stuff and numbers",
+    extent = as.character(landings_metadata$extent),
+    language = "English"
+  )
+
+  metadat
+}
+
+# add files to the latest dataset created
+upload_files <- function(file_list, token, dataverse, server) {
   dataverse_content <-
     dataverse::dataverse_contents(
       dataverse = dataverse,
@@ -91,14 +117,15 @@ add_file <- function(file, token, dataverse, server) {
     last_dataset$identifier
   )
 
-
-  dataverse::add_dataset_file(
-    file = files,
-    dataset = PID,
-    key = token,
-    description = "",
-    server = server
-  )
+  for (i in 1:length(file_list)) {
+    dataverse::add_dataset_file(
+      file = file_list[i],
+      dataset = PID,
+      key = token,
+      description = "",
+      server = server
+    )
+  }
 }
 
 
@@ -119,4 +146,30 @@ release_last_dataset <- function(token, dataverse, server) {
     key = token,
     server = server
   )
+}
+
+# upload and publish data in dataverse
+export_files <- function(token, dataverse, file_list, metadat, server) {
+  pars <- read_config()
+
+  metadat <- generate_metadata()
+
+  dataverse::initiate_sword_dataset(
+    dataverse = dataverse,
+    body = metadat,
+    key = token,
+    server = server
+  )
+
+  file_list <- # get files from cloud
+
+    upload_files(
+      file_list,
+      token,
+      dataverse,
+      server
+    )
+
+
+  release_last_dataset(token, dataverse, server)
 }
