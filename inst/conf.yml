@@ -53,7 +53,7 @@ default:
     version:
       preprocess: latest
     rfishtable:
-      file_prefix: rfish_table
+      file_prefix: rfish-table
       version: latest
       country_codes:
         - 626
