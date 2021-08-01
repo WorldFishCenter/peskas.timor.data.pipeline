@@ -4,7 +4,7 @@
 \alias{retrieve_lengths}
 \title{Retrieve weight-length parameters}
 \usage{
-retrieve_lengths(data, country_code = c(626, 360))
+retrieve_lengths(data, country_code)
 }
 \arguments{
 \item{data}{A table returned from \code{get_catch_types}}

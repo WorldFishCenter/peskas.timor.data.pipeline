@@ -198,7 +198,7 @@ join_weights <- function(data) {
       catch_taxon = .data$interagency_code
     )
 
-  rfish_tab <- get_preprocessed_metadata(pars)$morphometric_table
+  rfish_tab <- get_morphometric_table()
 
   # filter by length type and exclude doubtful measurements (EsQ column)
   rfish_tab <-
@@ -345,4 +345,34 @@ get_rfish_table <- function(log_threshold = logger::DEBUG) {
     options = pars$storage$google$options
   )
   readr::read_rds(file = rfish_rds)
+}
+
+#
+get_morphometric_table <- function(log_threshold = logger::DEBUG) {
+  pars <- read_config()
+
+  rfish_rds <- cloud_object_name(
+    prefix = paste(pars$metadata$rfishtable$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$metadata$rfishtable$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE
+  )
+  logger::log_info("Downloading {rfish_rds}...")
+
+  rfish_table <-
+    download_cloud_file(
+      name = rfish_rds,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    ) %>%
+    readr::read_rds() %>%
+    dplyr::mutate(DataRef = as.character(.data$DataRef))
+
+  #get manually filled morphometric tabls
+  manual_table <- get_preprocessed_metadata(pars)$morphometric_table
+
+  #merge the two tables
+  dplyr::bind_rows(rfish_table, manual_table)
 }
