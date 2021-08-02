@@ -350,23 +350,7 @@ get_rfish_table <- function(pars) {
 #
 get_morphometric_table <- function(pars, manual_table) {
 
-  rfish_rds <- cloud_object_name(
-    prefix = paste(pars$metadata$rfishtable$file_prefix),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$metadata$rfishtable$version,
-    options = pars$storage$google$options,
-    exact_match = TRUE
-  )
-  logger::log_info("Downloading {rfish_rds}...")
-
-  rfish_table <-
-    download_cloud_file(
-      name = rfish_rds,
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
-    ) %>%
-    readr::read_rds() %>%
+  rfish_table <- get_rfish_table(pars) %>%
     dplyr::mutate(DataRef = as.character(.data$DataRef))
 
   #merge the two tables
