@@ -229,7 +229,7 @@ join_weights <- function(data, pars) {
                                            code = species, n_individuals,
                                            rfish_tab$length_weight,
                                            rfish_tab$length_length)) %>%
-    dplyr::ungroup() %>%
+    dplyr::ungroup( ) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
