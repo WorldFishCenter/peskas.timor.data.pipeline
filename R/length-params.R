@@ -200,43 +200,8 @@ join_weights <- function(data, pars) {
     )
 
   rfish_tab <- get_morphometric_tables(pars, metadata$morphometric_table)
-  rfish_tab <-
-    rfish_tab %>%
-    dplyr::filter(!.data$ interagency_code %in% c("COZ", "IAX", "OCZ", "CRA", "LOX") &
-      is.na(.data$EsQ) & .data$Type %in% c("TL", "FL", "WD") |
-      .data$ interagency_code %in% "COZ" & is.na(.data$EsQ) & .data$Type %in% "ShL" |
-      .data$ interagency_code %in% c("IAX", "OCZ") & is.na(.data$EsQ) & .data$Type %in% "ML" |
-      .data$ interagency_code %in% "CRA" & is.na(.data$EsQ) & .data$Type %in% "CW" |
-      .data$ interagency_code %in% "LOX" & is.na(.data$EsQ) & .data$Type %in% "CL") %>%
-    dplyr::rename(species = .data$interagency_code)
 
-  # summarize weight and length parameters using median
-  w_tab <-
-    rfish_tab %>%
-    dplyr::select(
-      .data$species,
-      .data$Type,
-      .data$a,
-      .data$b
-    ) %>%
-    dplyr::group_by(.data$species, .data$Type) %>%
-    dplyr::summarise_all(median, na.rm = TRUE)
-
-  l_tab <-
-    rfish_tab %>%
-    dplyr::select(.data$species, .data$aL, .data$bL, .data$Length1, .data$Length2) %>%
-    dplyr::group_by(.data$species, .data$Length1, .data$Length2) %>%
-    dplyr::summarise_all(median, na.rm = TRUE) %>%
-    dplyr::rename(Type = .data$Length2)
-
-  # Length1 = unknown length, Length2 = known length
-  # join weight-length and length-length tables . The length
-  # conversion formula is Length1 = aL + Length2 x bL
-
-  wl_tab <- dplyr::left_join(w_tab, l_tab)
-
-  data <-
-    data %>%
+  data %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::left_join,
@@ -253,15 +218,18 @@ join_weights <- function(data, pars) {
     ) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
-    dplyr::left_join(wl_tab) %>%
     # Excluding FL and TL for weight calculation in legacy and recent landings
     # respectively. Keep group DRZ as it has FL=TL.
-    dplyr::mutate(weight = dplyr::case_when(
-      .data$survey_version == "v1" & !.data$Type == "FL" | .data$species == "DRZ" ~
-      (.data$a * .data$mean_length^.data$b) * .data$n_individuals,
-      .data$survey_version == "v2" & !.data$Type == "TL" | .data$species == "DRZ" ~
-      (.data$a * .data$mean_length^.data$b) * .data$n_individuals
-    )) %>%
+    dplyr::mutate(length_type = dplyr::case_when(
+      !is.na(length_type) ~ length_type,
+      .data$survey_version == "v1" ~ "FL",
+      .data$survey_version == "v2" ~ "TL")) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(weight = estimate_weight(length = mean_length, length_type,
+                                           code = species, n_individuals,
+                                           rfish_tab$length_weight,
+                                           rfish_tab$length_length)) %>%
+    dplyr::ungroup() %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
@@ -369,4 +337,41 @@ get_morphometric_tables <- function(pars, manual_table) {
   list(length_weight = lw,
        length_length = ll)
 }
+
+
+
+estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
+
+  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals))
+    return(NA)
+
+  if (n_individuals == 0) return(0)
+
+  this_lw <- lw %>%
+    dplyr::filter(interagency_code == code)
+
+  # Transform length to other types if relevant
+  this_ll <- ll %>%
+    dplyr::filter(interagency_code == code, Length2 == length_type) %>%
+    dplyr::mutate(length = aL + length * bL,
+                  Type = Length1)
+
+  this_length <-
+    dplyr::tibble(
+      interagency_code = code,
+      # We have to do it for each species because we don't know what is the
+      # actual species
+      Species = unique(this_lw$Species),
+      length = length,
+      Type = length_type) %>%
+    # Augment the info with transformations
+    dplyr::bind_rows(this_ll)
+
+  w <- dplyr::full_join(this_lw, this_length,
+                        by = c("interagency_code", "Species", "Type")) %>%
+    dplyr::mutate(weight = a * length ^ b)
+
+  # I think we should use the median only at the end so that we can integrate as
+  # much info as possible beforehand
+  median(w$weight, na.rm = T) * n_individuals
 }
