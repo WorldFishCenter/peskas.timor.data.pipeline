@@ -193,12 +193,13 @@ join_weights <- function(data) {
   pars <- read_config()
 
   catch_codes <- get_preprocessed_metadata(pars)$catch_types %>%
+  metadata <- get_preprocessed_metadata(pars)
+  catch_codes <- metadata$catch_types %>%
     dplyr::transmute(
       species = as.character(.data$catch_number),
       catch_taxon = .data$interagency_code
     )
-
-  rfish_tab <- get_morphometric_table()
+  rfish_tab <- get_morphometric_table(pars, metadata$morphometric_table)
 
   # filter by length type and exclude doubtful measurements (EsQ column)
   rfish_tab <-
@@ -327,8 +328,7 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
 
 
 # get weight-length table from google cloud
-get_rfish_table <- function(log_threshold = logger::DEBUG) {
-  pars <- read_config()
+get_rfish_table <- function(pars) {
 
   rfish_rds <- cloud_object_name(
     prefix = paste(pars$metadata$rfishtable$file_prefix),
@@ -348,8 +348,7 @@ get_rfish_table <- function(log_threshold = logger::DEBUG) {
 }
 
 #
-get_morphometric_table <- function(log_threshold = logger::DEBUG) {
-  pars <- read_config()
+get_morphometric_table <- function(pars, manual_table) {
 
   rfish_rds <- cloud_object_name(
     prefix = paste(pars$metadata$rfishtable$file_prefix),
@@ -369,9 +368,6 @@ get_morphometric_table <- function(log_threshold = logger::DEBUG) {
     ) %>%
     readr::read_rds() %>%
     dplyr::mutate(DataRef = as.character(.data$DataRef))
-
-  #get manually filled morphometric tabls
-  manual_table <- get_preprocessed_metadata(pars)$morphometric_table
 
   #merge the two tables
   dplyr::bind_rows(rfish_table, manual_table)
