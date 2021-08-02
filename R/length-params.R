@@ -243,7 +243,8 @@ join_weights <- function(data, pars) {
       .data$photo,
       .data$length_individuals,
       .data$length_type
-    dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
+    ))# %>%
+    # dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
 }
 
 # Helper function useful to calculate total catch weight associated to join_weights
