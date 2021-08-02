@@ -265,12 +265,6 @@ join_weights <- function(data, pars) {
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
-      .data$Type,
-      .data$a,
-      .data$b,
-      .data$Length1,
-      .data$aL,
-      .data$bL,
       .data$weight
     )) %>%
     tidyr::nest(species_group = c(
