@@ -241,8 +241,8 @@ join_weights <- function(data, pars) {
       .data$food_or_sale,
       .data$other_species_name,
       .data$photo,
-      .data$length_individuals
-    )) %>%
+      .data$length_individuals,
+      .data$length_type
     dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
 }
 
