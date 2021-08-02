@@ -191,16 +191,15 @@ retrieve_lengths <- function(data, country_code) {
 #'
 join_weights <- function(data, pars) {
 
-  catch_codes <- get_preprocessed_metadata(pars)$catch_types %>%
   metadata <- get_preprocessed_metadata(pars)
   catch_codes <- metadata$catch_types %>%
     dplyr::transmute(
       species = as.character(.data$catch_number),
-      catch_taxon = .data$interagency_code
+      catch_taxon = .data$interagency_code,
+      length_type = .data$length_type
     )
-  rfish_tab <- get_morphometric_table(pars, metadata$morphometric_table)
 
-  # filter by length type and exclude doubtful measurements (EsQ column)
+  rfish_tab <- get_morphometric_tables(pars, metadata$morphometric_table)
   rfish_tab <-
     rfish_tab %>%
     dplyr::filter(!.data$ interagency_code %in% c("COZ", "IAX", "OCZ", "CRA", "LOX") &
@@ -347,11 +346,33 @@ get_rfish_table <- function(pars) {
 }
 
 #
-get_morphometric_table <- function(pars, manual_table) {
+get_morphometric_tables <- function(pars, manual_table) {
 
   rfish_table <- get_rfish_table(pars) %>%
     dplyr::mutate(DataRef = as.character(.data$DataRef))
 
-  #merge the two tables
-  dplyr::bind_rows(rfish_table, manual_table)
+  # merge the two tables
+  rfish_tab <- dplyr::bind_rows(rfish_table, manual_table)
+
+  lw <- rfish_tab %>%
+    # There are extra coefficients in the aTL column that we should use
+    dplyr::mutate(Type = "TL", a = aTL) %>%
+    dplyr::bind_rows(rfish_tab) %>%
+    # There are some that have "No" low quality which means is OK?
+    dplyr::filter(!is.na(a), !isTRUE(tolower(EsQ) == "yes")) %>%
+    dplyr::select(interagency_code, Species, LengthMin, LengthMax, Type, a, b) %>%
+    dplyr::distinct()
+
+  ll <- rfish_tab %>%
+    # Relationship is reciprocal and we could use that information too
+    dplyr::mutate(l1 = Length1, l2 = Length2, a1 = aL, b1 = bL,
+                  Length1 = l2, Length2 = l1, aL = a1 / b1 * (-1), bL = 1 / b1) %>%
+    dplyr::bind_rows(rfish_tab) %>%
+    dplyr::select(interagency_code, Species, Length1, Length2, aL, bL) %>%
+    dplyr::filter(!is.na(aL)) %>%
+    dplyr::distinct()
+
+  list(length_weight = lw,
+       length_length = ll)
+}
 }
