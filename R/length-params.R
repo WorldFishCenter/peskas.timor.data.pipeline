@@ -189,8 +189,7 @@ retrieve_lengths <- function(data, country_code) {
 #' @return A new landings data frame including length-weights info
 #' @export
 #'
-join_weights <- function(data) {
-  pars <- read_config()
+join_weights <- function(data, pars) {
 
   catch_codes <- get_preprocessed_metadata(pars)$catch_types %>%
   metadata <- get_preprocessed_metadata(pars)
