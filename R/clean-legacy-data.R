@@ -132,7 +132,7 @@ clean_catches <- function(x){
       value %in% c(217) ~ "36",
       value %in% c(215) ~ "37",
       value %in% c(219) ~ "38",
-      value %in% c(219) ~ "39",
+      value %in% c(148) ~ "39",
       value %in% c(152) ~ "41",
       value %in% c(74,76) ~ "42",
       value %in% c(114) ~ "43",
