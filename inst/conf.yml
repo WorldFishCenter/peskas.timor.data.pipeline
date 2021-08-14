@@ -45,6 +45,7 @@ default:
         - devices
         - vms_installs
         - catch_types
+        - centro_pescas
     version:
       preprocess: latest
 

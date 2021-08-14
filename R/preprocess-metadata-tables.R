@@ -59,7 +59,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     devices = pt_validate_devices(metadata_tables$devices),
     device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
     boats = pt_validate_boats(metadata_tables$boats),
-    catch_types = pt_validate_catch_types(metadata_tables$catch_types))
+    catch_types = pt_validate_catch_types(metadata_tables$catch_types),
+    centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
@@ -199,3 +200,16 @@ pt_validate_boats <- function(boats_table){
 pt_validate_catch_types <- function(catch_type_table){
   catch_type_table
 }
+
+#' Parse and validate centro de pescas table
+#'
+#' Currently this function does not perform anything and is a placeholder
+#'
+#' @param centro_pescas_table a data frame with info on centro de pescas
+#'
+#' @return a tibble
+#'
+pt_validate_centro_pescas <- function(centro_pescas_table){
+  centro_pescas_table
+}
+
