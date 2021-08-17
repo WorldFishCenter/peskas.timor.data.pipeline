@@ -1,3 +1,60 @@
+#' Add weight of species to merged landings
+#'
+#' Downloads merged landings and calculates the weight of the catch.
+#'
+#' The  file is then uploaded to the cloud. The name is the same as for merged
+#' landings but with "_weight" at the end. The parameters needed are:
+#'
+#' ```
+#' surveys:
+#'   merged_landings:
+#'     file_prefix:
+#'     version:
+#' storage:
+#'   storage_name:
+#'     key:
+#'     options:
+#'       project:
+#'       bucket:
+#'       service_account_key:
+#' ```
+#'
+#' Progress through the function is tracked using the package *logger*.
+#'
+#' @param log_threshold
+#' @inheritParams preprocess_landings
+#' @inheritParams preprocess_legacy_landings
+#' @return No outputs. This function is used for it's side effects
+#' @keywords workflow
+#' @export
+calculate_weights <- function(log_threshold = logger::DEBUG){
+
+  logger::log_threshold(log_threshold)
+  pars <- read_config()
+
+  merged_landings <- get_merged_landings(pars)
+  metadata <- get_preprocessed_metadata(pars)
+  morphometric_tables <- get_morphometric_tables(pars, metadata$morphometric_table)
+
+  landings_with_weight <- join_weights(
+    merged_landings,
+    metadata,
+    morphometric_tables
+  )
+
+  landings_with_weight_filename <- paste(pars$surveys$merged_landings$file_prefix, "weight", sep = "_") %>%
+    add_version(extension = "rds")
+  readr::write_rds(x = landings_with_weight,
+                   file = landings_with_weight_filename,
+                   compress = "gz")
+
+  logger::log_info("Uploading {landings_with_weight_filename} to cloud sorage")
+  upload_cloud_file(file = landings_with_weight_filename,
+                    provider = pars$storage$google$key,
+                    options = pars$storage$google$options)
+}
+
+
 #' Download metadata catch types
 #'
 #' This function downloads airtable tables containing catches metadata.

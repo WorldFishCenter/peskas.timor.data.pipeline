@@ -38,7 +38,6 @@
 merge_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
-
   pars <- read_config()
 
   preprocessed_landings <-
@@ -71,8 +70,7 @@ merge_landings <- function(log_threshold = logger::DEBUG){
   prep_legacy_landings <- prep_legacy_landings %>%
     dplyr::mutate(survey_version = rep("v1",nrow(prep_legacy_landings)))
 
-  merged_landings <- dplyr::bind_rows(prep_landings,prep_legacy_landings) %>%
-    join_weights(pars)
+  merged_landings <- dplyr::bind_rows(prep_landings,prep_legacy_landings)
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%
     add_version(extension = "rds")
@@ -86,3 +84,4 @@ merge_landings <- function(log_threshold = logger::DEBUG){
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
 }
+
