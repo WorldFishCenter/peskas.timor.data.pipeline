@@ -30,7 +30,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
-  landings <- get_merged_landings(pars)
+  landings <- get_merged_landings(pars, "_weight")
 
   # read arguments for outliers identification
   default_max_limit <-  pars$validation$landings$default$max
@@ -224,9 +224,9 @@ get_preprocessed_metadata <- function(pars){
   readr::read_rds(file = metadata_rds)
 }
 
-get_merged_landings <- function(pars){
+get_merged_landings <- function(pars, suffix = ""){
   landings_rds <- cloud_object_name(
-    prefix = paste(pars$surveys$merged_landings$file_prefix),
+    prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$surveys$merged_landings$version,
