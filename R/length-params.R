@@ -246,9 +246,8 @@ retrieve_lengths <- function(data, country_code) {
 #' @return A new landings data frame including length-weights info
 #' @export
 #'
-join_weights <- function(data, pars) {
+join_weights <- function(data, metadata, rfish_tab) {
 
-  metadata <- get_preprocessed_metadata(pars)
   catch_codes <- metadata$catch_types %>%
     dplyr::transmute(
       species = as.character(.data$catch_number),
@@ -256,7 +255,6 @@ join_weights <- function(data, pars) {
       length_type = .data$length_type
     )
 
-  rfish_tab <- get_morphometric_tables(pars, metadata$morphometric_table)
 
   data %>%
     dplyr::mutate(
