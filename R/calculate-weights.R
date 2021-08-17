@@ -258,7 +258,6 @@ join_weights <- function(data, metadata, rfish_tab) {
     dplyr::mutate(catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon))
 
   data %>%
-    dplyr::sample_n(100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::left_join,
@@ -413,7 +412,7 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
   # Transform length to other types if relevant
   this_ll <- ll %>%
     dplyr::filter(.data$interagency_code == code, .data$Length2 == length_type) %>%
-    dplyr::mutate(length = .data$aL + .data$length * .data$bL,
+    dplyr::mutate(length = .data$aL + length * .data$bL,
                   Type = .data$Length1)
 
   this_length <-
