@@ -253,8 +253,8 @@ join_weights <- function(data, metadata, rfish_tab) {
       species = as.character(.data$catch_number),
       catch_taxon = .data$interagency_code,
       length_type = .data$length_type
-    )
-
+    ) %>%
+    dplyr::mutate(catch_taxon = dplyr::if_else(species == "0", "0", catch_taxon))
 
   data %>%
     dplyr::mutate(
@@ -398,7 +398,7 @@ get_morphometric_tables <- function(pars, manual_table) {
 
 estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
-  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals))
+  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0")
     return(NA)
 
   if (n_individuals == 0) return(0)
