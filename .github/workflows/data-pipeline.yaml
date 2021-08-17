@@ -88,7 +88,7 @@ jobs:
 
   merge-landings:
     name: Merge landings
-    needs: [ingest-preprocess-landings, ingest-preprocess-legacy-landings]
+    needs: [ingest-preprocess-landings, ingest-preprocess-legacy-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
