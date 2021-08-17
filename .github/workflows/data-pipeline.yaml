@@ -106,7 +106,7 @@ jobs:
 
   validate-landings:
     name: Validate landings
-    needs: [merge-landings, ingest-preprocess-metadata-tables]
+    needs: [merge-landings]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
