@@ -156,7 +156,7 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
 #' @param ... arguments for `univOutl::LocScaleB()`
 #'
 #' @return a vector of the same lenght as x
-#'
+#' @importFrom stats mad
 alert_outlier <- function(x,
                           no_alert_value = NA_real_,
                           alert_if_larger = no_alert_value,

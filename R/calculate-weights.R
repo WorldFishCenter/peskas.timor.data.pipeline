@@ -72,7 +72,7 @@ get_catch_types <- function(pars) {
   fao_records <- metadata$fao_catch
 
   catches_tab <- dplyr::left_join(catch_types, fao_records, by = "interagency_code") %>%
-    dplyr::filter(!is.na(interagency_code))
+    dplyr::filter(!is.na(.data$interagency_code))
 
   spp <- catches_tab %>%
     dplyr::select(
@@ -187,6 +187,7 @@ get_fish_length <- function(taxa,
 #'
 #' @return A data frame containing species length parameters
 #' @export
+#' @importFrom stats na.omit
 #'
 #' @examples
 #' \dontrun{
@@ -199,7 +200,7 @@ retrieve_lengths <- function(data, country_code) {
   rfish_tab <- NULL
 
   for (i in unique(data$interagency_code)) {
-    dat <- dplyr::filter(data, interagency_code %in% i)
+    dat <- dplyr::filter(data, .data$interagency_code %in% i)
     int_code <- unique(i)
 
     sp_len <-
@@ -254,9 +255,10 @@ join_weights <- function(data, metadata, rfish_tab) {
       catch_taxon = .data$interagency_code,
       length_type = .data$length_type
     ) %>%
-    dplyr::mutate(catch_taxon = dplyr::if_else(species == "0", "0", catch_taxon))
+    dplyr::mutate(catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon))
 
   data %>%
+    dplyr::sample_n(100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::left_join,
@@ -280,8 +282,8 @@ join_weights <- function(data, metadata, rfish_tab) {
       .data$survey_version == "v1" ~ "FL",
       .data$survey_version == "v2" ~ "TL")) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(weight = estimate_weight(length = mean_length, length_type,
-                                           code = species, n_individuals,
+    dplyr::mutate(weight = estimate_weight(length = .data$mean_length, .data$length_type,
+                                           code = .data$species, .data$n_individuals,
                                            rfish_tab$length_weight,
                                            rfish_tab$length_length)) %>%
     dplyr::ungroup( ) %>%
@@ -374,20 +376,20 @@ get_morphometric_tables <- function(pars, manual_table) {
 
   lw <- rfish_tab %>%
     # There are extra coefficients in the aTL column that we should use
-    dplyr::mutate(Type = "TL", a = aTL) %>%
+    dplyr::mutate(Type = "TL", a = .data$aTL) %>%
     dplyr::bind_rows(rfish_tab) %>%
     # There are some that have "No" low quality which means is OK?
-    dplyr::filter(!is.na(a), !isTRUE(tolower(EsQ) == "yes")) %>%
-    dplyr::select(interagency_code, Species, LengthMin, LengthMax, Type, a, b) %>%
+    dplyr::filter(!is.na(.data$a), !isTRUE(tolower(.data$EsQ) == "yes")) %>%
+    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin, .data$LengthMax, .data$Type, .data$a, .data$b) %>%
     dplyr::distinct()
 
   ll <- rfish_tab %>%
     # Relationship is reciprocal and we could use that information too
-    dplyr::mutate(l1 = Length1, l2 = Length2, a1 = aL, b1 = bL,
-                  Length1 = l2, Length2 = l1, aL = a1 / b1 * (-1), bL = 1 / b1) %>%
+    dplyr::mutate(l1 = .data$Length1, l2 = .data$Length2, a1 = .data$aL, b1 = .data$bL,
+                  Length1 = .data$l2, Length2 = .data$l1, aL = .data$a1 / .data$b1 * (-1), bL = 1 / .data$b1) %>%
     dplyr::bind_rows(rfish_tab) %>%
-    dplyr::select(interagency_code, Species, Length1, Length2, aL, bL) %>%
-    dplyr::filter(!is.na(aL)) %>%
+    dplyr::select(.data$interagency_code, .data$Species, .data$Length1, .data$Length2, .data$aL, .data$bL) %>%
+    dplyr::filter(!is.na(.data$aL)) %>%
     dplyr::distinct()
 
   list(length_weight = lw,
@@ -396,6 +398,8 @@ get_morphometric_tables <- function(pars, manual_table) {
 
 
 
+#' Estimate weight of a single taxon type
+#' @importFrom stats median
 estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
   if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0")
@@ -404,13 +408,13 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
   if (n_individuals == 0) return(0)
 
   this_lw <- lw %>%
-    dplyr::filter(interagency_code == code)
+    dplyr::filter(.data$interagency_code == code)
 
   # Transform length to other types if relevant
   this_ll <- ll %>%
-    dplyr::filter(interagency_code == code, Length2 == length_type) %>%
-    dplyr::mutate(length = aL + length * bL,
-                  Type = Length1)
+    dplyr::filter(.data$interagency_code == code, .data$Length2 == length_type) %>%
+    dplyr::mutate(length = .data$aL + .data$length * .data$bL,
+                  Type = .data$Length1)
 
   this_length <-
     dplyr::tibble(
@@ -425,7 +429,7 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
   w <- dplyr::full_join(this_lw, this_length,
                         by = c("interagency_code", "Species", "Type")) %>%
-    dplyr::mutate(weight = a * length ^ b)
+    dplyr::mutate(weight = .data$a * .data$length ^ .data$b)
 
   # I think we should use the median only at the end so that we can integrate as
   # much info as possible beforehand
