@@ -101,6 +101,8 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call merge_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::merge_landings()'
+      - name: Call calculate_weights()
+        run: Rscript -e 'peskas.timor.data.pipeline::calculate_weights()'
 
   validate-landings:
     name: Validate landings
@@ -180,6 +182,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
       - name: Test merged_trips
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
+
 
   export-trips:
     name: export_trips()
