@@ -13,6 +13,7 @@
 
 - We test validated data to ensure its integrity
 - Added `merge_trips()` which integrates data from the landings and tracking together
+- Added `format_public_data()` to format and export data to be used for analytics
 
 # peskas.timor.data.pipeline 0.13.0
 

@@ -89,6 +89,9 @@ default:
   merged_trips:
     file_prefix: all_trips
 
+  export:
+    file_prefix: timor
+
   storage:
     google:
       key: gcs
@@ -105,6 +108,14 @@ default:
         bucket: pds-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
+  public_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: public-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
 production:
   storage:
     google:
@@ -114,6 +125,10 @@ production:
     google:
       options:
         bucket: pds-timor
+  public_storage:
+    google:
+      options:
+        bucket: public-timor
   validation:
     airtable:
       tables:
@@ -146,6 +161,10 @@ local:
       options:
         service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
   pds_storage:
+    google:
+      options:
+        service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+  public_storage:
     google:
       options:
         service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")

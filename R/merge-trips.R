@@ -50,7 +50,7 @@ merge_trips <- function(){
     dplyr::bind_rows(pds$`FALSE`) %>%
     dplyr::select(-.data$unique_trip_per_day)
 
-  merged_trips_filename <-pars$merged_trips$file_prefix %>%
+  merged_trips_filename <- pars$merged_trips$file_prefix %>%
     add_version(extension = "rds")
 
   readr::write_rds(x = merged_trips,
