@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Merge recent and legacy pre-processed landings — merge_landings • peskas.timor.data.pipeline</title>
+<title>Join length-weights info to preprocessed landings — join_weights • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,10 @@
 
 
 
-<meta property="og:title" content="Merge recent and legacy pre-processed landings — merge_landings" />
-<meta property="og:description" content="Downloads pre-processed versions of recent and legacy landings from cloud and
-merge in a rds-format file using the function dplyr::full_join." />
+<meta property="og:title" content="Join length-weights info to preprocessed landings — join_weights" />
+<meta property="og:description" content="The function integrate length-weight info from FIshBase databse to preprocessed
+surveys data and convert catch labels according to the FAO nomenclature
+(http://www.fao.org/fishery/statistics/global-production/3/en)." />
 
 
 
@@ -107,56 +108,39 @@ merge in a rds-format file using the function dplyr::full_join." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Merge recent and legacy pre-processed landings</h1>
+    <h1>Join length-weights info to preprocessed landings</h1>
     
-    <div class="hidden name"><code>merge_landings.Rd</code></div>
+    <div class="hidden name"><code>join_weights.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Downloads pre-processed versions of recent and legacy landings from cloud and
-merge in a rds-format file using the function <a href='https://dplyr.tidyverse.org/reference/mutate-joins.html'>dplyr::full_join</a>.</p>
+    <p>The function integrate length-weight info from FIshBase databse to preprocessed
+surveys data and convert catch labels according to the FAO nomenclature
+(<a href='http://www.fao.org/fishery/statistics/global-production/3/en'>http://www.fao.org/fishery/statistics/global-production/3/en</a>).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>merge_landings</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>join_weights</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>metadata</span>, <span class='va'>rfish_tab</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>log_threshold</th>
-      <td><p>The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See <a href='https://daroczig.github.io/logger/reference/log_levels.html'>logger::log_levels</a> for more
-details</p></td>
+      <th>data</th>
+      <td><p>The survey landings data frame</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>No outputs. This function is used for it's side effects</p>
+    <p>A new landings data frame including length-weights info</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>The merged file is then uploaded to the cloud. The parameters needed are:</p><pre>surveys:
-  landings:
-    file_prefix:
-    version:
-      preprocess:
-  landings_legacy:
-    file_prefix:
-    version:
-      preprocess:
-  merged_landings:
-    file_prefix:
-    version:
-storage:
-  storage_name:
-    key:
-    options:
-      project:
-      bucket:
-      service_account_key:
-</pre>
-
-<p>Progress through the function is tracked using the package <em>logger</em>.</p>
+    <p>The length types used to calculate weight in fish catches include total length
+(TL) in survey version 1 and fork length (FL) in survey version 2 with the
+exception of the group SRX (Myliobatiformes), which uses disk width (WD).
+Weights of Non-fish groups are calculated according to carapace width (CW) in
+crabs, mantel length (ML) in Cephalopoda and shell length (ShL) in Bivalvia,
+carapace length (CL) in lobsters.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

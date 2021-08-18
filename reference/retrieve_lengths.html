@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Merge recent and legacy pre-processed landings — merge_landings • peskas.timor.data.pipeline</title>
+<title>Retrieve weight-length parameters — retrieve_lengths • peskas.timor.data.pipeline</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,9 @@
 
 
 
-<meta property="og:title" content="Merge recent and legacy pre-processed landings — merge_landings" />
-<meta property="og:description" content="Downloads pre-processed versions of recent and legacy landings from cloud and
-merge in a rds-format file using the function dplyr::full_join." />
+<meta property="og:title" content="Retrieve weight-length parameters — retrieve_lengths" />
+<meta property="og:description" content="This function takes a table returned from get_catch_types and returns detailed
+weight-length parameters from each species group." />
 
 
 
@@ -107,57 +107,44 @@ merge in a rds-format file using the function dplyr::full_join." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Merge recent and legacy pre-processed landings</h1>
+    <h1>Retrieve weight-length parameters</h1>
     
-    <div class="hidden name"><code>merge_landings.Rd</code></div>
+    <div class="hidden name"><code>retrieve_lengths.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Downloads pre-processed versions of recent and legacy landings from cloud and
-merge in a rds-format file using the function <a href='https://dplyr.tidyverse.org/reference/mutate-joins.html'>dplyr::full_join</a>.</p>
+    <p>This function takes a table returned from <code>get_catch_types</code> and returns detailed
+weight-length parameters from each species group.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>merge_landings</span><span class='op'>(</span>log_threshold <span class='op'>=</span> <span class='fu'>logger</span><span class='fu'>::</span><span class='va'><a href='https://daroczig.github.io/logger/reference/log_levels.html'>DEBUG</a></span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>retrieve_lengths</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>country_code</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>log_threshold</th>
-      <td><p>The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See <a href='https://daroczig.github.io/logger/reference/log_levels.html'>logger::log_levels</a> for more
-details</p></td>
+      <th>data</th>
+      <td><p>A table returned from <code>get_catch_types</code></p></td>
+    </tr>
+    <tr>
+      <th>country_code</th>
+      <td><p>The code of the country associated to FishBase database, default
+code include Timor-Leste and Indonesia. Full list at
+<a href='https://www.fishbase.se/country/ListOfCountryCodes.php'>https://www.fishbase.se/country/ListOfCountryCodes.php</a>.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>No outputs. This function is used for it's side effects</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <p>A data frame containing species length parameters</p>
 
-    <p>The merged file is then uploaded to the cloud. The parameters needed are:</p><pre>surveys:
-  landings:
-    file_prefix:
-    version:
-      preprocess:
-  landings_legacy:
-    file_prefix:
-    version:
-      preprocess:
-  merged_landings:
-    file_prefix:
-    version:
-storage:
-  storage_name:
-    key:
-    options:
-      project:
-      bucket:
-      service_account_key:
-</pre>
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>rank_tab</span> <span class='op'>&lt;-</span> <span class='fu'><a href='get_catch_types.html'>get_catch_types</a></span><span class='op'>(</span><span class='va'>pars</span><span class='op'>)</span>
+<span class='fu'>retrieve_lengths</span><span class='op'>(</span><span class='va'>rank_tab</span><span class='op'>)</span>
+<span class='op'>}</span>
 
-<p>Progress through the function is tracked using the package <em>logger</em>.</p>
-
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
