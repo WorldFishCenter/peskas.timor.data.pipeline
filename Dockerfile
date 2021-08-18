@@ -24,6 +24,9 @@ RUN install2.r --error --skipinstalled \
     furrr \
     future \
     univOutl \
+    rfishbase \
+    taxize \
+    gsheet \
     tinytest
 
 # Install suggests

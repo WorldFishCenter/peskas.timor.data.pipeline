@@ -1,3 +1,12 @@
+# peskas.timor.data.pipeline 0.15.0
+
+## New features
+
+- Added a series of functions (`get_catch_types()`, `get_fish_length()` ,`retrieve_lengths()`) useful to retrieve morphometric conversion factors from catch types names in metadata tables. 
+- Added a new metadata table in airtable (morphometric_table) containing length-weight and length-length conversion factors.
+- Added `join_weights()` which integrates morphometric data with merged landings.
+
+
 # peskas.timor.data.pipeline 0.14.0
 
 ## New features
