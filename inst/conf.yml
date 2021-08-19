@@ -89,6 +89,9 @@ default:
   merged_trips:
     file_prefix: all_trips
 
+  models:
+    file_prefix: model_predictions
+
   export:
     file_prefix: timor
 
