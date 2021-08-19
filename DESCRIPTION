@@ -22,6 +22,7 @@ Imports:
     dplyr,
     digest,
     git2r,
+    glmmTMB,
     googleAuthR,
     googleCloudStorageR,
     googledrive,
