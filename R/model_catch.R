@@ -109,15 +109,15 @@ model_value <- function(trips){
 
 estimate_statistics <- function(value_model, landings_model){
 
-  models <- list(landing_value = value_model,
-                 n_landings = landings_model)
+  models <- list(landing_revenue = value_model,
+                 n_landings_per_boat = landings_model)
 
   estimations <- models %>%
     purrr::imap(predict_variable) %>%
     purrr::reduce(dplyr::full_join)
 
   estimations_total <- estimations %>%
-    dplyr::mutate(value = .data$landing_value * .data$n_landings * 2334) %>%
+    dplyr::mutate(revenue = .data$landing_revenue * .data$n_landings_per_boat * 2334) %>%
     dplyr::arrange(.data$landing_period)
 
   list(
