@@ -27,13 +27,13 @@ RUN install2.r --error --skipinstalled \
     taxize \
     gsheet \
     tinytest \
-    rfishbase
+    remotes \
+    && R -e "remotes::install_github('ropensci/rfishbase')"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
     covr \
     pkgdown \
-    remotes \
     sessioninfo \
     testthat \
     roxygen2 \
