@@ -37,10 +37,10 @@ RUN install2.r --error --skipinstalled \
     furrr \
     future \
     univOutl \
-    rfishbase \
     taxize \
     gsheet \
-    tinytest
+    tinytest \
+    && R -e "remotes::install_github("ropensci/rfishbase")"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
