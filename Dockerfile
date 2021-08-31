@@ -26,14 +26,14 @@ RUN install2.r --error --skipinstalled \
     univOutl \
     taxize \
     gsheet \
-    tinytest
+    tinytest \
+    remotes
 RUN R -e "remotes::install_version('rfishbase',version='3.1.9',dependencies = TRUE, upgrade='default')"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
     covr \
     pkgdown \
-    remotes \
     sessioninfo \
     testthat \
     roxygen2 \
