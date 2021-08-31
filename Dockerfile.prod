@@ -39,7 +39,7 @@ RUN install2.r --error --skipinstalled \
     univOutl \
     taxize \
     gsheet \
-    tinytest \
+    tinytest
 RUN R -e "remotes::install_version('rfishbase',version='3.1.9',dependencies = TRUE, upgrade='default')"
 
 # Install suggests
