@@ -40,7 +40,7 @@ RUN install2.r --error --skipinstalled \
     taxize \
     gsheet \
     tinytest \
-    RUN Rscript -e "remotes::install_github('ropensci/rfishbase',dependencies=TRUE, upgrade='always')"
+    RUN Rscript -e "remotes::install_version('rfishbase',dependencies=TRUE, upgrade='always')"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
