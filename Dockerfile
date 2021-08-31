@@ -27,7 +27,7 @@ RUN install2.r --error --skipinstalled \
     taxize \
     gsheet \
     tinytest \
-    rfishbase@3.1.9
+    rfishbase
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
