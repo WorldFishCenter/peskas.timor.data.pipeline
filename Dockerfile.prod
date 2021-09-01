@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.1.0
+FROM rocker/r-ver:4.1.1
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -40,7 +40,6 @@ RUN install2.r --error --skipinstalled \
     taxize \
     gsheet \
     tinytest \
-    arkdb \
     remotes \
     rfishbase
 

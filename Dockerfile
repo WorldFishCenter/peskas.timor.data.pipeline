@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.1.0
+FROM rocker/r-ver:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -27,7 +27,6 @@ RUN install2.r --error --skipinstalled \
     taxize \
     gsheet \
     tinytest \
-    arkdb \
     remotes \
     rfishbase
 
