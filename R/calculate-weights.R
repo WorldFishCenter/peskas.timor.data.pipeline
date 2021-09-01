@@ -368,7 +368,9 @@ get_rfish_table <- function(pars) {
 get_morphometric_tables <- function(pars, manual_table) {
 
   rfish_table <- get_rfish_table(pars) %>%
-    dplyr::mutate(DataRef = as.character(.data$DataRef))
+    dplyr::mutate(DataRef = as.character(.data$DataRef),
+                  LengthMin = as.double(.data$LengthMin),
+                  aL = as.double(.data$aL))
 
   # merge the two tables
   rfish_tab <- dplyr::bind_rows(rfish_table, manual_table)
