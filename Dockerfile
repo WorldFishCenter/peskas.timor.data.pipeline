@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.0.3
+FROM rocker/geospatial:4.1.0
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -28,8 +28,8 @@ RUN install2.r --error --skipinstalled \
     gsheet \
     tinytest \
     arkdb \
-    remotes
-RUN R -e "remotes::install_github('ropensci/rfishbase',dependencies = TRUE, upgrade='default')"
+    remotes \
+    rfishbase
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
