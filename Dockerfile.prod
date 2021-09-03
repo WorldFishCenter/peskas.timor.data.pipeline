@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.0.3
+FROM rocker/r-ver:4.1.1
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -37,16 +37,16 @@ RUN install2.r --error --skipinstalled \
     furrr \
     future \
     univOutl \
-    rfishbase \
     taxize \
     gsheet \
-    tinytest
+    tinytest \
+    remotes \
+    rfishbase
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
     covr \
     pkgdown \
-    remotes \
     sessioninfo \
     testthat \
     roxygen2 \

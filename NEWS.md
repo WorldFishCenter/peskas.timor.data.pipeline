@@ -1,3 +1,14 @@
+# peskas.timor.data.pipeline 0.16.0
+
+## Breaking changes
+
+- The Docker file now run rocker/r-ver 4.1.1 instead of rocker/geospatial:4.0.3 
+
+## Bug fixes
+
+- Fixed the bug when calling `ingest_rfish_table()` in the main pipeline.
+
+
 # peskas.timor.data.pipeline 0.15.0
 
 ## New features
