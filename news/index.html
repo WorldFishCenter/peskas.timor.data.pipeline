@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.15.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.16.0</span>
       </span>
     </div>
 
@@ -109,6 +109,24 @@
       
     </div>
 
+    <div id="peskastimordatapipeline-0160" class="section level1">
+<h1 class="page-header" data-toc-text="0.16.0">
+<a href="#peskastimordatapipeline-0160" class="anchor"></a>peskas.timor.data.pipeline 0.16.0</h1>
+<div id="breaking-changes" class="section level2">
+<h2 class="hasAnchor">
+<a href="#breaking-changes" class="anchor"></a>Breaking changes</h2>
+<ul>
+<li>The Docker file now run rocker/r-ver 4.1.1 instead of rocker/geospatial:4.0.3</li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level2">
+<h2 class="hasAnchor">
+<a href="#bug-fixes" class="anchor"></a>Bug fixes</h2>
+<ul>
+<li>Fixed the bug when calling <code><a href="../reference/ingest_rfish_table.html">ingest_rfish_table()</a></code> in the main pipeline.</li>
+</ul>
+</div>
+</div>
     <div id="peskastimordatapipeline-0150" class="section level1">
 <h1 class="page-header" data-toc-text="0.15.0">
 <a href="#peskastimordatapipeline-0150" class="anchor"></a>peskas.timor.data.pipeline 0.15.0</h1>
@@ -159,9 +177,9 @@
 <li>Created a new bucket (pds-timor-dev) to store pds data.</li>
 </ul>
 </div>
-<div id="bug-fixes" class="section level2">
+<div id="bug-fixes-1" class="section level2">
 <h2 class="hasAnchor">
-<a href="#bug-fixes" class="anchor"></a>Bug fixes</h2>
+<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h2>
 <ul>
 <li>
 <code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> returns an empty vector when the bucket is empty</li>
@@ -171,9 +189,9 @@
     <div id="peskastimordatapipeline-0101" class="section level1">
 <h1 class="page-header" data-toc-text="0.10.1">
 <a href="#peskastimordatapipeline-0101" class="anchor"></a>peskas.timor.data.pipeline 0.10.1</h1>
-<div id="bug-fixes-1" class="section level2">
+<div id="bug-fixes-2" class="section level2">
 <h2 class="hasAnchor">
-<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h2>
+<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h2>
 <ul>
 <li>Fixed the bug in survey retrieve process. Integrating a server response status check in <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>
 </li>
@@ -201,9 +219,9 @@
 <li>Simplified jobs in the pipeline workflow</li>
 </ul>
 </div>
-<div id="bug-fixes-2" class="section level2">
+<div id="bug-fixes-3" class="section level2">
 <h2 class="hasAnchor">
-<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h2>
+<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h2>
 <ul>
 <li>Fixed workflow so that runs that are supposed to run in production actually do so</li>
 </ul>
@@ -241,9 +259,9 @@
 </li>
 </ul>
 </div>
-<div id="breaking-changes" class="section level3">
+<div id="breaking-changes-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#breaking-changes" class="anchor"></a>Breaking changes</h3>
+<a href="#breaking-changes-1" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>Landings pre-processing now renames a few columns in the data: specifically <em>submission_id</em> (used to be *_id<em>) and </em>landing_date* (used to be <em>date</em>)</li>
 </ul>
@@ -280,9 +298,9 @@
 <code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> can now also match files by exact name and not just by prefix</li>
 </ul>
 </div>
-<div id="breaking-changes-1" class="section level3">
+<div id="breaking-changes-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#breaking-changes-1" class="anchor"></a>Breaking changes</h3>
+<a href="#breaking-changes-2" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>
 <code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> and <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> now use logic to use Airtable instead og Google Sheets</li>
@@ -313,9 +331,9 @@
     <div id="peskastimordatapipeline-040" class="section level1">
 <h1 class="page-header" data-toc-text="0.4.0">
 <a href="#peskastimordatapipeline-040" class="anchor"></a>peskas.timor.data.pipeline 0.4.0</h1>
-<div id="breaking-changes-2" class="section level3">
+<div id="breaking-changes-3" class="section level3">
 <h3 class="hasAnchor">
-<a href="#breaking-changes-2" class="anchor"></a>Breaking changes</h3>
+<a href="#breaking-changes-3" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li>
 </ul>
@@ -328,9 +346,9 @@
 <li>Improved documentation of the package: particularly the readme and the function reference.</li>
 </ul>
 </div>
-<div id="bug-fixes-3" class="section level3">
+<div id="bug-fixes-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-4" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>We now skip RCurl from windows tests</li>
 </ul>
@@ -362,9 +380,9 @@
     <div id="peskastimordatapipeline-020" class="section level1">
 <h1 class="page-header" data-toc-text="0.2.0">
 <a href="#peskastimordatapipeline-020" class="anchor"></a>peskas.timor.data.pipeline 0.2.0</h1>
-<div id="breaking-changes-3" class="section level3">
+<div id="breaking-changes-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#breaking-changes-3" class="anchor"></a>Breaking changes</h3>
+<a href="#breaking-changes-4" class="anchor"></a>Breaking changes</h3>
 <ul>
 <li>
 <code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>, <code><a href="../reference/retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>, and <code><a href="../reference/retrieve_survey.html">retrieve_survey()</a></code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
