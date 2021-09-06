@@ -190,3 +190,25 @@ insistent_upload_cloud_file <- function(..., delay = 3){
                      quiet = F)(...)
   Sys.sleep(delay)
 }
+
+#' Insistent version of `download_cloud_file()`
+#'
+#' Just like `download_cloud_file()`, this function takes a vector of tracks files
+#' as argument and download them to the cloud. The function uses
+#' [purrr::insistently] in order to continue to download files despite stale OAuth
+#' token.
+#'
+#' @param delay he time interval to suspend execution for, in seconds.
+#' @param ... Inputs to `download_cloud_file()`
+#'
+#' @return No output. This function is used for it's side effects
+#' @export
+#'
+insistent_download_cloud_file <- function(..., delay = 3){
+  purrr::insistently(download_cloud_file,
+                     rate = purrr::rate_backoff(
+                       pause_cap = 60*5,
+                       max_times = 10),
+                     quiet = F)(...)
+  Sys.sleep(delay)
+}
