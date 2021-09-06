@@ -56,16 +56,17 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
       Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
       `Last Seen` = lubridate::as_datetime(.data$`Last Seen`,
-        format = "%a %b %d %X UTC %Y",
-        tz = "UTC"
+                                           format = "%a %b %d %X UTC %Y",
+                                           tz = "UTC"
       )
     ) %>%
     associate_pds_trips()
 
+  logger::log_info("Retrieving pds tracks list")
   tracks_list <- googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket)
 
   tracks_descriptors <-
-    get_tracks_descriptors(pds_trips = pds_trips_raw, pds_tracks = tracks_list)
+    get_tracks_descriptors(pars, pds_trips = pds_trips_raw, pds_tracks = tracks_list)
 
   pds_trips_raw_preprocessed <-
     dplyr::left_join(pds_trips_raw, tracks_descriptors, by = "Trip")
@@ -77,13 +78,6 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
     x = pds_trips_raw_preprocessed,
     file = preprocessed_filename,
     compress = "gz"
-  )
-
-  logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
-    file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
   )
 }
 
@@ -132,16 +126,17 @@ associate_pds_trips <- function(x) {
 #'
 #' @param pds_trips The table of pds trips.
 #' @param pds_tracks The list of pds tracks files.
+#' @param pars The configuration file.
 #'
 #' @return A dataframe with summaries for each pds trip ID.
 #' @export
 #'
-get_tracks_descriptors <- function(pds_trips = NULL, pds_tracks = NULL) {
+get_tracks_descriptors <- function(pars, pds_trips = NULL, pds_tracks = NULL) {
   tracks_descriptors <- data.frame()
   for (i in c(pds_trips$Trip)) {
     Trip <- i
     track_id <- paste(pars$pds$tracks$file_prefix, as.character(Trip), sep = "-")
-    track_file <- dplyr::filter(tracks_list, grepl(track_id, name)) %>%
+    track_file <- dplyr::filter(pds_tracks, grepl(track_id, .data$name)) %>%
       magrittr::extract2("name")
     track <-
       download_cloud_file(
@@ -160,7 +155,7 @@ get_tracks_descriptors <- function(pds_trips = NULL, pds_tracks = NULL) {
           c(track[nrow(track), ]$Lng, track[nrow(track), ]$Lat),
           fun = geosphere::distGeo
         )[1],
-        outliers_proportion = dplyr::filter(track, `Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
+        outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
         timetrace_dispersion = sd(diff(track$Time))
       )
     tracks_descriptors <- rbind(tracks_descriptors, descriptors)

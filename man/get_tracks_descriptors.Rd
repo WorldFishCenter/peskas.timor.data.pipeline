@@ -4,9 +4,11 @@
 \alias{get_tracks_descriptors}
 \title{Extract summaries from pds tracks}
 \usage{
-get_tracks_descriptors(pds_trips = NULL, pds_tracks = NULL)
+get_tracks_descriptors(pars, pds_trips = NULL, pds_tracks = NULL)
 }
 \arguments{
+\item{pars}{The configuration file.}
+
 \item{pds_trips}{The table of pds trips.}
 
 \item{pds_tracks}{The list of pds tracks files.}
