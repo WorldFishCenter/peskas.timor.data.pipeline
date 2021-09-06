@@ -4,14 +4,14 @@
 \alias{associate_pds_trips}
 \title{Label short interval trips}
 \usage{
-associate_pds_trips(pds_trips = NULL)
+associate_pds_trips(x)
 }
 \arguments{
-\item{pds_trips}{The table of pds trips.}
+\item{x}{A data frame containing raw pds trips data..}
 }
 \value{
-A dataframe with pds trips with a new column \code{associated_to} indicating
-the trips to be potentially merged.
+A dataframe with pds trips including a new column \code{associated_to}
+indicating the trips to be potentially merged.
 }
 \description{
 The pds data are quite patchy and sometimes a single trip is recorded as 2

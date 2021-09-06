@@ -96,16 +96,16 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' and the start of a trip for each boat and labels the trips that start less
 #' than 35 minutes from the other.
 #'
-#' @param pds_trips The table of pds trips.
+#' @param x A data frame containing raw pds trips data..
 #'
-#' @return A dataframe with pds trips with a new column `associated_to` indicating
-#' the trips to be potentially merged.
+#' @return A dataframe with pds trips including a new column `associated_to`
+#' indicating the trips to be potentially merged.
 #'
 #' @importFrom rlang .data
 #' @export
 #'
-associate_pds_trips <- function(pds_trips = NULL) {
-  pds_trips_raw %>%
+associate_pds_trips <- function(x) {
+  x %>%
     dplyr::arrange(.data$Boat, .data$Started) %>%
     dplyr::group_by(.data$Boat) %>%
     dplyr::mutate(start_end_diff = difftime(dplyr::lead(.data$Started),
