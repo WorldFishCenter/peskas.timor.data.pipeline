@@ -122,9 +122,9 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 
   # list id tracks already in bucket
   file_list_id <- cloud_object_name(prefix = pars$pds$tracks$file_prefix,
-                    provider = pars$pds_storage$google$key,
-                    extension = ext,
-                    options = pars$pds_storage$google$options) %>%
+                                    provider = pars$pds_storage$google$key,
+                                    extension = ext,
+                                    options = pars$pds_storage$google$options) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
