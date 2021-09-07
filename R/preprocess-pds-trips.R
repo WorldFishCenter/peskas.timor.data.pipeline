@@ -66,8 +66,6 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   upload_cloud_file(file = preprocessed_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
-
-  preprocess_pds_tracks()
 }
 
 #' Label short interval trips
