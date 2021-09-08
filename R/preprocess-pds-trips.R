@@ -146,7 +146,11 @@ get_tracks_descriptors <- function(pars, pds_trips = NULL, pds_tracks = NULL) {
           fun = geosphere::distGeo
         )[1],
         outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
-        timetrace_dispersion = sd(diff(track$Time))
+        timetrace_dispersion = sd(diff(track$Time)),
+        start_lat = dplyr::first(track$Lat),
+        start_lng = dplyr::first(track$Lng),
+        end_lat = dplyr::last(track$Lat),
+        end_lng = dplyr::last(track$Lng)
       )
     tracks_descriptors <- rbind(tracks_descriptors, descriptors)
   }
