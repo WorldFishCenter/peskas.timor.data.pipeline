@@ -30,7 +30,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
   validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
-  landings <- get_merged_landings(pars)
+  landings <- get_merged_landings(pars, "_weight")
 
   # read arguments for outliers identification
   default_max_limit <-  pars$validation$landings$default$max
@@ -80,11 +80,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
                   # .data$`_id`) %>%
     dplyr::transmute(submission_id=as.integer(.data$`_id`))
 
-  catch_codes <- metadata$catch_types %>%
-    dplyr::transmute(species = as.character(.data$catch_number),
-                     catch_taxon = .data$interagency_code) %>%
-    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
-
   logger::log_info("Renaming data fields")
   validated_landings <-
     list(imei_alerts,
@@ -95,7 +90,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
-    dplyr::slice(1:100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
@@ -104,19 +98,17 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         length = .data$mean_length,
         individuals = .data$n_individuals),
       species_group = purrr::map(
-        .x = species_group, .f = dplyr::left_join,
-        catch_codes, by = c("species")),
-      species_group = purrr::map(
-        .x = species_group, .f = dplyr::select,
-        catch_taxon,
+        .x = .data$species_group, .f = dplyr::select,
+        catch_taxon=.data$species,
         catch_purpose = .data$food_or_sale,
-        length_frequency = .data$length_individuals), ) %>%
+        length_frequency = .data$length_individuals)) %>%
     dplyr::select(
       landing_id = .data$submission_id,
       landing_date = .data$date,
+      tracker_imei = .data$imei,
       trip_duration = .data$trip_duration,
-      landed_catch = .data$species_group,
-      landed_value = .data$total_catch_value)
+      landing_catch = .data$species_group,
+      landing_value = .data$total_catch_value)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
@@ -144,7 +136,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     dplyr::rename(submission_id = .data$`_id`,
                   submission_date = .data$`_submission_time`) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id),
-                  submission_date = lubridate::as_date(submission_date)) %>%
+                  submission_date = lubridate::as_date(.data$submission_date)) %>%
     dplyr::select(.data$submission_id, .data$submission_date)
   remote_alerts <- validation$alerts %>%
     dplyr::select(.data$id, .data$alert_number) %>%
@@ -232,12 +224,30 @@ get_preprocessed_metadata <- function(pars){
   readr::read_rds(file = metadata_rds)
 }
 
-get_merged_landings <- function(pars){
+get_merged_landings <- function(pars, suffix = ""){
   landings_rds <- cloud_object_name(
-    prefix = paste(pars$surveys$merged_landings$file_prefix),
+    prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$surveys$merged_landings$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE)
+  logger::log_info("Downloading {landings_rds}...")
+  download_cloud_file(name = landings_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = landings_rds)
+}
+
+
+get_validated_landings <- function(log_threshold = logger::DEBUG){
+  pars <- read_config()
+
+  landings_rds <- cloud_object_name(
+    prefix = paste(pars$surveys$validated_landings$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$surveys$validated_landings$version,
     options = pars$storage$google$options,
     exact_match = TRUE)
   logger::log_info("Downloading {landings_rds}...")
