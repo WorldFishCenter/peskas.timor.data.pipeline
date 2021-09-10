@@ -44,21 +44,22 @@ get_metadata_info <- function(pars) {
 #' The function generate a list of metadata information to append to the
 #' files to upload to a Dataverse repository.
 #'
+#' @param pars The configuration file
+#'
 #' @return A list with metadata information
 #' @export
 #'
 #' @examples
-generate_metadata <- function() {
-  pars <- read_config()
+generate_metadata <- function(pars) {
   landings_metadata <- get_metadata_info(pars)
 
   metadat <- list(
-    title = paste("Project title"),
-    creator = "Creator of the project",
+    title = as.character(pars$export_dataverse$metadata$title),
+    subject = as.character(pars$export_dataverse$metadata$subject),
+    description = as.character(pars$export_dataverse$metadata$description),
     created = as.character(Sys.Date()),
-    description = "Description of the data",
     extent = as.character(landings_metadata$extent),
-    language = "English"
+    language = as.character(pars$export_dataverse$metadata$language)
   )
 
   metadat
@@ -136,32 +137,46 @@ publish_last_dataset <- function(token = NULL, dataverse = NULL, server = NULL) 
 #' This function upload and publish data on a specific Dataverse repository
 #' including associated metadata information.
 #'
-#' @inheritParams upload_files
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more
+#'   details
 #'
 #' @export
 #'
 #' @examples
-export_files <- function(token, dataverse, server) {
-  metadat <- generate_metadata()
+export_files <- function(log_threshold = logger::DEBUG) {
+
+  logger::log_threshold(log_threshold)
+
+  pars <- read_config()
+
+  dataverse <- pars$export_dataverse$dataverse_id
+  key <- pars$export_dataverse$token
+  server <- pars$export_dataverse$server
+
+  logger::log_info("Generating metadata...")
+  metadat <- generate_metadata(pars)
 
   dataverse::initiate_sword_dataset(
     dataverse = dataverse,
-    body = metadat,
-    key = token,
+    key = key,
+    server = server,
+    body = metadat
+  )
+
+  #file_list <- add function to retrieve file to export... still to define which files and format
+
+  logger::log_info("Exporting files...")
+  upload_files(
+    file_list = file_list,
+    token = key,
+    dataverse = dataverse,
     server = server
   )
 
-  file_list <- # complete with files to export
-
-    upload_files(
-      file_list = file_list,
-      token = token,
-      dataverse = dataverse,
-      server = server
-    )
-
+  logger::log_info("Publishing data...")
   publish_last_dataset(
-    token = token,
+    token = key,
     dataverse = dataverse,
     server = server
   )

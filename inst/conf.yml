@@ -18,6 +18,10 @@ default:
     merged_landings:
       file_prefix: timor-landings-merged
       version: latest
+    validated_landings:
+      file_prefix: timor-landings-merged_validated
+      version: latest
+
   pds:
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
@@ -44,8 +48,16 @@ default:
         - devices
         - vms_installs
         - catch_types
+        - fao_catch
+        - morphometric_table
     version:
       preprocess: latest
+    rfishtable:
+      file_prefix: rfish-table
+      version: latest
+      country_codes:
+        - 626
+        - 360
 
   validation:
     landings:
@@ -74,6 +86,22 @@ default:
     version:
       preprocess: latest
 
+  merged_trips:
+    file_prefix: all_trips
+
+  export:
+    file_prefix: timor
+
+    export_dataverse:
+    server: 'demo.dataverse.org'
+    dataverse_id: 'dataverse_name'
+    token: !expr Sys.getenv('DATAVERSE_TOKEN')
+    metadata:
+       title: 'Peskas - National Fisheries Monitoring System of Timor-Leste'
+       subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
+       description: 'A digital fisheries monitoring pipeline comprised of free, open-source software components and example summary data from field trials in Timor-Leste'
+       language: 'English'
+
   storage:
     google:
       key: gcs
@@ -90,6 +118,14 @@ default:
         bucket: pds-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
+  public_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: public-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
 production:
   storage:
     google:
@@ -99,6 +135,10 @@ production:
     google:
       options:
         bucket: pds-timor
+  public_storage:
+    google:
+      options:
+        bucket: public-timor
   validation:
     airtable:
       tables:
@@ -126,11 +166,17 @@ local:
     tracks:
       token: !expr readLines("auth/pds-token")
       secret: !expr readLines("auth/pds-secret")
+  export_dataverse:
+    token: !expr readLines("auth/dataverse-token")
   storage:
     google:
       options:
         service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
   pds_storage:
+    google:
+      options:
+        service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
+  public_storage:
     google:
       options:
         service_account_key: !expr readLines("auth/gcp-sa-peskas_ingestion-key.json")
