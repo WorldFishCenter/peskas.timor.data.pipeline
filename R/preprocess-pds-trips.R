@@ -117,6 +117,7 @@ associate_pds_trips <- function(x) {
 #' @export
 #'
 get_tracks_descriptors <- function(pars, pds_trips = NULL, pds_tracks = NULL) {
+
   tracks_descriptors <- data.frame()
 
   for (i in c(pds_trips$Trip)) {
@@ -141,10 +142,10 @@ get_tracks_descriptors <- function(pars, pds_trips = NULL, pds_tracks = NULL) {
     descriptors <-
       data.frame(
         Trip = Trip,
+        Boat = unique(track$Boat),
         start_end_distance = geosphere::distm(c(track[1, ]$Lng, track[1, ]$Lat),
           c(track[nrow(track), ]$Lng, track[nrow(track), ]$Lat),
-          fun = geosphere::distGeo
-        )[1],
+          fun = geosphere::distGeo)[1],
         outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
         timetrace_dispersion = sd(diff(track$Time)),
         start_lat = dplyr::first(track$Lat),
@@ -191,12 +192,33 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   pds_trips <- get_preprocessed_trips(pars)
-
-  logger::log_info("Retrieving pds tracks list")
   tracks_list <- googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket)
 
-  tracks_descriptors <-
-    get_tracks_descriptors(pars, pds_trips = pds_trips, pds_tracks = tracks_list)
+  list_prep_tracks <-
+    googleCloudStorageR::gcs_list_objects(pars$storage$google$options$bucket) %>%
+    dplyr::filter(grepl(
+      paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
+      .data$name
+    ))
+
+  if (nrow(list_prep_tracks) == 0) {
+    tracks_descriptors <-
+      get_tracks_descriptors(pars, pds_trips = pds_trips, pds_tracks = tracks_list)
+  } else {
+    # add function to save and read the already-processed tracks
+    preprocessed_tracks <- get_preprocessed_tracks(pars)
+
+    # filter the new trips
+    pds_trips <-
+      pds_trips %>%
+      dplyr::filter(!.data$Trip %in% unique(preprocessed_tracks$Trip))
+
+    tracks_descriptors <-
+      get_tracks_descriptors(pars, pds_trips = pds_trips, pds_tracks = tracks_list)
+
+    # bind new tracks_descriptors with latest ones
+    tracks_descriptors <- dplyr::bind_rows(preprocessed_tracks, tracks_descriptors)
+  }
 
   preprocessed_filename <- paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
@@ -212,4 +234,19 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
     provider = pars$pds_storage$google$key,
     options = pars$pds_storage$google$options
   )
+}
+
+# Download preprocessed tracks
+get_preprocessed_tracks <- function(pars){
+  pds_tracks_rds <- cloud_object_name(
+    prefix = paste(pars$pds$tracks$file_prefix, 'preprocessed', sep = "_"),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$pds$tracks$version$preprocess,
+    options = pars$storage$google$options)
+  logger::log_info("Downloading {pds_tracks_rds}...")
+  download_cloud_file(name = pds_tracks_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = pds_tracks_rds)
 }
