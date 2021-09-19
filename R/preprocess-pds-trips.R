@@ -109,53 +109,51 @@ associate_pds_trips <- function(x) {
 #' the proportion of track points exceeding 30 m/s, the `timetrace_dispersion`:
 #' measures the irregularity in the track signal.
 #'
-#' @param pds_trips The table of pds trips.
-#' @param pds_tracks The list of pds tracks files.
+#' @param Trip A vector of pds trips to process.
+#' @param tracks_list The list of pds tracks files.
 #' @param pars The configuration file.
 #'
 #' @return A dataframe with summaries for each pds trip ID.
 #' @export
 #'
-get_tracks_descriptors <- function(pars, pds_trips = NULL, pds_tracks = NULL) {
-
+get_tracks_descriptors <- function(Trip, pars, tracks_list) {
   tracks_descriptors <- data.frame()
 
-  for (i in c(pds_trips$Trip)) {
-    Trip <- i
-    track_id <- paste(pars$pds$tracks$file_prefix, as.character(Trip), sep = "-")
-    track_file <- dplyr::filter(pds_tracks, grepl(track_id, .data$name)) %>%
-      magrittr::extract2("name")
+  track_id <- paste(pars$pds$tracks$file_prefix, as.character(Trip), sep = "-")
+  track_file <- dplyr::filter(tracks_list, grepl(track_id, .data$name)) %>%
+    magrittr::extract2("name")
 
-    track <-
-      purrr::map(pars$pds_storage, ~ purrr::walk(
-        .x = track_file,
-        .f = ~ insistent_download_cloud_file(
-          name = .,
-          provider = pars$pds_storage$google$key,
-          options = pars$pds_storage$google$options
-        )
-      )) %>%
-      readr::read_csv(show_col_types = FALSE)
-
-    file.remove(track_file)
-
-    descriptors <-
-      data.frame(
-        Trip = Trip,
-        Boat = unique(track$Boat),
-        start_end_distance = geosphere::distm(c(track[1, ]$Lng, track[1, ]$Lat),
-          c(track[nrow(track), ]$Lng, track[nrow(track), ]$Lat),
-          fun = geosphere::distGeo)[1],
-        outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
-        timetrace_dispersion = sd(diff(track$Time)),
-        start_lat = dplyr::first(track$Lat),
-        start_lng = dplyr::first(track$Lng),
-        end_lat = dplyr::last(track$Lat),
-        end_lng = dplyr::last(track$Lng)
+  track <-
+    purrr::map(pars$pds_storage, ~ purrr::walk(
+      .x = track_file,
+      .f = ~ insistent_download_cloud_file(
+        name = .,
+        provider = pars$pds_storage$google$key,
+        options = pars$pds_storage$google$options
       )
-    tracks_descriptors <- rbind(tracks_descriptors, descriptors)
-  }
-  tibble::as_tibble(tracks_descriptors)
+    )) %>%
+    readr::read_csv(show_col_types = FALSE)
+
+  file.remove(track_file)
+
+  descriptors <-
+    data.frame(
+      Trip = Trip,
+      Boat = unique(track$Boat),
+      start_end_distance = geosphere::distm(c(track[1, ]$Lng, track[1, ]$Lat),
+        c(track[nrow(track), ]$Lng, track[nrow(track), ]$Lat),
+        fun = geosphere::distGeo
+      )[1],
+      outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
+      timetrace_dispersion = sd(diff(track$Time)),
+      start_lat = dplyr::first(track$Lat),
+      start_lng = dplyr::first(track$Lng),
+      end_lat = dplyr::last(track$Lat),
+      end_lng = dplyr::last(track$Lng)
+    )
+  tracks_descriptors <-
+    rbind(tracks_descriptors, descriptors) %>%
+    tibble::tibble()
 }
 
 
@@ -201,9 +199,13 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
       .data$name
     ))
 
+  future::plan(future::multisession,
+               workers = pars$pds$tracks$multisession$n_sessions)
+
   if (nrow(list_prep_tracks) == 0) {
+    tracks_to_download <- unique(pds_trips$Trip)
     tracks_descriptors <-
-      get_tracks_descriptors(pars, pds_trips = pds_trips, pds_tracks = tracks_list)
+      furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
   } else {
     # add function to save and read the already-processed tracks
     preprocessed_tracks <- get_preprocessed_tracks(pars)
@@ -213,8 +215,9 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
       pds_trips %>%
       dplyr::filter(!.data$Trip %in% unique(preprocessed_tracks$Trip))
 
+    tracks_to_download <- unique(pds_trips$Trip)
     tracks_descriptors <-
-      get_tracks_descriptors(pars, pds_trips = pds_trips, pds_tracks = tracks_list)
+      furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
 
     # bind new tracks_descriptors with latest ones
     tracks_descriptors <- dplyr::bind_rows(preprocessed_tracks, tracks_descriptors)
@@ -231,9 +234,9 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   upload_cloud_file(
     file = preprocessed_filename,
-    provider = pars$pds_storage$google$key,
-    options = pars$pds_storage$google$options
-  )
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options)
+
 }
 
 # Download preprocessed tracks

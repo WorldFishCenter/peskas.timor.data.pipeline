@@ -4,14 +4,14 @@
 \alias{get_tracks_descriptors}
 \title{Extract summaries from pds tracks}
 \usage{
-get_tracks_descriptors(pars, pds_trips = NULL, pds_tracks = NULL)
+get_tracks_descriptors(Trip, pars, tracks_list)
 }
 \arguments{
+\item{Trip}{A vector of pds trips to process.}
+
 \item{pars}{The configuration file.}
 
-\item{pds_trips}{The table of pds trips.}
-
-\item{pds_tracks}{The list of pds tracks files.}
+\item{tracks_list}{The list of pds tracks files.}
 }
 \value{
 A dataframe with summaries for each pds trip ID.
