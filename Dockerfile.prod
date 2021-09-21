@@ -43,9 +43,6 @@ RUN install2.r --error --skipinstalled \
     remotes \
     rfishbase
 
-# Install specific versions
-RUN R -e "devtools::install_version('RCurl', version = '1.98-1.4', repos = 'http://cran.us.r-project.org')"
-
 # Install suggests
 RUN install2.r --error --skipinstalled \
     covr \
@@ -61,5 +58,8 @@ RUN install2.r --error --skipinstalled \
 COPY . /home
 WORKDIR /home
 RUN Rscript -e 'remotes::install_local(dependencies = TRUE)'
+
+# Install specific versions
+RUN R -e "devtools::install_version('RCurl', version = '1.98-1.4', repos = 'http://cran.us.r-project.org')"
 
 ENTRYPOINT ["Rscript"]
