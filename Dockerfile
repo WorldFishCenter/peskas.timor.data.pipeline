@@ -14,7 +14,7 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
+    devtools \
     readr \
     readxl \
     stringr \
@@ -29,6 +29,9 @@ RUN install2.r --error --skipinstalled \
     tinytest \
     remotes \
     rfishbase
+
+# Install specific versions
+RUN R -e "devtools::install_version('RCurl', version = '1.98-1.4', repos = 'http://cran.us.r-project.org')"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
