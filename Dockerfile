@@ -31,7 +31,7 @@ RUN install2.r --error --skipinstalled \
     rfishbase
 
 # Install specific versions
-RUN R -e "devtools::install_version('RCurl', version = '1.98-1.4', repos = 'http://cran.us.r-project.org')"
+RUN R -e "devtools::install_version('RCurl', version = '1.98-1.4', repos = 'http://cran.us.r-project.org', dependencies=TRUE)"
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
