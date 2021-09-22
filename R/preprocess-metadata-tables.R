@@ -61,8 +61,10 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     boats = pt_validate_boats(metadata_tables$boats),
     catch_types = pt_validate_catch_types(metadata_tables$catch_types),
     fao_catch = pt_validate_fao_catch(metadata_tables$fao_catch),
-    morphometric_table = pt_validate_morphometric_table(metadata_tables$morphometric_table))
-    centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas))
+    morphometric_table = pt_validate_morphometric_table(metadata_tables$morphometric_table),
+    centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas),
+    vessel_types = pt_validate_vessel_types(metadata_tables$vessel_types),
+    gear_types = pt_validate_gear_types(metadata_tables$gear_types))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
@@ -235,7 +237,6 @@ pt_validate_morphometric_table <- function(morphometric_table){
 pt_validate_centro_pescas <- function(centro_pescas_table){
   centro_pescas_table
 }
-
 
 pt_validate_gear_types <- function(gear_types_table){
   gear_types_table
