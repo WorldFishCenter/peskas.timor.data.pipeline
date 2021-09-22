@@ -60,6 +60,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     device_installs = pt_validate_vms_installs(metadata_tables$vms_installs),
     boats = pt_validate_boats(metadata_tables$boats),
     catch_types = pt_validate_catch_types(metadata_tables$catch_types),
+    gear_types = pt_validate_gear_types(metadata_tables$gear_types),
+    vessel_types = pt_validate_vessel_types(metadata_tables$vessel_types),
     centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
@@ -213,3 +215,11 @@ pt_validate_centro_pescas <- function(centro_pescas_table){
   centro_pescas_table
 }
 
+
+pt_validate_gear_types <- function(gear_types_table){
+  gear_types_table
+}
+
+pt_validate_vessel_types <- function(vessel_types_table){
+  vessel_types_table
+}
