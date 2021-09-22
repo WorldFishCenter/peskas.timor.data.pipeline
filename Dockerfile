@@ -1,10 +1,11 @@
-FROM rocker/geospatial:4.0.3
+FROM rocker/r-ver:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
     config \
     dplyr \
     git2r \
+    glmmTMB \
     googleAuthR \
     googleCloudStorageR \
     googledrive \
@@ -24,13 +25,16 @@ RUN install2.r --error --skipinstalled \
     furrr \
     future \
     univOutl \
-    tinytest
+    taxize \
+    gsheet \
+    tinytest \
+    remotes \
+    rfishbase
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
     covr \
     pkgdown \
-    remotes \
     sessioninfo \
     testthat \
     roxygen2 \

@@ -38,7 +38,6 @@
 merge_landings <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
-
   pars <- read_config()
 
   preprocessed_landings <-
@@ -85,3 +84,4 @@ merge_landings <- function(log_threshold = logger::DEBUG){
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
 }
+

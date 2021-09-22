@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 0.14.0
+Version: 0.16.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
@@ -22,6 +22,7 @@ Imports:
     dplyr,
     digest,
     git2r,
+    glmmTMB,
     googleAuthR,
     googleCloudStorageR,
     googledrive,
@@ -38,9 +39,12 @@ Imports:
     tibble,
     tidyr,
     rlang (>= 0.1.2),
-    furrr,
+    furrr, 
     future,
-    univOutl
+    rfishbase,
+    taxize,
+    univOutl,
+    gsheet
 Suggests: 
     covr,
     pkgdown,
