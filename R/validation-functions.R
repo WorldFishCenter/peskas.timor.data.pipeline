@@ -80,11 +80,11 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay){
       dplyr::select(.data$`_id`,.data$date,.data$`_submission_time`) %>%
       dplyr::mutate(
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
-        submission_date = lubridate::with_tz(`_submission_time`, "Asia/Dili"),
+        submission_date = lubridate::with_tz(.data$`_submission_time`, "Asia/Dili"),
         # submission_date = lubridate::as_date(submission_date),
         date = lubridate::ymd(.data$date, tz = "Asia/Dili"),
         # date = lubridate::as_date(date),
-        d = date - submission_date) %>%
+        d = date - .data$submission_date) %>%
       dplyr::transmute(
         # Alert needs to be checked before editing the date column
         alert_number = dplyr::case_when(
@@ -156,7 +156,7 @@ validate_catch_price <- function(data,method=NULL,k=NULL){
 #' @param ... arguments for `univOutl::LocScaleB()`
 #'
 #' @return a vector of the same lenght as x
-#'
+#' @importFrom stats mad
 alert_outlier <- function(x,
                           no_alert_value = NA_real_,
                           alert_if_larger = no_alert_value,
@@ -218,13 +218,10 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
   catches_dat_unnested <-  data %>%
     dplyr::select(.data$`_id`,.data$species_group) %>%
     tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals,keep_empty = TRUE) %>%
-    dplyr::select(.data$`_id`,.data$n,.data$species,
-                  .data$mean_length,.data$n_individuals) %>%
-    dplyr::mutate(dplyr::across(c(.data$mean_length,.data$n_individuals),.fns = as.numeric))
+    tidyr::unnest(.data$length_individuals,keep_empty = TRUE)
 
   validated_length <- catches_dat_unnested %>%
-    dplyr::group_by(species) %>%
+    dplyr::group_by(.data$species) %>%
     dplyr::mutate(
       n_individuals = dplyr::case_when(
         .data$n_individuals == 0 ~ NA_real_,
@@ -243,7 +240,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
       mean_length = dplyr::case_when(
         is.na(.data$alert_length) ~ .data$mean_length,
         TRUE ~ NA_real_),
-      alert_number = dplyr::coalesce(alert_n_individuals, alert_length),
+      alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`) %>%
     dplyr::ungroup() %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
@@ -259,7 +256,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     validated_length %>%
     dplyr::select(-.data$alert_number) %>%
     dplyr::group_by(.data$submission_id,.data$n,.data$species) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length,.data$n_individuals))
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$weight))
 
   # replace validated catches params in original data
   validated_catch_params <- data %>%

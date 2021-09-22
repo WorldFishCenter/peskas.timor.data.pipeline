@@ -48,3 +48,14 @@ get_public_files <- function(pars){
       options = pars$public_storage$google$options) %>%
     purrr::map(readr::read_rds)
 }
+
+get_models <- function(pars){
+  cloud_object_name(
+    prefix = paste0(pars$models$file_prefix),
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options) %>%
+    readr::read_rds()
+}
