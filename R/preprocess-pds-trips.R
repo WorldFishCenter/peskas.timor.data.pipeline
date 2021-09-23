@@ -231,11 +231,15 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
     compress = "gz"
   )
 
-  logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
-    file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options)
+  logger::log_info("Uploading {preprocessed_filename} to cloud...")
+  # Iterate over multiple storage providers if there are more than one
+  purrr::map(pars$storage, ~ purrr::walk(
+    .x = preprocessed_filename,
+    .f = ~ insistent_upload_cloud_file(
+      file = .,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options)))
+  logger::log_success("File upload succeded")
 
 }
 
