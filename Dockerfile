@@ -15,7 +15,7 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
+    Rcurl \
     readr \
     readxl \
     stringr \
@@ -39,7 +39,8 @@ RUN install2.r --error --skipinstalled \
     testthat \
     roxygen2 \
     tidyselect \
-    textclean
+    textclean \
+    geosphere
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

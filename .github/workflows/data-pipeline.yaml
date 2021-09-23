@@ -151,7 +151,6 @@ jobs:
 
   preprocess-pds-tracks:
     name: preprocess_pds_tracks()
-    if: ${{ false }} # Skip for now as it's not been implemented
     needs: ingest-pds-trips
     runs-on: ubuntu-20.04
     container:
@@ -164,7 +163,7 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_pds_tracks()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_tracks()'
 
   merge-trips:
     name: Merge trips
