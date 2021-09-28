@@ -53,8 +53,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
       `Last Seen` = lubridate::as_datetime(.data$`Last Seen`,
                                            format = "%a %b %d %X UTC %Y",
-                                           tz = "UTC")) %>%
-    associate_pds_trips()
+                                           tz = "UTC"))
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
@@ -66,38 +65,6 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   upload_cloud_file(file = preprocessed_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
-}
-
-#' Label short interval trips
-#'
-#' The pds data are quite patchy and sometimes a single trip is recorded as 2
-#' different trips. This function calculates the time interval between the end
-#' and the start of a trip for each boat and labels the trips that start less
-#' than 35 minutes from the other.
-#'
-#' @param x A data frame containing raw pds trips data..
-#'
-#' @return A dataframe with pds trips including a new column `associated_to`
-#' indicating the trips to be potentially merged.
-#'
-#' @importFrom rlang .data
-#' @export
-#'
-associate_pds_trips <- function(x) {
-  x %>%
-    dplyr::arrange(.data$Boat, .data$Started) %>%
-    dplyr::group_by(.data$Boat) %>%
-    dplyr::mutate(start_end_diff = difftime(dplyr::lead(.data$Started),
-                                            .data$Ended, units = "mins")) %>%
-    dplyr::mutate(
-      associated_to = dplyr::case_when(
-        start_end_diff < 35 ~ .data$Trip,
-        TRUE ~ NA_integer_
-      ),
-      associated_to = dplyr::lag(.data$associated_to),
-      associated_to = dplyr::coalesce(.data$associated_to, .data$Trip)
-    ) %>%
-    dplyr::ungroup()
 }
 
 

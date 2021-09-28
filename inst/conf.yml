@@ -75,8 +75,12 @@ default:
         n_individuals:
           k: 7
     pds_trips:
-      trip_hours: 18
+      max_trip_hours: 18
+      min_trip_hours: 0.5
       trip_km: 60
+      start_end_km: 3
+      outliers : 10
+      timetrace: 1400
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk
