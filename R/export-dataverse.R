@@ -145,9 +145,7 @@ publish_last_dataset <- function(token = NULL, dataverse = NULL, server = NULL) 
 #'
 #' @examples
 export_files <- function(log_threshold = logger::DEBUG) {
-
   logger::log_threshold(log_threshold)
-
   pars <- read_config()
 
   dataverse <- pars$export_dataverse$dataverse_id
@@ -164,20 +162,36 @@ export_files <- function(log_threshold = logger::DEBUG) {
     body = metadat
   )
 
-  #file_list <- add function to retrieve file to export... still to define which files and format
+  logger::log_info("Retrieving public data to release...")
+  prefixes <- c("aggregated__", "trips", "catch")
+
+  release_files_names <-
+    purrr::map(prefixes, ~ cloud_object_name(
+      prefix = paste(pars$export$file_prefix, .x, sep = "_"),
+      version = "latest",
+      provider = pars$public_storage$google$key,
+      options = pars$public_storage$google$options
+    )) %>%
+    do.call('rbind',.) %>%
+    as.character()
+
+  purrr::map(release_files_names,
+             download_cloud_file,
+             provider = pars$public_storage$google$key,
+             options = pars$public_storage$google$options)
 
   logger::log_info("Exporting files...")
   upload_files(
-    file_list = file_list,
+    file_list = release_files_names,
     token = key,
     dataverse = dataverse,
     server = server
   )
 
-  logger::log_info("Publishing data...")
-  publish_last_dataset(
-    token = key,
-    dataverse = dataverse,
-    server = server
-  )
+  #logger::log_info("Publishing data...")
+  #publish_last_dataset(
+  #  token = key,
+  #  dataverse = dataverse,
+  #  server = server
+  #)
 }

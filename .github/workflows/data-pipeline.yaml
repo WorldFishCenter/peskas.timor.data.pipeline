@@ -184,10 +184,25 @@ jobs:
       - name: Test merged_trips
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
 
+  model-indicators:
+    name: Model indicators
+    needs: [merge-trips]
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call model_indicators()
+        run: Rscript -e 'peskas.timor.data.pipeline::model_indicators()'
 
   export-trips:
     name: Export trips
-    needs: [merge-trips]
+    needs: [merge-trips, model-indicators]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -202,3 +217,20 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Test public data
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
+
+  release-data:
+    name: Release data
+    if: ${{ false }} # Skip for now as it's not been implemented
+    needs: [export-trips]
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call export_files()
+        run: echo 'Feature not implemented yet'
