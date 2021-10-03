@@ -53,7 +53,8 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    dataverse
+    dataverse \
+    rmarkdown
 
 # Install local package
 COPY . /home

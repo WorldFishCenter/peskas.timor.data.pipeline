@@ -57,9 +57,7 @@ generate_metadata <- function(pars) {
     title = as.character(pars$export_dataverse$metadata$title),
     subject = as.character(pars$export_dataverse$metadata$subject),
     description = as.character(pars$export_dataverse$metadata$description),
-    created = as.character(Sys.Date()),
-    extent = as.character(landings_metadata$extent),
-    language = as.character(pars$export_dataverse$metadata$language)
+    created = as.character(Sys.Date())
   )
 
   metadat
@@ -152,6 +150,10 @@ export_files <- function(log_threshold = logger::DEBUG) {
   key <- pars$export_dataverse$token
   server <- pars$export_dataverse$server
 
+  logger::log_info("Retrieving public data to release...")
+  rmarkdown::render('./data_description.rmd',params=list(output_file = data_description.html,
+                                                         pars))
+
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
 
@@ -162,23 +164,7 @@ export_files <- function(log_threshold = logger::DEBUG) {
     body = metadat
   )
 
-  logger::log_info("Retrieving public data to release...")
-  prefixes <- c("aggregated__", "trips", "catch")
-
-  release_files_names <-
-    purrr::map(prefixes, ~ cloud_object_name(
-      prefix = paste(pars$export$file_prefix, .x, sep = "_"),
-      version = "latest",
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
-    )) %>%
-    do.call('rbind',.) %>%
-    as.character()
-
-  purrr::map(release_files_names,
-             download_cloud_file,
-             provider = pars$public_storage$google$key,
-             options = pars$public_storage$google$options)
+  release_files_names <- c(files_names,'data_description.html')
 
   logger::log_info("Exporting files...")
   upload_files(
