@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.1.1
+FROM rocker/tidyverse:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
