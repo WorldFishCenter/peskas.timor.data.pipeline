@@ -64,6 +64,12 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     method = pars$validation$landings$catch$method %||% default_method,
     k_ind = pars$validation$catch$n_individuals$k %||% default_k,
     k_length = pars$validation$catch$length$k %||% default_k)
+  vessel_type_alerts <- validate_vessel_type(
+    landings,
+    metadata$vessel_types)
+  gear_type_alerts <- validate_gear_type(
+    landings,
+    metadata$gear_types)
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
@@ -72,23 +78,21 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   ready_cols <- landings %>%
     dplyr::select(
-      gear = .data$`trip_group/gear_type`,
-      boat_type = .data$`trip_group/boat_type`,
-      site_number = .data$landing_site_name,
+      # site_number = .data$landing_site_name,
       submission_id = .data$`_id`
     ) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
 
-  catch_codes <- metadata$catch_types %>%
-    dplyr::transmute(species = as.character(.data$catch_number),
-                     catch_taxon = .data$interagency_code) %>%
-    dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
-
-  municipality_codes <- metadata$centro_pescas %>%
-    dplyr::select(
-      .data$site_number,
-      .data$`municipality (from administrative_posts)`
-    )
+  # catch_codes <- metadata$catch_types %>%
+  #   dplyr::transmute(species = as.character(.data$catch_number),
+  #                    catch_taxon = .data$interagency_code) %>%
+  #   dplyr::bind_rows(tibble::tibble(species = "0", catch_taxon = "0"))
+  #
+  # municipality_codes <- metadata$centro_pescas %>%
+  #   dplyr::select(
+  #     .data$site_number,
+  #     .data$`municipality (from administrative_posts)`
+  #   )
 
   logger::log_info("Renaming data fields")
   validated_landings <-
@@ -96,11 +100,14 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          surveys_time_alerts$validated_dates,
          surveys_time_alerts$validated_duration,
          surveys_price_alerts,
-         surveys_catch_alerts) %>%
+         surveys_catch_alerts,
+         vessel_type_alerts,
+         gear_type_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
     #dplyr::left_join(municipality_codes, by = "site_number") %>%
+    # dplyr::slice_head(n = 100) %>%
     dplyr::mutate(
       species_group = purrr::map(
         .x = .data$species_group, .f = purrr::modify_at,
@@ -121,8 +128,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_catch = .data$species_group,
       landing_value = .data$total_catch_value,
       #municipality = .data$`municipality (from administrative_posts)`,
-      .data$gear,
-      .data$boat_type)
+      .data$gear_type,
+      .data$vessel_type)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
