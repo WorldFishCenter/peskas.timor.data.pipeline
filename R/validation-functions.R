@@ -282,16 +282,16 @@ validate_vessel_type <- function(data, metadata_vessel_table){
                   boat_code = .data$`trip_group/boat_type`) %>%
     dplyr::mutate(boat_code = as.integer(boat_code)) %>%
     dplyr::left_join(metadata_vessel_table, by = "boat_code") %>%
-    dplyr::rename(vessel_type = boat_type) %>%
+    dplyr::rename(vessel_type = .data$boat_type) %>%
     # If no vessel type is not what we expected
-    dplyr::mutate(not_valid_code = !is.na(boat_code) & is.na(vessel_type),
-                  alert_number = dplyr::if_else(isTRUE(not_valid_code), 12, NA_real_)) %>%
+    dplyr::mutate(not_valid_code = !is.na(.data$boat_code) & is.na(.data$vessel_type),
+                  alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 12, NA_real_)) %>%
     # If no vessel type was recorded when it should have
-    dplyr::mutate(no_vessel_type = `trip_group/has_boat` == "TRUE" & is.na(vessel_type),
-                  alert_number = dplyr::if_else(isTRUE(no_vessel_type), 13, NA_real_))  %>%
+    dplyr::mutate(no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$vessel_type),
+                  alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 13, NA_real_))  %>%
     # Fixing types
-    dplyr::mutate(submission_id = as.integer(submission_id)) %>%
-    dplyr::select(vessel_type, alert_number, submission_id)
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::select(.data$vessel_type, .data$alert_number, .data$submission_id)
 }
 
 validate_gear_type <- function(data, metadata_gear_table){
@@ -300,15 +300,15 @@ validate_gear_type <- function(data, metadata_gear_table){
                   gear_code = .data$`trip_group/gear_type`) %>%
     dplyr::left_join(metadata_gear_table, by = "gear_code") %>%
     # If no vessel type is not what we expected
-    dplyr::mutate(not_valid_code = !is.na(gear_code) & is.na(gear_id),
-                  alert_number = dplyr::if_else(isTRUE(not_valid_code), 14, NA_real_)) %>%
+    dplyr::mutate(not_valid_code = !is.na(.data$gear_code) & is.na(.data$gear_id),
+                  alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 14, NA_real_)) %>%
     # If no gear type was recorded when it should have
-    dplyr::mutate(no_vessel_type = `trip_group/has_boat` == "TRUE" & is.na(gear_code),
-                  alert_number = dplyr::if_else(isTRUE(no_vessel_type), 15, NA_real_)) %>%
+    dplyr::mutate(no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$gear_code),
+                  alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 15, NA_real_)) %>%
     # Fixing types
-    dplyr::mutate(submission_id = as.integer(submission_id)) %>%
-    dplyr::select(gear_id, alert_number, submission_id) %>%
-    dplyr::rename(gear_type = gear_id)
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::select(.data$gear_id, .data$alert_number, .data$submission_id) %>%
+    dplyr::rename(gear_type = .data$gear_id)
 
 
 }
