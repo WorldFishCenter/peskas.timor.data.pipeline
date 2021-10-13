@@ -50,6 +50,9 @@ default:
         - catch_types
         - fao_catch
         - morphometric_table
+        - centro_pescas
+        - vessel_types
+        - gear_types
     version:
       preprocess: latest
     rfishtable:
