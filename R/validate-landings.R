@@ -103,8 +103,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         catch_purpose = .data$food_or_sale,
         length_frequency = .data$length_individuals)) %>%
     dplyr::mutate(
-      sold_proportion = purrr::map_dbl(.data$species_group, calc_sold_proportion),
-      catches_number = purrr::map_dbl(.data$species_group, calc_catches)
+      n_taxa = purrr::map_dbl(.data$species_group, calc_catches)
     ) %>%
     dplyr::select(
       landing_id = .data$submission_id,
@@ -112,7 +111,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       tracker_imei = .data$imei,
       trip_duration = .data$trip_duration,
       landing_catch = .data$species_group,
-      landing_value = .data$total_catch_value)
+      landing_value = .data$total_catch_value,
+      n_taxa)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
@@ -259,13 +259,6 @@ get_validated_landings <- function(log_threshold = logger::DEBUG){
                       provider = pars$storage$google$key,
                       options = pars$storage$google$options)
   readr::read_rds(file = landings_rds)
-}
-
-# calculate the proportion of sold catches for each trip
-calc_sold_proportion <- function(x) {
-  x <- x %>% dplyr::filter(!.data$catch_purpose == "both")
-  n_catch <- nrow(x)
-  x %>% dplyr::filter(.data$catch_purpose=="sale") %>% nrow() / n_catch * 100
 }
 
 # calculate the number of catches for each trip
