@@ -138,3 +138,5 @@ predict_variable <- function(model, var){
                   {{var}} := predict(model, type = "response", newdata = .))
 }
 
+model_catch <- function(){
+}
