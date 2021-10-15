@@ -163,4 +163,3 @@ model_catch <- function(trips){
           data = catch_df)
 
 }
-}
