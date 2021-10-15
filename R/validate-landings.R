@@ -114,11 +114,13 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         .at = "length_individuals",
         purrr::map, dplyr::select,
         length = .data$mean_length,
-        individuals = .data$n_individuals),
+        individuals = .data$n_individuals,
+        weight = .data$weight),
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::select,
         catch_taxon=.data$species,
         catch_purpose = .data$food_or_sale,
+        length_type = .data$length_type,
         length_frequency = .data$length_individuals)) %>%
     dplyr::select(
       landing_id = .data$submission_id,
