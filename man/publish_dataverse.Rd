@@ -4,10 +4,10 @@
 \alias{publish_dataverse}
 \title{Publish a Dataverse repository}
 \usage{
-publish_dataverse(token, dataverse, server)
+publish_dataverse(key, dataverse, server)
 }
 \arguments{
-\item{token}{API token associated to the Dataverse account.}
+\item{key}{API token associated to the Dataverse account.}
 
 \item{dataverse}{A character string specifying the Dataverse ID.}
 

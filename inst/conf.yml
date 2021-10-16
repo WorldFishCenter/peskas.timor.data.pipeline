@@ -97,13 +97,14 @@ default:
 
   export_dataverse:
     server: 'demo.dataverse.org'
-    dataverse_id: 'dataverse_test'
+    dataverse_id: 'export_test'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
 
     metadata:
        title: 'Peskas - National Fisheries Monitoring System of Timor-Leste'
        subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
        description: 'A digital fisheries monitoring pipeline comprised of free, open-source software components and example summary data from field trials in Timor-Leste'
+       creator: 'Peskas team'
 
   storage:
     google:

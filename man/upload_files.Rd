@@ -4,12 +4,12 @@
 \alias{upload_files}
 \title{Upload files to Dataverse}
 \usage{
-upload_files(file_list = NULL, token = NULL, dataverse = NULL, server = NULL)
+upload_files(file_list = NULL, key = NULL, dataverse = NULL, server = NULL)
 }
 \arguments{
 \item{file_list}{Paths indicating the files to be uploaded to Dataverse.}
 
-\item{token}{API token associated to the Dataverse account.}
+\item{key}{API token associated to the Dataverse account.}
 
 \item{dataverse}{A character string specifying the Dataverse ID.}
 

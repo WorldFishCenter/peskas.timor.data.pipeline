@@ -2,42 +2,22 @@
 #'
 #' This function publish a specific Dataverse repository.
 #'
-#' @param token API token associated to the Dataverse account.
+#' @param key API token associated to the Dataverse account.
 #' @param dataverse A character string specifying the Dataverse ID.
 #' @param server A character string specifying a Dataverse server.
 #'
 #' @export
 #'
 #' @examples
-publish_dataverse <- function(token, dataverse, server) {
+publish_dataverse <- function(key, dataverse, server) {
   url <- paste0("https://", server, "/api/dataverses/", dataverse, "/actions/:publish")
   res <- httr::POST(
     url = url,
-    httr::add_headers(`X-Dataverse-key` = token)
+    httr::add_headers(`X-Dataverse-key` = key)
   )
   res
 }
 
-#' Retrieve metadata information from survey landings
-#'
-#' This function downloads the latest version of landings and extract metadata
-#' information.
-#'
-#' @param pars Configuration file
-#'
-#' @return A list with metadata information:
-#' extent: time period covered
-#' ....
-#' @export
-#'
-#' @examples
-get_metadata_info <- function(pars) {
-  landings <- get_merged_landings(pars)
-  extent <- paste(min(landings$date), max(landings$date), sep = "-")
-
-  landings_metadata <- list(extent = extent)
-  landings_metadata
-}
 
 #' Generate a list of metadata
 #'
@@ -51,12 +31,12 @@ get_metadata_info <- function(pars) {
 #'
 #' @examples
 generate_metadata <- function(pars) {
-  landings_metadata <- get_metadata_info(pars)
 
   metadat <- list(
     title = as.character(pars$export_dataverse$metadata$title),
     subject = as.character(pars$export_dataverse$metadata$subject),
     description = as.character(pars$export_dataverse$metadata$description),
+    creator = as.character(pars$export_dataverse$metadata$creator),
     created = as.character(Sys.Date())
   )
 
@@ -68,18 +48,18 @@ generate_metadata <- function(pars) {
 #' This function upload a list files in a specific Dataverse repository.
 #'
 #' @param file_list Paths indicating the files to be uploaded to Dataverse.
-#' @param token API token associated to the Dataverse account.
+#' @param key API token associated to the Dataverse account.
 #' @param dataverse A character string specifying the Dataverse ID.
 #' @param server A character string specifying a Dataverse server.
 #'
 #' @export
 #'
 #' @examples
-upload_files <- function(file_list = NULL, token = NULL, dataverse = NULL, server = NULL) {
+upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server = NULL) {
   dataverse_content <-
     dataverse::dataverse_contents(
       dataverse = dataverse,
-      key = token,
+      key = key,
       server = server
     )
 
@@ -94,7 +74,7 @@ upload_files <- function(file_list = NULL, token = NULL, dataverse = NULL, serve
     dataverse::add_dataset_file(
       file = file_list[i],
       dataset = PID,
-      key = token,
+      key = key,
       description = "",
       server = server
     )
@@ -112,11 +92,11 @@ upload_files <- function(file_list = NULL, token = NULL, dataverse = NULL, serve
 #' @export
 #'
 #' @examples
-publish_last_dataset <- function(token = NULL, dataverse = NULL, server = NULL) {
+publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
   dataverse_content <-
     dataverse::dataverse_contents(
       dataverse = dataverse,
-      key = token,
+      key = key,
       server = server
     )
 
@@ -125,7 +105,7 @@ publish_last_dataset <- function(token = NULL, dataverse = NULL, server = NULL) 
   dataverse::publish_dataset(
     dataset = last_data,
     minor = FALSE,
-    key = token,
+    key = key,
     server = server
   )
 }
@@ -157,10 +137,11 @@ export_files <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
 
+
   dataverse::initiate_sword_dataset(
     dataverse = dataverse,
-    key = key,
-    server = server,
+    server=server,
+    key=key,
     body = metadat
   )
 
@@ -169,14 +150,14 @@ export_files <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Exporting files...")
   upload_files(
     file_list = release_files_names,
-    token = key,
+    key = key,
     dataverse = dataverse,
     server = server
   )
 
   #logger::log_info("Publishing data...")
   #publish_last_dataset(
-  #  token = key,
+  #  key = key,
   #  dataverse = dataverse,
   #  server = server
   #)

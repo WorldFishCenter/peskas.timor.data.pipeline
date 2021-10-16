@@ -4,10 +4,10 @@
 \alias{publish_last_dataset}
 \title{Publish latest dataset created}
 \usage{
-publish_last_dataset(token = NULL, dataverse = NULL, server = NULL)
+publish_last_dataset(key = NULL, dataverse = NULL, server = NULL)
 }
 \arguments{
-\item{token}{API token associated to the Dataverse account.}
+\item{key}{API token associated to the Dataverse account.}
 
 \item{dataverse}{A character string specifying the Dataverse ID.}
 
