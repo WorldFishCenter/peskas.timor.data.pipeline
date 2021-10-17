@@ -1,0 +1,15 @@
+---
+title: "Peskas data report"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# That's a test
+
+```{r}
+dplyr::glimpse(aggregated)
+str(aggregated)
+```
