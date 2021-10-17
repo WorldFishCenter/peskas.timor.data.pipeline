@@ -54,7 +54,8 @@ Suggests:
     roxygen2,
     tidyselect,
     textclean, 
-    tinytest
+    tinytest,
+    rmarkdown
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
