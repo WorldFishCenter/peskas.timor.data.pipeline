@@ -152,7 +152,7 @@ model_catch <- function(trips){
     dplyr::mutate(landing_id = as.character(.data$landing_id),
                   weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%
-    summarise(landing_weight = sum(weight, na.rm = FALSE)/1000) %>%
+    dplyr::summarise(landing_weight = sum(.data$weight, na.rm = FALSE)/1000) %>%
     dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
                   month = as.character(lubridate::month(.data$landing_period)),
                   period = paste(.data$year, .data$month, sep = "-"))
