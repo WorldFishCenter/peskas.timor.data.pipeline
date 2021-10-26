@@ -1,15 +1,141 @@
 ---
-title: "Peskas data report"
-output: pdf_document
+title: "Peskas data report (testing version)"
+mainfont: Montserrat
+output:
+  pdf_document:
+    latex_engine: lualatex
+    toc: yes
+    toc_depth: 2
+header-includes: \usepackage{float} \floatplacement{figure}{H}
 ---
+<style>
+p.caption {
+  font-size: 0.8em;
+}
+body {
+text-align: justify}
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
 ```
 
-# That's a test
+```{r, include=FALSE}
+#libraries
+library(ggplot2)
+#palettes
+year_palette <- rev(c("#bda639","#1b5767","#629a9b","#c51f5d","#92684d"))
+catch_use_palette <- rev(c("#9f8985","#87bdbc","#dbdbc9"))
+# help functions
+label_date <- function(x){
+  format(x, "%b") %>%
+    stringr::str_replace("Jan", paste0("Jan\n", format(x, "%Y")))
+}
+# temporal range
+temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TRUE)),
+                    zoo::as.yearmon(max(aggregated$month$date_bin_start,na.rm=TRUE)),
+                    sep = " - ")
 
-```{r}
-dplyr::glimpse(aggregated)
-str(aggregated)
 ```
+
+# Aim
+This report summarises relevant statistics and insights from the Peskas platform during the period `r temp_range`. The report examines the main temporal trends in the national revenue related to small-scale fishing in Timor-Leste and provides quantitative and qualitative information on the catches.
+
+# What is Peskas
+Peskas is the official fisheries national monitoring system of Timor-Leste....
+
+
+# National revenue
+## Revenue calculation...
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE,fig.cap="Time series of monthly aggregated total revenue. The red line is the local polynomial regressions fitted to the time series while the shaded area represents the 0.95 confidence interval.", fig.height=4, fig.width=8}
+aggregated$month$month <- lubridate::month(aggregated$month$date_bin_start,label=TRUE)
+aggregated$month$year <- lubridate::year(aggregated$month$date_bin_start)
+
+max_rev <- max(aggregated$month$revenue,na.rm=TRUE)
+min_rev <- min(aggregated$month$revenue,na.rm=TRUE)
+
+
+aggregated$month %>% 
+  dplyr::filter(!is.na(date_bin_start)&year!=2017) %>% 
+  dplyr::select(year, month, date_bin_start, revenue) %>%
+  ggplot(aes(x=date_bin_start,y=revenue))+
+  geom_line(color="#447597")+
+  geom_point(color="#447597")+
+  stat_smooth(method = "loess",color="#976644",alpha=0.1)+
+  labs(x="month",y="total revenue (USD)",
+       title = "Interannual distribution of monthly total revenue")+
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date)+
+  coord_cartesian(ylim=c(96035.99,max_rev))+
+  theme_minimal(14)+
+  theme(text = element_text(family="Helvetica"))
+```
+
+
+```{r, echo=FALSE, warning=FALSE, fig.cap="Seasonal revenue", fig.height=4, fig.width=8,out.height="80%",out.width="80%"}
+aggregated$month %>% 
+  dplyr::filter(!is.na(date_bin_start)&year!=2017) %>% 
+  dplyr::select(year, month, date_bin_start, revenue) %>%
+  ggplot()+
+  geom_line(mapping=aes(x=as.factor(month),y=revenue,color=as.factor(year),group=as.factor(year)))+
+  geom_point(mapping=aes(x=as.factor(month),y=revenue,color=as.factor(year)))+
+  labs(x="",y="total revenue (USD)",color="year",
+       title = "Seasonal distribution of monthly total revenue")+
+  scale_color_manual(values=year_palette)+
+  coord_polar()+
+  theme_minimal(10)+
+  theme(text = element_text(family="Helvetica"))+
+  theme(axis.ticks.y = element_line(colour = "black"))
+```
+
+
+# Catches in Timor-Leste
+Brief explanation of how identification works, must contain the table of catch codes table
+
+```{r, echo=FALSE, warning=FALSE, fig.cap="Distribution of the catches ranked by catch code. Each bar is colured according to the proportion of the catch final usage.", fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
+catches %>% 
+  dplyr::filter(individuals!=0) %>% 
+  dplyr::count(catch_taxon,catch_purpose) %>% 
+  ggplot()+
+  geom_col(mapping=aes(x=reorder(catch_taxon,n),y=n,fill=catch_purpose))+
+  theme_minimal(10)+
+  theme(text = element_text(family="Helvetica"))+
+  theme(legend.position = "top")+
+  scale_fill_manual(values=catch_use_palette)+
+  labs(y="number of catches",x="",fill="catch purpose")+
+  coord_flip()
+```
+
+```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A) and their length (B) and weigth (C) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
+
+individuals_p <-
+catches %>% 
+  dplyr::filter(individuals!=0) %>% 
+  ggplot()+
+  geom_density(mapping=aes(x=individuals),adjust=2,color="#447597",fill="#447597")+
+  theme_minimal(14)+
+  theme(text = element_text(family="Helvetica"))+
+  labs(x="Number of individuals",y="kernel density")
+
+length_p <- 
+catches %>% 
+  dplyr::filter(individuals!=0) %>% 
+  ggplot()+
+  geom_density(mapping=aes(x=length),adjust=2,color="#447597",fill="#447597")+
+  theme_minimal(14)+
+  theme(text = element_text(family="Helvetica"))+
+  labs(x="Total length (cm)",y="")
+
+weigth_p <-
+catches %>% 
+  dplyr::filter(individuals!=0) %>% 
+  ggplot()+
+  geom_density(mapping=aes(x=weight/1000),adjust=2,color="#447597",fill="#447597")+
+  theme_minimal(14)+
+  theme(text = element_text(family="Helvetica"))+
+  labs(x="Total weight (kg)",y="")
+
+cowplot::plot_grid(individuals_p,length_p,weigth_p,ncol=3,align="hv",labels="AUTO")
+```
+

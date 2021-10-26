@@ -53,7 +53,10 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    rmarkdown
+    rmarkdown \
+    ggplot2 \
+    zoo
+
 
 # Install local package
 COPY . /home

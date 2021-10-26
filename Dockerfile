@@ -40,7 +40,9 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    rmarkdown
+    rmarkdown \
+    ggplot2 \
+    zoo
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
