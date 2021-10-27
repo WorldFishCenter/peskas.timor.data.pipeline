@@ -22,21 +22,43 @@ options(tinytex.verbose = TRUE)
 ```
 
 ```{r, include=FALSE}
+#get data
+pars <- read_config()
+c("aggregated__", "trips", "catch") %>%
+  purrr::map(., ~ cloud_object_name(
+    prefix = paste(pars$export$file_prefix, .x, sep = "_"),
+    version = "latest",
+    extension = "rds",
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )) %>%
+  do.call("rbind", .) %>%
+  as.character() %>%
+  unique() %>%
+  purrr::walk(.,
+    download_cloud_file,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )
+
+aggregated <- readRDS(list.files(pattern = 'timor_aggregated'))
+trips <- readRDS(list.files(pattern = 'timor_trips'))
+catch <- readRDS(list.files(pattern = 'timor_catch'))
 #libraries
 library(ggplot2)
 #palettes
 year_palette <- rev(c("#bda639","#1b5767","#629a9b","#c51f5d","#92684d"))
 catch_use_palette <- rev(c("#9f8985","#87bdbc","#dbdbc9"))
-# help functions
+# help functions 
 label_date <- function(x){
   format(x, "%b") %>%
     stringr::str_replace("Jan", paste0("Jan\n", format(x, "%Y")))
 }
-# temporal range
+# useful info
 temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TRUE)),
                     zoo::as.yearmon(max(aggregated$month$date_bin_start,na.rm=TRUE)),
                     sep = " - ")
-
+total_value <- sum(trips$landing_value,na.rm=TRUE)
 ```
 
 # Aim
@@ -94,7 +116,7 @@ aggregated$month %>%
 Brief explanation of how identification works, must contain the table of catch codes table
 
 ```{r, echo=FALSE, warning=FALSE, fig.cap="Distribution of the catches ranked by catch code. Each bar is colured according to the proportion of the catch final usage.", fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
-catches %>% 
+catch %>% 
   dplyr::filter(individuals!=0) %>% 
   dplyr::count(catch_taxon,catch_purpose) %>% 
   ggplot()+
@@ -110,7 +132,7 @@ catches %>%
 ```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A) and their length (B) and weigth (C) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
 
 individuals_p <-
-catches %>% 
+catch %>% 
   dplyr::filter(individuals!=0) %>% 
   ggplot()+
   geom_density(mapping=aes(x=individuals),adjust=2,color="#447597",fill="#447597")+
@@ -119,7 +141,7 @@ catches %>%
   labs(x="Number of individuals",y="kernel density")
 
 length_p <- 
-catches %>% 
+catch %>% 
   dplyr::filter(individuals!=0) %>% 
   ggplot()+
   geom_density(mapping=aes(x=length),adjust=2,color="#447597",fill="#447597")+
@@ -128,7 +150,7 @@ catches %>%
   labs(x="Total length (cm)",y="")
 
 weigth_p <-
-catches %>% 
+catch %>% 
   dplyr::filter(individuals!=0) %>% 
   ggplot()+
   geom_density(mapping=aes(x=weight/1000),adjust=2,color="#447597",fill="#447597")+
@@ -136,6 +158,9 @@ catches %>%
   theme(text = element_text(family="Helvetica"))+
   labs(x="Total weight (kg)",y="")
 
-cowplot::plot_grid(individuals_p,length_p,weigth_p,ncol=3,align="hv",labels="AUTO")
+cowplot::plot_grid(individuals_p,
+                   length_p,
+                   #weigth_p,
+                   ncol=3,align="hv",labels="AUTO")
 ```
 

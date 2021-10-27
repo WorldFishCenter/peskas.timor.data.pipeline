@@ -77,12 +77,6 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                 provider = pars$public_storage$google$key,
                 options = pars$public_storage$google$options)
 
-  rmarkdown::render('./data_report.rmd',params=list(output_file = data_report.pdf,
-                                                    pars))
-
-  upload_cloud_file('data_report.pdf',
-                    provider = pars$public_storage$google$key,
-                    options = pars$public_storage$google$options)
 }
 
 #' @importFrom rlang .data
@@ -215,3 +209,12 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
   binned_frame
 
 }
+
+upload_report <- function(log_threshold = logger::DEBUG){
+  pars <- read_config()
+  logger::log_info("Uploading Peskas data report to cloud")
+  upload_cloud_file('data_report.pdf',
+                    provider = pars$public_storage$google$key,
+                    options = pars$public_storage$google$options)
+}
+
