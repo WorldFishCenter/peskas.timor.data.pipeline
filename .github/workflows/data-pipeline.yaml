@@ -230,6 +230,7 @@ jobs:
     steps:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Build report
       - uses: docker://pandoc/latex:2.6
         with:
