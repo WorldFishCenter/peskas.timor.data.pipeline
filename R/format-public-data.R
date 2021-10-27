@@ -194,8 +194,10 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
 
   binned_frame <- standardised_predictions %>%
     dplyr::summarise(landing_revenue = mean(.data$landing_revenue),
+                     landing_weight = mean(.data$landing_weight),
                      n_landings_per_boat = sum(.data$n_landings_per_boat),
-                     revenue = sum(.data$revenue)) %>%
+                     revenue = sum(.data$revenue),
+                     catch = sum(.data$catch)) %>%
     dplyr::ungroup() %>%
     # remove rows where all the variables are NA
     dplyr::filter(dplyr::if_any(where(is.numeric), ~!is.na(.)))

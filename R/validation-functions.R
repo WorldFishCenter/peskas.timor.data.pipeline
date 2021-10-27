@@ -243,6 +243,12 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
       alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`) %>%
     dplyr::ungroup() %>%
+    # Adjusting weight accordingly
+    dplyr::mutate(weight = dplyr::case_when(
+      !is.na(.data$alert_number) ~ NA_real_,
+      .data$n_individuals == 0 ~ 0,
+      TRUE ~ .data$weight
+    )) %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
   # extract alert number
@@ -263,7 +269,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     dplyr::rename(submission_id=.data$`_id`) %>%
     dplyr::select(.data$submission_id,.data$species_group) %>%
     tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
-    dplyr::mutate(length_individuals=validated_length_nested$length_individuals)%>%
+    dplyr::mutate(length_individuals = validated_length_nested$length_individuals) %>%
     dplyr::group_by(.data$submission_id) %>%
     tidyr::nest() %>%
     dplyr::rename("species_group" = "data") %>%
