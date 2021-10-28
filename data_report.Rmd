@@ -1,12 +1,16 @@
 ---
-title: "Peskas data report (testing version)"
+title: PESKAS data report (testing version)
 mainfont: Montserrat
 output:
   pdf_document:
     latex_engine: lualatex
     toc: yes
     toc_depth: 2
-header-includes: \usepackage{float} \floatplacement{figure}{H}
+header-includes: 
+  - \usepackage{float} 
+  - \floatplacement{figure}{H}
+  - \usepackage{leading}
+  - \leading{18pt}
 ---
 <style>
 p.caption {
@@ -22,10 +26,15 @@ options(tinytex.verbose = TRUE)
 ```
 
 ```{r, include=FALSE}
+#libraries
+library(ggplot2)
+library(magrittr)
+
 #get data
-pars <- read_config()
+pars <- peskas.timor.data.pipeline::read_config()
+files <- 
 c("aggregated__", "trips", "catch") %>%
-  purrr::map(., ~ cloud_object_name(
+  purrr::map(., ~ peskas.timor.data.pipeline::cloud_object_name(
     prefix = paste(pars$export$file_prefix, .x, sep = "_"),
     version = "latest",
     extension = "rds",
@@ -36,24 +45,25 @@ c("aggregated__", "trips", "catch") %>%
   as.character() %>%
   unique() %>%
   purrr::walk(.,
-    download_cloud_file,
+    peskas.timor.data.pipeline::download_cloud_file,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )
-
 aggregated <- readRDS(list.files(pattern = 'timor_aggregated'))
 trips <- readRDS(list.files(pattern = 'timor_trips'))
 catch <- readRDS(list.files(pattern = 'timor_catch'))
-#libraries
-library(ggplot2)
+file.remove(files)
+
 #palettes
 year_palette <- rev(c("#bda639","#1b5767","#629a9b","#c51f5d","#92684d"))
 catch_use_palette <- rev(c("#9f8985","#87bdbc","#dbdbc9"))
+
 # help functions 
 label_date <- function(x){
   format(x, "%b") %>%
     stringr::str_replace("Jan", paste0("Jan\n", format(x, "%Y")))
 }
+
 # useful info
 temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TRUE)),
                     zoo::as.yearmon(max(aggregated$month$date_bin_start,na.rm=TRUE)),
@@ -61,12 +71,22 @@ temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TR
 total_value <- sum(trips$landing_value,na.rm=TRUE)
 ```
 
+***
+
 # Aim
 This report summarises relevant statistics and insights from the Peskas platform during the period `r temp_range`. The report examines the main temporal trends in the national revenue related to small-scale fishing in Timor-Leste and provides quantitative and qualitative information on the catches.
 
 # What is Peskas
-Peskas is the official fisheries national monitoring system of Timor-Leste....
+Peskas is the official fisheries national monitoring system of Timor-Leste and represents one of the most sophisticated data collection systems for small-scale fisheries in the world. 
 
+Peskas' platform collects real-time information directly from fishermen's activity via a system of digital surveys developed in [$\color{blue}{\text{KoBo toolbox}}$](http://www.kobotoolbox.org/). In addition, Peskas uses the technology provided by [$\color{blue}{\text{Pelagic Data System}}$](https://www.pelagicdata.com/) to record vessel movements via solar-powered tracking devices (see Figure \ref{fig:flowchart}). 
+
+The data and the information collected is subjected to an elaborate processing and cleaning through an open-source code pipeline on [$\color{blue}{\text{GitHub}}$](https://github.com/WorldFishCenter/peskas.timor.data.pipeline), and provide important data in the hands of fisheries officers, researchers and local stakeholders and enables them to better understand the contribution of fish and fisheries to local livelihoods and food security.
+
+```{r, echo=FALSE, message=FALSE, fig.cap="A diagrammatic representation of the Peskas application\\label{fig:flowchart}", fig.height=4, fig.width=8}
+download.file('https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pone.0234760/1/pone.0234760.g002.PNG_L?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20211028%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20211028T163322Z&X-Goog-Expires=86400&X-Goog-SignedHeaders=host&X-Goog-Signature=7f70de8d5faf2e06bc0cc6af0b59b2f79d264a854e4cdbdfc389e996c2ebfc9a80de385708e112d6db0beb5b91b1f56dd342d9cf48343a4bd902420c5d45e223276c9d78ee2e9ef2f6ac5724e45e7bb89d5e26116fa9ded8867cc69ce560c214201d9ef26d69faefa88c60af47b31d37e2d7a8f216346ba478ad82481108d8342912a224db2a92581ecfbbe8ad31577fee57633a9dd42271db0039e6834c52a2d754535923f4186c04635ab42d7040b28b95cd57d8e95820eddce509a994e79a858021775fcf122afe9d27798c726af4f823165a49e54ed903c6a67a368d22658bff62bf9f86a2331e411b1e8f3a6f3211a49675e28950e27f3c2d2bce49949e','data_report_files/flowchart.png', mode = 'wb')
+knitr::include_graphics('data_report_files/flowchart.png')
+```
 
 # National revenue
 ## Revenue calculation...
@@ -111,6 +131,7 @@ aggregated$month %>%
   theme(axis.ticks.y = element_line(colour = "black"))
 ```
 
+\pagebreak
 
 # Catches in Timor-Leste
 Brief explanation of how identification works, must contain the table of catch codes table
@@ -129,7 +150,7 @@ catch %>%
   coord_flip()
 ```
 
-```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A) and their length (B) and weigth (C) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
+```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A) and their length (B) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
 
 individuals_p <-
 catch %>% 
@@ -161,6 +182,6 @@ catch %>%
 cowplot::plot_grid(individuals_p,
                    length_p,
                    #weigth_p,
-                   ncol=3,align="hv",labels="AUTO")
+                   ncol=2,align="hv",labels="AUTO")
 ```
 

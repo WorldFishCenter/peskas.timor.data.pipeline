@@ -30,7 +30,8 @@ model_indicators <- function(log_threshold = logger::DEBUG){
 
   landings_model <- model_landings(trips)
   value_model <- model_value(trips)
-  results <- estimate_statistics(landings_model, value_model)
+  catch_model <- model_catch(trips)
+  results <- estimate_statistics(landings_model, value_model, catch_model)
 
   models_filename <- add_version(pars$models$file_prefix, "rds")
   readr::write_rds(results, models_filename, compress = "gz")
@@ -107,17 +108,19 @@ model_value <- function(trips){
 
 }
 
-estimate_statistics <- function(value_model, landings_model){
+estimate_statistics <- function(value_model, landings_model, catch_model){
 
   models <- list(landing_revenue = value_model,
-                 n_landings_per_boat = landings_model)
+                 n_landings_per_boat = landings_model,
+                 landing_weight = catch_model)
 
   estimations <- models %>%
     purrr::imap(predict_variable) %>%
     purrr::reduce(dplyr::full_join)
 
   estimations_total <- estimations %>%
-    dplyr::mutate(revenue = .data$landing_revenue * .data$n_landings_per_boat * 2334) %>%
+    dplyr::mutate(revenue = .data$landing_revenue * .data$n_landings_per_boat * 2334,
+                  catch = .data$landing_weight * .data$n_landings_per_boat * 2334) %>%
     dplyr::arrange(.data$landing_period)
 
   list(
@@ -138,3 +141,25 @@ predict_variable <- function(model, var){
                   {{var}} := predict(model, type = "response", newdata = .))
 }
 
+model_catch <- function(trips){
+
+  catch_df <- trips %>%
+    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
+                                                         unit = "month")) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::filter(!is.na(.data$landing_period), !is.na(.data$landing_value)) %>%
+    dplyr::mutate(landing_id = as.character(.data$landing_id),
+                  weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)) %>%
+    dplyr::group_by(.data$landing_id, .data$landing_period) %>%
+    dplyr::summarise(landing_weight = sum(.data$weight, na.rm = FALSE)/1000) %>%
+    dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
+                  month = as.character(lubridate::month(.data$landing_period)),
+                  period = paste(.data$year, .data$month, sep = "-"))
+
+  glmmTMB(landing_weight ~ (1 | month) + (1 | period),
+          ziformula = ~ (1 | month) + (1 | period),
+          family = "poisson",
+          data = catch_df)
+
+}
