@@ -55,7 +55,8 @@ RUN install2.r --error --skipinstalled \
     textclean \
     rmarkdown \
     ggplot2 \
-    zoo
+    zoo \
+    bookdown
 
 
 # Install local package

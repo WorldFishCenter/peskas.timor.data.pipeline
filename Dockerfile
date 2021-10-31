@@ -42,7 +42,8 @@ RUN install2.r --error --skipinstalled \
     textclean \
     rmarkdown \
     ggplot2 \
-    zoo
+    zoo \
+    bookdown
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

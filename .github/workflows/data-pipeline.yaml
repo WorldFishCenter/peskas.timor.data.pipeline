@@ -232,6 +232,7 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Build report
+        uses: actions/checkout@v2
         uses: docker://pandoc/latex:2.6
         with:
           args: "--pdf-engine=lualatex --output=data_report.pdf data_report.Rmd"
