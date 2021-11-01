@@ -232,10 +232,9 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Build report
-        uses: actions/checkout@v2
         uses: docker://pandoc/latex:2.6
         with:
-          args: "--pdf-engine=lualatex --output=data_report.pdf data_report.Rmd"
+          args: "--output=data_report.pdf data_report.Rmd"
       - name: Call upload_report()
         run: Rscript -e 'peskas.timor.data.pipeline::upload_report()'
 

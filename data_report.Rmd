@@ -24,7 +24,7 @@ header-includes:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(cache=FALSE)
 ```
 
 ```{r, include=FALSE}
@@ -65,7 +65,7 @@ aggregated <- readRDS(list.files(pattern = 'timor_aggregated'))
 trips <- readRDS(list.files(pattern = 'timor_trips'))
 catch <- readRDS(list.files(pattern = 'timor_catch'))
 catch_types <- peskas.timor.data.pipeline::get_catch_types(pars) %>% 
-  dplyr::select('Catch code'=interagency_code,
+  dplyr::select('ASFIS code'=interagency_code,
                 'Taxonomic rank (family)'=catch_family,
                 'Common name'=catch_name_en)
 }
@@ -84,6 +84,9 @@ label_date <- function(x){
 temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TRUE)),
                     zoo::as.yearmon(max(aggregated$month$date_bin_start,na.rm=TRUE)),
                     sep = " - ")
+
+total_value <- sum(trips$landing_value,na.rm=TRUE)
+total_weight <- sum(catch$weight,na.rm=TRUE)
 ```
 
 ***
@@ -103,8 +106,8 @@ Information about the process and user-centred design of the Peskas pipeline and
 * [$\color{myblue}{\text{PeskAAS: A near real-time monitoring system for small-scale fisheries in Timor-Leste}}$](https://www.fao.org/documents/card/en/c/cb2030en). In A. Tilley & M. B. Roscher (Eds.), Information and communication technologies for small-scale fisheries (ICT4SSF) - A handbook for fisheries stakeholders. In support of the implementation of the Voluntary Guidelines for Securing Sustainable Small-Scale Fisheries in the Context of Food Security and Poverty Eradication (pp. 11–18). FAO; WorldFish.
 * [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760). PloS One, 15(11), e0234760.
 * [$\color{myblue}{\text{Nearshore Fish Aggregating Devices Show Positive Outcomes for Sustainable Fisheries Development in Timor-Leste}}$](https://www.frontiersin.org/articles/10.3389/fmars.2019.00487/full). Frontiers in Marine Science, 6, 487.
-\newline 
-\newline 
+
+
 
 (ref:flowchart) A diagrammatic representation of the Peskas application. From [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760)
 
@@ -115,8 +118,7 @@ knitr::include_graphics('inst/report_files/flowchart.png')
 
 # Revenue
 The landing value in USD is obtained from landing surveys at multiple sites around the country. Fishers are asked for the estimated price of their catch at the landing site regardless of whether the catch is deemed for sale or consumption. Prices may change throughout the year and across landing sites. We then obtain monthly estimates using a random-effect statistical model.
-\newline 
-\newline 
+\newline
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8, fig.cap='Time series of monthly aggregated total revenue. The red line is the local polynomial regression fitted to the time series while the shaded area represents the 0.95 confidence interval.'}
 max_rev <- max(aggregated$month$revenue,na.rm=TRUE)
@@ -157,19 +159,28 @@ aggregated$month %>%
   theme(text = element_text(family="Helvetica"))+
   theme(axis.ticks.y = element_line(colour = "black"))
 ```
-
 \pagebreak
 
 # Catches 
-Brief explanation of how identification works, must contain the table of catch codes table
-\newline 
 
+Through the KoBo toolbox digital surveys, fishermen share several information related to each fishing trip. The fishermen were trained to provide homogeneous data both on the quality of the catch (the type of species caught) and on the quantity, indexed by the number of individuals and their length. In particular, the species caught are categorized in a list that includes the main species and groups caught in Timor-Leste (Table \@ref(tab:catch-table)).
+\newline
 
-```{r, echo=FALSE, warning=FALSE}
+```{r catch-table, echo=FALSE, warning=FALSE}
 catch_types %>% 
+  dplyr::mutate(n = 1:dplyr::n()) %>% 
+  dplyr::select(n,tidyr::everything()) %>% 
   replace(is.na(.), "-") %>% 
-  knitr::kable("pipe",width=4,
-               caption = "Catch codes ([ASFIS](https://www.fao.org/fishery/collection/asfis/en)), scientific and common names of Peskas catches")
+  knitr::kable("latex",booktabs = T,
+               longtable = TRUE,
+               caption="ASFIS codes (FAO 3-Alpha Species Codes), scientific and common names of Peskas catches",
+               linesep = "",
+               align="c") %>% 
+  kableExtra::kable_styling(font_size = 7) %>% 
+  kableExtra::row_spec(0, font_size=9, bold = TRUE) %>% 
+  kableExtra::column_spec(1, width = "6em") %>% 
+  kableExtra::column_spec(2:4, width = "18em") %>% 
+  kableExtra::kable_styling(latex_options = c("HOLD_position","striped","repeat_header"))
 ```
 
 
@@ -220,12 +231,11 @@ tot_catch <-
 cowplot::plot_grid(tot_catch,
   rank_catch,
   ncol = 1,
-  rel_heights = c(1.25, 7),
+  rel_heights = c(1.5, 7),
   align = "v"
 )
 ```
-\newline 
-\newline 
+
 
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE,fig.cap="Interannual proportion catches final usage", fig.height=4, fig.width=8}
@@ -250,8 +260,6 @@ dplyr::left_join(catch,trips,by="trip_id") %>%
         legend.position = "top",
         legend.title=element_blank())
 ```
-\newline 
-\newline 
 
 
 ```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A), their length (B)  and weigth (C) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
@@ -287,11 +295,11 @@ cowplot::plot_grid(individuals_p,
                    weigth_p,
                    ncol=3,align="hv",labels="AUTO")
 ```
-\newline 
-\newline 
 
 
-```{r, echo=FALSE, warning=FALSE, fig.cap="Catches ranked by average value (USD). The darkest shade in each bar represent the 95 confidence interval for average, other shades indicate the 5th and the 25th, and the 75th and 95th going from left to right respectively.", fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
+(ref:catch-value) Catches ranked by average value (USD). The darkest shade in each bar represent the 95% confidence interval for average, other shades indicate the 5th and the 25th, and the 75th and 95th going from left to right respectively.
+
+```{r catch-value, echo=FALSE, warning=FALSE, fig.cap='(ref:catch-value)', fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
 
   dplyr::left_join(catch, trips, by = "trip_id") %>%
     dplyr::filter(individuals > 0 &
@@ -324,8 +332,79 @@ cowplot::plot_grid(individuals_p,
     geom_crossbar(aes(ymin = left95, ymax = right95), fill = "#28465a", color = "#28465a", width = 0.3) +
     geom_point(fill = "#28465a", color = "#28465a", size = 2.5) +
     coord_flip(ylim = c(0, 1000)) +
-    theme_minimal(10)+
+    theme_minimal(11)+
     labs(x="",y="Value (USD) per Kilogram",subtitle ="Most valuable catch types")+
     theme(text = element_text(family="Helvetica"))
 ```
 
+(ref:overall-prop) Overall proportion of economic value and weight by each catch type. 
+
+```{r overall-prop, echo=FALSE, warning=FALSE, fig.cap='(ref:overall-prop)', fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
+
+revenue_df <-
+  dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
+  dplyr::group_by(landing_taxa) %>%
+  dplyr::summarise(aggregated_value = sum(landing_value, na.rm = TRUE)) %>%
+  dplyr::mutate(value_proportion = aggregated_value / total_value * 100) %>%
+  dplyr::arrange(dplyr::desc(value_proportion)) %>%
+  dplyr::mutate(cumulative = cumsum(value_proportion))
+
+weight_df <-
+  dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
+  dplyr::group_by(landing_taxa) %>%
+  dplyr::summarise(aggregated_weight = sum(weight, na.rm = TRUE)) %>%
+  dplyr::mutate(weight_proportion = aggregated_weight / total_weight * 100) %>%
+  dplyr::arrange(dplyr::desc(weight_proportion)) %>%
+  dplyr::mutate(cumulative = cumsum(weight_proportion))
+
+dplyr::left_join(revenue_df, weight_df, by = "landing_taxa") %>%
+  dplyr::select(landing_taxa, value_proportion, weight_proportion) %>%
+  dplyr::arrange(value_proportion) %>%
+  dplyr::mutate(landing_taxa = factor(landing_taxa, levels = .$landing_taxa)) %>%
+  tidyr::pivot_longer(-landing_taxa) %>%
+  ggplot(aes(value, landing_taxa)) +
+  geom_line(aes(group = landing_taxa), color = "#b2b2b2") +
+  geom_point(aes(color = name),size=2.5) +
+  theme_minimal(12) +
+  scale_x_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_color_manual(labels = c("Economic value", "Weight"), values = c("#859e74", "#8d749e")) +
+  labs(x = "Overall proportion", y = "") +
+  theme(
+    text = element_text(family = "Helvetica"),
+    panel.grid.minor.x = element_blank(),
+    legend.position = "top",
+    legend.title = element_blank()
+  )
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8, fig.cap='Time series of catches diversity on the monthly scale. Points represent average diversity while bars define the 0.95 confidence interval.'}
+  dplyr::left_join(catch,trips,by="trip_id") %>%
+    dplyr::filter(individuals>0 & landing_n_taxa>0) %>%
+    dplyr::mutate(landing_date_month=lubridate::floor_date(landing_date,unit = "month")) %>%
+    dplyr::select(landing_date_month,landing_n_taxa) %>%
+    dplyr::group_by(landing_date_month) %>%
+    dplyr::summarise(mean=mean(landing_n_taxa),
+                     sd = sd(landing_n_taxa),
+                     n = dplyr::n()) %>%
+    dplyr::mutate( se=sd/sqrt(n),
+                   ic=se * qt((1-0.05)/2 + .5, n-1),
+                   month=lubridate::month(landing_date_month,label=TRUE),
+                   year=lubridate::year(landing_date_month))  %>%
+    ggplot(aes(x=landing_date_month,y=mean))+
+    geom_line(color="#447597")+
+    geom_point(color="#447597")+
+    geom_pointrange(
+      aes(ymin=mean-ic, ymax=mean+ic),
+      position = position_dodge(0.3),
+      color="#447597"
+    )+
+    stat_smooth(method = "loess",color="#976644",alpha=0.1)+
+    labs(x="month",y="Catch diversity (number of taxa)",
+         title = "Interannual catches diversity")+
+    scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date)+
+    theme_minimal(14)+
+    theme(text = element_text(family="Helvetica"))
+```
