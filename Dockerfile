@@ -44,7 +44,8 @@ RUN install2.r --error --skipinstalled \
     ggplot2 \
     zoo \
     bookdown \
-    kableExtra
+    kableExtra \
+    cowplot
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
