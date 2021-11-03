@@ -32,6 +32,8 @@ knitr::opts_chunk$set(cache=FALSE)
 library(ggplot2)
 library(magrittr)
 #get data
+
+setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
 # avoid to pay google continuously
@@ -430,7 +432,7 @@ Information about the process and user-centred design of the Peskas pipeline and
 (ref:flowchart) A diagrammatic representation of the Peskas application. From [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760)
 
 ```{r flowchart, echo=FALSE, message=FALSE, fig.height=4, fig.width=8,fig.cap='(ref:flowchart)'}
-knitr::include_graphics('inst/report_files/flowchart.png')
+knitr::include_graphics('inst/report/flowchart.png')
 ```
 \pagebreak
 

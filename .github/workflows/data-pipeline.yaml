@@ -217,5 +217,7 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Test public data
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
-      - name: Generate and upload report
-        run: Rscript -e 'peskas.timor.data.pipeline::generate_upload_report()'
+      - name: Generate report
+        run: Rscript -e 'rmarkdown::render(input = system.file("inst/report/data_report.Rmd", package = "peskas.timor.data.pipeline"), output_file = "inst/report/data_report.pdf")'
+      - name: Upload report
+        run: Rscript -e 'peskas.timor.data.pipeline::upload_report()'
