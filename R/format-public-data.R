@@ -221,5 +221,3 @@ upload_report <- function(log_threshold = logger::DEBUG){
                     provider = pars$public_storage$google$key,
                     options = pars$public_storage$google$options)
 }
-
-?upload_cloud_file
