@@ -217,24 +217,5 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Test public data
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
-
-  generate-report:
-    name: Build and upload report
-    needs: [export-trips]
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Build report
-        uses: docker://pandoc/latex:2.6
-        with:
-          args: "--output=data_report.pdf data_report.Rmd"
-      - name: Call upload_report()
-        run: Rscript -e 'peskas.timor.data.pipeline::upload_report()'
-
+      - name: Generate and upload report
+        run: Rscript -e 'peskas.timor.data.pipeline::generate_upload_report()'

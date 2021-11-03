@@ -1,4 +1,4 @@
-FROM rocker/tidyverse:4.1.1
+FROM rocker/verse:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -43,7 +43,8 @@ RUN install2.r --error --skipinstalled \
     rmarkdown \
     ggplot2 \
     zoo \
-    bookdown
+    bookdown \
+    kableExtra
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

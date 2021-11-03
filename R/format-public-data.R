@@ -212,8 +212,14 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
 
 }
 
-upload_report <- function(log_threshold = logger::DEBUG){
+#'@export
+generate_upload_report <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
+
+  rmarkdown::render(input='./data_report.Rmd',
+                    run_pandoc = TRUE,
+                    params=list(output_file = data_report.pdf))
+
   logger::log_info("Uploading Peskas data report to cloud")
   upload_cloud_file('data_report.pdf',
                     provider = pars$public_storage$google$key,

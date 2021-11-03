@@ -60,3 +60,17 @@ get_models <- function(pars){
       options = pars$storage$google$options) %>%
     readr::read_rds()
 }
+
+#' @export
+get_preprocessed_metadata <- function(pars){
+  metadata_rds <- cloud_object_name(
+    prefix = paste(pars$metadata$airtable$name, 'preprocessed', sep = "_"),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    options = pars$storage$google$options)
+  logger::log_info("Downloading {metadata_rds}...")
+  download_cloud_file(name = metadata_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = metadata_rds)
+}
