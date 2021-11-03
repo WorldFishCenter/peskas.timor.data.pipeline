@@ -213,11 +213,12 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
 }
 
 #'@export
-upload_report <- function(log_threshold = logger::DEBUG){
+upload_data_report <- function(log_threshold = logger::DEBUG){
   pars <- read_config()
 
+  out_file <- system.file("report/data_report.pdf",package = "peskas.timor.data.pipeline")
   logger::log_info("Uploading Peskas data report to cloud")
-  upload_cloud_file('inst/report/data_report.pdf',
+  upload_cloud_file(out_file,
                     provider = pars$public_storage$google$key,
                     options = pars$public_storage$google$options)
 }

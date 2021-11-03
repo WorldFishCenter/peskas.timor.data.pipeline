@@ -24,38 +24,20 @@ header-includes:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache=FALSE)
+knitr::opts_chunk$set(cache = FALSE)
 ```
 
 ```{r, include=FALSE}
-#libraries
+# libraries
 library(ggplot2)
 library(magrittr)
-#get data
 
+# get data
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
-# avoid to pay google continuously
-if(isTRUE(length(list.files(pattern = c('.rds')))==4)){
-aggregated <- readRDS(list.files(pattern = 'timor_aggregated'))
-trips <- readRDS(list.files(pattern = 'timor_trips'))
-catch <- readRDS(list.files(pattern = 'timor_catch'))
-catch_types <- readRDS(list.files(pattern = 'metadata'))$catch_types %>% 
-  dplyr::filter(!catch_name_en %in% c("Herring","Unknown","Surgeonfish")) %>%#remove duplicates
-  dplyr::select("catch_taxon"=interagency_code,
-                'Taxonomic rank (family)'=catch_family,
-                'Common name'=catch_name_en) 
-catch <- 
-catch_types %>% 
-  dplyr::select(catch_taxon,
-                comm_name="Common name") %>% 
-  dplyr::right_join(catch,by="catch_taxon") %>% 
-  dplyr::ungroup()
-
-}else{
-files <- 
-c("aggregated__", "trips", "catch") %>%
+files <-
+  c("aggregated__", "trips", "catch") %>%
   purrr::map(., ~ peskas.timor.data.pipeline::cloud_object_name(
     prefix = paste(pars$export$file_prefix, .x, sep = "_"),
     version = "latest",
@@ -71,42 +53,44 @@ c("aggregated__", "trips", "catch") %>%
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )
-aggregated <- readRDS(list.files(pattern = 'timor_aggregated'))
-trips <- readRDS(list.files(pattern = 'timor_trips'))
-catch <- readRDS(list.files(pattern = 'timor_catch'))
+aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
+trips <- readRDS(list.files(pattern = "timor_trips"))
+catch <- readRDS(list.files(pattern = "timor_catch"))
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
-catch_types <- readRDS(list.files(pattern = 'metadata'))$catch_types %>% 
-  dplyr::filter(!catch_name_en %in% c("Herring","Unknown","Surgeonfish")) %>%#remove duplicates
-  dplyr::select("catch_taxon"=interagency_code,
-                'Taxonomic rank (family)'=catch_family,
-                'Common name'=catch_name_en) 
+catch_types <- readRDS(list.files(pattern = "metadata"))$catch_types %>%
+  dplyr::filter(!catch_name_en %in% c("Herring", "Unknown", "Surgeonfish")) %>% # remove duplicates
+  dplyr::select(
+    "catch_taxon" = interagency_code,
+    "Taxonomic rank (family)" = catch_family,
+    "Common name" = catch_name_en
+  )
 
-  
-catch <- 
-catch_types %>% 
+catch <-
+  catch_types %>%
   dplyr::select(catch_taxon,
-                comm_name="Common name") %>% 
-  dplyr::right_join(catch,by="catch_taxon") %>% 
+    comm_name = "Common name"
+  ) %>%
+  dplyr::right_join(catch, by = "catch_taxon") %>%
   dplyr::ungroup()
-}
 
-#palettes
-year_palette <- rev(c("#bda639","#1b5767","#629a9b","#c51f5d","#92684d"))
-catch_use_palette <- rev(c("#9f8985","#87bdbc","#dbdbc9"))
+# palettes
+year_palette <- rev(c("#bda639", "#1b5767", "#629a9b", "#c51f5d", "#92684d"))
+catch_use_palette <- rev(c("#9f8985", "#87bdbc", "#dbdbc9"))
 
-# help functions 
-label_date <- function(x){
+# help functions
+label_date <- function(x) {
   format(x, "%b") %>%
     stringr::str_replace("Jan", paste0("Jan\n", format(x, "%Y")))
 }
 
 # useful data
-temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start,na.rm=TRUE)),
-                    zoo::as.yearmon(max(aggregated$month$date_bin_start,na.rm=TRUE)),
-                    sep = " - ")
+temp_range <- paste(zoo::as.yearmon(min(aggregated$month$date_bin_start, na.rm = TRUE)),
+  zoo::as.yearmon(max(aggregated$month$date_bin_start, na.rm = TRUE)),
+  sep = " - "
+)
 
-total_value <- sum(trips$landing_value,na.rm=TRUE)
-total_weight <- sum(catch$weight,na.rm=TRUE)
+total_value <- sum(trips$landing_value, na.rm = TRUE)
+total_weight <- sum(catch$weight, na.rm = TRUE)
 ```
 
 ***
@@ -120,54 +104,65 @@ The landing value in USD is obtained from landing surveys at multiple sites arou
 \newline
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8, fig.cap='Time series of monthly aggregated total revenue. The red line is the local polynomial regression fitted to the time series while the shaded area represents the 0.95 confidence interval.'}
-max_rev <- max(aggregated$month$revenue,na.rm=TRUE)
-min_rev <- min(aggregated$month$revenue,na.rm=TRUE)
+max_rev <- max(aggregated$month$revenue, na.rm = TRUE)
+min_rev <- min(aggregated$month$revenue, na.rm = TRUE)
 
-aggregated$month %>% 
-  dplyr::mutate(month=lubridate::month(date_bin_start,label=TRUE),
-                year=lubridate::year(date_bin_start)) %>% 
-  dplyr::filter(!is.na(date_bin_start)&year!=2017) %>% 
+aggregated$month %>%
+  dplyr::mutate(
+    month = lubridate::month(date_bin_start, label = TRUE),
+    year = lubridate::year(date_bin_start)
+  ) %>%
+  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
   dplyr::select(year, month, date_bin_start, revenue) %>%
-  ggplot(aes(x=date_bin_start,y=revenue))+
-  geom_line(color="#447597")+
-  geom_point(color="#447597")+
-  stat_smooth(method = "loess",color="#976644",alpha=0.1)+
-  labs(x="date",y="total revenue (USD)",
-       title = "Interannual distribution of total revenue",
-       subtitle = "The total revenue increased between the end of 2018 and the beginning of 2020 touching\nvalues greater than $ 900,000, then it gradually decreased.")+
-  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date)+
-  scale_y_continuous(labels = scales::comma)+
-  coord_cartesian(ylim=c(96035.99,max_rev))+
-  theme_minimal(14)+
-  theme(text = element_text(family="Helvetica"),
-        plot.title = element_text(size = 18),
-        plot.subtitle = element_text(size = 12, color = "darkslategrey"))
-
+  ggplot(aes(x = date_bin_start, y = revenue)) +
+  geom_line(color = "#447597") +
+  geom_point(color = "#447597") +
+  stat_smooth(method = "loess", color = "#976644", alpha = 0.1) +
+  labs(
+    x = "date", y = "total revenue (USD)",
+    title = "Interannual distribution of total revenue",
+    subtitle = "The total revenue increased between the end of 2018 and the beginning of 2020 touching\nvalues greater than $ 900,000, then it gradually decreased."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  scale_y_continuous(labels = scales::comma) +
+  coord_cartesian(ylim = c(96035.99, max_rev)) +
+  theme_minimal(14) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
 ```
 \newline
 \newline
 
 
 ```{r, echo=FALSE, warning=FALSE, fig.asp=1,fig.cap="Monthly revenue shown for each year of Peskas' activity", fig.height=3, fig.width=8,out.height="70%",out.width="90%"}
-aggregated$month %>% 
-    dplyr::mutate(month=lubridate::month(date_bin_start,label=TRUE),
-                year=lubridate::year(date_bin_start)) %>% 
-  dplyr::filter(!is.na(date_bin_start)&year!=2017) %>% 
+aggregated$month %>%
+  dplyr::mutate(
+    month = lubridate::month(date_bin_start, label = TRUE),
+    year = lubridate::year(date_bin_start)
+  ) %>%
+  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
   dplyr::select(year, month, date_bin_start, revenue) %>%
-  ggplot()+
-  geom_line(mapping=aes(x=as.factor(month),y=revenue,color=as.factor(year),group=as.factor(year)))+
-  geom_point(mapping=aes(x=as.factor(month),y=revenue,color=as.factor(year)))+
-  labs(x="",y="total revenue (USD)",color="year",
-       title = "Seasonal distribution of total revenue",
-       subtitle = "Except for 2019, the total revenue is seasonal, showing the highest during winter.")+
-  scale_color_manual(values=year_palette)+
-  scale_y_continuous(labels = scales::comma)+
-  coord_polar()+
-  theme_minimal(14)+
-  theme(axis.ticks.y = element_line(colour = "black"),
-        text = element_text(family="Helvetica"),
-        plot.title = element_text(size = 18),
-        plot.subtitle = element_text(size = 12, color = "darkslategrey"))
+  ggplot() +
+  geom_line(mapping = aes(x = as.factor(month), y = revenue, color = as.factor(year), group = as.factor(year))) +
+  geom_point(mapping = aes(x = as.factor(month), y = revenue, color = as.factor(year))) +
+  labs(
+    x = "", y = "total revenue (USD)", color = "year",
+    title = "Seasonal distribution of total revenue",
+    subtitle = "Except for 2019, the total revenue is seasonal, showing the highest during winter."
+  ) +
+  scale_color_manual(values = year_palette) +
+  scale_y_continuous(labels = scales::comma) +
+  coord_polar() +
+  theme_minimal(14) +
+  theme(
+    axis.ticks.y = element_line(colour = "black"),
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
 ```
 \pagebreak
 
@@ -205,18 +200,20 @@ dplyr::left_join(revenue_df, weight_df, by = "comm_name") %>%
   tidyr::pivot_longer(-comm_name) %>%
   ggplot(aes(value, comm_name)) +
   geom_line(aes(group = comm_name), color = "#b2b2b2") +
-  geom_point(aes(color = name),size=2.5) +
+  geom_point(aes(color = name), size = 2.5) +
   theme_minimal(12) +
   scale_x_continuous(labels = scales::percent_format(scale = 1)) +
   scale_color_manual(labels = c("Economic value", "Weight"), values = c("#669966", "#996699")) +
-  labs(x = "Overall proportion", y = "",
-       title = "Overall stock and economic species' importance",
-       subtitle = "Sardines represent the most important species both for the overall\neconomic value and stock, although they show a wide disproportion\nbetween overall weight and value relative to other groups. Following,\nfusiliers, mackerel scads, flying fishes and garfishes have a significant\noverall contribution. In particular, garfishes represent the most important\ngroup in terms of relative economic value compared to the overall stock.") +
+  labs(
+    x = "Overall proportion", y = "",
+    title = "Overall stock and economic species' importance",
+    subtitle = "Sardines represent the most important species both for the overall\neconomic value and stock, although they show a wide disproportion\nbetween overall weight and value relative to other groups. Following,\nfusiliers, mackerel scads, flying fishes and garfishes have a significant\noverall contribution. In particular, garfishes represent the most important\ngroup in terms of relative economic value compared to the overall stock."
+  ) +
   theme(
     panel.grid.minor.x = element_blank(),
     legend.position = "top",
     legend.title = element_blank(),
-    text = element_text(family="Helvetica"),
+    text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 18),
     plot.subtitle = element_text(size = 12, color = "darkslategrey")
   )
@@ -227,47 +224,47 @@ dplyr::left_join(revenue_df, weight_df, by = "comm_name") %>%
 
 ```{r catch-value, echo=FALSE, warning=FALSE, fig.cap='(ref:catch-value)', fig.height=7, fig.width=6,out.height="100%",out.width="100%"}
 
-  dplyr::left_join(catch, trips, by = "trip_id") %>%
-    dplyr::filter(individuals > 0 &
-      nchar(landing_taxa) == 3 &
-      landing_value != 0) %>%
-    dplyr::mutate(norm_value = landing_value / (weight / 1000)) %>%
-    dplyr::select(comm_name, norm_value) %>%
-    dplyr::group_by(comm_name) %>%
-    dplyr::summarise(
-      mean = mean(norm_value, na.rm = TRUE),
-      n = dplyr::n(),
-      sd = sd(norm_value, na.rm = TRUE),
-      q95 = quantile(norm_value, 0.95, na.rm = TRUE),
-      q75 = quantile(norm_value, 3 / 4, na.rm = TRUE),
-      q25 = quantile(norm_value, 1 / 4, na.rm = TRUE),
-      q5 = quantile(norm_value, 0.05, na.rm = TRUE)
-    ) %>%
-    dplyr::mutate(
-      se = sd / sqrt(n),
-      left95 = mean - 2 * se,
-      right95 = mean + 2 * se,
-      left95 = dplyr::case_when(
-        left95 < 0 ~ 0,
-        TRUE ~ left95
-      )
-    ) %>%
-    ggplot(aes(x = reorder(comm_name, mean), y = mean)) +
-    geom_crossbar(aes(ymin = q5, ymax = q95), fill = "#c6d5df", color = "#c6d5df", width = 0.3) +
-    geom_crossbar(aes(ymin = q25, ymax = q75), fill = "#8eacc0", color = "#8eacc0", width = 0.3) +
-    geom_crossbar(aes(ymin = left95, ymax = right95), fill = "#28465a", color = "#28465a", width = 0.3) +
-    geom_point(fill = "#28465a", color = "#28465a", size = 2.5) +
-    coord_flip(ylim = c(0, 1000)) +
-    theme_minimal(11)+
-    labs(x="",y="Value (USD) per Kilogram",subtitle ="Most valuable catch types")+
-    theme(text = element_text(family="Helvetica"))
+dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 &
+    nchar(landing_taxa) == 3 &
+    landing_value != 0) %>%
+  dplyr::mutate(norm_value = landing_value / (weight / 1000)) %>%
+  dplyr::select(comm_name, norm_value) %>%
+  dplyr::group_by(comm_name) %>%
+  dplyr::summarise(
+    mean = mean(norm_value, na.rm = TRUE),
+    n = dplyr::n(),
+    sd = sd(norm_value, na.rm = TRUE),
+    q95 = quantile(norm_value, 0.95, na.rm = TRUE),
+    q75 = quantile(norm_value, 3 / 4, na.rm = TRUE),
+    q25 = quantile(norm_value, 1 / 4, na.rm = TRUE),
+    q5 = quantile(norm_value, 0.05, na.rm = TRUE)
+  ) %>%
+  dplyr::mutate(
+    se = sd / sqrt(n),
+    left95 = mean - 2 * se,
+    right95 = mean + 2 * se,
+    left95 = dplyr::case_when(
+      left95 < 0 ~ 0,
+      TRUE ~ left95
+    )
+  ) %>%
+  ggplot(aes(x = reorder(comm_name, mean), y = mean)) +
+  geom_crossbar(aes(ymin = q5, ymax = q95), fill = "#c6d5df", color = "#c6d5df", width = 0.3) +
+  geom_crossbar(aes(ymin = q25, ymax = q75), fill = "#8eacc0", color = "#8eacc0", width = 0.3) +
+  geom_crossbar(aes(ymin = left95, ymax = right95), fill = "#28465a", color = "#28465a", width = 0.3) +
+  geom_point(fill = "#28465a", color = "#28465a", size = 2.5) +
+  coord_flip(ylim = c(0, 1000)) +
+  theme_minimal(11) +
+  labs(x = "", y = "Value (USD) per Kilogram", subtitle = "Most valuable catch types") +
+  theme(text = element_text(family = "Helvetica"))
 ```
 
 
 ```{r, echo=FALSE, warning=FALSE, fig.cap="Total proportion of catches final usage (top) and usage proportion of each catch ranked by total number of catches (bottom)", fig.height=12, fig.width=8.5,out.height="100%",out.width="100%"}
 rank_catch <-
   catch %>%
-  dplyr::filter(individuals != 0 & comm_name!="NA") %>%
+  dplyr::filter(individuals != 0 & comm_name != "NA") %>%
   dplyr::count(comm_name, catch_purpose) %>%
   ggplot() +
   geom_col(mapping = aes(x = reorder(comm_name, n), y = n, fill = catch_purpose)) +
@@ -275,7 +272,7 @@ rank_catch <-
   theme(text = element_text(family = "Helvetica")) +
   theme(legend.position = "") +
   scale_fill_manual(values = catch_use_palette) +
-  scale_y_continuous(labels = scales::comma)+
+  scale_y_continuous(labels = scales::comma) +
   labs(y = "number of catches", x = "", fill = "") +
   coord_flip()
 
@@ -290,10 +287,11 @@ tot_catch <-
   ) %>%
   ggplot(aes(x = dummy_var, y = n, fill = catch_purpose)) +
   geom_col(width = 5) +
-    geom_text(aes(label=paste0(round(proportion,1),"%")),
-            position=position_stack(vjust=0.5),
-            color="white",
-            fontface="bold")+
+  geom_text(aes(label = paste0(round(proportion, 1), "%")),
+    position = position_stack(vjust = 0.5),
+    color = "white",
+    fontface = "bold"
+  ) +
   theme_minimal(14) +
   theme(
     legend.position = "top",
@@ -305,10 +303,13 @@ tot_catch <-
     axis.ticks.y = element_blank(),
     axis.ticks.x = element_blank(),
     plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 12, color = "darkslategrey")) +
-    labs(y = "", x = "", fill = "Catch usage",
-       title = "Catches final usage",
-       subtitle = "Sardines and pilchards are by far the most caught species followed by scads\nand emperor fishes.Overall, more than 70% of the catch is doomed for sale,\nexcept for some groups caught for sustenance as unicornfish and soldierfish.") +
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  ) +
+  labs(
+    y = "", x = "", fill = "Catch usage",
+    title = "Catches final usage",
+    subtitle = "Sardines and pilchards are by far the most caught species followed by scads\nand emperor fishes.Overall, more than 70% of the catch is doomed for sale,\nexcept for some groups caught for sustenance as unicornfish and soldierfish."
+  ) +
   scale_fill_manual(values = catch_use_palette) +
   coord_flip()
 
@@ -324,93 +325,106 @@ cowplot::plot_grid(tot_catch,
 
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE,fig.cap="Interannual proportion catches final usage", fig.height=4, fig.width=8}
-dplyr::left_join(catch,trips,by="trip_id") %>%
+dplyr::left_join(catch, trips, by = "trip_id") %>%
   dplyr::filter(individuals != 0) %>%
-  dplyr::mutate(landing_date_month=lubridate::floor_date(landing_date,unit = "month")) %>%
+  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
   dplyr::group_by(landing_date_month) %>%
   dplyr::count(catch_purpose) %>%
-  dplyr::mutate(tot=sum(n,na.rm=TRUE),
-                usage_proportion=n/tot*100) %>%
-  ggplot(aes(landing_date_month,usage_proportion,group=catch_purpose,color=catch_purpose))+
-  geom_line()+
-  geom_point()+
-  labs(x="month",y="Usage proportion",
-       color="usage proportion",
-       title = "Time series of catches final usage",
-       subtitle = "")+
-  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date)+
-  scale_y_continuous(labels = scales::percent_format(scale = 1))+
+  dplyr::mutate(
+    tot = sum(n, na.rm = TRUE),
+    usage_proportion = n / tot * 100
+  ) %>%
+  ggplot(aes(landing_date_month, usage_proportion, group = catch_purpose, color = catch_purpose)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x = "month", y = "Usage proportion",
+    color = "usage proportion",
+    title = "Time series of catches final usage",
+    subtitle = ""
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   scale_color_manual(values = catch_use_palette) +
-  theme_minimal(14)+
-  theme(text = element_text(family="Helvetica"),
-        legend.position = "top",
-        legend.title=element_blank(),
-        plot.title = element_text(size = 18),
-        plot.subtitle = element_text(size = 12, color = "darkslategrey"))
+  theme_minimal(14) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
 ```
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8, fig.cap='Time series of catches diversity on the monthly scale. Points represent average diversity while bars define the 0.95 confidence interval.'}
-  dplyr::left_join(catch,trips,by="trip_id") %>%
-    dplyr::filter(individuals>0 & landing_n_taxa>0) %>%
-    dplyr::mutate(landing_date_month=lubridate::floor_date(landing_date,unit = "month")) %>%
-    dplyr::select(landing_date_month,landing_n_taxa) %>%
-    dplyr::group_by(landing_date_month) %>%
-    dplyr::summarise(mean=mean(landing_n_taxa),
-                     sd = sd(landing_n_taxa),
-                     n = dplyr::n()) %>%
-    dplyr::mutate( se=sd/sqrt(n),
-                   ic=se * qt((1-0.05)/2 + .5, n-1),
-                   month=lubridate::month(landing_date_month,label=TRUE),
-                   year=lubridate::year(landing_date_month))  %>%
-    ggplot(aes(x=landing_date_month,y=mean))+
-    geom_line(color="#447597")+
-    geom_point(color="#447597")+
-    geom_pointrange(
-      aes(ymin=mean-ic, ymax=mean+ic),
-      position = position_dodge(0.3),
-      color="#447597"
-    )+
-    stat_smooth(method = "loess",color="#976644",alpha=0.1)+
-    labs(x="month",y="Catch diversity (number of taxa)",
-         title = "Interannual catches diversity")+
-    scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date)+
-    theme_minimal(14)+
-    theme(text = element_text(family="Helvetica"))
+dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 & landing_n_taxa > 0) %>%
+  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
+  dplyr::select(landing_date_month, landing_n_taxa) %>%
+  dplyr::group_by(landing_date_month) %>%
+  dplyr::summarise(
+    mean = mean(landing_n_taxa),
+    sd = sd(landing_n_taxa),
+    n = dplyr::n()
+  ) %>%
+  dplyr::mutate(
+    se = sd / sqrt(n),
+    ic = se * qt((1 - 0.05) / 2 + .5, n - 1),
+    month = lubridate::month(landing_date_month, label = TRUE),
+    year = lubridate::year(landing_date_month)
+  ) %>%
+  ggplot(aes(x = landing_date_month, y = mean)) +
+  geom_line(color = "#447597") +
+  geom_point(color = "#447597") +
+  geom_pointrange(
+    aes(ymin = mean - ic, ymax = mean + ic),
+    position = position_dodge(0.3),
+    color = "#447597"
+  ) +
+  stat_smooth(method = "loess", color = "#976644", alpha = 0.1) +
+  labs(
+    x = "month", y = "Catch diversity (number of taxa)",
+    title = "Interannual catches diversity"
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica"))
 ```
 
 ```{r, echo=FALSE, warning=FALSE, fig.cap="Main catches descriptors. Distribution of the number of individuals (A), their length (B)  and weigth (C) considering all the catches.", fig.height=4, fig.width=9,out.height="100%",out.width="100%"}
 individuals_p <-
-catch %>% 
-  dplyr::filter(individuals!=0) %>% 
-  ggplot()+
-  geom_density(mapping=aes(x=individuals),adjust=2,color="#447597",fill="#447597")+
-  theme_minimal(14)+
-  theme(text = element_text(family="Helvetica"))+
-  labs(x="Number of individuals",y="kernel density")
+  catch %>%
+  dplyr::filter(individuals != 0) %>%
+  ggplot() +
+  geom_density(mapping = aes(x = individuals), adjust = 2, color = "#447597", fill = "#447597") +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  labs(x = "Number of individuals", y = "kernel density")
 
-length_p <- 
-catch %>% 
-  dplyr::filter(individuals!=0) %>% 
-  ggplot()+
-  geom_density(mapping=aes(x=length),adjust=2,color="#447597",fill="#447597")+
-  theme_minimal(14)+
-  theme(text = element_text(family="Helvetica"))+
-  labs(x="Total length (cm)",y="")
+length_p <-
+  catch %>%
+  dplyr::filter(individuals != 0) %>%
+  ggplot() +
+  geom_density(mapping = aes(x = length), adjust = 2, color = "#447597", fill = "#447597") +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  labs(x = "Total length (cm)", y = "")
 
 weigth_p <-
-catch %>% 
-  dplyr::filter(individuals!=0) %>% 
-  ggplot()+
-  geom_density(mapping=aes(x=weight/1000),adjust=2,color="#447597",fill="#447597")+
-  theme_minimal(14)+
-  theme(text = element_text(family="Helvetica"))+
-  labs(x="Total weight (kg)",y="")
+  catch %>%
+  dplyr::filter(individuals != 0) %>%
+  ggplot() +
+  geom_density(mapping = aes(x = weight / 1000), adjust = 2, color = "#447597", fill = "#447597") +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  labs(x = "Total weight (kg)", y = "")
 
 cowplot::plot_grid(individuals_p,
-                   length_p,
-                   weigth_p,
-                   ncol=3,align="hv",labels="AUTO")
+  length_p,
+  weigth_p,
+  ncol = 3, align = "hv", labels = "AUTO"
+)
 ```
 
 
@@ -432,25 +446,27 @@ Information about the process and user-centred design of the Peskas pipeline and
 (ref:flowchart) A diagrammatic representation of the Peskas application. From [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760)
 
 ```{r flowchart, echo=FALSE, message=FALSE, fig.height=4, fig.width=8,fig.cap='(ref:flowchart)'}
-knitr::include_graphics('flowchart.png')
+knitr::include_graphics("flowchart.png")
 ```
 \pagebreak
 
 
 ```{r catch-table, echo=FALSE, warning=FALSE}
-catch_types %>% 
-  dplyr::rename("ASFIS code"=catch_taxon) %>% 
-  dplyr::mutate(n = 1:dplyr::n()) %>% 
-  dplyr::select(n,tidyr::everything()) %>% 
-  replace(is.na(.), "-") %>% 
-  knitr::kable("latex",booktabs = T,
-               longtable = TRUE,
-               caption="ASFIS codes (FAO 3-Alpha Species Codes), scientific and common names of Peskas catches",
-               linesep = "",
-               align="c") %>% 
-  kableExtra::kable_styling(font_size = 7) %>% 
-  kableExtra::row_spec(0, font_size=9, bold = TRUE) %>% 
-  kableExtra::column_spec(1, width = "6em") %>% 
-  kableExtra::column_spec(2:4, width = "18em") %>% 
-  kableExtra::kable_styling(latex_options = c("HOLD_position","striped","repeat_header"))
+catch_types %>%
+  dplyr::rename("ASFIS code" = catch_taxon) %>%
+  dplyr::mutate(n = 1:dplyr::n()) %>%
+  dplyr::select(n, tidyr::everything()) %>%
+  replace(is.na(.), "-") %>%
+  knitr::kable("latex",
+    booktabs = T,
+    longtable = TRUE,
+    caption = "ASFIS codes (FAO 3-Alpha Species Codes), scientific and common names of Peskas catches",
+    linesep = "",
+    align = "c"
+  ) %>%
+  kableExtra::kable_styling(font_size = 7) %>%
+  kableExtra::row_spec(0, font_size = 9, bold = TRUE) %>%
+  kableExtra::column_spec(1, width = "6em") %>%
+  kableExtra::column_spec(2:4, width = "18em") %>%
+  kableExtra::kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
 ```
