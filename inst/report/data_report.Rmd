@@ -33,8 +33,6 @@ library(ggplot2)
 library(magrittr)
 
 # get data
-setwd("../..")
-pars <- peskas.timor.data.pipeline::read_config()
 
 files <-
   c("aggregated__", "trips", "catch") %>%
@@ -64,6 +62,8 @@ catch_types <- readRDS(list.files(pattern = "metadata"))$catch_types %>%
     "Taxonomic rank (family)" = catch_family,
     "Common name" = catch_name_en
   )
+
+file.remove(c(files,list.files(pattern = "metadata")))
 
 catch <-
   catch_types %>%

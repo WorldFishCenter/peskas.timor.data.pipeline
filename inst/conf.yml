@@ -98,6 +98,9 @@ default:
   export:
     file_prefix: timor
 
+  report:
+    file_prefix: data_report
+
   storage:
     google:
       key: gcs
