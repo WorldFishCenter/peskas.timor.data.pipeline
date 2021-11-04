@@ -3,8 +3,13 @@ library(magrittr)
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
-filename <- pars$report$file_prefix %>%
-  peskas.timor.data.pipeline::add_version(extension = "pdf")
+# Skip versioning for the moment until prepare for appropriate func in peskas app
+# Overwrite data report at each upload
+
+#filename <- pars$report$file_prefix %>%
+#  peskas.timor.data.pipeline::add_version(extension = "pdf")
+
+filename <- "data_report.pdf"
 
 rmarkdown::render(
   input = system.file("report/data_report.Rmd", package = "peskas.timor.data.pipeline"),

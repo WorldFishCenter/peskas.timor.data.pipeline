@@ -1,5 +1,6 @@
 ---
 title: PESKAS data report (testing version)
+date: "Last compiled on `r Sys.time()`"
 mainfont: Montserrat
 geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
 output:

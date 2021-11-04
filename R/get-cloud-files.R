@@ -61,6 +61,12 @@ get_models <- function(pars){
     readr::read_rds()
 }
 
+
+#' Download Peskas metadata
+#'
+#' Download preprocessed Peskas metadata from Google Cloud
+#'
+#' @param pars The configuration file
 #' @export
 get_preprocessed_metadata <- function(pars){
   metadata_rds <- cloud_object_name(
