@@ -34,8 +34,7 @@ library(ggplot2)
 library(magrittr)
 
 # get data
-
-files <-
+public_files <-
   c("aggregated__", "trips", "catch") %>%
   purrr::map(., ~ peskas.timor.data.pipeline::cloud_object_name(
     prefix = paste(pars$export$file_prefix, .x, sep = "_"),
@@ -52,10 +51,13 @@ files <-
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )
+
 aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
 trips <- readRDS(list.files(pattern = "timor_trips"))
 catch <- readRDS(list.files(pattern = "timor_catch"))
+validated_landings <- peskas.timor.data.pipeline::get_validated_landings()
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
+
 catch_types <- readRDS(list.files(pattern = "metadata"))$catch_types %>%
   dplyr::filter(!catch_name_en %in% c("Herring", "Unknown", "Surgeonfish")) %>% # remove duplicates
   dplyr::select(
@@ -64,7 +66,7 @@ catch_types <- readRDS(list.files(pattern = "metadata"))$catch_types %>%
     "Common name" = catch_name_en
   )
 
-file.remove(c(files,list.files(pattern = "metadata")))
+file.remove(c(public_files,list.files(pattern = "metadata"),list.files(pattern = "merged")))
 
 catch <-
   catch_types %>%
@@ -98,7 +100,128 @@ total_weight <- sum(catch$weight, na.rm = TRUE)
 
 # Aim
 This report summarises relevant statistics and insights from the Peskas platform during the period `r temp_range`. The report examines the main temporal trends in the national revenue related to small-scale fishing in Timor-Leste and provides quantitative and qualitative information on the catches.
+\pagebreak
 
+
+# Summary of Peskas fleet
+
+```{r echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+gear_plot <-
+  tidyr::tibble(
+    gear_type = metadata$gear_types$gear_id,
+    n_boats = purrr::map_dbl(metadata$gear_types$boats, length)
+  ) %>%
+  dplyr::filter(gear_type != "manual collection") %>%
+  dplyr::mutate(
+    dummy_var = rep("dummycol", nrow(.)),
+    total_boats = sum(n_boats),
+    proportion = n_boats / total_boats * 100,
+    proportion_label = dplyr::case_when(
+      proportion < 5 ~ NA_real_,
+      TRUE ~ proportion
+    )
+  ) %>%
+  ggplot(aes(x = dummy_var, y = n_boats, fill = reorder(gear_type, n_boats))) +
+  geom_col(width = 2) +
+  geom_text(aes(label = ifelse(is.na(proportion_label), "", paste0(round(proportion_label, 1), "%"))),
+    position = position_stack(vjust = 0.5),
+    color = "white",
+    fontface = "bold",
+    na.rm = TRUE
+  ) +
+  theme_minimal(14) +
+  theme(
+    legend.position = "top",
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  ) +
+  labs(
+    y = "", x = "", fill = "Gear type",
+    title = "Boat properties",
+    subtitle = "The fleet associated to Peskas is composed of a total of 451 boats, most of them  motorised.\nMore than 90% of the boats are equipped with hand line and long line while about 6% equip spear guns."
+  ) +
+  scale_fill_manual(values = rev(c("#3d405b", "#6f1a07", "#81b29a", "#96c5f7", "#f2cc8f", "#e07a5f", "#ffd23f", "#625834"))) +
+  coord_flip()
+
+
+vessel_plot <-
+  tidyr::tibble(
+    boat_type = metadata$vessel_types$boat_type,
+    n_boats = purrr::map_dbl(metadata$vessel_types$boats, length)
+  ) %>%
+  dplyr::filter(.data$boat_type != "gleaning") %>%
+  dplyr::mutate(
+    dummy_var = rep("dummycol", nrow(.)),
+    total_boats = sum(.data$n_boats),
+    proportion = .data$n_boats / .data$total_boats * 100,
+    proportion_label = dplyr::case_when(
+      .data$proportion < 5 ~ NA_real_,
+      TRUE ~ .data$proportion
+    )
+  ) %>%
+  ggplot(aes(x = dummy_var, y = n_boats, fill = reorder(boat_type, n_boats))) +
+  geom_col(width = 5) +
+  geom_text(aes(label = ifelse(is.na(proportion_label), "", paste0(round(proportion_label, 0), "%"))),
+    position = position_stack(vjust = 0.5),
+    color = "white",
+    fontface = "bold",
+    na.rm = TRUE
+  ) +
+  theme_minimal(14) +
+  theme(
+    legend.position = "right",
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  ) +
+  labs(
+    y = "", x = "", fill = "Vessel type"
+  ) +
+  scale_fill_manual(values = rev(c("#49566e", "#fad591"))) +
+  coord_polar("y", start = 0)
+
+cowplot::plot_grid(gear_plot, vessel_plot, ncol = 2, axis = "t", align = "hv", rel_widths = c(4, 2))
+```
+\newline
+\newline
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=2, fig.width=5}
+metadata$boats %>%
+  dplyr::select(.data$boat_length, .data$boat_engine_power) %>%
+  tidyr::pivot_longer(cols = tidyr::everything()) %>%
+  ggplot() +
+  theme_minimal(11) +
+  facet_grid(. ~ name,
+    scales = "free",
+    labeller = as_labeller(c(
+      boat_engine_power = "Boat horspower (hp)",
+      boat_length = "Boat length (m)"
+    ))
+  ) +
+  geom_histogram(mapping = aes(x = value), bins = 30, binwidth = 0.5, color = "#447597", fill = "#447597", alpha = 0.3) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    plot.subtitle = element_text(size = 9, color = "darkslategrey")
+  ) +
+  labs(
+    x = "",
+    y = "Frequency",
+    subtitle = "Most of the boats are equipped with a 15-hp motor and measure between 3 and 7 meters.\nVery few of them are longer than 10 meters."
+  )
+```
 
 # Revenue
 The landing value in USD is obtained from landing surveys at multiple sites around the country. Fishers are asked for the estimated price of their catch at the landing site regardless of whether the catch is deemed for sale or consumption. Prices may change throughout the year and across landing sites. We then obtain monthly estimates using a random-effect statistical model.
@@ -452,22 +575,3 @@ knitr::include_graphics("flowchart.png")
 \pagebreak
 
 
-```{r catch-table, echo=FALSE, warning=FALSE}
-catch_types %>%
-  dplyr::rename("ASFIS code" = catch_taxon) %>%
-  dplyr::mutate(n = 1:dplyr::n()) %>%
-  dplyr::select(n, tidyr::everything()) %>%
-  replace(is.na(.), "-") %>%
-  knitr::kable("latex",
-    booktabs = T,
-    longtable = TRUE,
-    caption = "ASFIS codes (FAO 3-Alpha Species Codes), scientific and common names of Peskas catches",
-    linesep = "",
-    align = "c"
-  ) %>%
-  kableExtra::kable_styling(font_size = 7) %>%
-  kableExtra::row_spec(0, font_size = 9, bold = TRUE) %>%
-  kableExtra::column_spec(1, width = "6em") %>%
-  kableExtra::column_spec(2:4, width = "18em") %>%
-  kableExtra::kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
-```

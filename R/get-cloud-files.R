@@ -1,3 +1,9 @@
+#' Download Peskas validated landings
+#'
+#' Download validated Peskas data from Google Cloud
+#'
+#' @param pars The configuration file
+#' @export
 
 get_validated_landings <- function(pars){
   cloud_object_name(

@@ -79,7 +79,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   ready_cols <- landings %>%
     dplyr::select(
       # site_number = .data$landing_site_name,
-      submission_id = .data$`_id`
+      submission_id = .data$`_id`,
+      n_gleaners = .data$how_many_gleaners_today,
+      n_child_fishers = .data$`trip_group/no_fishers/no_child_fishers`,
+      n_women_fishers = .data$`trip_group/no_fishers/no_women_fishers`
     ) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
 
@@ -131,7 +134,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_value = .data$total_catch_value,
       #municipality = .data$`municipality (from administrative_posts)`,
       .data$gear_type,
-      .data$vessel_type)
+      .data$vessel_type,
+      .data$n_gleaners,
+      .data$n_child_fishers,
+      .data$n_women_fishers)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
