@@ -1,8 +1,5 @@
 library(magrittr)
 
-setwd("../..")
-pars <- peskas.timor.data.pipeline::read_config()
-
 # Skip versioning for the moment until prepare for appropriate func in peskas app
 # Overwrite data report at each upload
 

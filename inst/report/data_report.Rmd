@@ -14,14 +14,10 @@ header-includes:
   - \floatplacement{figure}{H}
   - \usepackage{leading}
   - \leading{16pt}
-  - \usepackage{caption}
-  - \captionsetup[figure]{font=small}
-  - \captionsetup[table]{font=small}
   - \definecolor{myblue}{RGB}{68,117,151}
   - \let\counterwithout\relax
   - \let\counterwithin\relax
   - \usepackage{chngcntr}
-  - \counterwithin{figure}{section}
 ---
 
 ```{r setup, include=FALSE}
@@ -32,6 +28,9 @@ knitr::opts_chunk$set(cache = FALSE)
 # libraries
 library(ggplot2)
 library(magrittr)
+
+setwd("../..")
+pars <- peskas.timor.data.pipeline::read_config()
 
 # get data
 public_files <-
@@ -186,6 +185,8 @@ cowplot::plot_grid(gear_plot,vessel_plot,ncol = 2, axis="t", align = "hv",rel_wi
 ```
 \newline
 \newline
+\newline
+
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3, fig.width=6,out.height="100%",out.width="100%"}
 metadata$boats %>%
@@ -245,17 +246,81 @@ trips %>%
 ```
 \pagebreak
 
-# Boat GPS tracks
-```{r, echo=FALSE, message=FALSE}
-knitr::include_graphics("timor_tracks_map.png")
+
+# Boat tracks
+```{r, echo=FALSE, message=FALSE, fig.height=6, fig.width=8}
+knitr::include_graphics("timor_map.pdf")
 ```
 \pagebreak
 
+# National revenue
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
+max_rev <- max(aggregated$month$revenue, na.rm = TRUE)
+min_rev <- min(aggregated$month$revenue, na.rm = TRUE)
+
+aggregated$month %>%
+  dplyr::mutate(
+    month = lubridate::month(date_bin_start, label = TRUE),
+    year = lubridate::year(date_bin_start)
+  ) %>%
+  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
+  dplyr::select(year, month, date_bin_start, revenue) %>%
+  ggplot(aes(x = date_bin_start, y = revenue)) +
+  geom_line(color = "#447597") +
+  geom_point(color = "#447597") +
+  geom_area(fill="#447597",alpha=0.15)+
+  stat_smooth(method = "loess", color = "#976644", alpha = 0.1) +
+  labs(
+    x = "date", y = "total revenue (USD)",
+    title = "Interannual total revenue",
+    subtitle = "The total revenue increased between the end of 2018 and the beginning of 2020 touching\nvalues greater than $ 900,000, then it gradually decreased."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  scale_y_continuous(labels = scales::comma) +
+  coord_cartesian(ylim = c(96035.99, max_rev)) +
+  theme_minimal(14) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
+```
+\newline
+\newline
+
+```{r, echo=FALSE, warning=FALSE, fig.asp=1, fig.height=3, fig.width=7,out.height="70%",out.width="90%"}
+aggregated$month %>%
+  dplyr::mutate(
+    month = lubridate::month(date_bin_start, label = TRUE),
+    year = lubridate::year(date_bin_start)
+  ) %>%
+  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
+  dplyr::select(year, month, date_bin_start, revenue) %>%
+  ggplot() +
+  geom_line(mapping = aes(x = as.factor(month), y = revenue, color = as.factor(year), group = as.factor(year))) +
+  geom_point(mapping = aes(x = as.factor(month), y = revenue, color = as.factor(year))) +
+  labs(
+    x = "", y = "total revenue (USD)", color = "year",
+    title = "Seasonal total revenue",
+    subtitle = "Except for 2019, the total revenue is seasonal, showing the highest during winter."
+  ) +
+  scale_color_manual(values = year_palette) +
+  scale_y_continuous(labels = scales::comma) +
+  coord_polar() +
+  theme_minimal(14) +
+  theme(
+    axis.ticks.y = element_line(colour = "black"),
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 13, color = "darkslategrey")
+  )
+```
 \pagebreak
 
 # Catches by gear type
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=11,out.height="100%",out.width="100%"}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=11}
 validated_landings %>%
   dplyr::select(landing_date,gear_type,landing_value) %>%
   dplyr::filter(gear_type!="NA",landing_value>0) %>%
@@ -267,13 +332,13 @@ validated_landings %>%
   ggplot(aes(x=as.Date(month_date),y=n,fill=gear_type)) +
   geom_col(position = "fill")+
   scale_fill_brewer(type="div",direction=1)+
-  theme_minimal(15)+
+  theme_minimal(16)+
   scale_y_continuous(labels=scales::percent)+
   scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
                limits = c(as.Date("2018-01-01"),Sys.Date() - 31))+
   theme(text = element_text(family = "Helvetica"),
         plot.title = element_text(size = 19),
-        plot.subtitle = element_text(size = 13, color = "darkslategrey"))+
+        plot.subtitle = element_text(size = 14, color = "darkslategrey"))+
   labs(fill="Gear type",x="Date",y="Proportion of catches",
        title="Proportion of catches by gear type",
        subtitle="Gill nets nets constitute more than 50% of the catch on a monthly scale. Except before 2020\nwhen the use of long lines was marginal the relative usage of different gear types was\ncomparable along the time series.")
@@ -406,7 +471,7 @@ aggregated$month %>%
   ggplot(aes(weight_proportion, comm_name)) +
   geom_segment(aes(yend = comm_name), xend = 0, colour = "#525B76")+
   geom_point(size = 2.5,color="#525B76") +
-  theme_minimal(14) +
+  theme_minimal(15) +
   scale_x_continuous(labels = scales::percent_format(scale = 1)) +
   #scale_color_manual(labels = c("Economic value", "Weight"), values = c("#669966", "#996699")) +
   labs(
@@ -419,8 +484,8 @@ aggregated$month %>%
     legend.position = "top",
     legend.title = element_blank(),
     text = element_text(family = "Helvetica"),
-    plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 13, color = "darkslategrey")
+    plot.title = element_text(size = 19),
+    plot.subtitle = element_text(size = 14, color = "darkslategrey")
   )
 
 ```
@@ -461,7 +526,50 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     subtitle = "Fishing of the most important species remained mostly stable, except for a\nconsiderable increase of fusiliers and to a lesser extent of flying fish."
   )
 
+```
+\pagebreak
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
+dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 & landing_n_taxa > 0) %>%
+  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
+  dplyr::select(landing_date_month, landing_n_taxa) %>%
+  dplyr::group_by(landing_date_month) %>%
+  dplyr::summarise(
+    mean = mean(landing_n_taxa),
+    sd = sd(landing_n_taxa),
+    n = dplyr::n()
+  ) %>%
+  dplyr::mutate(
+    se = sd / sqrt(n),
+    ic = se * qt((1 - 0.05) / 2 + .5, n - 1),
+    month = lubridate::month(landing_date_month, label = TRUE),
+    year = lubridate::year(landing_date_month)
+  ) %>%
+  ggplot(aes(x = landing_date_month, y = mean)) +
+  geom_line(color = "#447597") +
+  geom_point(color = "#447597") +
+  geom_pointrange(
+    aes(ymin = mean - ic, ymax = mean + ic),
+    position = position_dodge(0.3),
+    color = "#447597"
+  ) +
+  stat_smooth(method = "loess", color = "#976644", alpha = 0.1) +
+  labs(
+    x = "month", y = "Catch diversity (number of taxa)",
+    title = "Interannual catches diversity",
+    subtitle= "The average diversity associated to catches is constantly increasing over time."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  theme_minimal(14) +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    text = element_text(family = "Helvetica"),
+    legend.position="bottom",
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 13, color = "darkslategrey")
+  )
 ```
 \pagebreak
 
@@ -528,6 +636,39 @@ cowplot::plot_grid(tot_catch,
 ```
 \pagebreak
 
+```{r, echo=FALSE, warning=FALSE,message=FALSE, fig.height=5, fig.width=8}
+dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals != 0) %>%
+  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
+  dplyr::group_by(landing_date_month) %>%
+  dplyr::count(catch_purpose) %>%
+  dplyr::mutate(
+    tot = sum(n, na.rm = TRUE),
+    usage_proportion = n / tot * 100
+  ) %>%
+  ggplot(aes(landing_date_month, usage_proportion, group = catch_purpose, color = catch_purpose)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x = "month", y = "Usage proportion",
+    color = "usage proportion",
+    title = "Time series of catches final usage",
+    subtitle = "Since 2019 catches sale is constantly increasing relatively to other usages."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_color_manual(values = catch_use_palette) +
+  theme_minimal(15) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
+```
+\pagebreak
+
 # Other fisheries
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
@@ -564,11 +705,11 @@ validated_landings %>%
   scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
                limits = c(as.Date("2018-01-01"),Sys.Date() - 31)) +
   scale_y_continuous(labels = scales::comma, limits = c(0,NA)) +
-  theme_minimal(14) +
+  theme_minimal(15) +
   theme(
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+    plot.subtitle = element_text(size = 13, color = "darkslategrey")
   )
 ```
 \pagebreak
@@ -577,7 +718,7 @@ validated_landings %>%
 # About Peskas
 Peskas is the official fisheries national monitoring system of Timor-Leste and represents one of the most sophisticated data collection systems for small-scale fisheries in the world. 
 
-Peskas' platform collects real-time information directly from fishermen's activity via a system of digital surveys developed in [$\color{myblue}{\text{KoBo toolbox}}$](http://www.kobotoolbox.org/). In addition, Peskas uses the technology provided by [$\color{myblue}{\text{Pelagic Data System}}$](https://www.pelagicdata.com/) to record vessel movements via solar-powered tracking devices (see Figure \@ref(fig:flowchart)). 
+Peskas' platform collects real-time information directly from fishermen's activity via a system of digital surveys developed in [$\color{myblue}{\text{KoBo toolbox}}$](http://www.kobotoolbox.org/). In addition, Peskas uses the technology provided by [$\color{myblue}{\text{Pelagic Data System}}$](https://www.pelagicdata.com/) to record vessel movements via solar-powered tracking devices). 
 
 The data and the information collected is subjected to an elaborate processing and cleaning through an open-source code pipeline on [$\color{myblue}{\text{GitHub}}$](https://github.com/WorldFishCenter/peskas.timor.data.pipeline), and provide important data in the hands of fisheries officers, researchers and local stakeholders and enables them to better understand the contribution of fish and fisheries to local livelihoods and food security.
 
@@ -587,13 +728,5 @@ Information about the process and user-centred design of the Peskas pipeline and
 * [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760). PloS One, 15(11), e0234760.
 * [$\color{myblue}{\text{Nearshore Fish Aggregating Devices Show Positive Outcomes for Sustainable Fisheries Development in Timor-Leste}}$](https://www.frontiersin.org/articles/10.3389/fmars.2019.00487/full). Frontiers in Marine Science, 6, 487.
 
-
-
-(ref:flowchart) A diagrammatic representation of the Peskas application. From [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760)
-
-```{r flowchart, echo=FALSE, message=FALSE, fig.height=4, fig.width=8,fig.cap='(ref:flowchart)'}
-knitr::include_graphics("flowchart.png")
-```
-\pagebreak
 
 
