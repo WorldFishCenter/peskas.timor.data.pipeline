@@ -247,7 +247,7 @@ trips %>%
 
 # Boat GPS tracks
 ```{r, echo=FALSE, message=FALSE}
-knitr::include_graphics("timor_tracks_map.pdf")
+knitr::include_graphics("timor_tracks_map.png")
 ```
 \pagebreak
 
