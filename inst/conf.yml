@@ -97,7 +97,7 @@ default:
 
   export_dataverse:
     server: 'demo.dataverse.org'
-    dataverse_id: 'export_test'
+    dataverse_id: 'peskas_demo'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
 
     metadata:

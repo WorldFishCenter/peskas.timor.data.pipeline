@@ -219,8 +219,7 @@ jobs:
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
 
   release-data:
-    name: Release data
-    if: ${{ false }} # Skip for now as it's not been implemented
+    name: Release to Dataverse
     needs: [export-trips]
     runs-on: ubuntu-20.04
     container:
@@ -233,4 +232,6 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_files()
-        run: echo 'Feature not implemented yet'
+        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'
+
+

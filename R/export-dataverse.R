@@ -131,8 +131,7 @@ export_files <- function(log_threshold = logger::DEBUG) {
   server <- pars$export_dataverse$server
 
   logger::log_info("Retrieving public data to release...")
-  rmarkdown::render('./data_description.rmd',params=list(output_file = data_description.html,
-                                                         pars))
+  rmarkdown::render('./DESCRIPTION.Rmd',params=list(output_file = './DESCRIPTION.html'))
 
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
@@ -145,7 +144,7 @@ export_files <- function(log_threshold = logger::DEBUG) {
     body = metadat
   )
 
-  release_files_names <- c(files_names,'data_description.html')
+  release_files_names <- c(files_names,'DESCRIPTION.html')
 
   logger::log_info("Exporting files...")
   upload_files(
