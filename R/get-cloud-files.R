@@ -3,8 +3,9 @@
 #' Download validated Peskas data from Google Cloud
 #'
 #' @param pars The configuration file
+#'
 #' @export
-
+#'
 get_validated_landings <- function(pars){
   cloud_object_name(
     prefix = paste0(pars$surveys$merged_landings$file_prefix, "_", "validated"),
@@ -15,6 +16,7 @@ get_validated_landings <- function(pars){
       options = pars$storage$google$options) %>%
     readr::read_rds()
 }
+
 
 get_validated_pds_trips <- function(pars){
   cloud_object_name(
