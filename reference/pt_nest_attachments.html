@@ -149,20 +149,21 @@ can contain arbitrary information, like other data frames, lists, vectors, or
 models.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='va'>dummy_landings</span> <span class='op'>&lt;-</span> <span class='fu'>tidyr</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/tibble.html'>tibble</a></span><span class='op'>(</span>
-  `_id` <span class='op'>=</span> <span class='st'>"123"</span>,
-  `_attachments.0.download_url` <span class='op'>=</span> <span class='st'>"http://url-1.com"</span>,
-  `_attachments.0.id` <span class='op'>=</span> <span class='st'>"01"</span>,
-  `_attachments.1.download_url` <span class='op'>=</span> <span class='st'>"http://url-2.com"</span>,
-  `_attachments.1.id` <span class='op'>=</span> <span class='st'>"02"</span>,
-  `_attachments.2.download_url` <span class='op'>=</span> <span class='cn'>NA</span>,
-  `_attachments.2.id` <span class='op'>=</span> <span class='cn'>NA</span><span class='op'>)</span>
-<span class='fu'>pt_nest_attachments</span><span class='op'>(</span><span class='va'>dummy_landings</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span style='color: #949494;'># A tibble: 1 × 2</span>
-#&gt;   `_id` `_attachments`  
-#&gt;   <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;list&gt;</span>          
-#&gt; <span style='color: #BCBCBC;'>1</span> 123   <span style='color: #949494;'>&lt;tibble [2 × 2]&gt;</span></div><div class='input'>
-</div></pre>
+    <pre class="examples"><span class='r-in'><span class='va'>dummy_landings</span> <span class='op'>&lt;-</span> <span class='fu'>tidyr</span><span class='fu'>::</span><span class='fu'><a href='https://tibble.tidyverse.org/reference/tibble.html'>tibble</a></span><span class='op'>(</span></span>
+<span class='r-in'>  `_id` <span class='op'>=</span> <span class='st'>"123"</span>,</span>
+<span class='r-in'>  `_attachments.0.download_url` <span class='op'>=</span> <span class='st'>"http://url-1.com"</span>,</span>
+<span class='r-in'>  `_attachments.0.id` <span class='op'>=</span> <span class='st'>"01"</span>,</span>
+<span class='r-in'>  `_attachments.1.download_url` <span class='op'>=</span> <span class='st'>"http://url-2.com"</span>,</span>
+<span class='r-in'>  `_attachments.1.id` <span class='op'>=</span> <span class='st'>"02"</span>,</span>
+<span class='r-in'>  `_attachments.2.download_url` <span class='op'>=</span> <span class='cn'>NA</span>,</span>
+<span class='r-in'>  `_attachments.2.id` <span class='op'>=</span> <span class='cn'>NA</span><span class='op'>)</span></span>
+<span class='r-in'><span class='fu'>pt_nest_attachments</span><span class='op'>(</span><span class='va'>dummy_landings</span><span class='op'>)</span></span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> <span style='color: #949494;'># A tibble: 1 × 2</span></span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span>   `_id` `_attachments`  </span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span>   <span style='color: #949494; font-style: italic;'>&lt;chr&gt;</span> <span style='color: #949494; font-style: italic;'>&lt;list&gt;</span>          </span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> <span style='color: #BCBCBC;'>1</span> 123   <span style='color: #949494;'>&lt;tibble [2 × 2]&gt;</span></span>
+<span class='r-in'></span>
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

@@ -148,31 +148,31 @@ only by the coalesced vectors.</p></td>
     <p>A data frame containing the coalesced vector(s)</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='va'>authentication_details</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/readLines.html'>readLines</a></span><span class='op'>(</span><span class='st'>"location_of_json_file.json"</span><span class='op'>)</span>
- <span class='co'># obtain the latest version of all files corresponding to timor-landings-v1</span>
- <span class='va'>legacy_data</span> <span class='op'>&lt;-</span>
- <span class='fu'><a href='cloud_object_name.html'>cloud_object_name</a></span><span class='op'>(</span>
- prefix <span class='op'>=</span> <span class='st'>"timor-landings-v1"</span>,
- version <span class='op'>=</span> <span class='st'>"latest"</span>,
- provider <span class='op'>=</span> <span class='st'>"gcs"</span>,
- options <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>service_account_key <span class='op'>=</span> <span class='va'>authentication_details</span>,
-                bucket <span class='op'>=</span> <span class='st'>"my-bucket"</span><span class='op'>)</span><span class='op'>)</span>
-
- <span class='va'>legacy_raw</span> <span class='op'>&lt;-</span>
- <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/read_delim.html'>read_csv</a></span><span class='op'>(</span>file <span class='op'>=</span> <span class='va'>legacy_data</span>, col_types <span class='op'>=</span>
- <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/cols.html'>cols</a></span><span class='op'>(</span>.default <span class='op'>=</span> <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/parse_atomic.html'>col_character</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-
- <span class='va'>to_coal</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='st'>"date"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'>%&gt;%</span> <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='st'>"Data"</span>,<span class='st'>"Date"</span><span class='op'>)</span>,
-                 <span class='st'>"trip_group/gear_type"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'>%&gt;%</span>
-                 <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='fu'>tidyselect</span><span class='fu'>::</span><span class='fu'><a href='https://tidyselect.r-lib.org/reference/starts_with.html'>contains</a></span><span class='op'>(</span><span class='st'>"gear"</span><span class='op'>)</span><span class='op'>)</span>,
-                 <span class='st'>"trip_group/habitat_boat"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'>%&gt;%</span>
-                 <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='fu'>tidyselect</span><span class='fu'>::</span><span class='fu'><a href='https://tidyselect.r-lib.org/reference/starts_with.html'>contains</a></span><span class='op'>(</span><span class='st'>"habitat"</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-
- <span class='fu'>coalist</span><span class='op'>(</span><span class='va'>legacy_raw</span>,<span class='va'>to_coal</span>,return_dat<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span>
-<span class='op'>}</span>
-
-</div></pre>
+    <pre class="examples"><span class='r-in'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span></span>
+<span class='r-in'><span class='va'>authentication_details</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/readLines.html'>readLines</a></span><span class='op'>(</span><span class='st'>"location_of_json_file.json"</span><span class='op'>)</span></span>
+<span class='r-in'> <span class='co'># obtain the latest version of all files corresponding to timor-landings-v1</span></span>
+<span class='r-in'> <span class='va'>legacy_data</span> <span class='op'>&lt;-</span></span>
+<span class='r-in'> <span class='fu'><a href='cloud_object_name.html'>cloud_object_name</a></span><span class='op'>(</span></span>
+<span class='r-in'> prefix <span class='op'>=</span> <span class='st'>"timor-landings-v1"</span>,</span>
+<span class='r-in'> version <span class='op'>=</span> <span class='st'>"latest"</span>,</span>
+<span class='r-in'> provider <span class='op'>=</span> <span class='st'>"gcs"</span>,</span>
+<span class='r-in'> options <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>service_account_key <span class='op'>=</span> <span class='va'>authentication_details</span>,</span>
+<span class='r-in'>                bucket <span class='op'>=</span> <span class='st'>"my-bucket"</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'> <span class='va'>legacy_raw</span> <span class='op'>&lt;-</span></span>
+<span class='r-in'> <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/read_delim.html'>read_csv</a></span><span class='op'>(</span>file <span class='op'>=</span> <span class='va'>legacy_data</span>, col_types <span class='op'>=</span></span>
+<span class='r-in'> <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/cols.html'>cols</a></span><span class='op'>(</span>.default <span class='op'>=</span> <span class='fu'>readr</span><span class='fu'>::</span><span class='fu'><a href='https://readr.tidyverse.org/reference/parse_atomic.html'>col_character</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'> <span class='va'>to_coal</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='st'>"date"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'><a href='%>%.html'>%&gt;%</a></span> <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='st'>"Data"</span>,<span class='st'>"Date"</span><span class='op'>)</span>,</span>
+<span class='r-in'>                 <span class='st'>"trip_group/gear_type"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'><a href='%>%.html'>%&gt;%</a></span></span>
+<span class='r-in'>                 <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='fu'>tidyselect</span><span class='fu'>::</span><span class='fu'><a href='https://tidyselect.r-lib.org/reference/starts_with.html'>contains</a></span><span class='op'>(</span><span class='st'>"gear"</span><span class='op'>)</span><span class='op'>)</span>,</span>
+<span class='r-in'>                 <span class='st'>"trip_group/habitat_boat"</span> <span class='op'>=</span> <span class='va'>legacy_raw</span> <span class='op'><a href='%>%.html'>%&gt;%</a></span></span>
+<span class='r-in'>                 <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span><span class='op'>(</span><span class='fu'>tidyselect</span><span class='fu'>::</span><span class='fu'><a href='https://tidyselect.r-lib.org/reference/starts_with.html'>contains</a></span><span class='op'>(</span><span class='st'>"habitat"</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'> <span class='fu'>coalist</span><span class='op'>(</span><span class='va'>legacy_raw</span>,<span class='va'>to_coal</span>,return_dat<span class='op'>=</span><span class='cn'>FALSE</span><span class='op'>)</span></span>
+<span class='r-in'><span class='op'>}</span></span>
+<span class='r-in'></span>
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
