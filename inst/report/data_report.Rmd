@@ -18,6 +18,7 @@ header-includes:
   - \let\counterwithout\relax
   - \let\counterwithin\relax
   - \usepackage{chngcntr}
+urlcolor: myblue
 ---
 
 ```{r setup, include=FALSE}
@@ -721,15 +722,12 @@ validated_landings %>%
 # About Peskas
 Peskas is the official fisheries national monitoring system of Timor-Leste and represents one of the most sophisticated data collection systems for small-scale fisheries in the world. 
 
-Peskas' platform collects real-time information directly from fishermen's activity via a system of digital surveys developed in [$\color{myblue}{\text{KoBo toolbox}}$](http://www.kobotoolbox.org/). In addition, Peskas uses the technology provided by [$\color{myblue}{\text{Pelagic Data System}}$](https://www.pelagicdata.com/) to record vessel movements via solar-powered tracking devices). 
+Peskas' platform collects real-time information directly from fishermen's activity via a system of digital surveys developed in [KoBo toolbox](http://www.kobotoolbox.org/). In addition, Peskas uses the technology provided by [Pelagic Data System](https://www.pelagicdata.com/) to record vessel movements via solar-powered tracking devices). 
 
-The data and the information collected is subjected to an elaborate processing and cleaning through an open-source code pipeline on [$\color{myblue}{\text{GitHub}}$](https://github.com/WorldFishCenter/peskas.timor.data.pipeline), and provide important data in the hands of fisheries officers, researchers and local stakeholders and enables them to better understand the contribution of fish and fisheries to local livelihoods and food security.
+The data and the information collected is subjected to an elaborate processing and cleaning through an open-source code pipeline on [GitHub](https://github.com/WorldFishCenter/peskas.timor.data.pipeline), and provide important data in the hands of fisheries officers, researchers and local stakeholders and enables them to better understand the contribution of fish and fisheries to local livelihoods and food security.
 
 Information about the process and user-centred design of the Peskas pipeline and initial analytics, and its application in fisheries research & management can be found in the following publications:
 
-* [$\color{myblue}{\text{PeskAAS: A near real-time monitoring system for small-scale fisheries in Timor-Leste}}$](https://www.fao.org/documents/card/en/c/cb2030en). In A. Tilley & M. B. Roscher (Eds.), Information and communication technologies for small-scale fisheries (ICT4SSF) - A handbook for fisheries stakeholders. In support of the implementation of the Voluntary Guidelines for Securing Sustainable Small-Scale Fisheries in the Context of Food Security and Poverty Eradication (pp. 11–18). FAO; WorldFish.
-* [$\color{myblue}{\text{PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries}}$](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760). PloS One, 15(11), e0234760.
-* [$\color{myblue}{\text{Nearshore Fish Aggregating Devices Show Positive Outcomes for Sustainable Fisheries Development in Timor-Leste}}$](https://www.frontiersin.org/articles/10.3389/fmars.2019.00487/full). Frontiers in Marine Science, 6, 487.
-
-
-
+* [PeskAAS: A near real-time monitoring system for small-scale fisheries in Timor-Leste](https://www.fao.org/documents/card/en/c/cb2030en). In A. Tilley & M. B. Roscher (Eds.), Information and communication technologies for small-scale fisheries (ICT4SSF) - A handbook for fisheries stakeholders. In support of the implementation of the Voluntary Guidelines for Securing Sustainable Small-Scale Fisheries in the Context of Food Security and Poverty Eradication (pp. 11–18). FAO; WorldFish.
+* [PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0234760). PloS One, 15(11), e0234760.
+* [Nearshore Fish Aggregating Devices Show Positive Outcomes for Sustainable Fisheries Development in Timor-Leste](https://www.frontiersin.org/articles/10.3389/fmars.2019.00487/full). Frontiers in Marine Science, 6, 487.
