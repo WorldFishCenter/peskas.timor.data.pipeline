@@ -248,8 +248,11 @@ trips %>%
 
 
 # Boat tracks
-```{r, echo=FALSE, message=FALSE, fig.height=6, fig.width=8}
-knitr::include_graphics("timor_map.pdf")
+```{r, echo=FALSE, message=FALSE, fig.height=8, fig.width=6, fig.align='left',fig.asp=2/3}
+knitr::include_graphics("timor_tracks_full.png")
+
+# aggiorno i dati per fare la mappa
+#
 ```
 \pagebreak
 
