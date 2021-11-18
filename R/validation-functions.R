@@ -286,7 +286,7 @@ validate_vessel_type <- function(data, metadata_vessel_table){
   data %>%
     dplyr::rename(submission_id = .data$`_id`,
                   boat_code = .data$`trip_group/boat_type`) %>%
-    dplyr::mutate(boat_code = as.integer(boat_code)) %>%
+    dplyr::mutate(boat_code = as.integer(.data$boat_code)) %>%
     dplyr::left_join(metadata_vessel_table, by = "boat_code") %>%
     dplyr::rename(vessel_type = .data$boat_type) %>%
     # If no vessel type is not what we expected
@@ -317,4 +317,26 @@ validate_gear_type <- function(data, metadata_gear_table){
     dplyr::rename(gear_type = .data$gear_id)
 
 
+}
+
+validate_sites <- function(data, metadata_stations, metadata_reporting_units){
+
+  sites_df <-
+    metadata_stations %>%
+    dplyr::filter(!is.na(.data$station_code)) %>%
+    dplyr::inner_join(metadata_reporting_units, by = c("reporting_unit" = "id")) %>%
+    dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit.y) %>%
+    dplyr::mutate(station_code = as.character(.data$station_code)) %>%
+    dplyr::mutate(station_name = trimws(.data$station_name)) %>%
+    dplyr::rename(reporting_region = .data$reporting_unit.y)
+
+  data %>%
+    dplyr::rename(submission_id = .data$`_id`) %>%
+    dplyr::mutate(station_code = as.character(.data$landing_site_name)) %>%
+    dplyr::select(.data$submission_id, .data$station_code) %>%
+    dplyr::left_join(sites_df, by = "station_code") %>%
+    # If the station is not known to us
+    dplyr::mutate(alert_number = dplyr::if_else(is.na(.data$station_name) | is.na(.data$reporting_region), 16, NA_real_)) %>%
+    # Fixing types
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
 }
