@@ -71,10 +71,10 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                 options = pars$public_storage$google$options)
 
   logger::log_info("Saving and exporting public data as rds")
-  c('trips', "catch", "aggregated") %>%
+  c('trips', "catch", "aggregated", "taxa_aggregated") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
-    purrr::walk2(list(trips_table, catch_table, aggregated),
+    purrr::walk2(list(trips_table, catch_table, aggregated, taxa_estimations),
                  ~ readr::write_rds(.y, .x, compress = "gz")) %>%
     purrr::walk(upload_cloud_file,
                 provider = pars$public_storage$google$key,
