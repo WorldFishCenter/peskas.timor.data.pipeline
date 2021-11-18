@@ -184,9 +184,22 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
     lubridate::ceiling_date(max(aggregated_predictions$landing_period), "year"),
     by = "month")
 
+  today <- Sys.Date()
+
   standardised_predictions <- aggregated_predictions %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
     tidyr::complete(date_bin_start = all_months) %>%
+    # Correct last month as predictions are for the full month but we should present only the estimates to date
+    dplyr::mutate(
+      current_period =
+        today >= .data$date_bin_start &
+        today < dplyr::lead(date_bin_start),
+      elapsed = as.numeric(today - .data$date_bin_start + 1),
+      period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
+      n_landings_per_boat = dplyr::if_else(current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
+      revenue = dplyr::if_else(current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+      catch = dplyr::if_else(current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)) %>%
+    dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
     dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
                                                          bin_unit,
                                                          week_start = 7)) %>%
