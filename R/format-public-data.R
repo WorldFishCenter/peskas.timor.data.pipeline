@@ -197,7 +197,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
     dplyr::mutate(
       current_period =
         today >= .data$date_bin_start &
-        today < dplyr::lead(date_bin_start),
+        today < dplyr::lead(.data$date_bin_start),
       elapsed = as.numeric(today - .data$date_bin_start + 1),
       period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
       n_landings_per_boat = dplyr::if_else(current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
@@ -230,4 +230,17 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
 
   binned_frame
 
+}
+
+
+where <- function (fn)
+{
+  predicate <- rlang::as_function(fn)
+  function(x, ...) {
+    out <- predicate(x, ...)
+    if (!rlang::is_bool(out)) {
+      rlang::abort("`where()` must be used with functions that return `TRUE` or `FALSE`.")
+    }
+    out
+  }
 }

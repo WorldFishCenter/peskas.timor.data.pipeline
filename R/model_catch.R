@@ -69,9 +69,9 @@ model_landings <- function(trips){
                     fill = list(n_landings = 0)) %>%
     dplyr::group_by(.data$tracker_imei) %>%
     # Removing observations from the first and last month as they are not complete
-    dplyr::filter(landing_period > dplyr::first(na.omit(.data$first_trip)),
-                  landing_period < dplyr::first(na.omit(.data$last_seen))) %>%
-    dplyr::select(-first_trip, -last_seen) %>%
+    dplyr::filter(.data$landing_period > dplyr::first(na.omit(.data$first_trip)),
+                  .data$landing_period < dplyr::first(na.omit(.data$last_seen))) %>%
+    dplyr::select(-.data$first_trip, -.data$last_seen) %>%
     dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
                   month = as.character(lubridate::month(.data$landing_period)),
                   period = paste(.data$year, .data$month, sep = "-")) %>%
@@ -138,7 +138,7 @@ estimate_statistics <- function(value_model, landings_model, catch_model){
 estimates_per_taxa <- function(catch_models, general_results){
 
   national_estimates <- general_results$predictions$aggregated %>%
-    dplyr::select(-landing_weight) %>%
+    dplyr::select(-.data$landing_weight) %>%
     dplyr::mutate(landing_revenue = NA,
                   revenue = NA,
                   catch = NA)
@@ -203,7 +203,7 @@ estimates_per_taxa <- function(catch_models, general_results){
 #' @importFrom stats predict
 predict_variable <- function(model, var){
   model$frame %>%
-    dplyr::select(period, month) %>%
+    dplyr::select(.data$period, .data$month) %>%
     dplyr::distinct() %>%
     dplyr::mutate(landing_period = lubridate::ym(period),
                   {{var}} := predict(model, type = "response", newdata = .))
@@ -217,7 +217,7 @@ model_catch <- function(trips){
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
-    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(reporting_region))) %>%
+    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(.data$reporting_region))) %>%
     dplyr::filter(!is.na(.data$landing_period), !is.na(.data$landing_value)) %>%
     dplyr::mutate(landing_id = as.character(.data$landing_id),
                   weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)) %>%
@@ -237,21 +237,19 @@ model_catch <- function(trips){
 
 model_catch_per_taxa <- function(trips, modelled_taxa){
 
-  library(glmmTMB)
-
   catch_df <- trips %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
                                                          unit = "month")) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
-    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(reporting_region))) %>%
+    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(.data$reporting_region))) %>%
     dplyr::mutate(landing_id = as.character(.data$landing_id),
                   weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)) %>%
     dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(modelled_taxa, "0"), .data$catch_taxon, "MZZ")) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
     dplyr::summarise(landing_weight = sum(.data$weight, na.rm = FALSE)/1000, .groups = "drop") %>%
-    tidyr::complete(.data$grouped_taxa, tidyr::nesting(landing_id, landing_period), fill = list(landing_weight = 0)) %>%
+    tidyr::complete(.data$grouped_taxa, tidyr::nesting(.data$landing_id, .data$landing_period), fill = list(landing_weight = 0)) %>%
     dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
                   month = as.character(lubridate::month(.data$landing_period)),
                   period = paste(.data$year, .data$month, sep = "-")) %>%
