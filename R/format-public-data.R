@@ -51,6 +51,9 @@ format_public_data <- function(log_threshold = logger::DEBUG){
   aggregated_estimations <- periods %>%
     rlang::set_names() %>%
     purrr::map(summarise_estimations, models$predictions$aggregated)
+  taxa_estimations <- periods %>% rlang::set_names() %>%
+      purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join)
 
   logger::log_info("Saving and exporting public data as tsv")
@@ -177,7 +180,8 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
      dplyr::arrange(dplyr::desc(.data$date_bin_start))
 }
 
-summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
+summarise_estimations <- function(bin_unit = "month", aggregated_predictions, groupings = "date_bin_start"){
+
 
   all_months <- seq(
     lubridate::floor_date(min(aggregated_predictions$landing_period), "year"),
@@ -203,7 +207,8 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
     dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
                                                          bin_unit,
                                                          week_start = 7)) %>%
-    dplyr::group_by(.data$date_bin_start)
+    dplyr::filter(dplyr::across(dplyr::all_of(groupings), ~!is.na(.))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
 
   binned_frame <- standardised_predictions %>%
     dplyr::summarise(landing_revenue = mean(.data$landing_revenue),
@@ -211,8 +216,10 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions){
                      n_landings_per_boat = sum(.data$n_landings_per_boat),
                      revenue = sum(.data$revenue),
                      catch = sum(.data$catch)) %>%
-    dplyr::ungroup() %>%
+    dplyr::ungroup()
+
     # remove rows where all the variables are NA
+  binned_frame <- binned_frame %>%
     dplyr::filter(dplyr::if_any(where(is.numeric), ~!is.na(.)))
 
   if (lubridate::duration(1, units = bin_unit) <
