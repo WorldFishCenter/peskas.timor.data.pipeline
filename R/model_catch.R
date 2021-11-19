@@ -249,7 +249,10 @@ model_catch_per_taxa <- function(trips, modelled_taxa){
     dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(modelled_taxa, "0"), .data$catch_taxon, "MZZ")) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
     dplyr::summarise(landing_weight = sum(.data$weight, na.rm = FALSE)/1000, .groups = "drop") %>%
-    tidyr::complete(.data$grouped_taxa, tidyr::nesting(.data$landing_id, .data$landing_period), fill = list(landing_weight = 0)) %>%
+    tidyr::complete(
+      .data$grouped_taxa,
+      tidyr::nesting(!!!dplyr::select(tidyselect::all_of(c("landing_id", "landing_period")))),
+      fill = list(landing_weight = 0)) %>%
     dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
                   month = as.character(lubridate::month(.data$landing_period)),
                   period = paste(.data$year, .data$month, sep = "-")) %>%
@@ -271,3 +274,4 @@ model_catch_per_taxa <- function(trips, modelled_taxa){
   models
 
 }
+
