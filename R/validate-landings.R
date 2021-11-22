@@ -64,6 +64,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     method = pars$validation$landings$catch$method %||% default_method,
     k_ind = pars$validation$catch$n_individuals$k %||% default_k,
     k_length = pars$validation$catch$length$k %||% default_k)
+  price_weight_alerts <- validate_price_weight(surveys_catch_alerts,
+                                               surveys_price_alerts,
+                                               cook_dist = pars$validation$landings$cook_dist)
   vessel_type_alerts <- validate_vessel_type(
     landings,
     metadata$vessel_types)
@@ -99,8 +102,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     list(imei_alerts,
          surveys_time_alerts$validated_dates,
          surveys_time_alerts$validated_duration,
-         surveys_price_alerts,
-         surveys_catch_alerts,
+         price_weight_alerts$surveys_price_alerts,
+         price_weight_alerts$surveys_catch_alerts,
          vessel_type_alerts,
          gear_type_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
