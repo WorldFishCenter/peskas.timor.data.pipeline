@@ -52,6 +52,11 @@ default:
         - catch_types
         - fao_catch
         - morphometric_table
+        - centro_pescas
+        - vessel_types
+        - gear_types
+        - stations
+        - reporting_units
     version:
       preprocess: latest
     rfishtable:
@@ -94,6 +99,10 @@ default:
 
   merged_trips:
     file_prefix: all_trips
+
+  models:
+    file_prefix: model_predictions
+    modelled_taxa: [CLP, OCZ, CJX, SDX, BEN, EMP, FLY, SNA, RAX, CGX, TUN]
 
   export:
     file_prefix: timor

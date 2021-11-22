@@ -18,6 +18,7 @@ RUN install2.r --error --skipinstalled \
     config \
     dplyr \
     git2r \
+    glmmTMB \
     googleAuthR \
     googleCloudStorageR \
     googledrive \

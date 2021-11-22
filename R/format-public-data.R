@@ -32,6 +32,8 @@ format_public_data <- function(log_threshold = logger::DEBUG){
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
+  logger::log_info("Retrieving modelled data...")
+  models <- get_models(pars)
 
   logger::log_info("Calculating summary fields")
   merged_trips_with_addons <- add_calculated_fields(merged_trips)
@@ -42,12 +44,20 @@ format_public_data <- function(log_threshold = logger::DEBUG){
   catch_table <- get_catch_table(merged_trips_with_addons)
 
   logger::log_info("Aggregating data")
-  aggregated <- c("day", "week", "month", "year") %>%
+  periods <- c("day", "week", "month", "year")
+  aggregated_trips <- periods %>%
     rlang::set_names() %>%
     purrr::map(summarise_trips, merged_trips_with_addons)
+  aggregated_estimations <- periods %>%
+    rlang::set_names() %>%
+    purrr::map(summarise_estimations, models$predictions$aggregated)
+  taxa_estimations <- periods %>% rlang::set_names() %>%
+      purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+
+  aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join)
 
   logger::log_info("Saving and exporting public data as tsv")
-  tsv_filenames <- c("day", "week", "month", "year") %>%
+  tsv_filenames <- periods %>%
     paste0("aggregated-", .) %>%
     c('trips', "catch", .) %>%
     paste0(pars$export$file_prefix, "_", .) %>%
@@ -61,10 +71,10 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                 options = pars$public_storage$google$options)
 
   logger::log_info("Saving and exporting public data as rds")
-  c('trips', "catch", "aggregated") %>%
+  c('trips', "catch", "aggregated", "taxa_aggregated") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
-    purrr::walk2(list(trips_table, catch_table, aggregated),
+    purrr::walk2(list(trips_table, catch_table, aggregated, taxa_estimations),
                  ~ readr::write_rds(.y, .x, compress = "gz")) %>%
     purrr::walk(upload_cloud_file,
                 provider = pars$public_storage$google$key,
@@ -168,4 +178,69 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
      dplyr::mutate(prop_matched = round(.data$prop_matched, 4),
                    dplyr::across(dplyr::starts_with("n_"), as.integer)) %>%
      dplyr::arrange(dplyr::desc(.data$date_bin_start))
+}
+
+summarise_estimations <- function(bin_unit = "month", aggregated_predictions, groupings = "date_bin_start"){
+
+
+  all_months <- seq(
+    lubridate::floor_date(min(aggregated_predictions$landing_period), "year"),
+    lubridate::ceiling_date(max(aggregated_predictions$landing_period), "year"),
+    by = "month")
+
+  today <- Sys.Date()
+
+  standardised_predictions <- aggregated_predictions %>%
+    dplyr::rename(date_bin_start = .data$landing_period) %>%
+    tidyr::complete(date_bin_start = all_months) %>%
+    # Correct last month as predictions are for the full month but we should present only the estimates to date
+    dplyr::mutate(
+      current_period =
+        today >= .data$date_bin_start &
+        today < dplyr::lead(.data$date_bin_start),
+      elapsed = as.numeric(today - .data$date_bin_start + 1),
+      period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
+      n_landings_per_boat = dplyr::if_else(current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
+      revenue = dplyr::if_else(current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+      catch = dplyr::if_else(current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)) %>%
+    dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
+    dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
+                                                         bin_unit,
+                                                         week_start = 7)) %>%
+    dplyr::filter(dplyr::across(dplyr::all_of(groupings), ~!is.na(.))) %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
+
+  binned_frame <- standardised_predictions %>%
+    dplyr::summarise(landing_revenue = mean(.data$landing_revenue),
+                     landing_weight = mean(.data$landing_weight),
+                     n_landings_per_boat = sum(.data$n_landings_per_boat),
+                     revenue = sum(.data$revenue),
+                     catch = sum(.data$catch)) %>%
+    dplyr::ungroup()
+
+    # remove rows where all the variables are NA
+  binned_frame <- binned_frame %>%
+    dplyr::filter(dplyr::if_any(where(is.numeric), ~!is.na(.)))
+
+  if (lubridate::duration(1, units = bin_unit) <
+      lubridate::duration(1, units = "month")) {
+    binned_frame <- binned_frame %>%
+      dplyr::sample_n(0)
+  }
+
+  binned_frame
+
+}
+
+
+where <- function (fn)
+{
+  predicate <- rlang::as_function(fn)
+  function(x, ...) {
+    out <- predicate(x, ...)
+    if (!rlang::is_bool(out)) {
+      rlang::abort("`where()` must be used with functions that return `TRUE` or `FALSE`.")
+    }
+    out
+  }
 }
