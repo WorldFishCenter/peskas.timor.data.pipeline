@@ -140,17 +140,11 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
-      - name: Call preprocess_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
-      - name: Call validate_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
-      - name: Test validated PDS trips
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
       - name: Call ingest_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
 
   preprocess-pds-tracks:
-    name: preprocess_pds_tracks()
+    name: Preprocess pds trips and tracks
     needs: ingest-pds-trips
     runs-on: ubuntu-20.04
     container:
@@ -162,8 +156,14 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call preprocess_pds_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
       - name: Call preprocess_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_tracks()'
+      - name: Call validate_pds_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
+      - name: Test validated PDS trips
+        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
 
   merge-trips:
     name: Merge trips
