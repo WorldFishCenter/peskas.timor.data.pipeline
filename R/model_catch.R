@@ -65,9 +65,9 @@ model_landings <- function(trips){
                     fill = list(n_landings = 0)) %>%
     dplyr::group_by(.data$tracker_imei) %>%
     # Removing observations from the first and last month as they are not complete
-    dplyr::filter(landing_period > dplyr::first(na.omit(.data$first_trip)),
-                  landing_period < dplyr::first(na.omit(.data$last_seen))) %>%
-    dplyr::select(-first_trip, -last_seen) %>%
+    dplyr::filter(.data$landing_period > dplyr::first(na.omit(.data$first_trip)),
+                  .data$landing_period < dplyr::first(na.omit(.data$last_seen))) %>%
+    dplyr::select(-.data$first_trip, -.data$last_seen) %>%
     dplyr::mutate(year = as.character(lubridate::year(.data$landing_period)),
                   month = as.character(lubridate::month(.data$landing_period)),
                   period = paste(.data$year, .data$month, sep = "-")) %>%
@@ -135,9 +135,9 @@ estimate_statistics <- function(value_model, landings_model, catch_model){
 #' @importFrom stats predict
 predict_variable <- function(model, var){
   model$frame %>%
-    dplyr::select(period, month) %>%
+    dplyr::select(.data$period, .data$month) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(landing_period = lubridate::ym(period),
+    dplyr::mutate(landing_period = lubridate::ym(.data$period),
                   {{var}} := predict(model, type = "response", newdata = .))
 }
 
