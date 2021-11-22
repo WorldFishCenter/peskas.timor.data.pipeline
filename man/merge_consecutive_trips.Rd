@@ -4,18 +4,26 @@
 \alias{merge_consecutive_trips}
 \title{Merge short intervalled trips}
 \usage{
-merge_consecutive_trips(x)
+merge_consecutive_trips(
+  x,
+  consecutive_time = NULL,
+  consecutive_distance = NULL
+)
 }
 \arguments{
 \item{x}{A data frame containing raw pds trips data.}
+
+\item{consecutive_time}{Time between consecutive trips (hrs).}
+
+\item{consecutive_distance}{Distance between consecutive trips (Km).}
 }
 \value{
 A dataframe with pds trips including a new column \code{associated_to}
-indicating the trips to be potentially merged.
+indicating the consecutive trips to be merged.
 }
 \description{
-The pds data are quite patchy and sometimes a single trip is recorded as 2
-different trips. This function calculates the time and distance interval between the end
-and the start of a trip for each boat and merge the trips that start less
-than 180 minutes from the other within 2 km.
+PDS data are quite patchy, sometimes an actual single trip is recorded as 2
+different trips. This function calculates the temporal and the geographical
+distance between two consecutive trips for each boat, merging those consecutive
+trips that start before 180 minutes from the following within a range of 2 km.
 }

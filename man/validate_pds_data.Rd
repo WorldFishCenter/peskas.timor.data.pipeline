@@ -17,23 +17,23 @@ validate_pds_data(
 \arguments{
 \item{data}{A data frame containing pds trips}
 
-\item{max_hrs}{Upper limit of trip duration in hours to be considered a valid
+\item{max_hrs}{Upper limit of trip duration (hours) to be considered a valid
 catch session.}
 
-\item{min_hrs}{Lower of trip distance traveled in Km to be considered a valid
+\item{min_hrs}{Lower limit of trip duration (hours) to be considered a valid
 catch session.}
 
-\item{km}{Limit of trip distance traveled in Km to be considered a valid
+\item{km}{Limit of trip distance traveled (Km) to be considered a valid
 catch session.}
 
-\item{se_km}{Limit distance between the start and end of a trip to be
+\item{se_km}{Distance between the start and end point of a trip to be
 considered a valid catch session.}
 
 \item{outl}{Limit of speed outlier points in each trip to be considered a
-clean pds track.}
+good quality pds track.}
 
 \item{timet}{Limit of signal trace dispersion to be considered a
-clean pds track.}
+good quality pds track.}
 }
 \value{
 A list containing data frames with validated catch duration and

@@ -17,9 +17,10 @@ get_tracks_descriptors(Trip, pars, tracks_list)
 A dataframe with summaries for each pds trip ID.
 }
 \description{
-This function extracts summaries from pds tracks potentially useful to the
-validation step. The function extracts the \code{start_end_distance}: the distance
+This function extracts summaries from the tracks of pds data useful to the
+validation. The function extracts \code{start_end_distance}: the distance
 between the initial and the final point of a trip, the \code{outliers_proportion}:
-the proportion of track points exceeding 30 m/s, the \code{timetrace_dispersion}:
-measures the irregularity in the track signal.
+the proportion of track points exceeding 30 m/s in a trip,
+the \code{timetrace_dispersion}: a measure of the the irregularity in the tracking
+signal.
 }

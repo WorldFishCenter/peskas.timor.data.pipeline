@@ -2,17 +2,17 @@
 % Please edit documentation in R/validate-pds-trips.R
 \name{get_distance}
 \alias{get_distance}
-\title{Distance between consecutive trips}
+\title{Estimate distance between consecutive trips}
 \usage{
 get_distance(x)
 }
 \arguments{
-\item{x}{A data frame containing coordinates from pds trips data.}
+\item{x}{A data frame containing trips coordinates.}
 }
 \value{
 A vector of distances in meters
 }
 \description{
-This function calculates the geographical distance between the end and the
-start of two consecutive trips
+This function calculates the geographical distance in meters between the end
+and the start of two consecutive trips.
 }

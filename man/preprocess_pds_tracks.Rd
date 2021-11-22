@@ -19,6 +19,9 @@ Downloads raw structured data from cloud storage services and pre-process
 into a binary format that is easier to deal with in R.
 }
 \details{
+The preprocessed file consists of a dataframe containing PDS tracks' diagnostics
+useful to the following validation step.
+
 The parameters needed are:\preformatted{pds:
  tracks:
   token: !expr Sys.getenv('PDS_TOKEN')

@@ -22,5 +22,5 @@ can be safely used for analysis.
 \details{
 The parameters needed in the config file are those required for
 \code{preprocess_pds_trips()}, as well as parameters needed to identify anomalous
-trips, that are  \code{hrs}and \code{km}.
+trips.
 }

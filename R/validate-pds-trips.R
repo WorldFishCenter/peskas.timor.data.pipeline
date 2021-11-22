@@ -6,7 +6,7 @@
 #'
 #'The parameters needed in the config file are those required for
 #'`preprocess_pds_trips()`, as well as parameters needed to identify anomalous
-#'trips, that are  `hrs`and `km`.
+#'trips.
 #'
 #' @param log_threshold
 #' @inheritParams ingest_pds_trips
@@ -22,8 +22,9 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   pds_trips <- get_preprocessed_trips(pars)
   pds_tracks <- get_preprocessed_tracks(pars)
 
-  # remove duplicated trips, join with tracks diagnostics nad merge consecutive trips
-  pds_full <- pds_trips %>%
+  # remove duplicated trips, join trips with tracks diagnostics and merge consecutive trips
+  pds_full <-
+    pds_trips %>%
     dplyr::arrange(dplyr::desc(.data$Trip)) %>%
     dplyr::distinct(pds_trips, dplyr::across(-.data$Trip), .keep_all = TRUE) %>%
     dplyr::arrange(.data$Boat, .data$Started) %>%
@@ -37,8 +38,10 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     ) %>%
     dplyr::left_join(pds_tracks, by = c("Trip", "Boat")) %>%
     dplyr::ungroup() %>%
-    merge_consecutive_trips()
+    merge_consecutive_trips(consecutive_time = pars$validation$pds_trips$consecutive_time,
+                            consecutive_distance = pars$validation$pds_trips$consecutive_distance)
 
+  # call validation coefficients
   max_hrs <- pars$validation$pds_trips$max_trip_hours
   min_hrs <- pars$validation$pds_trips$min_trip_hours
   km <- pars$validation$pds_trips$trip_km
@@ -48,10 +51,14 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 
 
   logger::log_info("Validating pds trips...")
-  pds_alerts <- validate_pds_data(pds_full,max_hrs=max_hrs, min_hrs=min_hrs,km=km,
-                             se_km=se_km,outl=outl,timet=timet)
+  pds_alerts <- validate_pds_data(pds_full,
+                                  max_hrs=max_hrs,
+                                  min_hrs=min_hrs,
+                                  km=km,
+                                  se_km=se_km,
+                                  outl=outl,
+                                  timet=timet)
 
-  # take ready (?) columns
   ready_cols <- pds_full %>%
     dplyr::select(.data$`Last Seen`,
                   .data$IMEI,
@@ -96,18 +103,18 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 #' trip duration and distance.
 #'
 #' @param data A data frame containing pds trips
-#' @param max_hrs Upper limit of trip duration in hours to be considered a valid
+#' @param max_hrs Upper limit of trip duration (hours) to be considered a valid
 #' catch session.
-#' @param min_hrs Lower of trip distance traveled in Km to be considered a valid
+#' @param min_hrs Lower limit of trip duration (hours) to be considered a valid
 #' catch session.
-#' @param km Limit of trip distance traveled in Km to be considered a valid
+#' @param km Limit of trip distance traveled (Km) to be considered a valid
 #' catch session.
-#' @param se_km Limit distance between the start and end of a trip to be
+#' @param se_km Distance between the start and end point of a trip to be
 #' considered a valid catch session.
 #' @param outl Limit of speed outlier points in each trip to be considered a
-#' clean pds track.
+#' good quality pds track.
 #' @param timet Limit of signal trace dispersion to be considered a
-#' clean pds track.
+#' good quality pds track.
 #'
 #' @return A list containing data frames with validated catch duration and
 #' catch distance traveled
@@ -122,8 +129,13 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 #'   validate_pds(pds_trips)
 #' }
 #'
-validate_pds_data <- function(data, max_hrs = NULL, min_hrs = NULL,
-                                    km = NULL,se_km=NULL,outl=NULL,timet=NULL) {
+validate_pds_data <- function(data,
+                              max_hrs = NULL,
+                              min_hrs = NULL,
+                              km = NULL,
+                              se_km=NULL,
+                              outl=NULL,
+                              timet=NULL){
   validated_pds_list <- list(
     validated_pds_duration = data %>%
       dplyr::transmute(
@@ -197,21 +209,25 @@ get_preprocessed_trips <- function(pars){
 
 #' Merge short intervalled trips
 #'
-#' The pds data are quite patchy and sometimes a single trip is recorded as 2
-#' different trips. This function calculates the time and distance interval between the end
-#' and the start of a trip for each boat and merge the trips that start less
-#' than 180 minutes from the other within 2 km.
+#' PDS data are quite patchy, sometimes an actual single trip is recorded as 2
+#' different trips. This function calculates the temporal and the geographical
+#' distance between two consecutive trips for each boat, merging those consecutive
+#' trips that start before 180 minutes from the following within a range of 2 km.
 #'
 #' @param x A data frame containing raw pds trips data.
+#' @param consecutive_time Time between consecutive trips (hrs).
+#' @param consecutive_distance Distance between consecutive trips (Km).
 #'
 #' @return A dataframe with pds trips including a new column `associated_to`
-#' indicating the trips to be potentially merged.
+#' indicating the consecutive trips to be merged.
 #'
 #' @importFrom rlang .data
 #' @export
 #'
 
-merge_consecutive_trips <- function(x) {
+merge_consecutive_trips <- function(x,
+                                    consecutive_time = NULL,
+                                    consecutive_distance = NULL) {
   x %>%
     dplyr::mutate(
       end_start_distance = get_distance(.),
@@ -227,7 +243,8 @@ merge_consecutive_trips <- function(x) {
     )) %>%
     dplyr::mutate(
       associated_to = dplyr::case_when(
-        .data$end_start_time < 180 & .data$end_start_distance < 2000 ~ .data$Trip,
+        .data$end_start_time < consecutive_time * 60 &
+          .data$end_start_distance < consecutive_distance * 1000 ~ .data$Trip,
         TRUE ~ NA_integer_
       ),
       associated_to = dplyr::lag(.data$associated_to),
@@ -251,19 +268,19 @@ merge_consecutive_trips <- function(x) {
       `Device Id` = dplyr::first(.data$`Device Id`),
       `Last Seen` = dplyr::last(.data$`Last Seen`),
       start_end_distance = sum(.data$start_end_distance),
-      outliers_proportion = mean(.data$outliers_proportion),
-      timetrace_dispersion = mean(.data$timetrace_dispersion)
+      outliers_proportion = max(.data$outliers_proportion),
+      timetrace_dispersion = max(.data$timetrace_dispersion)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(-.data$associated_to)
 }
 
-#' Distance between consecutive trips
+#' Estimate distance between consecutive trips
 #'
-#' This function calculates the geographical distance between the end and the
-#' start of two consecutive trips
+#' This function calculates the geographical distance in meters between the end
+#' and the start of two consecutive trips.
 #'
-#' @param x A data frame containing coordinates from pds trips data.
+#' @param x A data frame containing trips coordinates.
 #'
 #' @return A vector of distances in meters
 #' @export

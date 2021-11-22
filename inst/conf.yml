@@ -86,6 +86,8 @@ default:
       start_end_km: 3
       outliers : 10
       timetrace: 1400
+      consecutive_time: 3
+      consecutive_distance: 2
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk

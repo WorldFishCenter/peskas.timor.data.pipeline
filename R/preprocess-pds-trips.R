@@ -70,11 +70,12 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
 
 #' Extract summaries from pds tracks
 #'
-#' This function extracts summaries from pds tracks potentially useful to the
-#' validation step. The function extracts the `start_end_distance`: the distance
+#' This function extracts summaries from the tracks of pds data useful to the
+#' validation. The function extracts `start_end_distance`: the distance
 #' between the initial and the final point of a trip, the `outliers_proportion`:
-#' the proportion of track points exceeding 30 m/s, the `timetrace_dispersion`:
-#' measures the irregularity in the track signal.
+#' the proportion of track points exceeding 30 m/s in a trip,
+#' the `timetrace_dispersion`: a measure of the the irregularity in the tracking
+#' signal.
 #'
 #' @param Trip A vector of pds trips to process.
 #' @param tracks_list The list of pds tracks files.
@@ -84,15 +85,17 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 get_tracks_descriptors <- function(Trip, pars, tracks_list) {
+
   tracks_descriptors <- data.frame()
 
   track_id <- paste(pars$pds$tracks$file_prefix, as.character(Trip), sep = "-")
   track_file <- dplyr::filter(tracks_list, grepl(track_id, .data$name)) %>%
     magrittr::extract2("name")
 
+  # download the track
   track <-
     purrr::map(pars$pds_storage, ~ purrr::walk(
-      .x = track_file,
+      .x = track_file[1],
       .f = ~ insistent_download_cloud_file(
         name = .,
         provider = pars$pds_storage$google$key,
@@ -103,6 +106,7 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
 
   file.remove(track_file)
 
+  # populate tracks_descriptors with tracks diagnostics
   descriptors <-
     data.frame(
       Trip = Trip,
@@ -112,7 +116,7 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
         fun = geosphere::distGeo
       )[1],
       outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
-      timetrace_dispersion = sd(diff(track$Time)),
+      timetrace_dispersion = stats::sd(diff(track$Time)),
       start_lat = dplyr::first(track$Lat),
       start_lng = dplyr::first(track$Lng),
       end_lat = dplyr::last(track$Lat),
@@ -128,6 +132,9 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
 #'
 #' Downloads raw structured data from cloud storage services and pre-process
 #' into a binary format that is easier to deal with in R.
+#'
+#' The preprocessed file consists of a dataframe containing PDS tracks' diagnostics
+#' useful to the following validation step.
 #'
 #' The parameters needed are:
 #'
@@ -159,7 +166,8 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   pds_trips <- get_preprocessed_trips(pars)
   tracks_list <- googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket)
 
-  list_prep_tracks <-
+  # get list of preprocessed tracks files
+  preprocessed_files <-
     googleCloudStorageR::gcs_list_objects(pars$storage$google$options$bucket) %>%
     dplyr::filter(grepl(
       paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
@@ -169,20 +177,22 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   future::plan(future::multisession,
                workers = pars$pds$tracks$multisession$n_sessions)
 
-  if (nrow(list_prep_tracks) == 0) {
+  # avoid to operate on tracks already preprocessed
+  if (nrow(preprocessed_files) == 0) {
     tracks_to_download <- unique(pds_trips$Trip)
     tracks_descriptors <-
       furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
   } else {
-    # add function to save and read the already-processed tracks
+    # Read preprocessed tracks' file
     preprocessed_tracks <- get_preprocessed_tracks(pars)
 
-    # filter the new trips
-    pds_trips <-
+    # Extract IDs to preprocess
+    tracks_to_download <-
       pds_trips %>%
-      dplyr::filter(!.data$Trip %in% unique(preprocessed_tracks$Trip))
+      dplyr::filter(!.data$Trip %in% unique(preprocessed_tracks$Trip)) %>%
+      magrittr::extract2("Trip") %>%
+      unique()
 
-    tracks_to_download <- unique(pds_trips$Trip)
     tracks_descriptors <-
       furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
 
@@ -199,7 +209,6 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud...")
-  # Iterate over multiple storage providers if there are more than one
   purrr::map(pars$storage, ~ purrr::walk(
     .x = preprocessed_filename,
     .f = ~ insistent_upload_cloud_file(
