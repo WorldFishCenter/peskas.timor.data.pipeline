@@ -243,6 +243,8 @@ retrieve_lengths <- function(data, country_code) {
 #'
 #'
 #' @param data The survey landings data frame
+#' @param metadata Metadata tables
+#' @param rfish_tab Table with length weight parameters
 #'
 #' @return A new landings data frame including length-weights info
 #' @export
@@ -398,9 +400,6 @@ get_morphometric_tables <- function(pars, manual_table) {
 }
 
 
-
-#' Estimate weight of a single taxon type
-#' @importFrom stats median
 estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
   if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0")
@@ -434,5 +433,5 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
   # I think we should use the median only at the end so that we can integrate as
   # much info as possible beforehand
-  median(w$weight, na.rm = T) * n_individuals
+  stats::median(w$weight, na.rm = T) * n_individuals
 }

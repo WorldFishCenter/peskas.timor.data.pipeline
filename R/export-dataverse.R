@@ -130,12 +130,12 @@ export_files <- function(log_threshold = logger::DEBUG) {
   key <- pars$export_dataverse$token
   server <- pars$export_dataverse$server
 
-  logger::log_info("Retrieving public data to release...")
-  rmarkdown::render('./DESCRIPTION.Rmd',params=list(output_file = './DESCRIPTION.html'))
+  rmarkdown::render(
+    input = system.file("export/DESCRIPTION.Rmd",
+                        package = "peskas.timor.data.pipeline"))
 
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
-
 
   dataverse::initiate_sword_dataset(
     dataverse = dataverse,
@@ -146,13 +146,21 @@ export_files <- function(log_threshold = logger::DEBUG) {
 
   release_files_names <- c(files_names,'DESCRIPTION.html')
 
+  release_files <-
+    grep(paste(release_files_names,collapse="|"),
+         list.files("inst/export", full.names = TRUE),
+         ignore.case=FALSE,
+         value=TRUE)
+
   logger::log_info("Exporting files...")
   upload_files(
-    file_list = release_files_names,
+    file_list = release_files,
     key = key,
     dataverse = dataverse,
     server = server
   )
+
+  file.remove(release_files)
 
   #logger::log_info("Publishing data...")
   #publish_last_dataset(

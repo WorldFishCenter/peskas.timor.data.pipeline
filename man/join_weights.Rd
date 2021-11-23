@@ -8,6 +8,10 @@ join_weights(data, metadata, rfish_tab)
 }
 \arguments{
 \item{data}{The survey landings data frame}
+
+\item{metadata}{Metadata tables}
+
+\item{rfish_tab}{Table with length weight parameters}
 }
 \value{
 A new landings data frame including length-weights info
