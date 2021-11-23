@@ -11,6 +11,8 @@ env:
   AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
+  DATAVERSE_TOKEN: ${{ secrets.PESKAS_DATAVERSE_TOKEN }}
+
 
 jobs:
 
