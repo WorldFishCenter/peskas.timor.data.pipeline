@@ -131,7 +131,8 @@ export_files <- function(log_threshold = logger::DEBUG) {
   server <- pars$export_dataverse$server
 
   logger::log_info("Retrieving public data to release...")
-  rmarkdown::render('DESCRIPTION.Rmd')
+  rmarkdown::render(system.file('DESCRIPTION.Rmd',
+                                package = "peskas.timor.data.pipeline"))
 
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
