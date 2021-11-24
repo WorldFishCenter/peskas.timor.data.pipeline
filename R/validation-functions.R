@@ -351,8 +351,12 @@ validate_price_weight <- function(surveys_catch_alerts,
       .data$photo, .data$length_individuals, .data$length_type
     ))
 
-  list(surveys_price_alerts = surveys_price_alerts,
-       surveys_catch_alerts = surveys_catch_alerts)
+  #list(surveys_price_alerts = surveys_price_alerts,
+  #     surveys_catch_alerts = surveys_catch_alerts)
+
+  dplyr::full_join(surveys_catch_alerts,surveys_price_alerts,by=c("submission_id")) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
+    dplyr::select(-.data$alert_number.x, .data$alert_number.y)
 }
 
 
