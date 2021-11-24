@@ -121,8 +121,7 @@ publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
 #'
 #' @export
 #'
-#' @examples
-export_files <- function(log_threshold = logger::DEBUG) {
+upload_dataverse <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
