@@ -398,3 +398,25 @@ validate_gear_type <- function(data, metadata_gear_table){
 
 
 }
+
+validate_sites <- function(data, metadata_stations, metadata_reporting_units){
+
+  sites_df <-
+    metadata_stations %>%
+    dplyr::filter(!is.na(.data$station_code)) %>%
+    dplyr::inner_join(metadata_reporting_units, by = c("reporting_unit" = "id")) %>%
+    dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit.y) %>%
+    dplyr::mutate(station_code = as.character(.data$station_code)) %>%
+    dplyr::mutate(station_name = trimws(.data$station_name)) %>%
+    dplyr::rename(reporting_region = .data$reporting_unit.y)
+
+  data %>%
+    dplyr::rename(submission_id = .data$`_id`) %>%
+    dplyr::mutate(station_code = as.character(.data$landing_site_name)) %>%
+    dplyr::select(.data$submission_id, .data$station_code) %>%
+    dplyr::left_join(sites_df, by = "station_code") %>%
+    # If the station is not known to us
+    dplyr::mutate(alert_number = dplyr::if_else(is.na(.data$station_name) | is.na(.data$reporting_region), 16, NA_real_)) %>%
+    # Fixing types
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
+}

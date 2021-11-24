@@ -75,6 +75,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   gear_type_alerts <- validate_gear_type(
     landings,
     metadata$gear_types)
+  site_alerts <- validate_sites(
+    landings,
+    metadata$stations, metadata$reporting_unit
+  )
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
@@ -94,7 +98,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          surveys_time_alerts$validated_duration,
          price_weight_alerts,
          vessel_type_alerts,
-         gear_type_alerts) %>%
+         gear_type_alerts,
+         site_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
@@ -119,6 +124,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       trip_duration = .data$trip_duration,
       landing_catch = .data$species_group,
       landing_value = .data$total_catch_value,
+      landing_station = .data$station_name,
+      reporting_region = .data$reporting_region,
+      ##municipality = .data$`municipality (from administrative_posts)`,
       .data$gear_type,
       .data$vessel_type)
 
