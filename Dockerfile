@@ -26,7 +26,6 @@ RUN install2.r --error --skipinstalled \
     future \
     univOutl \
     taxize \
-    gsheet \
     tinytest \
     remotes \
     rfishbase
@@ -41,7 +40,8 @@ RUN install2.r --error --skipinstalled \
     tidyselect \
     textclean \
     dataverse \
-    rmarkdown
+    rmarkdown \
+    broom
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

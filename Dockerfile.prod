@@ -39,7 +39,6 @@ RUN install2.r --error --skipinstalled \
     future \
     univOutl \
     taxize \
-    gsheet \
     tinytest \
     remotes \
     rfishbase
@@ -54,7 +53,8 @@ RUN install2.r --error --skipinstalled \
     tidyselect \
     textclean \
     dataverse \
-    rmarkdown
+    rmarkdown \
+    broom
 
 # Install local package
 COPY . /home

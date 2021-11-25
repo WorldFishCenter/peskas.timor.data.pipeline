@@ -233,7 +233,5 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call Upload files
-        run: Rscript -e 'source(system.file("export/upload_to_dataverse.R", package = "peskas.timor.data.pipeline"))'
-
-
+      - name: Call upload_files()
+        run: Rscript -e 'peskas.timor.data.pipeline::upload_files()'

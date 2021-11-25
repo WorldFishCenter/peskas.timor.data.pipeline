@@ -43,8 +43,7 @@ Imports:
     future,
     rfishbase,
     taxize,
-    univOutl,
-    gsheet
+    univOutl
 Suggests: 
     covr,
     pkgdown,
@@ -56,7 +55,8 @@ Suggests:
     textclean,
     tinytest,
     dataverse,
-    rmarkdown
+    rmarkdown,
+    broom
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
