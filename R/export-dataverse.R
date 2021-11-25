@@ -130,8 +130,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   server <- pars$export_dataverse$server
 
   logger::log_info("Retrieving public data to release...")
-  rmarkdown::render(system.file('DESCRIPTION.Rmd',
-                                package = "peskas.timor.data.pipeline"))
+  rmarkdown::render('./DESCRIPTION.Rmd',params=list(output_file = './DESCRIPTION.html'))
 
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
@@ -144,7 +143,6 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 
   release_files_names <- c(files_names,'DESCRIPTION.html')
-
   logger::log_info("Exporting files...")
   upload_files(
     file_list = release_files_names,
