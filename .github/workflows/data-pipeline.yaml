@@ -222,7 +222,7 @@ jobs:
 
   release-data:
     name: Release to Dataverse
-    needs: [export-trips]
+    needs: [build-container]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -233,5 +233,5 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call upload_files()
-        run: Rscript -e 'peskas.timor.data.pipeline::upload_files()'
+      - name: Call upload_dataverse()
+        run: Rscript -e 'peskas.timor.data.pipeline::upload_dataverse()'
