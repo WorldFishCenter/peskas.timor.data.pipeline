@@ -41,8 +41,7 @@ RUN install2.r --error --skipinstalled \
     textclean \
     dataverse \
     rmarkdown \
-    broom \
-    here
+    broom
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

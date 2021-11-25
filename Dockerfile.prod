@@ -54,8 +54,7 @@ RUN install2.r --error --skipinstalled \
     textclean \
     dataverse \
     rmarkdown \
-    broom \
-    here
+    broom
 
 # Install local package
 COPY . /home
