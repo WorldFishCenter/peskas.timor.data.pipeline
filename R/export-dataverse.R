@@ -154,7 +154,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
 
   logger::log_info("Retrieving public data to release...")
-  rmarkdown::render(input = 'DESCRIPTION.Rmd',
+  rmarkdown::render(input = here::here("Description.Rmd"),
                     params = list(
                       time_range = time_range))
 
