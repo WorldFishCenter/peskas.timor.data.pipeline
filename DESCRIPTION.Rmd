@@ -6,28 +6,6 @@ output: html_document
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, echo = FALSE)
-prefixes <- c("aggregated__", "trips", "catch")
-
-files_names <-
-  purrr::map(prefixes, ~ cloud_object_name(
-    prefix = paste(pars$export$file_prefix, .x, sep = "_"),
-    version = "latest",
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
-  )) %>%
-  do.call('rbind',.) %>%
-  as.character() %>%
-  unique()
-
-  purrr::map(files_names,
-             download_cloud_file,
-             provider = pars$public_storage$google$key,
-             options = pars$public_storage$google$options)
-
-aggregated_day <- readr::read_rds(grep('aggregated', list.files(),value=TRUE))$day
-
-time_range <- paste(min(aggregated_day$date_bin_start,na.rm=TRUE),
-                    max(aggregated_day$date_bin_start,na.rm=TRUE),sep="-")
 ```
 
 ### Introductory information
