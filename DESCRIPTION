@@ -43,8 +43,7 @@ Imports:
     future,
     rfishbase,
     taxize,
-    univOutl,
-    gsheet
+    univOutl
 Suggests: 
     covr,
     pkgdown,
@@ -52,10 +51,11 @@ Suggests:
     sessioninfo,
     testthat,
     roxygen2,
-    tidyselect,
     textclean, 
     tinytest,
-    geosphere
+    geosphere,
+    tidyselect,
+    broom
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

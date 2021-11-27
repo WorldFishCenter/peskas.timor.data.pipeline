@@ -205,7 +205,7 @@ predict_variable <- function(model, var){
   model$frame %>%
     dplyr::select(.data$period, .data$month) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(landing_period = lubridate::ym(period),
+    dplyr::mutate(landing_period = lubridate::ym(.data$period),
                   {{var}} := predict(model, type = "response", newdata = .))
 }
 

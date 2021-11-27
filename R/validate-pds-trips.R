@@ -22,6 +22,17 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   pds_trips <- get_preprocessed_trips(pars)
   pds_tracks <- get_preprocessed_tracks(pars)
 
+  # call validation coefficients
+  max_hrs <- pars$validation$pds_trips$max_trip_hours
+  min_hrs <- pars$validation$pds_trips$min_trip_hours
+  km <- pars$validation$pds_trips$trip_km
+  se_km <- pars$validation$pds_trips$start_end_km
+  outl <- pars$validation$pds_trips$outliers
+  timet <- pars$validation$pds_trips$timetrace
+  consecutive_time <-  pars$validation$pds_trips$consecutive_time
+  consecutive_distance <-  pars$validation$pds_trips$consecutive_distance
+
+
   # remove duplicated trips, join trips with tracks diagnostics and merge consecutive trips
   pds_full <-
     pds_trips %>%
@@ -38,17 +49,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     ) %>%
     dplyr::left_join(pds_tracks, by = c("Trip", "Boat")) %>%
     dplyr::ungroup() %>%
-    merge_consecutive_trips(consecutive_time = pars$validation$pds_trips$consecutive_time,
-                            consecutive_distance = pars$validation$pds_trips$consecutive_distance)
-
-  # call validation coefficients
-  max_hrs <- pars$validation$pds_trips$max_trip_hours
-  min_hrs <- pars$validation$pds_trips$min_trip_hours
-  km <- pars$validation$pds_trips$trip_km
-  se_km <- pars$validation$pds_trips$start_end_km
-  outl <- pars$validation$pds_trips$outliers
-  timet <- pars$validation$pds_trips$timetrace
-
+    merge_consecutive_trips(consecutive_time = consecutive_time,
+                            consecutive_distance = consecutive_distance)
 
   logger::log_info("Validating pds trips...")
   pds_alerts <- validate_pds_data(pds_full,
@@ -251,7 +253,7 @@ merge_consecutive_trips <- function(x,
       associated_to = dplyr::coalesce(.data$associated_to, .data$Trip)
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(.data$Trip:.data$timetrace_dispersion, .data$associated_to) %>%
+    dplyr::select(.data$Trip:.data$end_lng, .data$associated_to) %>%
     dplyr::group_by(.data$associated_to) %>%
     dplyr::summarise(
       Trip = dplyr::first(.data$Trip),
@@ -267,12 +269,21 @@ merge_consecutive_trips <- function(x,
       IMEI = dplyr::first(.data$IMEI),
       `Device Id` = dplyr::first(.data$`Device Id`),
       `Last Seen` = dplyr::last(.data$`Last Seen`),
-      start_end_distance = sum(.data$start_end_distance),
       outliers_proportion = max(.data$outliers_proportion),
-      timetrace_dispersion = max(.data$timetrace_dispersion)
+      timetrace_dispersion = max(.data$timetrace_dispersion),
+      start_lat = dplyr::first(.data$start_lat),
+      start_lng = dplyr::first(.data$start_lng),
+      end_lat = dplyr::last(.data$end_lat),
+      end_lng = dplyr::last(.data$end_lng)
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-.data$associated_to)
+    dplyr::select(-.data$associated_to) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(start_end_distance =
+                    geosphere::distm(x = cbind(.data$start_lng, .data$start_lat),
+                                     y = cbind(.data$end_lng, .data$end_lat),
+                                     fun = geosphere::distGeo)) %>%
+    dplyr::select(-c(.data$start_lat:.data$end_lng))
 }
 
 #' Estimate distance between consecutive trips

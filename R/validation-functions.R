@@ -216,12 +216,12 @@ alert_outlier <- function(x,
 validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL){
 
   catches_dat_unnested <-  data %>%
-    dplyr::select(.data$`_id`,.data$species_group) %>%
+    dplyr::select(.data$`_id`,.data$`trip_group/gear_type`, .data$species_group) %>%
     tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals,keep_empty = TRUE)
 
   validated_length <- catches_dat_unnested %>%
-    dplyr::group_by(.data$species) %>%
+    dplyr::group_by(.data$`trip_group/gear_type`, .data$species) %>%
     dplyr::mutate(
       n_individuals = dplyr::case_when(
         .data$n_individuals == 0 ~ NA_real_,
@@ -279,6 +279,86 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
 
   validated_catch_params
 }
+
+#' Outlier identification based on Cook's distance
+#'
+#' This function adds an additional alert to both price and catch alert dataframes
+#' when the relation between the price and weight assume abnormal values relatively
+#' to each species. The relationship between weight and price is mostly linear,
+#' this function identifies the survey IDs where the Cook's distance is higher than
+#' cook_dist * mean_cook, where cook_dist is a multiplicative coefficient and
+#' cook_dist is the average Cook's distance relatively to each species.
+#'
+#' Currently, cook_dist is set to 21 as default value.
+#'
+#' @param surveys_catch_alerts The dataframe of catch alerts.
+#' @param surveys_price_alerts The dataframe of price alerts.
+#' @param cook_dist A number that go in the formula cook_dist * (mean(cooksd)).
+#'
+#' @return The price and catch alert' dataframes including outlier identification
+#' based on Cook's distance.
+#' @export
+#'
+validate_price_weight <- function(surveys_catch_alerts,
+                                  surveys_price_alerts,
+                                  cook_dist = NULL) {
+
+  # Extract single catches IDs
+  single_catches <-
+    surveys_catch_alerts %>%
+    dplyr::mutate(n = purrr::map_dbl(.data$species_group, nrow)) %>%
+    dplyr::filter(.data$n == 1) %>%
+    magrittr::extract2("submission_id")
+
+  # Extract IDs with abnormal price weight relation based on Cook's distance
+  alert_ids <-
+    dplyr::left_join(surveys_price_alerts, surveys_catch_alerts, by = "submission_id") %>%
+    dplyr::filter(.data$submission_id %in% single_catches) %>%
+    tidyr::unnest(.data$species_group) %>%
+    tidyr::unnest(.data$length_individuals) %>%
+    dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
+    dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
+    dplyr::group_by(.data$species) %>%
+    dplyr::mutate(model = broom::augment(stats::lm(formula = .data$weight ~ .data$total_catch_value))) %>%
+    dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
+    dplyr::select(-.data$model) %>%
+    dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) ~ 17, TRUE ~ NA_real_)) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(!is.na(.data$alert_number)) %>%
+    magrittr::extract2("submission_id")
+
+  # Integrate new alert to prices and weights
+  surveys_price_alerts %<>%
+    dplyr::mutate(
+      alert_number = dplyr::case_when(
+        .data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number
+      ),
+      total_catch_value = dplyr::case_when(
+        is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_
+      )
+    )
+
+  surveys_catch_alerts %<>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+    dplyr::mutate(
+      alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
+      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_)
+    ) %>%
+    tidyr::nest(length_individuals = c(.data$mean_length, .data$n_individuals, .data$weight)) %>%
+    tidyr::nest(species_group = c(
+      .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
+      .data$photo, .data$length_individuals, .data$length_type
+    ))
+
+  #list(surveys_price_alerts = surveys_price_alerts,
+  #     surveys_catch_alerts = surveys_catch_alerts)
+
+  dplyr::full_join(surveys_catch_alerts,surveys_price_alerts,by=c("submission_id")) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
+    dplyr::select(-.data$alert_number.x, -.data$alert_number.y)
+}
+
 
 # Ideally this function would in the future, check for the integrity of the boat type
 validate_vessel_type <- function(data, metadata_vessel_table){

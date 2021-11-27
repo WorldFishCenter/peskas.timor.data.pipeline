@@ -281,7 +281,12 @@ join_weights <- function(data, metadata, rfish_tab) {
     dplyr::mutate(length_type = dplyr::case_when(
       !is.na(length_type) ~ length_type,
       .data$survey_version == "v1" ~ "FL",
-      .data$survey_version == "v2" ~ "TL")) %>%
+      .data$survey_version == "v2" ~ "TL"
+    )) %>%
+    dplyr::mutate(length_type = dplyr::case_when(
+      .data$species %in% c("OCZ", "SLV") ~ "TL",
+      TRUE ~ .data$length_type
+    )) %>%
     dplyr::rowwise() %>%
     dplyr::mutate(weight = estimate_weight(length = .data$mean_length, .data$length_type,
                                            code = .data$species, .data$n_individuals,
