@@ -283,7 +283,8 @@ merge_consecutive_trips <- function(x,
                     geosphere::distm(x = cbind(.data$start_lng, .data$start_lat),
                                      y = cbind(.data$end_lng, .data$end_lat),
                                      fun = geosphere::distGeo)) %>%
-    dplyr::select(-c(.data$start_lat:.data$end_lng))
+    dplyr::select(-c(.data$start_lat:.data$end_lng)) %>%
+    dplyr::ungroup()
 }
 
 #' Estimate distance between consecutive trips
