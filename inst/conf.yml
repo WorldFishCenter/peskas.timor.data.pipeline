@@ -53,6 +53,8 @@ default:
         - centro_pescas
         - vessel_types
         - gear_types
+        - stations
+        - reporting_units
     version:
       preprocess: latest
     rfishtable:
@@ -75,6 +77,7 @@ default:
       catch:
         n_individuals:
           k: 7
+      cook_dist: 21
     pds_trips:
       trip_hours: 18
       trip_km: 60
@@ -94,6 +97,7 @@ default:
 
   models:
     file_prefix: model_predictions
+    modelled_taxa: [CLP, OCZ, CJX, SDX, BEN, EMP, FLY, SNA, RAX, CGX, TUN]
 
   export:
     file_prefix: timor

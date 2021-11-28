@@ -34,24 +34,25 @@ setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
 # get data
-public_files <-
-  c("aggregated__", "trips", "catch") %>%
-  purrr::map(., ~ peskas.timor.data.pipeline::cloud_object_name(
-    prefix = paste(pars$export$file_prefix, .x, sep = "_"),
-    version = "latest",
-    extension = "rds",
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
-  )) %>%
-  do.call("rbind", .) %>%
-  as.character() %>%
-  unique() %>%
-  purrr::walk(.,
-    peskas.timor.data.pipeline::download_cloud_file,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
-  )
+  public_files <- 
+    c("timor_aggregated", "timor_trips", "timor_catch", "timor_taxa_aggregated") %>% 
+    purrr::map(., ~ peskas.timor.data.pipeline::cloud_object_name(
+      prefix = .x,   
+      version = "latest",
+      extension = "rds",
+      provider = pars$public_storage$google$key,
+      options = pars$public_storage$google$options
+      )) %>%
+    do.call("rbind", .) %>%
+    as.character() %>%
+    unique() %>%
+    purrr::walk(.,
+                peskas.timor.data.pipeline::download_cloud_file,
+                provider = pars$public_storage$google$key,
+                options = pars$public_storage$google$options
+                )
 
+taxa_aggregated <- readRDS(list.files(pattern = "taxa_aggregated"))
 aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
 trips <- readRDS(list.files(pattern = "timor_trips"))
 catch <- readRDS(list.files(pattern = "timor_catch"))
