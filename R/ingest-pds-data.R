@@ -190,3 +190,20 @@ insistent_upload_cloud_file <- function(..., delay = 3){
                      quiet = F)(...)
   Sys.sleep(delay)
 }
+
+
+ingest_complete_tracks <- function(pars,
+                                   data = NULL,
+                                   trips = NULL) {
+  c(pars$pds$tracks$complete$file_prefix,
+    paste(pars$pds$tracks$complete$file_prefix, "metadata", sep = "_")) %>%
+    purrr::map_chr(add_version, extension = "rds") %T>%
+    purrr::walk2(
+      list(data, trips),
+      ~ readr::write_rds(.y, .x, compress = "gz")
+    ) %>%
+    purrr::walk(upload_cloud_file,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    )
+}

@@ -37,7 +37,8 @@ default:
       multisession:
         parallel: true
         n_sessions: 32
-
+      complete:
+        file_prefix: pds-track-complete
   metadata:
     airtable:
       name: metadata-tables
