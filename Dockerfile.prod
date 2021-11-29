@@ -52,6 +52,7 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
+    geosphere \
     broom
 
 # Install local package
