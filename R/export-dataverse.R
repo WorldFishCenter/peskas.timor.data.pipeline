@@ -161,8 +161,8 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
 
-  rds_files <- grep(".rds",files_names, value=TRUE)
-  release_files_names <- c(rds_files, system.file("export/DESCRIPTION.html",
+  #rds_files <- grep(".rds",files_names, value=TRUE)
+  release_files_names <- c(files_names, system.file("export/DESCRIPTION.html",
                                                   package = "peskas.timor.data.pipeline"))
 
   dataverse::initiate_sword_dataset(
