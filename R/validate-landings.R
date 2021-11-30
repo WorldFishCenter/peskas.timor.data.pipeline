@@ -79,6 +79,11 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     landings,
     metadata$stations, metadata$reporting_unit
   )
+  n_fishers_alerts <- validate_n_fishers(
+    landings,
+    method = pars$validation$landings$n_fishers$method %||% default_method,
+    k = pars$validation$landings$n_fishers$k %||% default_k
+  )
 
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
@@ -99,7 +104,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          price_weight_alerts,
          vessel_type_alerts,
          gear_type_alerts,
-         site_alerts) %>%
+         site_alerts,
+         n_fishers_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
@@ -126,6 +132,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_value = .data$total_catch_value,
       landing_station = .data$station_name,
       reporting_region = .data$reporting_region,
+      tidyselect::starts_with("fisher_number"),
       ##municipality = .data$`municipality (from administrative_posts)`,
       .data$gear_type,
       .data$vessel_type)

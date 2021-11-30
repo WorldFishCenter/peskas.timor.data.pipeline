@@ -420,3 +420,19 @@ validate_sites <- function(data, metadata_stations, metadata_reporting_units){
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
 }
+
+
+validate_n_fishers <- function(landings, method, k){
+
+  landings %>%
+    dplyr::select(submission_id = .data$`_id`,
+                  fisher_number_child = .data$`trip_group/no_fishers/no_child_fishers`,
+                  fisher_number_man = .data$`trip_group/no_fishers/no_men_fishers`,
+                  fisher_number_woman = .data$`trip_group/no_fishers/no_women_fishers`) %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(fisher_number_child, fisher_number_man, fisher_number_woman)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
+    dplyr::select(-tidyselect::ends_with("alert"))
+
+}
