@@ -137,38 +137,50 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     )) %>%
-    do.call('rbind',.) %>%
+    do.call("rbind", .) %>%
     as.character() %>%
     unique()
 
   purrr::map(files_names,
-             download_cloud_file,
-             provider = pars$public_storage$google$key,
-             options = pars$public_storage$google$options)
+    download_cloud_file,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )
 
-  aggregated_day <- readr::read_rds(grep('aggregated', list.files(),value=TRUE))$day
+  aggregated_day <- readr::read_rds(grep("aggregated", list.files(), value = TRUE))$day
 
   # test passing stuff to rmarkdown document
-  time_range <- paste(min(aggregated_day$date_bin_start,na.rm=TRUE),
-                      max(aggregated_day$date_bin_start,na.rm=TRUE),sep="-")
+  time_range <- paste(min(aggregated_day$date_bin_start, na.rm = TRUE),
+    max(aggregated_day$date_bin_start, na.rm = TRUE),
+    sep = "-"
+  )
 
 
   logger::log_info("Retrieving public data to release...")
-  rmarkdown::render(input = system.file("export/DESCRIPTION.Rmd", package = "peskas.timor.data.pipeline"),
-                    params = list(
-                      time_range = time_range))
+  rmarkdown::render(
+    input = system.file("export/DESCRIPTION.Rmd", package = "peskas.timor.data.pipeline"),
+    params = list(
+      time_range = time_range
+    )
+  )
 
   logger::log_info("Generating metadata...")
   metadat <- generate_metadata(pars)
 
-  #rds_files <- grep(".rds",files_names, value=TRUE)
-  release_files_names <- c(files_names, system.file("export/DESCRIPTION.html",
-                                                  package = "peskas.timor.data.pipeline"))
+
+  new_names <- gsub("__[^>]+__", "", files_names)
+  file.rename(from = files_names, to = new_names)
+
+  # rds_files <- grep(".rds",files_names, value=TRUE)
+  release_files_names <- c(new_names, system.file("export/DESCRIPTION.html",
+    package = "peskas.timor.data.pipeline"
+  ))
+
 
   dataverse::initiate_sword_dataset(
     dataverse = dataverse,
-    server=server,
-    key=key,
+    server = server,
+    key = key,
     body = metadat
   )
 
@@ -182,10 +194,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   file.remove(release_files_names)
 
-  #logger::log_info("Publishing data...")
-  #publish_last_dataset(
+  # logger::log_info("Publishing data...")
+  # publish_last_dataset(
   #  key = key,
   #  dataverse = dataverse,
   #  server = server
-  #)
+  # )
 }
