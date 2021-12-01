@@ -155,7 +155,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
        surveys_time_alerts$validated_duration,
        price_weight_alerts,
        vessel_type_alerts,
-       gear_type_alerts
+       gear_type_alerts,
+       site_alerts,
+       n_fishers_alerts
        ) %>%
     purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
     purrr::reduce(dplyr::bind_rows)
