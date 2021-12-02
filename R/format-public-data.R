@@ -110,7 +110,8 @@ add_calculated_fields <- function(merged_trips){
     dplyr::ungroup() %>%
     dplyr::mutate(n_taxa = purrr::map_int(.data$landing_catch, count_taxa)) %>%
     dplyr::mutate(taxa = purrr::map_chr(.data$landing_catch, collapse_taxa)) %>%
-    dplyr::mutate(landing_date = lubridate::as_date(.data$landing_date))
+    dplyr::mutate(landing_date = lubridate::as_date(.data$landing_date))# %>%
+    # dplyr::mutate(fisher_proportion_woman = fisher_number_woman / (fisher_number_child + fisher_number_man + fisher_number_woman))
 }
 
 #'@importFrom rlang .data
@@ -123,6 +124,11 @@ get_trips_table <- function(merged_trips_with_addons){
       landing_n_taxa = .data$n_taxa,
       landing_taxa = .data$taxa,
       .data$landing_value,
+      .data$landing_catch,
+      .data$vessel_type,
+      .data$landing_station,
+      .data$reporting_region,
+      tidyselect::starts_with("fisher_"),
       landing_survey_trip_duration = .data$trip_duration,
       .data$tracker_trip_start,
       .data$tracker_trip_end,
@@ -147,7 +153,8 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
                                                          bin_unit,
                                                          week_start = 7)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
-    dplyr::summarise(n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T))
+    dplyr::summarise(n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
+                     prop_landings_woman = sum(fisher_number_woman > 0, na.rm = T) / sum(!is.na(fisher_number_woman), na.rm = T))
 
    track_end_bin <- merged_trips_with_addons %>%
      dplyr::mutate(tracker_trip_end = lubridate::as_date(.data$tracker_trip_end),
