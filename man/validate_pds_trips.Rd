@@ -15,11 +15,12 @@ details}
 no outputs. This function is used for it's side effects
 }
 \description{
-Downloads the preprocessed version of pds trips from cloud storage services and
-validates a range of information so that it can be safely used for analysis.
+Downloads the preprocessed version of pds trips and pds tracks disgnostics
+from cloud storage services and validates a range of information so that it
+can be safely used for analysis.
 }
 \details{
 The parameters needed in the config file are those required for
 \code{preprocess_pds_trips()}, as well as parameters needed to identify anomalous
-trips, that are  \code{hrs}and \code{km}.
+trips.
 }

@@ -51,6 +51,7 @@ Suggests:
     sessioninfo,
     testthat,
     roxygen2,
+    geosphere,
     tidyselect,
     textclean,
     tinytest,

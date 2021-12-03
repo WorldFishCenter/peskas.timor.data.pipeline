@@ -15,7 +15,7 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
+    Rcurl \
     readr \
     readxl \
     stringr \
@@ -41,6 +41,7 @@ RUN install2.r --error --skipinstalled \
     textclean \
     dataverse \
     rmarkdown \
+    geosphere \
     broom
 
 # Rstudio interface preferences

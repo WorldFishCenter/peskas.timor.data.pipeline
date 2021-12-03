@@ -35,6 +35,7 @@ generate_metadata <- function(pars) {
   metadat <- list(
     title = as.character(pars$export_dataverse$metadata$title),
     subject = as.character(pars$export_dataverse$metadata$subject),
+    language = as.character(pars$export_dataverse$metadata$language),
     description = as.character(pars$export_dataverse$metadata$description),
     creator = as.character(pars$export_dataverse$metadata$creator),
     created = as.character(Sys.Date())
@@ -129,7 +130,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   key <- pars$export_dataverse$token
   server <- pars$export_dataverse$server
 
-  prefixes <- c("aggregated__", "trips", "catch")
+  prefixes <- c("aggregated__", "trips", "catch", "taxa")
   files_names <-
     purrr::map(prefixes, ~ cloud_object_name(
       prefix = paste(pars$export$file_prefix, .x, sep = "_"),
@@ -141,24 +142,25 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
     as.character() %>%
     unique()
 
+  logger::log_info("Retrieving public data to release...")
   purrr::map(files_names,
     download_cloud_file,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )
 
-  aggregated_day <- readr::read_rds(grep("aggregated", list.files(), value = TRUE))$day
+  aggregated_day <- readr::read_rds(grep("timor_aggregated", list.files(), value = TRUE))$day
 
-  # test passing stuff to rmarkdown document
+  # passing info to README rmarkdown document
   time_range <- paste(min(aggregated_day$date_bin_start, na.rm = TRUE),
     max(aggregated_day$date_bin_start, na.rm = TRUE),
     sep = "-"
   )
 
 
-  logger::log_info("Retrieving public data to release...")
+  logger::log_info("Generating README...")
   rmarkdown::render(
-    input = system.file("export/DESCRIPTION.Rmd", package = "peskas.timor.data.pipeline"),
+    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline"),
     params = list(
       time_range = time_range
     )
@@ -171,12 +173,11 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
 
-  # rds_files <- grep(".rds",files_names, value=TRUE)
-  release_files_names <- c(new_names, system.file("export/DESCRIPTION.html",
+  release_files_names <- c(new_names, system.file("export/README.html",
     package = "peskas.timor.data.pipeline"
   ))
 
-
+  logger::log_info("Initializing dataset in Peskas dataverse...")
   dataverse::initiate_sword_dataset(
     dataverse = dataverse,
     server = server,
@@ -194,10 +195,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   file.remove(release_files_names)
 
-  # logger::log_info("Publishing data...")
-  # publish_last_dataset(
+  #logger::log_info("Publishing data...")
+  #publish_last_dataset(
   #  key = key,
   #  dataverse = dataverse,
   #  server = server
-  # )
+  #)
 }
