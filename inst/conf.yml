@@ -119,7 +119,7 @@ default:
        title: 'Peskas - National Fisheries Monitoring System of Timor-Leste'
        subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
        language: 'English'
-       description: 'A digital fisheries monitoring pipeline comprised of free, open-source software components and example summary data from field trials in Timor-Leste'
+       description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). '
        creator: 'Tilley Alex'
 
   storage:

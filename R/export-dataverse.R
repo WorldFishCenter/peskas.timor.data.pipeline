@@ -24,19 +24,22 @@ publish_dataverse <- function(key, dataverse, server) {
 #' The function generate a list of metadata information to append to the
 #' files to upload to a Dataverse repository.
 #'
-#' @param pars The configuration file
+#' @param pars The configuration file.
+#' @param temp_coverage Temporal coverage of the data to upload.
 #'
 #' @return A list with metadata information
 #' @export
 #'
 #' @examples
-generate_metadata <- function(pars) {
-
+generate_metadata <- function(pars, temp_coverage = NULL) {
   metadat <- list(
     title = as.character(pars$export_dataverse$metadata$title),
     subject = as.character(pars$export_dataverse$metadata$subject),
     language = as.character(pars$export_dataverse$metadata$language),
-    description = as.character(pars$export_dataverse$metadata$description),
+    description = paste(
+      as.character(pars$export_dataverse$metadata$description),
+      "Period covered:", temp_coverage
+    ),
     creator = as.character(pars$export_dataverse$metadata$creator),
     created = as.character(Sys.Date())
   )
@@ -80,6 +83,64 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
       server = server
     )
   }
+}
+
+
+
+#' Delete a dataverse collection
+#'
+#' This function delete a specific Dataverse repository.
+#'
+#' @param key API token associated to the Dataverse account.
+#' @param dataverse A character string specifying the Dataverse ID.
+#' @param server A character string specifying a Dataverse server.
+#'
+#' @export
+#'
+delete_dataverse <- function(key, dataverse, server) {
+  dataverse_content <-
+    dataverse::dataverse_contents(
+      dataverse = dataverse,
+      key = key,
+      server = server
+    )
+
+  # delete datasets inside dataverse collection
+  clean_dataverse <- function(x) {
+    id <-
+      x %>%
+      magrittr::extract2("id")
+    delete_dataset(key = key, id = id, server = server)
+  }
+
+  purrr::walk(dataverse_content, clean_dataverse)
+
+  url <- paste0("https://", server, "/api/dataverses/", dataverse)
+  res <- httr::DELETE(
+    url = url,
+    httr::add_headers(`X-Dataverse-key` = key)
+  )
+  res
+}
+
+
+#' Delete a dataset of a dataverse collection
+#'
+#' This function delete a specific draft dataset.
+#'
+#' @param key API token associated to the Dataverse account.
+#' @param id The dataset ID.
+#' @param server A character string specifying a Dataverse server.
+#'
+#' @export
+#'
+delete_dataset <- function(key, id, server) {
+  url <- paste0("https://", server, "/api/datasets/", id, "/versions/:draft")
+  res <- httr::DELETE(
+    url = url,
+    httr::add_headers(`X-Dataverse-key` = key)
+  )
+  res
 }
 
 
@@ -152,11 +213,11 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   aggregated_day <- readr::read_rds(grep("timor_aggregated", list.files(), value = TRUE))$day
 
   # passing info to README rmarkdown document
-  time_range <- paste(min(aggregated_day$date_bin_start, na.rm = TRUE),
-    max(aggregated_day$date_bin_start, na.rm = TRUE),
-    sep = "-"
-  )
-
+  time_range <-
+    paste(zoo::as.yearmon(min(aggregated_day$date_bin_start, na.rm = TRUE)),
+      zoo::as.yearmon(max(aggregated_day$date_bin_start, na.rm = TRUE)),
+      sep = " - "
+    )
 
   logger::log_info("Generating README...")
   rmarkdown::render(
@@ -167,7 +228,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Generating metadata...")
-  metadat <- generate_metadata(pars)
+  metadat <- generate_metadata(pars, temp_coverage = time_range)
 
 
   new_names <- gsub("__[^>]+__", "", files_names)
@@ -195,10 +256,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   file.remove(release_files_names)
 
-  #logger::log_info("Publishing data...")
-  #publish_last_dataset(
+  # logger::log_info("Publishing data...")
+  # publish_last_dataset(
   #  key = key,
   #  dataverse = dataverse,
   #  server = server
-  #)
+  # )
 }

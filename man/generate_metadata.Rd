@@ -4,10 +4,12 @@
 \alias{generate_metadata}
 \title{Generate a list of metadata}
 \usage{
-generate_metadata(pars)
+generate_metadata(pars, temp_coverage = NULL)
 }
 \arguments{
-\item{pars}{The configuration file}
+\item{pars}{The configuration file.}
+
+\item{temp_coverage}{Temporal coverage of the data to upload.}
 }
 \value{
 A list with metadata information
