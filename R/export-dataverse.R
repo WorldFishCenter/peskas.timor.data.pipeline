@@ -256,10 +256,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   file.remove(release_files_names)
 
-  # logger::log_info("Publishing data...")
-  # publish_last_dataset(
-  #  key = key,
-  #  dataverse = dataverse,
-  #  server = server
-  # )
+   logger::log_info("Publishing data...")
+   publish_last_dataset(
+     key = key,
+     dataverse = dataverse,
+     server = server
+     )
 }
