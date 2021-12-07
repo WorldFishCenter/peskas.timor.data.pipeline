@@ -15,7 +15,7 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
+    Rcurl \
     readr \
     readxl \
     stringr \
@@ -45,7 +45,9 @@ RUN install2.r --error --skipinstalled \
     bookdown \
     kableExtra \
     cowplot \
-    broom
+    geosphere \
+    broom \
+    ggpubr
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

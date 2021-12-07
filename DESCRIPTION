@@ -54,8 +54,10 @@ Suggests:
     textclean, 
     tinytest,
     rmarkdown,
+    geosphere,
     tidyselect,
-    broom
+    broom,
+    ggpubr
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

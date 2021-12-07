@@ -33,6 +33,8 @@ default:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
       file_prefix: pds-track
+      version:
+        preprocess: latest
       compress: true
       multisession:
         parallel: true
@@ -79,8 +81,14 @@ default:
           k: 7
       cook_dist: 21
     pds_trips:
-      trip_hours: 18
+      max_trip_hours: 18
+      min_trip_hours: 0.5
       trip_km: 60
+      start_end_km: 3
+      outliers : 10
+      timetrace: 1400
+      consecutive_time: 3
+      consecutive_distance: 2
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk
@@ -97,7 +105,7 @@ default:
 
   models:
     file_prefix: model_predictions
-    modelled_taxa: [CLP, OCZ, CJX, SDX, BEN, EMP, FLY, SNA, RAX, CGX, TUN]
+    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, MOO]
 
   export:
     file_prefix: timor

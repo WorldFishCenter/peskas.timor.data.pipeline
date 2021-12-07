@@ -105,6 +105,7 @@ This report summarises relevant statistics and insights from the Peskas platform
 
 
 # Summary of Peskas fleet
+## National
 
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 gear_plot <-
@@ -147,19 +148,16 @@ tidyr::tibble(gear_id=metadata$gear_types$gear_id,
   coord_flip()
 
 vessel_plot <-
-  tidyr::tibble(boat_type=metadata$vessel_types$boat_type,
-                n_boats=purrr::map_dbl(metadata$vessel_types$boats, length)) %>%
-  dplyr::filter(boat_type!="gleaning") %>%
-  dplyr::mutate(
-    dummy_var = rep("dummycol", nrow(.)),
-    total_boats = sum(n_boats),
-    proportion = n_boats / total_boats * 100,
-    proportion_label = dplyr::case_when(proportion<5~NA_real_,
-                                        TRUE~proportion)
-  ) %>%
-  ggplot(aes(x = dummy_var, y = n_boats, fill = reorder(boat_type, n_boats))) +
+trips %>% 
+  dplyr::group_by(vessel_type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(tot = sum(.data$n, na.rm=TRUE),
+                prop = n/tot*100,
+                dummy_var = rep("dummycol", nrow(.))) %>% 
+  ggplot(aes(x = dummy_var, y = n, fill = reorder(vessel_type, n))) +
   geom_col(width = 5) +
-  geom_text(aes(label = ifelse(is.na(proportion_label), "", paste0(round(proportion_label, 0), "%"))),
+  geom_text(aes(label = ifelse(is.na(prop), "", paste0(round(prop, 0), "%"))),
             position = position_stack(vjust = 0.5),
             color = "white",
             fontface = "bold",
@@ -231,7 +229,7 @@ trips %>%
   geom_area(fill="#447597",alpha=0.15)+
   stat_smooth(method = "loess", color = "#976644", alpha = 0.1,size=0.5) +
   labs(
-    x = "Date", y = "Number of trips",
+    x = "Date", y = "National number of  trips",
     title = "Fishing trips",
     subtitle = "The Peskas platform recorded a total of 126905 fishing trips. Trips increased considerably\nuntil 2020 then undergo a slight decrease."
   ) +
@@ -245,6 +243,73 @@ trips %>%
     plot.title = element_text(size = 18),
     plot.subtitle = element_text(size = 12, color = "darkslategrey")
   )
+```
+\newline
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=5, fig.width=8}
+
+trips %>%
+  dplyr::select(landing_date, tidyselect::starts_with("fisher")) %>%
+  tidyr::pivot_longer(cols = -landing_date) %>%
+  dplyr::mutate(landing_date = lubridate::floor_date(.data$landing_date, unit = "month")) %>%
+  dplyr::group_by(landing_date, name) %>%
+  dplyr::summarise(value=sum(value,na.rm=TRUE)) %>%
+  ggplot(aes(landing_date,value, fill=
+               factor(name, levels = c("fisher_number_child", "fisher_number_woman", "fisher_number_man"))))+
+  geom_col(alpha=0.6)+
+  labs(
+    x = "Date", y = "Number of fishers",
+    title = "Fishers gender",
+    subtitle = "Monthly number of non-unique fishers in Timor,\nmale adult fishers are by far the most representative.",
+    fill = ""
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
+               limits = c(as.Date("2017-07-01"),Sys.Date() - 31)) +
+  theme_minimal(15) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 13, color = "darkslategrey"),
+    legend.position = "bottom",
+    legend.title = element_text()
+  )+
+  scale_fill_manual(labels = c("child", "female","male"),
+                    values=c("#383002","#bdb37b","#0b9984"))
+
+```
+
+## Municipal
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=8}
+trips %>% 
+  dplyr::select(landing_date, reporting_region) %>% 
+  dplyr::arrange(landing_date) %>% 
+  dplyr::mutate(landing_date = lubridate::floor_date(.data$landing_date, unit = "month")) %>% 
+  dplyr::group_by(landing_date, reporting_region) %>% 
+  dplyr::count(reporting_region) %>% 
+  dplyr::group_by(reporting_region) %>% 
+  dplyr::mutate(cumsum = cumsum(n)) %>% 
+  dplyr::filter(!is.na(reporting_region)) %>% 
+  ggplot(aes(landing_date,cumsum,color=reporting_region))+
+  geom_line(size=1) +
+  geom_point(size=2, alpha=0.5) +
+  labs(
+    x = "month", y = "Cumulative trips",
+    color = "Municipality",
+    title = "Municipal number of  trips",
+    subtitle = "Atauro municpality recorded most of the trips.\nSeveral municipalities have joined the project over time."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
+               limits = c(as.Date("2017-07-01"),Sys.Date() - 31)) +
+  theme_minimal(15) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )+
+  scale_colour_brewer(palette = "Paired")
 ```
 \pagebreak
 
@@ -461,7 +526,7 @@ aggregated$month %>%
 ```
 \pagebreak
 
-## Species stock 
+## National species stock 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
   dplyr::left_join(catch, trips, by = "trip_id") %>%
@@ -501,7 +566,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
                                                  "month",
                                                  week_start = 7),
                 year = lubridate::year(.data$landing_date)) %>%
-  dplyr::filter(catch_taxon %in% c("CLP","FLY","CJX","SDX")) %>%
+  dplyr::filter(catch_taxon %in% c("CLP","TUN","CJX","SDX")) %>%
   dplyr::select(comm_name,month_date,weight) %>%
   dplyr::group_by(month_date,comm_name) %>%
   dplyr::summarise(weight=sum(weight,na.rm=TRUE)) %>%
@@ -528,7 +593,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     color="Fish group",
     fill="",
     title = "Interannual species distribution",
-    subtitle = "Fishing of the most important species remained mostly stable, except for a\nconsiderable increase of fusiliers and to a lesser extent of flying fish."
+    subtitle = "Fishing of the most important species remained mostly stable, except for a\nconsiderable increase of fusiliers and to a lesser extent of Tuna-like species."
   )
 
 ```
@@ -576,6 +641,89 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     plot.subtitle = element_text(size = 13, color = "darkslategrey")
   )
 ```
+
+\pagebreak
+
+## Municipal species stock 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
+p1 <-
+  dplyr::left_join(catch,trips, by="trip_id") %>%
+  dplyr::filter(individuals>0) %>%
+  dplyr::select(reporting_region,comm_name,weight) %>%
+  dplyr::group_by(reporting_region,comm_name) %>%
+  dplyr::summarise(weight = sum(weight, na.rm=TRUE)) %>%
+  dplyr::arrange(dplyr::desc(weight)) %>%
+  dplyr::top_n(5) %>%
+  dplyr::filter(!is.na(reporting_region)) %>%
+  dplyr::mutate(total_weight = sum(weight, na.rm=TRUE)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(reporting_region = forcats::fct_reorder(reporting_region, total_weight)) %>%
+  ggplot(aes(weight,reporting_region,fill=comm_name))+
+  geom_col(position="fill") +
+  scale_x_continuous(labels=scales::percent)+
+  theme_minimal(15)+
+  labs(x="Catches composition",
+       y="",
+       title="Municipal species composition and stock",
+       subtitle = "Species composition is quite different among municipalities, Atauro is by far the municipality\nwith the largest stock.")+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(size=7.5),
+    legend.key.size = unit(1,"line"),
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 19),
+    plot.subtitle = element_text(size = 14, color = "darkslategrey"))
+
+leg <- ggpubr::get_legend(p1)
+leg <- ggpubr::as_ggplot(leg)
+
+p2 <-
+  dplyr::left_join(catch,trips, by="trip_id") %>%
+  dplyr::filter(individuals>0) %>%
+  dplyr::select(reporting_region,comm_name,weight) %>%
+  dplyr::group_by(reporting_region,comm_name) %>%
+  dplyr::summarise(weight = sum(weight, na.rm=TRUE)) %>%
+  dplyr::arrange(dplyr::desc(weight)) %>%
+  dplyr::top_n(5) %>%
+  dplyr::filter(!is.na(reporting_region)) %>%
+  dplyr::mutate(total_weight = sum(weight, na.rm=TRUE)/1000000) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(reporting_region = forcats::fct_reorder(reporting_region, total_weight)) %>%
+  ggplot(aes(total_weight,reporting_region))+
+  geom_point(size = 2.5,color="#525B76") +
+  geom_segment(aes(yend = reporting_region), xend = 0, colour = "#525B76")+
+  theme_minimal(15)+
+  labs(x="Aggregated weight (tons)",
+       y="")+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    legend.position = "top",
+    legend.title = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 19),
+    plot.subtitle = element_text(size = 14, color = "darkslategrey"))
+
+
+cow1 <- 
+  cowplot::plot_grid(p1 + theme(legend.position = "none"),
+                   p2 + theme(plot.margin = unit(c(0,0,0,-.75), "cm")),
+                   ncol = 2,
+                   nrow= 1,
+                   rel_widths =  c(2, 1),
+                   rel_heights = c(3, 0.75),
+                   align = "h")
+
+  cowplot::plot_grid(cow1,
+                     leg,
+                     nrow=2,
+                     rel_heights = c(3, 0.75))
+```
+
 \pagebreak
 
 # Catch usage

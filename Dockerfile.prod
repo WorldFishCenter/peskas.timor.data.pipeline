@@ -60,7 +60,9 @@ RUN install2.r --error --skipinstalled \
     kableExtra \
     cowplot \
     knitr \
-    broom
+    geosphere \
+    broom \
+    ggpubr
 
 # Install local package
 COPY . /home
