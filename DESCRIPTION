@@ -53,6 +53,7 @@ Suggests:
     roxygen2,
     textclean, 
     tinytest,
+    geosphere,
     tidyselect,
     broom
 Encoding: UTF-8
