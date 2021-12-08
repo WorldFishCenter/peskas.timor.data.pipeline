@@ -212,3 +212,35 @@ insistent_download_cloud_file <- function(..., delay = 3){
                      quiet = F)(...)
   Sys.sleep(delay)
 }
+
+
+
+#' Ingest tracks data as a single file
+#'
+#' This function uploads two files: `data`, the complete tracks in a single rds
+#' file and `trips`, a vector containing unique the trips from `data` useful to
+#' take track of the synchronization status of `data`.
+#'
+#' @param pars The configuration file.
+#' @param data An rds file containing tracks data.
+#' @param trips A vector of unique Trips from the argument `data`.
+#'
+#' @return No output. This function is used for it's side effects
+#' @export
+#'
+ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
+
+  c(
+    pars$pds$tracks$complete$file_prefix,
+    paste(pars$pds$tracks$complete$file_prefix, "trips", sep = "_")
+  ) %>%
+    purrr::map_chr(add_version, extension = "rds") %T>%
+    purrr::walk2(
+      list(data, trips),
+      ~ readr::write_rds(.y, .x, compress = "gz")
+    ) %>%
+    purrr::walk(upload_cloud_file,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    )
+}

@@ -278,20 +278,3 @@ get_merged_landings <- function(pars, suffix = ""){
   readr::read_rds(file = landings_rds)
 }
 
-
-get_validated_landings <- function(log_threshold = logger::DEBUG){
-  pars <- read_config()
-
-  landings_rds <- cloud_object_name(
-    prefix = paste(pars$surveys$validated_landings$file_prefix),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$surveys$validated_landings$version,
-    options = pars$storage$google$options,
-    exact_match = TRUE)
-  logger::log_info("Downloading {landings_rds}...")
-  download_cloud_file(name = landings_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
-  readr::read_rds(file = landings_rds)
-}

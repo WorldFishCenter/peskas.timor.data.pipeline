@@ -1,22 +1,29 @@
 #' Download Peskas validated landings
 #'
-#' Download validated Peskas data from Google Cloud
+#' Download validated Peskas data from Google Cloud.
 #'
-#' @param pars The configuration file
+#' @param log_threshold
+#' @inheritParams ingest_landings
 #'
+#' @return A dataframe of validated survey landings.
 #' @export
 #'
-get_validated_landings <- function(pars){
-  cloud_object_name(
-    prefix = paste0(pars$surveys$merged_landings$file_prefix, "_", "validated"),
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options) %>%
-    download_cloud_file(
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options) %>%
-    readr::read_rds()
-}
+get_validated_landings <- function(log_threshold = logger::DEBUG){
+  pars <- read_config()
 
+  landings_rds <- cloud_object_name(
+    prefix = paste(pars$surveys$validated_landings$file_prefix),
+    provider = pars$storage$google$key,
+    extension = "rds",
+    version = pars$surveys$validated_landings$version,
+    options = pars$storage$google$options,
+    exact_match = TRUE)
+  logger::log_info("Downloading {landings_rds}...")
+  download_cloud_file(name = landings_rds,
+                      provider = pars$storage$google$key,
+                      options = pars$storage$google$options)
+  readr::read_rds(file = landings_rds)
+}
 
 get_validated_pds_trips <- function(pars){
   cloud_object_name(
@@ -69,7 +76,6 @@ get_models <- function(pars){
     readr::read_rds()
 }
 
-
 #' Download Peskas metadata
 #'
 #' Download preprocessed Peskas metadata from Google Cloud
@@ -87,4 +93,119 @@ get_preprocessed_metadata <- function(pars){
                       provider = pars$storage$google$key,
                       options = pars$storage$google$options)
   readr::read_rds(file = metadata_rds)
+  }
+
+#' Download and synchronize tracks data in a single file
+#'
+#' This function downloads, synchronize and ingest tracks data from cloud
+#' storage in a single file. Since the transferred data is relatively large,
+#' the synchronization and uploading are refreshed when the complete track file
+#' is outdated by at least 5000 trips.
+#'
+#' @param pars The configuration file.
+#'
+#' @return The tabulated tracks collected in Timor..
+#' @export
+#'
+get_sync_tracks <- function(pars) {
+
+  logger::log_info("Downloading all tracks...")
+  full_tracks <- get_full_tracks(pars)
+
+  logger::log_info("Checking sync status...")
+  updated_trips <-
+    get_preprocessed_trips(pars) %>%
+    magrittr::extract2("Trip") %>%
+    unique()
+
+  check_trips <-
+    get_full_trips(pars)
+
+  new_trips <- setdiff(updated_trips, check_trips)
+
+  if (isTRUE(length(new_trips) < pars$pds$tracks$complete$new_trips)) {
+
+    full_tracks
+
+  } else {
+
+    logger::log_info("Syncing tracks file...")
+    new_tracks <-
+      googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
+      dplyr::mutate(Trip = stringr::str_match(.data$name, "pds-track-*(.*?)\\__")[, 2]) %>%
+      dplyr::filter(.data$Trip %in% new_trips)
+
+    get_track <- function(x) {
+      track <-
+        download_cloud_file(
+          name = x,
+          provider = pars$pds_storage$google$key,
+          options = pars$pds_storage$google$options
+        )
+      readr::read_csv(track, show_col_types = FALSE)[+c(1:6)]
+    }
+
+    future::plan(future::multisession,
+                 workers = pars$pds$tracks$multisession$n_sessions
+    )
+    new_tracks_batch <-
+      furrr::future_map(new_tracks$name, get_track, .progress = TRUE) %>%
+      purrr::reduce(dplyr::bind_rows)
+
+    complete_tracks <- dplyr::bind_rows(full_tracks, new_tracks_batch)
+    complete_tracks_trips <- unique(full_tracks$Trip)
+
+    logger::log_info("Uploading new file to cloud...")
+    ingest_complete_tracks(pars,
+                           data = complete_tracks,
+                           trips = complete_tracks_trips)
+
+    complete_tracks
+  }
+}
+
+#' Download tracks data in a single file
+#'
+#' Download the latest version of PDS single-file tracks data.
+#'
+#' @param pars The configuration file.
+#'
+#' @return
+#' @export
+#'
+get_full_tracks <- function(pars) {
+  cloud_object_name(
+    prefix = paste(pars$pds$tracks$complete$file_prefix, sep = "_"),
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options,
+    exact_match = TRUE
+  ) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    ) %>%
+    readr::read_rds()
+}
+
+#' Get trips from single-file tracks data.
+#'
+#' Download the list of trips from the latest version of PDS single-file
+#' tracks data.
+#'
+#' @param pars the configuration file.
+#'
+#' @return A vector of unique trips.
+#' @export
+#'
+get_full_trips <- function(pars) {
+  cloud_object_name(
+    prefix = paste(pars$pds$tracks$complete$file_prefix, "trips", sep = "_"),
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  ) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    ) %>%
+    readr::read_rds()
 }
