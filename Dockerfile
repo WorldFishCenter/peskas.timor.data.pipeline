@@ -47,7 +47,9 @@ RUN install2.r --error --skipinstalled \
     cowplot \
     geosphere \
     broom \
-    ggpubr
+    ggpubr \
+    ggplot2 \
+    sf
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

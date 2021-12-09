@@ -62,7 +62,9 @@ RUN install2.r --error --skipinstalled \
     knitr \
     geosphere \
     broom \
-    ggpubr
+    ggpubr \
+    ggplot2 \
+    sf
 
 # Install local package
 COPY . /home

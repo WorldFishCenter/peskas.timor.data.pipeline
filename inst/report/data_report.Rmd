@@ -51,6 +51,9 @@ pars <- peskas.timor.data.pipeline::read_config()
                 provider = pars$public_storage$google$key,
                 options = pars$public_storage$google$options
                 )
+  
+  get_tracks_map(pars)
+  timor_map <- list.files(pattern = "tracks-map")
 
 taxa_aggregated <- readRDS(list.files(pattern = "taxa_aggregated"))
 aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
@@ -316,10 +319,7 @@ trips %>%
 
 # Boat tracks
 ```{r, echo=FALSE, message=FALSE, fig.height=8, fig.width=6, fig.align='left',fig.asp=2/3}
-knitr::include_graphics("timor_tracks_full.png")
-
-# aggiorno i dati per fare la mappa
-#
+knitr::include_graphics(timor_map)
 ```
 \pagebreak
 

@@ -209,3 +209,24 @@ get_full_trips <- function(pars) {
     ) %>%
     readr::read_rds()
 }
+
+#' Get map of Timor pds tracks.
+#'
+#' Download the static map of Timor pds tracks.
+#'
+#' @param pars the configuration file.
+#'
+#' @export
+#'
+get_tracks_map <- function(pars) {
+  cloud_object_name(
+    prefix = pars$pds$tracks$map$file_prefix,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  ) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    )
+}
+

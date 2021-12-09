@@ -142,6 +142,8 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
       - name: Call ingest_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
+      - name: Call ingest_pds_map()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_map()'
 
   preprocess-pds-data:
     name: Preprocess pds data

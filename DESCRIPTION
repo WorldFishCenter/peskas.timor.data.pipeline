@@ -57,7 +57,9 @@ Suggests:
     geosphere,
     tidyselect,
     broom,
-    ggpubr
+    ggpubr,
+    ggplot2,
+    sf
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

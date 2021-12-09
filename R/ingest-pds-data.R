@@ -244,3 +244,92 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
       options = pars$storage$google$options
     )
 }
+
+
+#' Generate and ingest map of Timor pds tracks
+#'
+#' This function downloads pds tracks coordinates, generates a png image
+#' showing the map of Timor divided by municipalities including the tracks paths,
+#' and upload it to cloud storage.
+#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more
+#'   details
+#'
+#' @return No output. This funcrion is used for it's side effects.
+#' @export
+#'
+ingest_pds_map <- function(log_threshold = logger::DEBUG) {
+
+  logger::log_threshold(log_threshold)
+  pars <- read_config()
+
+  logger::log_info("Donwloading pds tracks...")
+  tracks <- get_sync_tracks(pars) %>%
+    dplyr::filter(Lng>124.03 & Lng<127.29 & Lat> -9.74 & Lat < -7.98) #exclude track points outside borders
+
+  timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
+    package = "peskas.timor.data.pipeline"
+  ) %>%
+    sf::st_read()
+
+  timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
+    package = "peskas.timor.data.pipeline"
+  ) %>%
+    sf::st_read()
+
+  logger::log_info("Generating map...")
+  require(ggplot2)
+
+  map <-
+    ggplot() +
+    theme_minimal() +
+    geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
+    geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
+    geom_path(
+      data = tracks, mapping = aes(x = Lng, y = Lat, group = Trip),
+      size = 0.08,
+      color = "#005b96"
+    ) +
+    geom_sf_text(data = timor_regions, aes(label = ADM1_EN), size = 3, fontface = "bold") +
+    labs(
+      x = "",
+      y = "",
+      fill = "",
+      title = "GPS tracks from PDS devices"
+    ) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      legend.position = "",
+      plot.margin = unit(c(0, 0, 0, 0), "null")
+    ) +
+    coord_sf(
+      xlim = c(124.73, 127.41),
+      ylim = c(-9.64, -8.02)
+    )
+
+    map_filename <- pars$pds$tracks$map$file_prefix %>%
+    add_version(extension = pars$pds$tracks$map$extension)
+
+  logger::log_info("Saving map...")
+  ggsave(
+    filename = map_filename,
+    plot = map,
+    width = 7,
+    height = 6,
+    bg = "white",
+    dpi = pars$pds$tracks$map$dpi_resolution
+  )
+
+  logger::log_info("Uploading {map_filename} to cloud sorage")
+  upload_cloud_file(file = map_filename,
+                    provider = pars$storage$google$key,
+                    options = pars$storage$google$options)
+
+}

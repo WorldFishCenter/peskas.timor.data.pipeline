@@ -42,6 +42,10 @@ default:
       complete:
         file_prefix: pds-track-complete
         new_trips: 5000
+      map:
+        file_prefix: tracks-map
+        extension: png
+        dpi_resolution: 450
   metadata:
     airtable:
       name: metadata-tables
