@@ -1,4 +1,4 @@
-FROM rocker/verse:4.1.1
+FROM rocker/geospatial:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -45,11 +45,9 @@ RUN install2.r --error --skipinstalled \
     bookdown \
     kableExtra \
     cowplot \
-    geosphere \
     broom \
     ggpubr \
-    sf \
-    udunits2
+
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

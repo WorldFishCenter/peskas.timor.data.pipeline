@@ -1,4 +1,4 @@
-FROM rocker/verse:4.1.1
+FROM rocker/geospatial:4.1.1
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -60,11 +60,8 @@ RUN install2.r --error --skipinstalled \
     kableExtra \
     cowplot \
     knitr \
-    geosphere \
     broom \
-    ggpubr \
-    sf \
-    udunits2
+    ggpubr
 
 # Install local package
 COPY . /home
