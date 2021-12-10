@@ -63,7 +63,8 @@ RUN install2.r --error --skipinstalled \
     geosphere \
     broom \
     ggpubr \
-    sf
+    sf \
+    RPostgreSQL
 
 # Install local package
 COPY . /home
