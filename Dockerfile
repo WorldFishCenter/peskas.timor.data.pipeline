@@ -48,7 +48,6 @@ RUN install2.r --error --skipinstalled \
     geosphere \
     broom \
     ggpubr \
-    ggplot2 \
     sf
 
 # Rstudio interface preferences

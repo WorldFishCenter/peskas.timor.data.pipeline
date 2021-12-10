@@ -12,7 +12,7 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \value{
-No output. This funcrion is used for it's side effects.
+No output. This function is used for it's side effects.
 }
 \description{
 This function downloads pds tracks coordinates, generates a png image

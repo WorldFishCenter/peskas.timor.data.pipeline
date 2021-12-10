@@ -63,7 +63,6 @@ RUN install2.r --error --skipinstalled \
     geosphere \
     broom \
     ggpubr \
-    ggplot2 \
     sf
 
 # Install local package

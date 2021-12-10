@@ -256,7 +256,7 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
 #'   threshold for the logging infrastructure. See [logger::log_levels] for more
 #'   details
 #'
-#' @return No output. This funcrion is used for it's side effects.
+#' @return No output. This function is used for it's side effects.
 #' @export
 #'
 ingest_pds_map <- function(log_threshold = logger::DEBUG) {
@@ -266,7 +266,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Donwloading pds tracks...")
   tracks <- get_sync_tracks(pars) %>%
-    dplyr::filter(Lng>124.03 & Lng<127.29 & Lat> -9.74 & Lat < -7.98) #exclude track points outside borders
+    dplyr::select(.data$Trip, .data$Lat, .data$Lng) %>% # select only necessary columns
+    dplyr::filter(.data$Lng>124.03 & .data$Lng<127.29 & .data$Lat> -9.74 &.data$ Lat < -7.98) #exclude track points outside borders
 
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
     package = "peskas.timor.data.pipeline"
