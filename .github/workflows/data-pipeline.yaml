@@ -163,8 +163,7 @@ jobs:
 
   ingest-pds-map:
     name: Ingest pds map
-    needs: [preprocess-pds-data]
-    needs: build-container
+    needs: preprocess-pds-data
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
