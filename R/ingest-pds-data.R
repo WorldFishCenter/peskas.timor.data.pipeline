@@ -264,11 +264,11 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
-  logger::log_info("Donwloading pds tracks...")
   tracks <- get_sync_tracks(pars) %>%
     dplyr::select(.data$Trip, .data$Lat, .data$Lng) %>% # select only necessary columns
     dplyr::filter(.data$Lng>124.03 & .data$Lng<127.29 & .data$Lat> -9.74 &.data$ Lat < -7.98) #exclude track points outside borders
 
+  logger::log_info("Opening shapefiles ...")
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
     package = "peskas.timor.data.pipeline"
   ) %>%

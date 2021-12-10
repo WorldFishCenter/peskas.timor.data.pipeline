@@ -111,6 +111,8 @@ get_sync_tracks <- function(pars) {
 
   logger::log_info("Downloading all tracks...")
   full_tracks <- get_full_tracks(pars)
+  # remove after loading to save memory
+  file.remove(list.files(pattern = "pds-track-complete__"))
 
   logger::log_info("Checking sync status...")
   updated_trips <-
