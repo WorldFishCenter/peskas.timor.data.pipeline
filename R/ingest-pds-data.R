@@ -265,7 +265,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   tracks <- get_sync_tracks(pars) %>%
-    dplyr::select(.data$Trip, .data$Lat, .data$Lng) %>% # select only necessary columns
     dplyr::filter(.data$Lng>124.03 & .data$Lng<127.29 & .data$Lat> -9.74 &.data$ Lat < -7.98) #exclude track points outside borders
 
   logger::log_info("Opening shapefiles ...")
