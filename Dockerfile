@@ -49,7 +49,7 @@ RUN install2.r --error --skipinstalled \
     broom \
     ggpubr \
     sf \
-    RPostgreSQL
+    udunits2
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

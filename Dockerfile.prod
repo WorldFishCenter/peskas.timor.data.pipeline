@@ -64,7 +64,7 @@ RUN install2.r --error --skipinstalled \
     broom \
     ggpubr \
     sf \
-    RPostgreSQL
+    udunits2
 
 # Install local package
 COPY . /home
