@@ -281,40 +281,45 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generating map...")
   require(ggplot2)
 
+  # Convert to grids to fill
+  degx <- degy <- 0.001 # define grid size
+  gridx <- seq(min(tracks$Lng), max(tracks$Lng) + degx, by = degx)
+  gridy <- seq(min(tracks$Lat), max(tracks$Lat) + degy, by = degy)
+
+  tracks_grid <-
+    tracks %>%
+    dplyr::mutate(
+      cell = paste(findInterval(.data$Lng, gridx),
+                   findInterval(.data$Lat, gridy),
+                   sep = ",")
+    ) %>%
+    dplyr::group_by(.data$cell) %>%
+    dplyr::summarise(Lat = mean(.data$Lat),
+                     Lng = mean(.data$Lng),
+                     trips = dplyr::n()) %>%
+    dplyr::filter(.data$trips>2)
+
   map <-
     ggplot() +
-    theme_minimal() +
+    theme_void() +
     geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
     geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
-    geom_path(
-      data = tracks, mapping = aes(x = Lng, y = Lat, group = Trip),
-      size = 0.08,
-      color = "#005b96"
-    ) +
     geom_sf_text(data = timor_regions, aes(label = ADM1_EN), size = 3, fontface = "bold") +
+    geom_point(tracks_grid, mapping=aes(x=Lng,y=Lat,color=log(trips)), size=0.1, alpha=0.5)+
+    scale_colour_viridis_c(begin=0.1)+
     labs(
       x = "",
       y = "",
       fill = "",
-      title = "GPS tracks from PDS devices"
+      title = ""
     ) +
-    theme(
-      panel.border = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks.y = element_blank(),
-      legend.position = "",
-      plot.margin = unit(c(0, 0, 0, 0), "null")
-    ) +
+    theme(legend.position = "") +
     coord_sf(
       xlim = c(124.73, 127.41),
       ylim = c(-9.64, -8.02)
     )
 
-    map_filename <- pars$pds$tracks$map$file_prefix %>%
+  map_filename <- pars$pds$tracks$map$file_prefix %>%
     add_version(extension = pars$pds$tracks$map$extension)
 
   logger::log_info("Saving map...")
