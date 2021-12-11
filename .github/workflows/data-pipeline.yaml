@@ -56,5 +56,6 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
       - name: Generate and upload report
         run: Rscript -e 'source(system.file("report/generate_upload_report.R", package = "peskas.timor.data.pipeline"))'
