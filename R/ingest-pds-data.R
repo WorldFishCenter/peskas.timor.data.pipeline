@@ -311,13 +311,10 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       x = "",
       y = "",
       fill = "",
-      title = ""
-    ) +
-    theme(legend.position = "") +
-    coord_sf(
-      xlim = c(124.73, 127.41),
-      ylim = c(-9.64, -8.02)
-    )
+      title = "") +
+    theme(legend.position = "")+
+    coord_sf(xlim=c(124.0363,127.2961),
+             ylim=c(-9.511914,-8.139941))
 
   map_filename <- pars$pds$tracks$map$file_prefix %>%
     add_version(extension = pars$pds$tracks$map$extension)
