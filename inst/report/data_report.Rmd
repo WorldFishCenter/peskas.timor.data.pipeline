@@ -53,7 +53,7 @@ pars <- peskas.timor.data.pipeline::read_config()
                 )
   
   peskas.timor.data.pipeline::get_tracks_map(pars)
-  timor_map <- list.files(pattern = "tracks-map")
+  timor_map <- list.files(pattern = "tracks-map", full.names = TRUE)
 
 taxa_aggregated <- readRDS(list.files(pattern = "taxa_aggregated"))
 aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
