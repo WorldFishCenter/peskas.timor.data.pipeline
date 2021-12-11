@@ -304,8 +304,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     theme_void() +
     geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
     geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
-    geom_sf_text(data = timor_regions, aes(label = ADM1_EN), size = 3, fontface = "bold") +
     geom_point(tracks_grid, mapping=aes(x=Lng,y=Lat,color=log(trips)), size=0.1, alpha=0.5)+
+    geom_sf_text(data = timor_regions, aes(label = ADM1_EN), size = 3, fontface = "bold") +
     scale_colour_viridis_c(begin=0.1)+
     labs(
       x = "",
