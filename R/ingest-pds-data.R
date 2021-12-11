@@ -279,7 +279,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     sf::st_read()
 
   logger::log_info("Generating map...")
-  require(ggplot2)
 
   # Convert to grids to fill
   degx <- degy <- 0.001 # define grid size
@@ -300,27 +299,36 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::filter(.data$trips>2)
 
   map <-
-    ggplot() +
-    theme_void() +
-    geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
-    geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
-    geom_point(tracks_grid, mapping=aes(x=Lng,y=Lat,color=log(trips)), size=0.1, alpha=0.5)+
-    geom_sf_text(data = timor_regions, aes(label = ADM1_EN), size = 3, fontface = "bold") +
-    scale_colour_viridis_c(begin=0.1)+
-    labs(
+    ggplot2::ggplot() +
+    ggplot2::theme_void() +
+    ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
+    ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
+    ggplot2::geom_point(tracks_grid,
+      mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = log(.data$trips)),
+      size = 0.1, alpha = 0.5
+    ) +
+    ggplot2::geom_sf_text(
+      data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 3,
+      fontface = "bold"
+    ) +
+    ggplot2::scale_colour_viridis_c(begin = 0.1) +
+    ggplot2::labs(
       x = "",
       y = "",
       fill = "",
-      title = "") +
-    theme(legend.position = "")+
-    coord_sf(xlim=c(124.0363,127.2961),
-             ylim=c(-9.511914,-8.139941))
+      title = ""
+    ) +
+    ggplot2::theme(legend.position = "") +
+    ggplot2::coord_sf(
+      xlim = c(124.0363, 127.2961),
+      ylim = c(-9.511914, -8.139941)
+    )
 
   map_filename <- pars$pds$tracks$map$file_prefix %>%
     add_version(extension = pars$pds$tracks$map$extension)
 
   logger::log_info("Saving map...")
-  ggsave(
+  ggplot2::ggsave(
     filename = map_filename,
     plot = map,
     width = 7,

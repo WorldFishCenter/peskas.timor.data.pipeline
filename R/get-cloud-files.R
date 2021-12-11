@@ -172,7 +172,7 @@ get_sync_tracks <- function(pars) {
 #'
 #' @param pars The configuration file.
 #'
-#' @return
+#' @return A dataframes with tracks coordinates for each trip
 #' @export
 #'
 get_full_tracks <- function(pars) {

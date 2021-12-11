@@ -9,7 +9,6 @@
 #'merged_trips.
 #'
 #'@param log_threshold
-#'@inheritParams ingest_landings
 #'@keywords workflow
 #'@return no outputs. This function is used for it's side effects
 #'

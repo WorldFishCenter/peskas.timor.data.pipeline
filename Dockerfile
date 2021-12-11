@@ -39,6 +39,7 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
+    tinytest \
     rmarkdown \
     ggplot2 \
     zoo \

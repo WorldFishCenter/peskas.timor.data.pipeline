@@ -10,7 +10,7 @@ get_full_tracks(pars)
 \item{pars}{The configuration file.}
 }
 \value{
-
+A dataframes with tracks coordinates for each trip
 }
 \description{
 Download the latest version of PDS single-file tracks data.
