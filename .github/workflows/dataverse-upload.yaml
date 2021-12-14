@@ -2,9 +2,8 @@ name: Upload public files to Dataverse
 
 on:
   push:
-  schedule:
     branches:
-    - data-export
+      - data-export
     - cron:  '0 0 * * *'
 
 env:
