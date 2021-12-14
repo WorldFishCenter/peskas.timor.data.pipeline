@@ -2,10 +2,10 @@ name: Upload public files to Dataverse
 
 on:
   push:
+  schedule:
+    - cron:  '0 0 * * *'
     branches:
       - data-export
-    - cron:  '0 0 * * *'
-
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   DATAVERSE_TOKEN: ${{ secrets.PESKAS_DATAVERSE_TOKEN }}
