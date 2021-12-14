@@ -4,8 +4,7 @@ on:
   push:
   schedule:
     - cron:  '0 0 * * *'
-    branches:
-      - data-export
+
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   DATAVERSE_TOKEN: ${{ secrets.PESKAS_DATAVERSE_TOKEN }}
@@ -18,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: data-export
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
