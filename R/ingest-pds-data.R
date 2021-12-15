@@ -305,12 +305,14 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
     ggplot2::geom_point(tracks_grid,
       mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = log(.data$trips)),
-      size = 0.1, alpha = 0.5
+      size = 0.01, alpha = 0.5
     ) +
     ggplot2::geom_sf_text(
       data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 3,
       fontface = "bold"
     ) +
+    ggplot2::annotate(geom="text", y=-8.16, x=125.45, label="Atauro",
+                      size = 3, fontface = "bold")+
     ggplot2::scale_colour_viridis_c(begin = 0.1) +
     ggplot2::labs(
       x = "",
