@@ -119,6 +119,9 @@ get_sync_tracks <- function(pars) {
     get_preprocessed_trips(pars) %>%
     magrittr::extract2("Trip") %>%
     unique()
+  # remove after loading to save memory
+  file.remove(list.files(pattern = "pds-trips-preprocessed__"))
+
 
   check_trips <-
     get_full_trips(pars)
@@ -131,7 +134,7 @@ get_sync_tracks <- function(pars) {
 
   } else {
 
-    logger::log_info("Syncing tracks file...")
+    logger::log_info("Syncing {length(new_trips)} tracks...")
     new_tracks <-
       googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
       dplyr::mutate(Trip = stringr::str_match(.data$name, "pds-track-*(.*?)\\__")[, 2]) %>%
@@ -145,7 +148,6 @@ get_sync_tracks <- function(pars) {
           options = pars$pds_storage$google$options
         )
       readr::read_csv(track, show_col_types = FALSE)[+c(3:5)]
-      file.remove(track)
     }
 
     future::plan(future::multisession,

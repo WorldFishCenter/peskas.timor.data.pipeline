@@ -41,7 +41,7 @@ default:
         n_sessions: 32
       complete:
         file_prefix: pds-track-complete
-        new_trips: 5000
+        new_trips: 1000
       map:
         file_prefix: tracks-map
         extension: png
