@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-        with:
-          ref: data-export
       - name: Build image with cache
         id: build-docker
         uses: whoan/docker-build-with-cache-action@v5
