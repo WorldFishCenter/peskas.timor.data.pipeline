@@ -145,6 +145,7 @@ get_sync_tracks <- function(pars) {
           options = pars$pds_storage$google$options
         )
       readr::read_csv(track, show_col_types = FALSE)[+c(3:5)]
+      file.remove(track)
     }
 
     future::plan(future::multisession,
