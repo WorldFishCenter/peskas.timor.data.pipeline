@@ -57,7 +57,8 @@ Suggests:
     tinytest,
     dataverse,
     rmarkdown,
-    broom
+    broom,
+    zoo
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

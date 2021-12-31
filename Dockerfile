@@ -42,7 +42,8 @@ RUN install2.r --error --skipinstalled \
     dataverse \
     rmarkdown \
     geosphere \
-    broom
+    broom \
+    zoo
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

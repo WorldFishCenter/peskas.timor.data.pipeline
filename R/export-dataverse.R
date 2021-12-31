@@ -191,11 +191,12 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   key <- pars$export_dataverse$token
   server <- pars$export_dataverse$server
 
-  prefixes <- c("aggregated__", "trips", "catch", "taxa")
+  prefixes <- c("trips", "catch")
   files_names <-
     purrr::map(prefixes, ~ cloud_object_name(
       prefix = paste(pars$export$file_prefix, .x, sep = "_"),
       version = "latest",
+      extension = "tsv",
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     )) %>%
@@ -210,12 +211,12 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
     options = pars$public_storage$google$options
   )
 
-  aggregated_day <- readr::read_rds(grep("timor_aggregated", list.files(), value = TRUE))$day
+  dates <- readr::read_tsv(grep("trips", list.files(), value = TRUE))$landing_date
 
   # passing info to README rmarkdown document
   time_range <-
-    paste(zoo::as.yearmon(min(aggregated_day$date_bin_start, na.rm = TRUE)),
-      zoo::as.yearmon(max(aggregated_day$date_bin_start, na.rm = TRUE)),
+    paste(zoo::as.yearmon(min(dates, na.rm = TRUE)),
+      zoo::as.yearmon(max(dates, na.rm = TRUE)),
       sep = " - "
     )
 
