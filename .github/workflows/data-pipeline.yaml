@@ -159,22 +159,6 @@ jobs:
       - name: Call preprocess_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_tracks()'
 
-  ingest-pds-map:
-    name: Ingest pds map
-    needs: preprocess-pds-data
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_pds_map()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_map()'
-
   validate-pds-data:
     name: Validate pds data
     needs: preprocess-pds-data
