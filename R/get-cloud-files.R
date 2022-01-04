@@ -149,12 +149,9 @@ get_sync_tracks <- function(pars) {
       readr::read_csv(track, show_col_types = FALSE)[+c(3:5)]
     }
 
-    future::plan(future::multisession,
-                 workers = pars$pds$tracks$multisession$n_sessions
-    )
     logger::log_info("Donwloading and binding the new tracks...")
     new_tracks_batch <-
-      furrr::future_map(new_tracks$name, get_track, .progress = TRUE) %>%
+      purrr::map(new_tracks$name, get_track) %>%
       purrr::reduce(dplyr::bind_rows)
 
     complete_tracks <- dplyr::bind_rows(full_tracks, new_tracks_batch)
