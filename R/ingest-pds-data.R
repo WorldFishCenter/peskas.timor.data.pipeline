@@ -168,23 +168,21 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
   }
   furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
 
-  # Store the IDs of pds-tracks (useful for map generation)
-  tracks_list <-
+  # Store names of pds-tracks (useful for map generation)
+  tracks_names <-
     googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
-    magrittr::extract2("name") %>%
-    stringr::str_extract("[[:digit:]]+") %>%
-    tidyr::as_tibble() %>%
-    dplyr::rename(Trip = .data$value)
+    dplyr::select(.data$name) %>%
+    dplyr::mutate(Trip = stringr::str_extract(.data$name, "[[:digit:]]+"))
 
-  tracks_list_filename <-
+  tracks_names_filename <-
     pars$pds$tracks$bucket_content$file_prefix %>%
     add_version(extension = "rds")
 
-  readr::write_rds(x = tracks_list,
-                   file = tracks_list_filename)
+  readr::write_rds(x = tracks_names,
+                   file = tracks_names_filename)
 
-  logger::log_info("Uploading {tracks_list_filename} to cloud sorage")
-  upload_cloud_file(file = tracks_list_filename,
+  logger::log_info("Uploading {tracks_names_filename} to cloud sorage")
+  upload_cloud_file(file = tracks_names_filename,
                     provider = pars$storage$google$key,
                     options = pars$storage$google$options)
 }
