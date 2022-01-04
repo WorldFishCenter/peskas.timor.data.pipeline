@@ -42,6 +42,8 @@ default:
       complete:
         file_prefix: pds-track-complete
         new_trips: 1000
+      bucket_content:
+        file_prefix: pds-track-list
       map:
         file_prefix: tracks-map
         extension: png

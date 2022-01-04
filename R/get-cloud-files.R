@@ -136,8 +136,7 @@ get_sync_tracks <- function(pars) {
 
     logger::log_info("Syncing {length(new_trips)} tracks...")
     new_tracks <-
-      googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
-      dplyr::mutate(Trip = stringr::str_match(.data$name, "pds-track-*(.*?)\\__")[, 2]) %>%
+      tracks_ids <- get_tracks_ids(pars) %>%
       dplyr::filter(.data$Trip %in% new_trips)
 
     get_track <- function(x) {
@@ -235,3 +234,23 @@ get_tracks_map <- function(pars) {
     )
 }
 
+#' Get pds IDs
+#'
+#' Get the list of pds-tracks IDs stored in the pds bucket
+#'
+#' @param pars the configuration file.
+#'
+#' @export
+#'
+get_tracks_ids <- function(pars) {
+  cloud_object_name(
+    prefix = pars$pds$tracks$bucket_content$file_prefix,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  ) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    ) %>%
+    readr::read_rds()
+}
