@@ -136,7 +136,7 @@ get_sync_tracks <- function(pars) {
 
     logger::log_info("Syncing {length(new_trips)} tracks...")
     new_tracks <-
-      tracks_ids <- get_tracks_ids(pars) %>%
+      get_tracks_ids(pars) %>%
       dplyr::filter(.data$Trip %in% new_trips)
 
     get_track <- function(x) {
@@ -152,6 +152,7 @@ get_sync_tracks <- function(pars) {
     future::plan(future::multisession,
                  workers = pars$pds$tracks$multisession$n_sessions
     )
+    logger::log_info("Donwloading and binding the new tracks...")
     new_tracks_batch <-
       furrr::future_map(new_tracks$name, get_track, .progress = TRUE) %>%
       purrr::reduce(dplyr::bind_rows)
