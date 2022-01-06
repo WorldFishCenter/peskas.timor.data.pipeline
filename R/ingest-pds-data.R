@@ -322,8 +322,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
     ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
     ggplot2::geom_point(tracks_grid,
-      mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = log(.data$trips)),
-      size = 0.01, alpha = 0.5
+                        mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
+                        size = 0.01, alpha = 0.5
     ) +
     ggplot2::geom_sf_text(
       data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 3,
@@ -331,29 +331,35 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ) +
     ggplot2::annotate(geom="text", y=-8.16, x=125.45, label="Atauro",
                       size = 3, fontface = "bold")+
-    ggplot2::scale_colour_viridis_c(begin = 0.1) +
+    ggplot2::scale_colour_viridis_c(begin = 0.1,
+                                    trans = "log2",
+                                    breaks = c(10, 100, 1000, 10000, 100000),
+                                    labels = c("10", "100", "1,000", "10,000", "100,000")) +
     ggplot2::labs(
       x = "",
       y = "",
       fill = "",
-      title = ""
+      title = "",
+      color = "Trips"
     ) +
-    ggplot2::theme(legend.position = "") +
     ggplot2::coord_sf(
       xlim = c(124.0363, 127.2961),
       ylim = c(-9.511914, -8.139941)
-    )
+    ) +
+    ggplot2::theme(legend.position = "top",
+                   legend.key.height  = ggplot2::unit(0.4, 'cm'),
+                   legend.key.width   = ggplot2::unit(1.5, 'cm'))
 
-  map_filename <- pars$pds$tracks$map$file_prefix %>%
-    add_version(extension = pars$pds$tracks$map$extension)
+  map_filename <-
+    paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
 
   logger::log_info("Saving map...")
   ggplot2::ggsave(
     filename = map_filename,
     plot = map,
     width = 7,
-    height = 6,
-    bg = "white",
+    height = 4,
+    bg = NULL,
     dpi = pars$pds$tracks$map$dpi_resolution
   )
 
@@ -363,3 +369,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
                     options = pars$storage$google$options)
 
 }
+
+
+
