@@ -353,7 +353,7 @@ trips %>%
 
 
 # Boat tracks
-```{r, echo=FALSE, message=FALSE, out.height="300px",fig.align='left'} 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, out.height="300px",fig.align='left'} 
 knitr::include_graphics(peskas.timor.data.pipeline::get_tracks_map(pars))
 ```
 \pagebreak

@@ -223,12 +223,12 @@ get_full_trips <- function(pars) {
 get_tracks_map <- function(pars) {
   cloud_object_name(
     prefix = pars$pds$tracks$map$file_prefix,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
   ) %>%
     download_cloud_file(
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
+      provider = pars$public_storage$google$key,
+      options = pars$public_storage$google$options
     )
 }
 

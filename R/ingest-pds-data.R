@@ -365,8 +365,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Uploading {map_filename} to cloud sorage")
   upload_cloud_file(file = map_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+                    provider = pars$public_storage$google$key,
+                    options = pars$public_storage$google$options)
 
 }
 
