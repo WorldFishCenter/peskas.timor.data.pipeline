@@ -876,7 +876,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
 
 # Other fisheries
 
-```{r, echo=FALSE, warning=FALSE, eval=FALSE, message=FALSE, fig.height=4, fig.width=8}
+```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=4, fig.width=8}
 validated_landings %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",

@@ -221,15 +221,11 @@ get_full_trips <- function(pars) {
 #' @export
 #'
 get_tracks_map <- function(pars) {
-  cloud_object_name(
-    prefix = pars$pds$tracks$map$file_prefix,
+  download_cloud_file(
+    name = paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = "."),
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
-  ) %>%
-    download_cloud_file(
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
-    )
+  )
 }
 
 #' Get pds IDs
