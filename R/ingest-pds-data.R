@@ -326,21 +326,21 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
                         size = 0.01, alpha = 0.5
     ) +
     ggplot2::geom_sf_text(
-      data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 3,
+      data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
       fontface = "bold"
     ) +
     ggplot2::annotate(geom="text", y=-8.16, x=125.45, label="Atauro",
-                      size = 3, fontface = "bold")+
+                      size = 2.8, fontface = "bold")+
     ggplot2::scale_colour_viridis_c(begin = 0.1,
                                     trans = "log2",
-                                    breaks = c(10, 100, 1000, 10000, 100000),
-                                    labels = c("10", "100", "1,000", "10,000", "100,000")) +
+                                    breaks = c(10, 100000),
+                                    labels = c("Low boats\nactivity", "High boats\nactivity")) +
     ggplot2::labs(
       x = "",
       y = "",
       fill = "",
       title = "",
-      color = "Trips"
+      color = ""
     ) +
     ggplot2::coord_sf(
       xlim = c(124.0363, 127.2961),
