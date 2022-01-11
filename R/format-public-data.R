@@ -154,7 +154,7 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
                                                          week_start = 7)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
     dplyr::summarise(n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
-                     prop_landings_woman = sum(fisher_number_woman > 0, na.rm = T) / sum(!is.na(fisher_number_woman), na.rm = T))
+                     prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T))
 
    track_end_bin <- merged_trips_with_addons %>%
      dplyr::mutate(tracker_trip_end = lubridate::as_date(.data$tracker_trip_end),
@@ -207,9 +207,9 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
         today < dplyr::lead(.data$date_bin_start),
       elapsed = as.numeric(today - .data$date_bin_start + 1),
       period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
-      n_landings_per_boat = dplyr::if_else(current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
-      revenue = dplyr::if_else(current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
-      catch = dplyr::if_else(current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)) %>%
+      n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
+      revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+      catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)) %>%
     dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
     dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
                                                          bin_unit,
