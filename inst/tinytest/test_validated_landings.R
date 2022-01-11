@@ -32,7 +32,7 @@ expect_false(
 
 expect_false(
   any(na.omit(validated_landings$landing_date) <
-        lubridate::as_date("2017-01-01")),
+        lubridate::with_tz("2017-01-01", "Asia/Dili")),
   "Landing dates prior to 2017")
 
 expect_true(
