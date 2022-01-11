@@ -145,7 +145,7 @@ estimates_per_taxa <- function(catch_models, general_results){
 
   estimations <- catch_models %>%
     purrr::map(predict_variable, var = "landing_weight") %>%
-    purrr::imap(~ dplyr::mutate(.x, .grouped_taxa = .y)) %>%
+    purrr::imap(~ dplyr::mutate(.x, grouped_taxa = .y)) %>%
     purrr::reduce(dplyr::bind_rows)
 
   estimations_per_taxa <- estimations %>%
