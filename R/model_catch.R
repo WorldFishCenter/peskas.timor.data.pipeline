@@ -145,7 +145,7 @@ estimates_per_taxa <- function(catch_models, general_results){
 
   estimations <- catch_models %>%
     purrr::map(predict_variable, var = "landing_weight") %>%
-    purrr::imap(~ dplyr::mutate(.x, grouped_taxa = .y)) %>%
+    purrr::imap(~ dplyr::mutate(.x, .grouped_taxa = .y)) %>%
     purrr::reduce(dplyr::bind_rows)
 
   estimations_per_taxa <- estimations %>%
@@ -268,7 +268,7 @@ model_catch_per_taxa <- function(trips, modelled_taxa){
       landing_weight ~ (1 | month) + (1 | period),
       # ziformula = ~ (1 | month) + (1 | period),
       family = "poisson",
-      data = dplyr::filter(catch_df, grouped_taxa == taxon))
+      data = dplyr::filter(catch_df, .data$grouped_taxa == taxon))
   }
 
   models
