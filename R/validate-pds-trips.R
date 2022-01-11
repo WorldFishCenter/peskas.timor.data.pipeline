@@ -38,6 +38,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     pds_trips %>%
     dplyr::arrange(dplyr::desc(.data$Trip)) %>%
     dplyr::distinct(pds_trips, dplyr::across(-.data$Trip), .keep_all = TRUE) %>%
+    dplyr::filter(.data$`Last Seen` < .data$Ended & .data$`Last Seen` < .data$Started)
     dplyr::arrange(.data$Boat, .data$Started) %>%
     dplyr::group_by(.data$Boat) %>%
     dplyr::mutate(
@@ -263,7 +264,11 @@ merge_consecutive_trips <- function(x,
       `Boat Name` = dplyr::first(.data$`Boat Name`),
       `Boat Gear` = dplyr::first(.data$`Boat Gear`),
       Community = dplyr::first(.data$Community),
-      `Duration (Seconds)` = dplyr::last(.data$Ended) - dplyr::first(.data$Started),
+      `Duration (Seconds)` = lubridate::int_length(
+        lubridate::interval(
+          dplyr::first(.data$Started), dplyr::last(.data$Ended)
+        )
+      ),
       `Range (Meters)` = sum(.data$`Range (Meters)`),
       `Distance (Meters)` = sum(.data$`Distance (Meters)`),
       IMEI = dplyr::first(.data$IMEI),
