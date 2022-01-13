@@ -2,9 +2,9 @@
 % Please edit documentation in R/calculate-weights.R
 \name{join_weights}
 \alias{join_weights}
-\title{Join length-weights info to preprocessed landings}
+\title{Join length-weights and nutritional parameters info to preprocessed landings}
 \usage{
-join_weights(data, metadata, rfish_tab)
+join_weights(data, metadata, rfish_tab, nutrients_table)
 }
 \arguments{
 \item{data}{The survey landings data frame}
@@ -12,13 +12,16 @@ join_weights(data, metadata, rfish_tab)
 \item{metadata}{Metadata tables}
 
 \item{rfish_tab}{Table with length weight parameters}
+
+\item{nutrients_table}{Table with nutritional parameters}
 }
 \value{
 A new landings data frame including length-weights info
 }
 \description{
-The function integrate length-weight info from FIshBase databse to preprocessed
-surveys data and convert catch labels according to the FAO nomenclature
+The function integrate nutritional info from the \code{get_nutrients_table} function
+and length-weight info from FIshBase databse to preprocessed surveys data and
+convert catch  labels according to the FAO nomenclature
 (\url{http://www.fao.org/fishery/statistics/global-production/3/en}).
 }
 \details{

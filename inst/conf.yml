@@ -65,6 +65,8 @@ default:
       country_codes:
         - 626
         - 360
+    nutrients:
+      resource: "https://raw.githubusercontent.com/mamacneil/NutrientFishbase/master/model/Species_Nutrient_Predictions.csv"
 
   validation:
     landings:
