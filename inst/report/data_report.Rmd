@@ -470,6 +470,25 @@ validated_landings %>%
 # Fishing effort 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
+effort_dat <-
+  validated_landings %>%
+  dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
+                                                 "month",
+                                                 week_start = 7)) %>%
+  dplyr::select(month_date,trip_duration) %>%
+  dplyr::group_by(month_date) %>%
+  dplyr::summarise(
+    mean = mean(trip_duration,na.rm=TRUE),
+    sd = sd(trip_duration,na.rm=TRUE),
+    n = dplyr::n()
+  ) 
+
+effort_caption <- paste0("The average trip duration of Peskas' boats is of ",
+                         round(mean(effort_dat$mean, na.rm=TRUE),1)," ± ", round(mean(effort_dat$sd, na.rm=TRUE),1),
+                         " hours.\nAs there are on average ", round(mean(effort_dat$n, na.rm=TRUE),0),
+                         " trips each month,\nthe monthly fishing effort is about ",
+                         round(mean(effort_dat$n, na.rm=TRUE),0)*round(mean(effort_dat$mean, na.rm=TRUE),1),
+                         " hours")
 validated_landings %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
@@ -507,7 +526,7 @@ validated_landings %>%
   labs(
     x = "Date", y = "Fishing effort (hours)",
     title = "Interannual distribution of fishing effort",
-    subtitle = "Fishing effort was highest during autumn in 2019 and during the winter in 2020,\nthen remained mostly stable for the rest of the time series."
+    subtitle = effort_caption
   )
 
 ```
@@ -515,6 +534,7 @@ validated_landings %>%
 \newline
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3, fig.width=4}
+
 validated_landings %>%
     dplyr::filter(trip_duration>0 & trip_duration!="NA") %>%
     dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
@@ -581,7 +601,23 @@ aggregated$month %>%
 ## National species stock 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
+stock_dat <-
   dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
+  dplyr::group_by(comm_name) %>%
+  dplyr::summarise(aggregated_weight = sum(weight, na.rm = TRUE)) %>%
+  dplyr::mutate(weight_proportion = aggregated_weight / total_weight * 100) %>%
+  dplyr::arrange(dplyr::desc(weight_proportion)) %>%
+  dplyr::mutate(cumulative = cumsum(weight_proportion)) %>%
+  dplyr::arrange(weight_proportion) %>%
+  dplyr::mutate(comm_name = factor(comm_name, levels = .$comm_name)) %>% 
+  dplyr::arrange(cumulative)
+
+stock_caption <- paste0(stock_dat[1,1]$comm_name, " represent the most important species in terms of overall stock,\ntogether with ",
+                        paste(stock_dat[2,1]$comm_name, stock_dat[3,1]$comm_name, stock_dat[4,1]$comm_name, sep =", "),
+                        ",\naccount for ", round(stock_dat[4,4],1), "% of the total stock." )
+
+dplyr::left_join(catch, trips, by = "trip_id") %>%
   dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
   dplyr::group_by(comm_name) %>%
   dplyr::summarise(aggregated_weight = sum(weight, na.rm = TRUE)) %>%
@@ -598,8 +634,8 @@ aggregated$month %>%
   #scale_color_manual(labels = c("Economic value", "Weight"), values = c("#669966", "#996699")) +
   labs(
     x = "Overall live weight proportion", y = "",
-    title = "Overall species'stock proportion",
-    subtitle = "Sardines represent the most important species in terms of overall stock, together with Mackerel,\nFusilliers and flying fishes account for about 40% of the total stock."
+    title = "Overall species' stock proportion",
+    subtitle = stock_caption
   ) +
   theme(
     panel.grid.minor.x = element_blank(),
@@ -876,7 +912,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
 
 # Other fisheries
 
-```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=4, fig.width=8}
+```{r, echo=FALSE, warning=FALSE, eval=FALSE, message=FALSE, fig.height=4, fig.width=8}
 validated_landings %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
