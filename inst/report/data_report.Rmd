@@ -485,8 +485,8 @@ effort_dat <-
 
 effort_caption <- paste0("The average trip duration of Peskas' boats is of ",
                          round(mean(effort_dat$mean, na.rm=TRUE),1)," ± ", round(mean(effort_dat$sd, na.rm=TRUE),1),
-                         " hours.\nAs there are on average ", round(mean(effort_dat$n, na.rm=TRUE),0),
-                         " trips each month,\nthe monthly fishing effort is about ",
+                         " hours. As there are\non average ", round(mean(effort_dat$n, na.rm=TRUE),0),
+                         " trips each month, the monthly fishing effort\nis about ",
                          round(mean(effort_dat$n, na.rm=TRUE),0)*round(mean(effort_dat$mean, na.rm=TRUE),1),
                          " hours")
 validated_landings %>%
@@ -615,7 +615,7 @@ stock_dat <-
 
 stock_caption <- paste0(stock_dat[1,1]$comm_name, " represent the most important species in terms of overall stock,\ntogether with ",
                         paste(stock_dat[2,1]$comm_name, stock_dat[3,1]$comm_name, stock_dat[4,1]$comm_name, sep =", "),
-                        ",\naccount for ", round(stock_dat[4,4],1), "% of the total stock." )
+                        ", account\nfor ", round(stock_dat[4,4],1), "% of the total stock." )
 
 dplyr::left_join(catch, trips, by = "trip_id") %>%
   dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
@@ -912,7 +912,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
 
 # Other fisheries
 
-```{r, echo=FALSE, warning=FALSE, eval=FALSE, message=FALSE, fig.height=4, fig.width=8}
+```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=4, fig.width=8}
 validated_landings %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
