@@ -113,7 +113,7 @@ default:
 
   models:
     file_prefix: model_predictions
-    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, MOO]
+    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, GZP]
 
   export:
     file_prefix: timor

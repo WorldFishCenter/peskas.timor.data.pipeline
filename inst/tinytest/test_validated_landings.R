@@ -27,12 +27,12 @@ expect_false(
   "Negative values in landings")
 
 expect_false(
-  any(na.omit(validated_landings$landing_date) > (Sys.Date() + 1)),
+  any(na.omit(validated_landings$landing_date) > (lubridate::with_tz(Sys.Date() + 1, "Asia/Dili"))),
   "Landing dates larger than current date + 1")
 
 expect_false(
   any(na.omit(validated_landings$landing_date) <
-        lubridate::as_date("2017-01-01")),
+        lubridate::with_tz("2017-01-01", "Asia/Dili")),
   "Landing dates prior to 2017")
 
 expect_true(
