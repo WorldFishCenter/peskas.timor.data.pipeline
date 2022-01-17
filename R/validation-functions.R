@@ -262,7 +262,7 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
     validated_length %>%
     dplyr::select(-.data$alert_number) %>%
     dplyr::group_by(.data$submission_id,.data$n,.data$species) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length:.data$weight))
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu))
 
   # replace validated catches params in original data
   validated_catch_params <- data %>%
@@ -345,7 +345,7 @@ validate_price_weight <- function(surveys_catch_alerts,
       alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
       weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_)
     ) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length, .data$n_individuals, .data$weight)) %>%
+    tidyr::nest(length_individuals = c(.data$mean_length : .data$Vitamin_A_mu)) %>%
     tidyr::nest(species_group = c(
       .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
       .data$photo, .data$length_individuals, .data$length_type

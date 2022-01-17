@@ -116,7 +116,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
         purrr::map, dplyr::select,
         length = .data$mean_length,
         individuals = .data$n_individuals,
-        weight = .data$weight),
+        weight = .data$weight,
+        .data$Selenium_mu : .data$Vitamin_A_mu),
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::select,
         catch_taxon=.data$species,
