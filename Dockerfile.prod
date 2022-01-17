@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.1.1
+FROM rocker/geospatial:4.1.1
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -41,7 +41,8 @@ RUN install2.r --error --skipinstalled \
     taxize \
     tinytest \
     remotes \
-    rfishbase
+    rfishbase \
+    knitr
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -52,8 +53,16 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    geosphere \
-    broom
+    tinytest \
+    rmarkdown \
+    ggplot2 \
+    zoo \
+    bookdown \
+    kableExtra \
+    cowplot \
+    knitr \
+    broom \
+    ggpubr
 
 # Install local package
 COPY . /home

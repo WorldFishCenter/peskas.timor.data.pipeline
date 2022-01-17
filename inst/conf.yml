@@ -39,7 +39,15 @@ default:
       multisession:
         parallel: true
         n_sessions: 32
-
+      complete:
+        file_prefix: pds-track-complete
+        new_trips: 1000
+      bucket_content:
+        file_prefix: pds-track-list
+      map:
+        file_prefix: tracks-map
+        extension: png
+        dpi_resolution: 450
   metadata:
     airtable:
       name: metadata-tables
@@ -109,6 +117,9 @@ default:
 
   export:
     file_prefix: timor
+
+  report:
+    file_prefix: data_report
 
   storage:
     google:
