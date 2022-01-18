@@ -22,6 +22,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -34,18 +36,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.16.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.17.0</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="reference/index.html">Reference</a>
 </li>
@@ -65,15 +61,15 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="peskastimordatapipeline" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#peskastimordatapipeline" class="anchor"></a>peskas.timor.data.pipeline</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="peskastimordatapipeline">peskas.timor.data.pipeline<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline"></a>
+</h1></div>
 <!-- badges: start -->
 
 <p>The goal of peskas.timor.data.pipeline is to implement, deploy, and execute the data and modelling pipelines that underpin Peskas-East Timor, the small-scale fisheries analytics in East Timor.</p>
-<div id="the-pipeline-is-an-r-package" class="section level2">
-<h2 class="hasAnchor">
-<a href="#the-pipeline-is-an-r-package" class="anchor"></a>The pipeline is an R package</h2>
+<div class="section level2">
+<h2 id="the-pipeline-is-an-r-package">The pipeline is an R package<a class="anchor" aria-label="anchor" href="#the-pipeline-is-an-r-package"></a>
+</h2>
 <p>peskas.timor.data.pipeline is structured as an R package because it makes it easier to write production-grade software. Specifically, structuring the code as an R package allows us to:</p>
 <ul>
 <li>better handle system and package dependencies,</li>
@@ -81,88 +77,100 @@
 <li>makes it easier to document the code, and</li>
 <li>makes it easier to test the code</li>
 </ul>
-<p>We make heavy use of <a href="https://engineering-shiny.org">tidyverse style conventions</a> and the <a href="https://usethis.r-lib.org">usethis</a> package to automate tasks during project setup and deployment.</p>
-<p>For more information about the rationale of structuring the pipeline as a package check <a href="https://engineering-shiny.org/structuring-project.html#structuring-your-app_">Chapter 3</a> in <a href="https://engineering-shiny.org"><em>Engineering Production-Grade Shiny Apps</em></a>. The book is focused on Shiny applications but the rationale also applies to data pipelines and production-ready code in general. The best place to learn more about package development is probably the <a href="https://r-pkgs.org"><em>R packages</em></a> book by Hadley Wickham and Jenny Brian.</p>
+<p>We make heavy use of <a href="https://engineering-shiny.org" class="external-link">tidyverse style conventions</a> and the <a href="https://usethis.r-lib.org" class="external-link">usethis</a> package to automate tasks during project setup and deployment.</p>
+<p>For more information about the rationale of structuring the pipeline as a package check <a href="https://engineering-shiny.org/structuring-project.html#structuring-your-app_" class="external-link">Chapter 3</a> in <a href="https://engineering-shiny.org" class="external-link"><em>Engineering Production-Grade Shiny Apps</em></a>. The book is focused on Shiny applications but the rationale also applies to data pipelines and production-ready code in general. The best place to learn more about package development is probably the <a href="https://r-pkgs.org" class="external-link"><em>R packages</em></a> book by Hadley Wickham and Jenny Brian.</p>
 </div>
-<div id="the-pipeline-runs-on-github-actions" class="section level2">
-<h2 class="hasAnchor">
-<a href="#the-pipeline-runs-on-github-actions" class="anchor"></a>The pipeline runs on Github Actions</h2>
-<p>While each step in the pipeline are defined as a function in the package, these functions are deployed and integrated using <a href="https://docs.github.com/en/actions/learn-github-actions">GitHub Actions</a>. This allow us to take advantages of best practices in continous development and integration (CD/CI) and automatically link the code to execution. However, these workflow functions work almost as scripts because they don’t take parameters and are used for their side effects.</p>
-<p>Each job in the pipeline is defined in the workflow file: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml"><code>.github/workflows/data-pipeline.yaml</code></a> and can be seen in the figure below. Note that additional workflows exist to test the package in multiple environments and build the documentation website.</p>
+<div class="section level2">
+<h2 id="the-pipeline-runs-on-github-actions">The pipeline runs on Github Actions<a class="anchor" aria-label="anchor" href="#the-pipeline-runs-on-github-actions"></a>
+</h2>
+<p>While each step in the pipeline are defined as a function in the package, these functions are deployed and integrated using <a href="https://docs.github.com/en/actions/learn-github-actions" class="external-link">GitHub Actions</a>. This allow us to take advantages of best practices in continous development and integration (CD/CI) and automatically link the code to execution. However, these workflow functions work almost as scripts because they don’t take parameters and are used for their side effects.</p>
+<p>Each job in the pipeline is defined in the workflow file: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml" class="external-link"><code>.github/workflows/data-pipeline.yaml</code></a> and can be seen in the figure below. Note that additional workflows exist to test the package in multiple environments and build the documentation website.</p>
 <p><img src="reference/figures/pipeline.png"></p>
 <p>The figure above illustrate the jobs that are part of the pipeline workflow. Note that not all of them are implemented yet.</p>
 <p>Generally, artifacts produced by each job are stored in a cloud storage container and retrieved from the cloud storage by the next job in the pipeline. When storing a job’s artifacts are versioned using the function <code><a href="reference/add_version.html">add_version()</a></code>, which generally includes a timestamp and the commit sha. This approach allow us to trace each artifact to a unique run of the pipeline. When retrieving jobs can call <code><a href="reference/cloud_object_name.html">cloud_object_name()</a></code> to obtain the latest or an specific version of an artifact.</p>
 </div>
-<div id="environment-parameters-are-specified-in-the-config-file" class="section level2">
-<h2 class="hasAnchor">
-<a href="#environment-parameters-are-specified-in-the-config-file" class="anchor"></a>Environment parameters are specified in the config file</h2>
-<p>The parameters that determine how the pipeline is run are specified in <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/conf.yml"><code>inst/conf.yml</code></a>. This file can be accessed using <code>system.file("conf.yml",package="peskas.timor.data.pipeline")</code>. Using this file, as opposed to, for example, including them in the code, allows us to easily switch parameters depending on the environment. We use the <a href="https://github.com/rstudio/config">config</a> package to read the configuration file. We use three different environments (see below). To determine which environment to use, the config package checks the environment variable <code>R_CONFIG_ACTIVE</code>.</p>
+<div class="section level2">
+<h2 id="environment-parameters-are-specified-in-the-config-file">Environment parameters are specified in the config file<a class="anchor" aria-label="anchor" href="#environment-parameters-are-specified-in-the-config-file"></a>
+</h2>
+<p>The parameters that determine how the pipeline is run are specified in <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/conf.yml" class="external-link"><code>inst/conf.yml</code></a>. This file can be accessed using <code>system.file("conf.yml",package="peskas.timor.data.pipeline")</code>. Using this file, as opposed to, for example, including them in the code, allows us to easily switch parameters depending on the environment. We use the <a href="https://github.com/rstudio/config" class="external-link">config</a> package to read the configuration file. We use three different environments (see below). To determine which environment to use, the config package checks the environment variable <code>R_CONFIG_ACTIVE</code>.</p>
 <ul>
-<li><p>Remote development environment (default): The development environment is the “default” configuration. This environment should be used when the code is running in the cloud One characteristic of this environment is that it uses cloud storage buckets that differ to those that the real application uses. This makes it ideal to test the code and the pipeline before it’s deployed into production. Because this environment is designed to run in the cloud, it indicates that API tokens and authentication files should be read from environment variables. This works well when the code runs in GitHub Actions, because the workflow has instructions to read authentication details from <a href="https://docs.github.com/en/actions/reference/encrypted-secrets">GitHub secrets</a> and passes it to R as environment variables.</p></li>
+<li><p>Remote development environment (default): The development environment is the “default” configuration. This environment should be used when the code is running in the cloud One characteristic of this environment is that it uses cloud storage buckets that differ to those that the real application uses. This makes it ideal to test the code and the pipeline before it’s deployed into production. Because this environment is designed to run in the cloud, it indicates that API tokens and authentication files should be read from environment variables. This works well when the code runs in GitHub Actions, because the workflow has instructions to read authentication details from <a href="https://docs.github.com/en/actions/reference/encrypted-secrets" class="external-link">GitHub secrets</a> and passes it to R as environment variables.</p></li>
 <li><p>Local development environment: The “local” environment is similar to the default environment in that is used for development and therefore uses resources ideal for testing the code. The main difference is that the authentication information is not read from environment variables but from local files. Specifically authentication files should live in a directory called <code>auth</code> which should never be committed to git. It is possible to run <code>Sys.setenv(R_CONFIG_ACTIVE="local")</code> in the R console to ensure the local environment is activated the next time <code>conf.yml</code> is read. An even easier alternative is to add the key-value pair <code>R_CONFIG_ACTIVE=local</code> to the <code>.Renviron</code> file in the project directory.</p></li>
 <li><p>Production environment: The production environment is similar to the default environment in that it’s designed to run in the cloud and read authentication details from the cloud. It differs in that it uses cloud resources that should be used exclusively in production once things have been tested out. This environment is active when <code>R_CONFIG_ACTIVE=production</code>; this environment variable is passed by pipeline workflow file when the code executes from the “main” git branch.</p></li>
 </ul>
 </div>
-<div id="we-use-docker-containers" class="section level2">
-<h2 class="hasAnchor">
-<a href="#we-use-docker-containers" class="anchor"></a>We use docker containers</h2>
+<div class="section level2">
+<h2 id="we-use-docker-containers">We use docker containers<a class="anchor" aria-label="anchor" href="#we-use-docker-containers"></a>
+</h2>
 <p>We use docker containers to make it easier to run and develop code.</p>
 <ul>
-<li><p>Development: We use the main <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile"><code>Dockerfile</code></a> for development. It’s based on the rocker/geospatial image and spins up an RStudio server instance with quite a large number of packages. To start an instance of this container you can simply go to the project’s directory and run <code>docker-compose up -d --build</code> from the terminal console.</p></li>
-<li><p>Production: We use <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile.prod"><code>Dockerfile.prod</code></a> to run the code in production. This image is based in a more lightweight version of R and only installs the required packages. The first job in the pipeline builds this container and other steps use it to run the code. This allow us to run the code under the same environment regardless of the cloud computing infrastructure that runs it.</p></li>
+<li><p>Development: We use the main <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile" class="external-link"><code>Dockerfile</code></a> for development. It’s based on the rocker/geospatial image and spins up an RStudio server instance with quite a large number of packages. To start an instance of this container you can simply go to the project’s directory and run <code>docker-compose up -d --build</code> from the terminal console.</p></li>
+<li><p>Production: We use <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile.prod" class="external-link"><code>Dockerfile.prod</code></a> to run the code in production. This image is based in a more lightweight version of R and only installs the required packages. The first job in the pipeline builds this container and other steps use it to run the code. This allow us to run the code under the same environment regardless of the cloud computing infrastructure that runs it.</p></li>
 </ul>
 </div>
-<div id="logging" class="section level2">
-<h2 class="hasAnchor">
-<a href="#logging" class="anchor"></a>Logging</h2>
-<p>We use the <a href="https://daroczig.github.io/logger/">logger</a> package to log events in production.</p>
+<div class="section level2">
+<h2 id="logging">Logging<a class="anchor" aria-label="anchor" href="#logging"></a>
+</h2>
+<p>We use the <a href="https://daroczig.github.io/logger/" class="external-link">logger</a> package to log events in production.</p>
 </div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://www.r-project.org/Licenses/GPL-3">GPL-3</a></small></li>
+<li><small><a href="https://www.r-project.org/Licenses/GPL-3" class="external-link">GPL-3</a></small></li>
 </ul>
 </div>
+
 <div class="community">
-<h2>Community</h2>
+<h2 data-toc-skip>Community</h2>
 <ul class="list-unstyled">
 <li><a href="CONTRIBUTING.html">Contributing guide</a></li>
 <li><a href="CODE_OF_CONDUCT.html">Code of conduct</a></li>
 </ul>
 </div>
-<div class="developers">
-<h2>Developers</h2>
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li>Fernando Cagua <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-5867-3687" target="orcid.widget" aria-label="ORCID"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
-<li>Lorenzo Longobardi <br><small class="roles"> Author </small>  </li>
-<li><a href="authors.html">All authors...</a></li>
+<li><a href="authors.html#citation">Citing peskas.timor.data.pipeline</a></li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="developers">
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
-<li><a href="https://CRAN.R-project.org/package=peskas.timor.data.pipeline"><img src="https://www.r-pkg.org/badges/version/peskas.timor.data.pipeline" alt="CRAN status"></a></li>
-<li><a href="https://codecov.io/gh/WorldFishCenter/peskas.timor.data.pipeline?branch=master"><img src="https://codecov.io/gh/WorldFishCenter/peskas.timor.data.pipeline/branch/master/graph/badge.svg" alt="Codecov test coverage"></a></li>
-<li><a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/actions"><img src="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
+<li>Fernando Cagua <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-5867-3687" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Lorenzo Longobardi <br><small class="roles"> Author </small>  </li>
+<li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
+
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://www.tidyverse.org/lifecycle/#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://CRAN.R-project.org/package=peskas.timor.data.pipeline" class="external-link"><img src="https://www.r-pkg.org/badges/version/peskas.timor.data.pipeline" alt="CRAN status"></a></li>
+<li><a href="https://codecov.io/gh/WorldFishCenter/peskas.timor.data.pipeline?branch=master" class="external-link"><img src="https://codecov.io/gh/WorldFishCenter/peskas.timor.data.pipeline/branch/master/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/actions" class="external-link"><img src="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
+</ul>
 </div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Fernando Cagua, Lorenzo Longobardi.</p>
+  <p></p>
+<p>Developed by Fernando Cagua, Lorenzo Longobardi.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -170,6 +178,8 @@
 
   
 
+
+  
 
   </body>
 </html>
