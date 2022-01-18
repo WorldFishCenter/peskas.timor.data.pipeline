@@ -92,6 +92,11 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   ready_cols <- landings %>%
     dplyr::select(
+      # site_number = .data$landing_site_name,
+      submission_id = .data$`_id`,
+      n_gleaners = .data$how_many_gleaners_today,
+      n_child_fishers = .data$`trip_group/no_fishers/no_child_fishers`,
+      n_women_fishers = .data$`trip_group/no_fishers/no_women_fishers`,
       submission_id = .data$`_id`
     ) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
@@ -136,7 +141,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       tidyselect::starts_with("fisher_number"),
       ##municipality = .data$`municipality (from administrative_posts)`,
       .data$gear_type,
-      .data$vessel_type)
+      .data$vessel_type,
+      .data$n_gleaners,
+      .data$n_child_fishers,
+      .data$n_women_fishers)
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
                                        "validated", sep = "_") %>%
@@ -271,20 +279,3 @@ get_merged_landings <- function(pars, suffix = ""){
   readr::read_rds(file = landings_rds)
 }
 
-
-get_validated_landings <- function(log_threshold = logger::DEBUG){
-  pars <- read_config()
-
-  landings_rds <- cloud_object_name(
-    prefix = paste(pars$surveys$validated_landings$file_prefix),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$surveys$validated_landings$version,
-    options = pars$storage$google$options,
-    exact_match = TRUE)
-  logger::log_info("Downloading {landings_rds}...")
-  download_cloud_file(name = landings_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
-  readr::read_rds(file = landings_rds)
-}
