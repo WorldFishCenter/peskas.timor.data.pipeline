@@ -1,4 +1,4 @@
-FROM rocker/tidyverse:4.1.1
+FROM rocker/geospatial:4.1.1
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -21,14 +21,7 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    rfishbase
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -39,8 +32,22 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    geosphere \
-    broom
+    tinytest \
+    rmarkdown \
+    ggplot2 \
+    zoo \
+    bookdown \
+    kableExtra \
+    cowplot \
+    broom \
+    ggpubr \
+    furrr \
+    future \
+    univOutl \
+    taxize \
+    tinytest \
+    remotes \
+    rfishbase
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
