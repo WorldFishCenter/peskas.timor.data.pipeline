@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 FROM rocker/verse:4.1.1
+=======
+FROM rocker/geospatial:4.1.1
+>>>>>>> 6b352bd9b735a6d6c62f7d7b36174e5df758e1c0
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -43,7 +47,13 @@ RUN install2.r --error --skipinstalled \
     rmarkdown \
     geosphere \
     broom \
-    zoo
+    zoo \
+    ggpubr \
+    cowplot \
+    kableExtra \
+    bookdown \
+    ggplot2 \
+    tinytest
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

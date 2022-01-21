@@ -39,7 +39,15 @@ default:
       multisession:
         parallel: true
         n_sessions: 32
-
+      complete:
+        file_prefix: pds-track-complete
+        new_trips: 1000
+      bucket_content:
+        file_prefix: pds-track-list
+      map:
+        file_prefix: tracks-map
+        extension: png
+        dpi_resolution: 450
   metadata:
     airtable:
       name: metadata-tables
@@ -105,7 +113,7 @@ default:
 
   models:
     file_prefix: model_predictions
-    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, MOO]
+    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, GZP]
 
   export:
     file_prefix: timor
@@ -114,13 +122,15 @@ default:
     server: 'demo.dataverse.org'
     dataverse_id: 'peskas'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
-
     metadata:
        title: 'Peskas - National Fisheries Monitoring System of Timor-Leste'
        subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
        language: 'English'
        description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). '
        creator: 'Tilley Alex'
+
+  report:
+    file_prefix: data_report
 
   storage:
     google:

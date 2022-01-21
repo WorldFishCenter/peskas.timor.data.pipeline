@@ -191,7 +191,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   key <- pars$export_dataverse$token
   server <- pars$export_dataverse$server
 
-  prefixes <- c("trips", "catch")
+  prefixes <- c("trips", "catch", "aggregated-month")
   files_names <-
     purrr::map(prefixes, ~ cloud_object_name(
       prefix = paste(pars$export$file_prefix, .x, sep = "_"),

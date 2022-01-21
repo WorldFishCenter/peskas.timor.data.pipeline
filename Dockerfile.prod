@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 FROM rocker/verse:4.1.1
+=======
+FROM rocker/geospatial:4.1.1
+>>>>>>> 6b352bd9b735a6d6c62f7d7b36174e5df758e1c0
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -41,7 +45,8 @@ RUN install2.r --error --skipinstalled \
     taxize \
     tinytest \
     remotes \
-    rfishbase
+    rfishbase \
+    knitr
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -56,7 +61,13 @@ RUN install2.r --error --skipinstalled \
     rmarkdown \
     geosphere \
     broom \
-    zoo
+    zoo \
+    ggpubr \
+    cowplot \
+    kableExtra \
+    bookdown \
+    ggplot2 \
+    tinytest
 
 # Install local package
 COPY . /home

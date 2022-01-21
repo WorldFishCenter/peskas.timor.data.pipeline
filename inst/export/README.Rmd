@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE, echo = FALSE)
 
 ### Introductory information
 
-* A short description of what data contains
+This repository contains trips and catch data related to the Peskas project.
 * Format of the files
 * Relationship between the files
 * Name/institution/address/email information for Principle investigator (or person responsible for collecting the data), Associate or co-investigators, Contact person for questions

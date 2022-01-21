@@ -1,3 +1,12 @@
+# peskas.timor.data.pipeline 0.17.0
+
+## New features
+
+- Added the folder *report* containing the scripts useful to generate a pdf report of Peskas. Such report is downloadable from Peskas portal.
+- Added a series of functions (`get_sync_tracks()`, `get_full_tracks()` ,`get_full_trips()`) useful to retrieve the complete file of pds tracks.
+- Generate and retrieve the pds track map with `ingest_pds_map()` and `get_tracks_map()`.
+
+
 # peskas.timor.data.pipeline 0.16.0
 
 ## Breaking changes
