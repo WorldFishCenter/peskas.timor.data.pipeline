@@ -211,31 +211,22 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
     options = pars$public_storage$google$options
   )
 
-  dates <- readr::read_tsv(grep("trips", list.files(), value = TRUE))$landing_date
+  data_description <- generate_description()
 
-  # passing info to README rmarkdown document
-  time_range <-
-    paste(zoo::as.yearmon(min(dates, na.rm = TRUE)),
-      zoo::as.yearmon(max(dates, na.rm = TRUE)),
-      sep = " - "
-    )
 
   logger::log_info("Generating README...")
   rmarkdown::render(
-    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline"),
-    params = list(
-      time_range = time_range
-    )
+    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline")
   )
 
   logger::log_info("Generating metadata...")
-  metadat <- generate_metadata(pars, temp_coverage = time_range)
+  metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
 
 
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
 
-  release_files_names <- c(new_names, system.file("export/README.html",
+  release_files_names <- c(new_names, system.file("export/README.docx",
     package = "peskas.timor.data.pipeline"
   ))
 
@@ -263,4 +254,88 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
      dataverse = dataverse,
      server = server
      )
+}
+
+
+
+#' Generate data description
+#'
+#' This function generate the description of the data useful for the README file.
+#'
+#' @param ... unused; for backwards compatibility only
+#'
+#' @return A list with the description of each variable of each uploaded dataset.
+#' @export
+#'
+generate_description <- function(...) {
+  trips_dat <- readr::read_tsv(grep("trips", list.files(), value = TRUE))
+  catch_dat <- readr::read_tsv(grep("catch", list.files(), value = TRUE))
+  aggr_dat <- readr::read_tsv(grep("aggregated", list.files(), value = TRUE))
+
+  time_range <-
+    paste(zoo::as.yearmon(min(trips_dat$landing_date, na.rm = TRUE)),
+          zoo::as.yearmon(max(trips_dat$landing_date, na.rm = TRUE)),
+          sep = " - "
+    )
+
+  trips_tab <-
+    tibble::tibble(
+      Variable = names(trips_dat),
+      Description = c(
+        "Unique identifier of a fishing trip",
+        "Date of the fishing trip",
+        "Number of taxa associated to the catch",
+        "Interagency code identifying the taxa group",
+        "Estimated value in USD of the catch",
+        "Uninformative column - for backwards compatibility only",
+        "The vessel type, can be motorised or unmotorised",
+        "Name of the landing station",
+        "Timor municipality",
+        "Number of children involved in the fishing trip",
+        "Number of adult males involved in the fishing trip",
+        "Number of adult females involved in the fishing trip",
+        "Duration of the fishing trip in hours",
+        "Start of the fishing trip",
+        "End of the fishing trip"
+      )
+    )
+
+  catch_tab <-
+    tibble::tibble(
+      Variable = names(catch_dat),
+      Description = c(
+        "Unique identifier of a fishing trip",
+        "Interagency code identifying the taxa group (https://www.fao.org/cwp-on-fishery-statistics/handbook/general-concepts/identifiers/en/)",
+        "Destiny of the catch, whether for sale, self-sustaining or both",
+        "Type of length used for catch measurement. TL: total length, FL: fork length, ShL: shell length, CW: carapace width",
+        "Average length of the individuals in the catch (cm)",
+        "Number of individuals in the catch",
+        "Weight of the catch in grams"
+      )
+    )
+
+  aggr_tab <-
+    tibble::tibble(
+      Variable = names(aggr_dat),
+      Description = c(
+        "Period aggregated data refer to",
+        "Number of landings",
+        "Proportion of landings involving woman",
+        "Number of PDS tracks recorded",
+        "Number of trips matched with PDS tracks",
+        "Proportion between total trips and matched PDS tracks",
+        "Estimated revenue for each trip in USD",
+        "Estimated weight for each trip in Kg",
+        "Estimated number of landings per boat",
+        "Total revenue in USD",
+        "Total catch in Kg"
+      )
+    )
+
+  list(
+    trips_tab = trips_tab,
+    catch_tab = catch_tab,
+    aggr_tab = aggr_tab,
+    time_range = time_range
+  )
 }
