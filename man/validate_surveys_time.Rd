@@ -25,8 +25,8 @@ info associated to each survey.
 }
 \examples{
 \dontrun{
-  pars <- read_config()
-  landings <- get_merged_landings(pars)
-  validate_surveys_time(landings,hrs =18)
+pars <- read_config()
+landings <- get_merged_landings(pars)
+validate_surveys_time(landings, hrs = 18)
 }
 }
