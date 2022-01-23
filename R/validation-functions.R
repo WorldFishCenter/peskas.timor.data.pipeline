@@ -1,16 +1,16 @@
 
 # Get a vector with imeis deployed in the field
-get_deployed_imeis <- function(metadata){
+get_deployed_imeis <- function(metadata) {
   metadata$devices %>%
     dplyr::right_join(metadata$device_installs,
-                      by = c("id" = "device_imei")) %>%
+      by = c("id" = "device_imei")
+    ) %>%
     dplyr::filter(!is.na(.data$device_imei)) %>%
     magrittr::extract2("device_imei")
 }
 
 # Perform tests for a single imei and return the corrected value and the flag
-validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
-
+validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
   this_id <- as.integer(this_id)
 
   # If imei is NA there is nothing to validate
@@ -68,41 +68,44 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis){
 #'
 #' @examples
 #' \dontrun{
-#'   pars <- read_config()
-#'   landings <- get_merged_landings(pars)
-#'   validate_surveys_time(landings,hrs =18)
+#' pars <- read_config()
+#' landings <- get_merged_landings(pars)
+#' validate_surveys_time(landings, hrs = 18)
 #' }
-validate_surveys_time <- function(data, hrs = NULL, submission_delay){
-
+validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
   validated_time <- list(
-
     validated_dates = data %>%
-      dplyr::select(.data$`_id`,.data$date,.data$`_submission_time`) %>%
+      dplyr::select(.data$`_id`, .data$date, .data$`_submission_time`) %>%
       dplyr::mutate(
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
         submission_date = lubridate::with_tz(.data$`_submission_time`, "Asia/Dili"),
         # submission_date = lubridate::as_date(submission_date),
         date = lubridate::ymd(.data$date, tz = "Asia/Dili"),
         # date = lubridate::as_date(date),
-        d = date - .data$submission_date) %>%
+        d = date - .data$submission_date
+      ) %>%
       dplyr::transmute(
         # Alert needs to be checked before editing the date column
         alert_number = dplyr::case_when(
           # test if submission date is prior catch date
           .data$date > .data$submission_date ~ 4,
           .data$date < .data$submission_date - lubridate::duration(submission_delay, units = "days") ~ 10,
-          TRUE ~ NA_real_),
+          TRUE ~ NA_real_
+        ),
         date = dplyr::case_when(
           is.na(alert_number) ~ .data$date,
-          TRUE ~ NA_real_),
-        submission_id = as.integer(.data$`_id`)),
-
+          TRUE ~ NA_real_
+        ),
+        submission_id = as.integer(.data$`_id`)
+      ),
     validated_duration = data %>%
-      dplyr::select(.data$`_id`,.data$`trip_group/duration`) %>%
+      dplyr::select(.data$`_id`, .data$`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = abs(as.numeric(.data$`trip_group/duration`))) %>%
-      dplyr::transmute(trip_duration=dplyr::case_when(.data$`trip_group/duration` >  hrs ~ NA_real_ ,TRUE ~ .data$`trip_group/duration`),#test if catch duration is longer than n hours
-                       alert_number=dplyr::case_when(.data$`trip_group/duration` >  hrs ~ 5 ,TRUE ~ NA_real_),
-                       submission_id=as.integer(.data$`_id`))
+      dplyr::transmute(
+        trip_duration = dplyr::case_when(.data$`trip_group/duration` > hrs ~ NA_real_, TRUE ~ .data$`trip_group/duration`), # test if catch duration is longer than n hours
+        alert_number = dplyr::case_when(.data$`trip_group/duration` > hrs ~ 5, TRUE ~ NA_real_),
+        submission_id = as.integer(.data$`_id`)
+      )
   )
   validated_time
 }
@@ -123,26 +126,30 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay){
 #'
 #' @examples
 #' \dontrun{
-#'   pars <- read_config()
-#'   landings <- get_merged_landings(pars)
-#'   validate_catch_value(landings,method="MAD",k=13)
+#' pars <- read_config()
+#' landings <- get_merged_landings(pars)
+#' validate_catch_value(landings, method = "MAD", k = 13)
 #' }
 #'
-validate_catch_price <- function(data,method=NULL,k=NULL){
-
-  validated_price = data %>%
-    dplyr::select(.data$`_id`,.data$total_catch_value) %>%
+validate_catch_price <- function(data, method = NULL, k = NULL) {
+  validated_price <- data %>%
+    dplyr::select(.data$`_id`, .data$total_catch_value) %>%
     dplyr::mutate(total_catch_value = as.numeric(.data$total_catch_value)) %>%
     dplyr::transmute(
       alert_number = alert_outlier(
         x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
-        logt = TRUE, k = k, method = method),
-      alert_number = dplyr::case_when(.data$total_catch_value < 0 ~ 8,
-                                      TRUE ~ .data$alert_number),
+        logt = TRUE, k = k, method = method
+      ),
+      alert_number = dplyr::case_when(
+        .data$total_catch_value < 0 ~ 8,
+        TRUE ~ .data$alert_number
+      ),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value,
-        TRUE ~ NA_real_),
-      submission_id = as.integer(.data$`_id`))
+        TRUE ~ NA_real_
+      ),
+      submission_id = as.integer(.data$`_id`)
+    )
 
   validated_price
 }
@@ -161,22 +168,28 @@ alert_outlier <- function(x,
                           no_alert_value = NA_real_,
                           alert_if_larger = no_alert_value,
                           alert_if_smaller = no_alert_value,
-                          ...){
-
+                          ...) {
   algo_args <- list(...)
 
   # Helper function to check if everything is NA or zero
-  all_na_or_zero <- function(x){
+  all_na_or_zero <- function(x) {
     isTRUE(all(is.na(x) | x == 0))
   }
 
   # If everything is NA or zero there is nothing to compute
-  if (all_na_or_zero(x)) return(NA_real_)
+  if (all_na_or_zero(x)) {
+    return(NA_real_)
+  }
   # If the median absolute deviation is zero we shouldn't be using this algo
-  if (mad(x, na.rm = T) <= 0) return(NA_real_)
+  if (mad(x, na.rm = T) <= 0) {
+    return(NA_real_)
+  }
   # If weights are specified and they are all NA or zero
-  if (!is.null(algo_args$weights))
-    if (all_na_or_zero(algo_args$weights)) return(NA_real_)
+  if (!is.null(algo_args$weights)) {
+    if (all_na_or_zero(algo_args$weights)) {
+      return(NA_real_)
+    }
+  }
 
   bounds <- univOutl::LocScaleB(x, ...) %>%
     magrittr::extract2("bounds")
@@ -208,17 +221,16 @@ alert_outlier <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#'   pars <- read_config()
-#'   landings <- get_merged_landings(pars)
-#'   validate_catch_params(landings,method="MAD",k=13)
+#' pars <- read_config()
+#' landings <- get_merged_landings(pars)
+#' validate_catch_params(landings, method = "MAD", k = 13)
 #' }
 #'
-validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL){
-
-  catches_dat_unnested <-  data %>%
-    dplyr::select(.data$`_id`,.data$`trip_group/gear_type`, .data$species_group) %>%
-    tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals,keep_empty = TRUE)
+validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = NULL) {
+  catches_dat_unnested <- data %>%
+    dplyr::select(.data$`_id`, .data$`trip_group/gear_type`, .data$species_group) %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE)
 
   validated_length <- catches_dat_unnested %>%
     dplyr::group_by(.data$`trip_group/gear_type`, .data$species) %>%
@@ -226,56 +238,67 @@ validate_catch_params <- function(data,method=NULL, k_ind =NULL, k_length = NULL
       n_individuals = dplyr::case_when(
         .data$n_individuals == 0 ~ NA_real_,
         .data$n_individuals < 0 ~ .data$n_individuals * -1,
-        TRUE ~ n_individuals),
+        TRUE ~ n_individuals
+      ),
       alert_n_individuals = alert_outlier(
         x = .data$n_individuals,
-        alert_if_larger = 11, logt = TRUE, k = k_ind),
+        alert_if_larger = 11, logt = TRUE, k = k_ind
+      ),
       n_individuals = dplyr::case_when(
         is.na(.data$n_individuals) & !is.na(.data$species) ~ 0,
         is.na(.data$alert_n_individuals) ~ .data$n_individuals,
-        TRUE ~ NA_real_),
+        TRUE ~ NA_real_
+      ),
       alert_length = alert_outlier(
         x = .data$mean_length,
-        alert_if_larger = 7, logt = TRUE, k = k_length),
+        alert_if_larger = 7, logt = TRUE, k = k_length
+      ),
       mean_length = dplyr::case_when(
         is.na(.data$alert_length) ~ .data$mean_length,
-        TRUE ~ NA_real_),
+        TRUE ~ NA_real_
+      ),
       alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
-      submission_id = .data$`_id`) %>%
+      submission_id = .data$`_id`
+    ) %>%
     dplyr::ungroup() %>%
     # Adjusting weight accordingly
-    dplyr::mutate(weight = dplyr::case_when(
-      !is.na(.data$alert_number) ~ NA_real_,
-      .data$n_individuals == 0 ~ 0,
-      TRUE ~ .data$weight
-    )) %>%
+    dplyr::mutate(
+      weight = dplyr::case_when(!is.na(.data$alert_number) ~ NA_real_,
+                                .data$n_individuals == 0 ~ 0
+                                , TRUE ~ .data$weight),
+      dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
+                    ~ dplyr::case_when(!is.na(.data$alert_number) ~ NA_real_,
+                                       .data$n_individuals == 0 ~ 0, TRUE ~ .data$.x))
+    ) %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
   # extract alert number
   alert_number <- validated_length %>%
-    dplyr::select(.data$submission_id,.data$n,.data$alert_number) %>%
+    dplyr::select(.data$submission_id, .data$n, .data$alert_number) %>%
     dplyr::group_by(.data$submission_id) %>%
-    dplyr::filter(dplyr::row_number() ==1)
+    dplyr::filter(dplyr::row_number() == 1)
 
   # nest validated data
   validated_length_nested <-
     validated_length %>%
     dplyr::select(-.data$alert_number) %>%
-    dplyr::group_by(.data$submission_id,.data$n,.data$species) %>%
+    dplyr::group_by(.data$submission_id, .data$n, .data$species) %>%
     tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu))
 
   # replace validated catches params in original data
   validated_catch_params <- data %>%
-    dplyr::rename(submission_id=.data$`_id`) %>%
-    dplyr::select(.data$submission_id,.data$species_group) %>%
-    tidyr::unnest(.data$species_group,keep_empty = TRUE) %>%
+    dplyr::rename(submission_id = .data$`_id`) %>%
+    dplyr::select(.data$submission_id, .data$species_group) %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     dplyr::mutate(length_individuals = validated_length_nested$length_individuals) %>%
     dplyr::group_by(.data$submission_id) %>%
     tidyr::nest() %>%
     dplyr::rename("species_group" = "data") %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(alert_number=alert_number$alert_number,
-                  submission_id=as.integer(.data$submission_id))
+    dplyr::mutate(
+      alert_number = alert_number$alert_number,
+      submission_id = as.integer(.data$submission_id)
+    )
 
   validated_catch_params
 }
@@ -345,62 +368,70 @@ validate_price_weight <- function(surveys_catch_alerts,
       alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
       weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_)
     ) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length : .data$Vitamin_A_mu)) %>%
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
     tidyr::nest(species_group = c(
       .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
       .data$photo, .data$length_individuals, .data$length_type
     ))
 
-  #list(surveys_price_alerts = surveys_price_alerts,
+  # list(surveys_price_alerts = surveys_price_alerts,
   #     surveys_catch_alerts = surveys_catch_alerts)
 
-  dplyr::full_join(surveys_catch_alerts,surveys_price_alerts,by=c("submission_id")) %>%
+  dplyr::full_join(surveys_catch_alerts, surveys_price_alerts, by = c("submission_id")) %>%
     dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
     dplyr::select(-.data$alert_number.x, -.data$alert_number.y)
 }
 
 
 # Ideally this function would in the future, check for the integrity of the boat type
-validate_vessel_type <- function(data, metadata_vessel_table){
-
+validate_vessel_type <- function(data, metadata_vessel_table) {
   data %>%
-    dplyr::rename(submission_id = .data$`_id`,
-                  boat_code = .data$`trip_group/boat_type`) %>%
+    dplyr::rename(
+      submission_id = .data$`_id`,
+      boat_code = .data$`trip_group/boat_type`
+    ) %>%
     dplyr::mutate(boat_code = as.integer(.data$boat_code)) %>%
     dplyr::left_join(metadata_vessel_table, by = "boat_code") %>%
     dplyr::rename(vessel_type = .data$boat_type) %>%
     # If no vessel type is not what we expected
-    dplyr::mutate(not_valid_code = !is.na(.data$boat_code) & is.na(.data$vessel_type),
-                  alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 12, NA_real_)) %>%
+    dplyr::mutate(
+      not_valid_code = !is.na(.data$boat_code) & is.na(.data$vessel_type),
+      alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 12, NA_real_)
+    ) %>%
     # If no vessel type was recorded when it should have
-    dplyr::mutate(no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$vessel_type),
-                  alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 13, NA_real_))  %>%
+    dplyr::mutate(
+      no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$vessel_type),
+      alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 13, NA_real_)
+    ) %>%
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
     dplyr::select(.data$vessel_type, .data$alert_number, .data$submission_id)
 }
 
-validate_gear_type <- function(data, metadata_gear_table){
+validate_gear_type <- function(data, metadata_gear_table) {
   data %>%
-    dplyr::rename(submission_id = .data$`_id`,
-                  gear_code = .data$`trip_group/gear_type`) %>%
+    dplyr::rename(
+      submission_id = .data$`_id`,
+      gear_code = .data$`trip_group/gear_type`
+    ) %>%
     dplyr::left_join(metadata_gear_table, by = "gear_code") %>%
     # If no vessel type is not what we expected
-    dplyr::mutate(not_valid_code = !is.na(.data$gear_code) & is.na(.data$gear_id),
-                  alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 14, NA_real_)) %>%
+    dplyr::mutate(
+      not_valid_code = !is.na(.data$gear_code) & is.na(.data$gear_id),
+      alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 14, NA_real_)
+    ) %>%
     # If no gear type was recorded when it should have
-    dplyr::mutate(no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$gear_code),
-                  alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 15, NA_real_)) %>%
+    dplyr::mutate(
+      no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$gear_code),
+      alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 15, NA_real_)
+    ) %>%
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
     dplyr::select(.data$gear_id, .data$alert_number, .data$submission_id) %>%
     dplyr::rename(gear_type = .data$gear_id)
-
-
 }
 
-validate_sites <- function(data, metadata_stations, metadata_reporting_units){
-
+validate_sites <- function(data, metadata_stations, metadata_reporting_units) {
   sites_df <-
     metadata_stations %>%
     dplyr::filter(!is.na(.data$station_code)) %>%
@@ -422,19 +453,19 @@ validate_sites <- function(data, metadata_stations, metadata_reporting_units){
 }
 
 
-validate_n_fishers <- function(landings, method, k){
-
+validate_n_fishers <- function(landings, method, k) {
   landings %>%
-    dplyr::select(submission_id = .data$`_id`,
-                  fisher_number_child = .data$`trip_group/no_fishers/no_child_fishers`,
-                  fisher_number_man = .data$`trip_group/no_fishers/no_men_fishers`,
-                  fisher_number_woman = .data$`trip_group/no_fishers/no_women_fishers`) %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      fisher_number_child = .data$`trip_group/no_fishers/no_child_fishers`,
+      fisher_number_man = .data$`trip_group/no_fishers/no_men_fishers`,
+      fisher_number_woman = .data$`trip_group/no_fishers/no_women_fishers`
+    ) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
     dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child, .data$fisher_number_man, .data$fisher_number_woman)) %>%
-    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
     dplyr::select(-tidyselect::ends_with("alert")) %>%
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
-
 }
