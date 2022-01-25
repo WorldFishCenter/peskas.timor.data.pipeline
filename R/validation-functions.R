@@ -267,7 +267,8 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
                                 , TRUE ~ .data$weight),
       dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
                     ~ dplyr::case_when(!is.na(.data$alert_number) ~ NA_real_,
-                                       .data$n_individuals == 0 ~ 0, TRUE ~ .data$.x))
+                                       .data$n_individuals == 0 ~ 0,
+                                       TRUE ~ .data$.x))
     ) %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
@@ -365,8 +366,12 @@ validate_price_weight <- function(surveys_catch_alerts,
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::mutate(
       alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
-      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_)
-    ) %>%
+      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
+      dplyr::across(
+        c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
+          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_)
+        )
+      ) %>%
     tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
     tidyr::nest(species_group = c(
       .data$n, .data$species, .data$food_or_sale, .data$other_species_name,

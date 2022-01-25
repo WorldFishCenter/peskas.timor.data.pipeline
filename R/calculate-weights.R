@@ -297,9 +297,10 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
                                            code = .data$species, .data$n_individuals,
                                            rfish_tab$length_weight,
                                            rfish_tab$length_length)) %>%
-    dplyr::ungroup( ) %>%
+    dplyr::ungroup() %>%
     dplyr::left_join(nutrients_table, by ="species") %>%
-    dplyr::mutate(dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
+    dplyr::mutate(weight = abs(.data$weight),
+                  dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
                                 ~ .x * .data$weight)) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
