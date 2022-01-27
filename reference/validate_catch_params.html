@@ -21,7 +21,7 @@ a nested column species_group containing validated catches parameters."><!-- mat
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.17.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
       </span>
     </div>
 
@@ -87,9 +87,9 @@ a nested column <code>species_group</code> containing validated catches paramete
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in">  <span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in">  <span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu">get_merged_landings</span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span>
-<span class="r-in">  <span class="fu">validate_catch_params</span><span class="op">(</span><span class="va">landings</span>,method<span class="op">=</span><span class="st">"MAD"</span>,k<span class="op">=</span><span class="fl">13</span><span class="op">)</span></span>
+<span class="r-in"><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span>
+<span class="r-in"><span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu">get_merged_landings</span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu">validate_catch_params</span><span class="op">(</span><span class="va">landings</span>, method <span class="op">=</span> <span class="st">"MAD"</span>, k <span class="op">=</span> <span class="fl">13</span><span class="op">)</span></span>
 <span class="r-in"><span class="op">}</span></span>
 <span class="r-in"></span>
 </code></pre></div>
