@@ -66,7 +66,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG){
     vessel_types = pt_validate_vessel_types(metadata_tables$vessel_types),
     gear_types = pt_validate_gear_types(metadata_tables$gear_types),
     stations = pt_validate_stations(metadata_tables$stations),
-    reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit))
+    reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
+    habitat = pt_validate_habitat(metadata_tables$habitat))
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
                                  "preprocessed", sep = "_") %>%
@@ -253,5 +254,9 @@ pt_validate_stations <- function(stations_table){
 }
 
 pt_validate_reporting_unit <- function(x){
+  x
+}
+
+pt_validate_habitat <- function(x){
   x
 }

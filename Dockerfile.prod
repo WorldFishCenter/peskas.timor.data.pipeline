@@ -34,15 +34,7 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    rfishbase \
-    knitr
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -62,7 +54,15 @@ RUN install2.r --error --skipinstalled \
     cowplot \
     knitr \
     broom \
-    ggpubr
+    ggpubr \
+    furrr \
+    future \
+    univOutl \
+    taxize \
+    tinytest \
+    remotes \
+    rfishbase \
+    knitr
 
 # Install local package
 COPY . /home

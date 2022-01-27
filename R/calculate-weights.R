@@ -35,11 +35,14 @@ calculate_weights <- function(log_threshold = logger::DEBUG){
   merged_landings <- get_merged_landings(pars)
   metadata <- get_preprocessed_metadata(pars)
   morphometric_tables <- get_morphometric_tables(pars, metadata$morphometric_table)
+  nutrients_table <- get_nutrients_table(pars) %>%
+    dplyr::rename(species = .data$interagency_code)
 
   landings_with_weight <- join_weights(
     merged_landings,
     metadata,
-    morphometric_tables
+    morphometric_tables,
+    nutrients_table
   )
 
   landings_with_weight_filename <- paste(pars$surveys$merged_landings$file_prefix, "weight", sep = "_") %>%
@@ -228,10 +231,11 @@ retrieve_lengths <- function(data, country_code) {
   rfish_tab
 }
 
-#' Join length-weights info to preprocessed landings
+#' Join length-weights and nutritional parameters info to preprocessed landings
 #'
-#' The function integrate length-weight info from FIshBase databse to preprocessed
-#' surveys data and convert catch labels according to the FAO nomenclature
+#' The function integrate nutritional info from the `get_nutrients_table` function
+#' and length-weight info from FIshBase databse to preprocessed surveys data and
+#' convert catch  labels according to the FAO nomenclature
 #' (\url{http://www.fao.org/fishery/statistics/global-production/3/en}).
 #'
 #' The length types used to calculate weight in fish catches include total length
@@ -245,11 +249,12 @@ retrieve_lengths <- function(data, country_code) {
 #' @param data The survey landings data frame
 #' @param metadata Metadata tables
 #' @param rfish_tab Table with length weight parameters
+#' @param nutrients_table Table with nutritional parameters
 #'
 #' @return A new landings data frame including length-weights info
 #' @export
 #'
-join_weights <- function(data, metadata, rfish_tab) {
+join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
 
   catch_codes <- metadata$catch_types %>%
     dplyr::transmute(
@@ -284,7 +289,7 @@ join_weights <- function(data, metadata, rfish_tab) {
       .data$survey_version == "v2" ~ "TL"
     )) %>%
     dplyr::mutate(length_type = dplyr::case_when(
-      .data$species %in% c("OCZ", "SLV") ~ "TL",
+      .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",
       TRUE ~ .data$length_type
     )) %>%
     dplyr::rowwise() %>%
@@ -292,11 +297,16 @@ join_weights <- function(data, metadata, rfish_tab) {
                                            code = .data$species, .data$n_individuals,
                                            rfish_tab$length_weight,
                                            rfish_tab$length_length)) %>%
-    dplyr::ungroup( ) %>%
+    dplyr::ungroup() %>%
+    dplyr::left_join(nutrients_table, by ="species") %>%
+    dplyr::mutate(weight = abs(.data$weight),
+                  dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
+                                ~ .x * .data$weight)) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
-      .data$weight
+      .data$weight,
+      tidyselect::ends_with("_mu")
     )) %>%
     tidyr::nest(species_group = c(
       .data$n,

@@ -21,14 +21,7 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    rfishbase
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -48,7 +41,13 @@ RUN install2.r --error --skipinstalled \
     cowplot \
     broom \
     ggpubr \
-
+    furrr \
+    future \
+    univOutl \
+    taxize \
+    tinytest \
+    remotes \
+    rfishbase
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
