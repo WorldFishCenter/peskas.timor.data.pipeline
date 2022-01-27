@@ -84,7 +84,10 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     method = pars$validation$landings$n_fishers$method %||% default_method,
     k = pars$validation$landings$n_fishers$k %||% default_k
   )
-
+  habitat_alerts <- validate_habitat(
+    landings,
+    metadata$habitat
+  )
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
@@ -92,7 +95,6 @@ validate_landings <- function(log_threshold = logger::DEBUG){
 
   ready_cols <- landings %>%
     dplyr::select(
-      # site_number = .data$landing_site_name,
       submission_id = .data$`_id`,
       n_gleaners = .data$how_many_gleaners_today,
       n_child_fishers = .data$`trip_group/no_fishers/no_child_fishers`,
@@ -110,7 +112,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          vessel_type_alerts,
          gear_type_alerts,
          site_alerts,
-         n_fishers_alerts) %>%
+         n_fishers_alerts,
+         habitat_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
@@ -138,8 +141,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       landing_value = .data$total_catch_value,
       landing_station = .data$station_name,
       reporting_region = .data$reporting_region,
+      habitat = .data$habitat_type,
       tidyselect::starts_with("fisher_number"),
-      ##municipality = .data$`municipality (from administrative_posts)`,
       .data$gear_type,
       .data$vessel_type,
       .data$n_gleaners,
@@ -166,7 +169,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
        vessel_type_alerts,
        gear_type_alerts,
        site_alerts,
-       n_fishers_alerts
+       n_fishers_alerts,
+       habitat_alerts
        ) %>%
     purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
     purrr::reduce(dplyr::bind_rows)

@@ -65,6 +65,7 @@ default:
         - gear_types
         - stations
         - reporting_units
+        - habitat
     version:
       preprocess: latest
     rfishtable:

@@ -388,8 +388,8 @@ validate_price_weight <- function(surveys_catch_alerts,
 
 
 # Ideally this function would in the future, check for the integrity of the boat type
-validate_vessel_type <- function(data, metadata_vessel_table) {
-  data %>%
+validate_vessel_type <- function(landings, metadata_vessel_table) {
+  landings %>%
     dplyr::rename(
       submission_id = .data$`_id`,
       boat_code = .data$`trip_group/boat_type`
@@ -412,8 +412,8 @@ validate_vessel_type <- function(data, metadata_vessel_table) {
     dplyr::select(.data$vessel_type, .data$alert_number, .data$submission_id)
 }
 
-validate_gear_type <- function(data, metadata_gear_table) {
-  data %>%
+validate_gear_type <- function(landings, metadata_gear_table) {
+  landings %>%
     dplyr::rename(
       submission_id = .data$`_id`,
       gear_code = .data$`trip_group/gear_type`
@@ -435,7 +435,7 @@ validate_gear_type <- function(data, metadata_gear_table) {
     dplyr::rename(gear_type = .data$gear_id)
 }
 
-validate_sites <- function(data, metadata_stations, metadata_reporting_units) {
+validate_sites <- function(landings, metadata_stations, metadata_reporting_units) {
   sites_df <-
     metadata_stations %>%
     dplyr::filter(!is.na(.data$station_code)) %>%
@@ -445,7 +445,7 @@ validate_sites <- function(data, metadata_stations, metadata_reporting_units) {
     dplyr::mutate(station_name = trimws(.data$station_name)) %>%
     dplyr::rename(reporting_region = .data$reporting_unit.y)
 
-  data %>%
+  landings %>%
     dplyr::rename(submission_id = .data$`_id`) %>%
     dplyr::mutate(station_code = as.character(.data$landing_site_name)) %>%
     dplyr::select(.data$submission_id, .data$station_code) %>%
@@ -472,4 +472,26 @@ validate_n_fishers <- function(landings, method, k) {
     dplyr::select(-tidyselect::ends_with("alert")) %>%
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
+}
+
+
+validate_habitat <- function(landings, metadata_habitat){
+  landings %>%
+    dplyr::rename(submission_id = .data$`_id`,
+                  habitat_code = .data$`trip_group/habitat_boat`) %>%
+    dplyr::mutate(habitat_code = as.numeric(.data$habitat_code),
+                  habitat_type = dplyr::case_when(habitat_code == 1 ~ "Reef",
+                                                  habitat_code == 2 ~ "FAD",
+                                                  habitat_code == 3 ~ "Deep",
+                                                  habitat_code == 4 ~ "Beach",
+                                                  habitat_code == 5 ~ "Traditional FAD",
+                                                  habitat_code == 6 ~ "Mangrove",
+                                                  habitat_code == 7 ~ "Seagrass",
+                                                  TRUE ~ NA_character_)) %>%
+    dplyr::select(.data$submission_id, .data$habitat_code, .data$habitat_type) %>%
+    dplyr::mutate(alert_number = dplyr::case_when(!.data$habitat_code %in%  c(metadata_habitat$habitat_code, NA_integer_) ~ 19,
+                                                  TRUE ~ NA_real_),
+                  habitat_type = dplyr::case_when(is.na(alert_number) ~ .data$habitat_type,
+                                                  TRUE ~ NA_character_),
+                  submission_id = as.integer(.data$submission_id))
 }
