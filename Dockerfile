@@ -51,5 +51,8 @@ RUN install2.r --error --skipinstalled \
     tidytext \
     ungeviz
 
+# Install GitHub packages
+RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
+
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

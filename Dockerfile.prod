@@ -66,6 +66,9 @@ RUN install2.r --error --skipinstalled \
     tidytext \
     ungeviz
 
+# Install GitHub packages
+RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
+
 # Install local package
 COPY . /home
 WORKDIR /home
