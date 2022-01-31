@@ -48,11 +48,11 @@ RUN install2.r --error --skipinstalled \
     tinytest \
     remotes \
     rfishbase \
-    tidytext \
-    ungeviz
+    tidytext
 
 # Install GitHub packages
-RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
+RUN installGithub.r wilkelab/ungeviz
+#RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

@@ -63,11 +63,10 @@ RUN install2.r --error --skipinstalled \
     remotes \
     rfishbase \
     knitr \
-    tidytext \
-    ungeviz
+    tidytext
 
 # Install GitHub packages
-RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
+RUN installGithub.r wilkelab/ungeviz
 
 # Install local package
 COPY . /home
