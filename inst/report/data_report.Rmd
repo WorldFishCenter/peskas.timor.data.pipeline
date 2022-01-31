@@ -58,9 +58,8 @@ taxa_aggregated <- readRDS(list.files(pattern = "taxa_aggregated"))
 aggregated <- readRDS(list.files(pattern = "timor_aggregated"))
 trips <- readRDS(list.files(pattern = "timor_trips"))
 catch <- readRDS(list.files(pattern = "timor_catch"))
-validated_landings <- peskas.timor.data.pipeline::get_validated_landings()
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
-nutrient_table <- get_nutrients_table(pars) 
+nutrient_table <- peskas.timor.data.pipeline::get_nutrients_table(pars) 
 
 catch_types <- readRDS(list.files(pattern = "metadata"))$catch_types %>%
   dplyr::filter(!catch_name_en %in% c("Herring", "Unknown", "Surgeonfish")) %>% # remove duplicates
@@ -384,7 +383,7 @@ max_rev <- max(aggregated$month$revenue, na.rm = TRUE)
 min_rev <- min(aggregated$month$revenue, na.rm = TRUE)
 mean_rev <- paste0(format(round(mean(aggregated$month$revenue, na.rm = TRUE), 0),big.mark=",",scientific=FALSE), " USD")
 
-revenue_caption <- paste0("The total revenue has a monthly average of ", mean_rev," and reaches the peaks during\nautumn and winter. It increased between the end of 2018 and the beginning of 2020\ntouching values greater than $ 900,000.")
+revenue_caption <- paste0("The total revenue has a monthly average of ", mean_rev," and reaches the peaks during\nthe dry season. It increased between the end of 2018 and the beginning of 2020\ntouching values greater than $ 900,000.")
 
 aggregated$month %>%
   dplyr::mutate(
@@ -428,7 +427,7 @@ aggregated$month %>%
   labs(
     x = "", y = "total revenue (USD)", color = "year",
     title = "Seasonal total revenue",
-    subtitle = "Except for 2019, the total revenue is seasonal, showing\nthe highest during autumn and winter."
+    subtitle = "Except for 2019, the total revenue is seasonal, showing\nthe highest during the dry season"
   ) +
   scale_color_manual(values = year_palette) +
   scale_y_continuous(labels = scales::comma) +
@@ -438,7 +437,7 @@ aggregated$month %>%
     axis.ticks.y = element_line(colour = "black"),
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 13, color = "darkslategrey")
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
   )
 ```
 
@@ -448,7 +447,7 @@ aggregated$month %>%
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=11}
 gear_prop_dat <- 
-validated_landings %>%
+trips %>%
   dplyr::select(landing_date,gear_type,landing_value) %>%
   dplyr::filter(gear_type!="NA",landing_value>0) %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
@@ -461,7 +460,7 @@ validated_landings %>%
 gear_caption <- 
   paste0("Gill nets nets constitute more than 50% of the catch on a monthly scale, and with",gear_prop_dat[1,2],"is by far the most used\ngear type. Following, ", paste(gear_prop_dat[2,1],gear_prop_dat[3,1],gear_prop_dat[4,1], sep=", "), " are the most used with ", paste(gear_prop_dat[2,2],gear_prop_dat[3,2],gear_prop_dat[4,2], sep=", ")," trips respectively.\nExcept before 2020 when the use of long lines was marginal, the relative usage of different gear types\nwas comparable along the time series.")
 
-validated_landings %>%
+trips %>%
   dplyr::select(landing_date,gear_type,landing_value) %>%
   dplyr::filter(gear_type!="NA",landing_value>0) %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
@@ -490,15 +489,15 @@ validated_landings %>%
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
 effort_dat <-
-  validated_landings %>%
+  trips %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
                                                  week_start = 7)) %>%
-  dplyr::select(month_date,trip_duration) %>%
+  dplyr::select(month_date,landing_survey_trip_duration) %>%
   dplyr::group_by(month_date) %>%
   dplyr::summarise(
-    mean = mean(trip_duration,na.rm=TRUE),
-    sd = sd(trip_duration,na.rm=TRUE),
+    mean = mean(landing_survey_trip_duration,na.rm=TRUE),
+    sd = sd(landing_survey_trip_duration,na.rm=TRUE),
     n = dplyr::n()
   ) 
 
@@ -508,15 +507,15 @@ effort_caption <- paste0("The average trip duration of Peskas' boats is of ",
                          " trips each month, the monthly fishing effort is about of ",
                          round(mean(effort_dat$n, na.rm=TRUE),0)*round(mean(effort_dat$mean, na.rm=TRUE),1),
                          " hours.")
-validated_landings %>%
+trips %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
                                                  week_start = 7)) %>%
-  dplyr::select(month_date,trip_duration) %>%
+  dplyr::select(month_date,landing_survey_trip_duration) %>%
   dplyr::group_by(month_date) %>%
   dplyr::summarise(
-    mean = mean(trip_duration,na.rm=TRUE),
-    sd = sd(trip_duration,na.rm=TRUE),
+    mean = mean(landing_survey_trip_duration,na.rm=TRUE),
+    sd = sd(landing_survey_trip_duration,na.rm=TRUE),
     n = dplyr::n()
   ) %>%
   dplyr::mutate(
@@ -552,15 +551,15 @@ validated_landings %>%
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=3, fig.width=4}
 
-validated_landings %>%
-    dplyr::filter(trip_duration>0 & trip_duration!="NA") %>%
+trips %>%
+    dplyr::filter(landing_survey_trip_duration>0 & landing_survey_trip_duration!="NA") %>%
     dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                    "month",
                                                    week_start = 7),
                   year = lubridate::year(.data$landing_date)) %>%
-    dplyr::select(year,month_date,trip_duration) %>%
+    dplyr::select(year,month_date,landing_survey_trip_duration) %>%
     dplyr::group_by(year,month_date) %>%
-    dplyr::summarise(monthly_effort=sum(trip_duration,na.rm=TRUE),
+    dplyr::summarise(monthly_effort=sum(landing_survey_trip_duration,na.rm=TRUE),
                      trips = dplyr::n()) %>%
      na.omit() %>%
      ggplot(aes(trips,monthly_effort))+
@@ -937,7 +936,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
 # Other fisheries
 
 ```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=4, fig.width=8}
-validated_landings %>%
+trips %>%
   dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
                                                  "month",
                                                  week_start = 7),
