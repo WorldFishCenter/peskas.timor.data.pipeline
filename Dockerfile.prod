@@ -63,7 +63,8 @@ RUN install2.r --error --skipinstalled \
     remotes \
     rfishbase \
     knitr \
-    tidytext
+    tidytext \
+    ungeviz
 
 # Install local package
 COPY . /home

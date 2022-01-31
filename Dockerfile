@@ -48,7 +48,8 @@ RUN install2.r --error --skipinstalled \
     tinytest \
     remotes \
     rfishbase \
-    tidytext
+    tidytext \
+    ungeviz
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
