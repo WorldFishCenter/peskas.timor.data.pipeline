@@ -15,7 +15,7 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    Rcurl \
+    RCurl \
     readr \
     stringr \
     tibble \
