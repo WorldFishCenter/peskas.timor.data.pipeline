@@ -116,7 +116,7 @@ RDI_Omega <- pars$metadata$nutrients$RDI$omega3
 
 # Aim
 
-This report summarises relevant statistics and insights from the Peskas platform during the period `r temp_range`. The report examines the main temporal trends in the national revenue related to small-scale fishing in Timor-Leste and provides quantitative and qualitative information on the catches.
+This report is automatically generated in the last step of [Peskas' data pipeline](https://github.com/WorldFishCenter/peskas.timor.data.pipeline) and summarises the main statistics and insights related to small-scale fisheries in Timor during the period `r temp_range`. The report gives an overview of the Peskas' fleet and provide aggregated statistics and time series of the total revenue and total catch. The report provide also information on the catch composition, highlighting the most important fish groups in terms of overall stock.
 
 \pagebreak
 
@@ -364,7 +364,7 @@ trips %>%
 
 \pagebreak
 
-# Boat tracks
+## Boat tracks
 
 Boat movements are tracked by [Pelagic Data System](https://www.pelagicdata.com/) tracking system, and a proprietary algorithm is used to determine when a trip occurs. Tracks are recorded by GPS devices mounted on the boats. The heatmap refer to the boats' movements tracked along the Timor coast with a grid resolution of 10 x 10 meters. The tracks are filtered for outliers and some potential algorithm errors. Specifically, we do not take into account geo-referenced tracks characterized by large anomalies in the quality of the tracking signal, the speed of the boats, and the distance and time travelled.
 
@@ -427,7 +427,7 @@ aggregated$month %>%
   labs(
     x = "", y = "total revenue (USD)", color = "year",
     title = "Seasonal total revenue",
-    subtitle = "Except for 2019, the total revenue is seasonal, showing\nthe highest during the dry season"
+    subtitle = "Except for 2019, the total revenue is seasonal, showing\nthe highest during the dry season."
   ) +
   scale_color_manual(values = year_palette) +
   scale_y_continuous(labels = scales::comma) +
@@ -436,56 +436,50 @@ aggregated$month %>%
   theme(
     axis.ticks.y = element_line(colour = "black"),
     text = element_text(family = "Helvetica"),
-    plot.title = element_text(size = 16),
+    plot.title = element_text(size = 15),
+    plot.subtitle = element_text(size = 10.5, color = "darkslategrey")
+  )
+```
+
+\pagebreak
+
+# Catch volume and effort
+
+## Catch volume
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
+aggregated$month %>%
+  dplyr::mutate(
+    month = lubridate::month(date_bin_start, label = TRUE),
+    year = lubridate::year(date_bin_start)
+  ) %>%
+  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
+  dplyr::select(year, month, date_bin_start, catch) %>%
+  ggplot(aes(x = date_bin_start, y = catch/1000000)) +
+  geom_line(color = "#447597") +
+  geom_point(color = "#447597") +
+  geom_area(fill="#447597",alpha=0.15)+
+  stat_smooth(method = "loess", color = "#976644", alpha = 0.1,size=0.5) +
+  labs(
+    x = "Date", y = "Tonnes live weight",
+    title = "Quantity of catch",
+    subtitle = "The catch revenue increased between the end of 2018 and the beginning of 2020 touching values\ngreater than 2 tons at the end of 2019, then it gradually decreased and remained stable for the\nrest of the series."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
+               limits = c(as.Date("2018-01-01"),Sys.Date() - 31)) +
+  scale_y_continuous(labels = scales::comma, limits = c(0,NA)) +
+  theme_minimal(14) +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    text = element_text(family = "Helvetica"),
+    plot.title = element_text(size = 18),
     plot.subtitle = element_text(size = 12, color = "darkslategrey")
   )
 ```
 
 \pagebreak
 
-# Catches by gear type
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=11}
-gear_prop_dat <- 
-trips %>%
-  dplyr::select(landing_date,gear_type,landing_value) %>%
-  dplyr::filter(gear_type!="NA",landing_value>0) %>%
-  dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
-                                                 "month",
-                                                 week_start = 7)) %>%
-  dplyr::group_by(gear_type) %>%
-  dplyr::count() %>% 
-  dplyr::arrange(dplyr::desc(n))
-
-gear_caption <- 
-  paste0("Gill nets nets constitute more than 50% of the catch on a monthly scale, and with",gear_prop_dat[1,2],"is by far the most used\ngear type. Following, ", paste(gear_prop_dat[2,1],gear_prop_dat[3,1],gear_prop_dat[4,1], sep=", "), " are the most used with ", paste(gear_prop_dat[2,2],gear_prop_dat[3,2],gear_prop_dat[4,2], sep=", ")," trips respectively.\nExcept before 2020 when the use of long lines was marginal, the relative usage of different gear types\nwas comparable along the time series.")
-
-trips %>%
-  dplyr::select(landing_date,gear_type,landing_value) %>%
-  dplyr::filter(gear_type!="NA",landing_value>0) %>%
-  dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
-                                                 "month",
-                                                 week_start = 7)) %>%
-  dplyr::group_by(month_date,gear_type) %>%
-  dplyr::count(gear_type) %>%
-  ggplot(aes(x=as.Date(month_date),y=n,fill=gear_type)) +
-  geom_col(position = "fill")+
-  scale_fill_brewer(type="div",direction=1)+
-  theme_minimal(19)+
-  scale_y_continuous(labels=scales::percent)+
-  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
-               limits = c(as.Date("2018-01-01"),Sys.Date() - 31))+
-  theme(text = element_text(family = "Helvetica"),
-        plot.title = element_text(size = 19),
-        plot.subtitle = element_text(size = 14, color = "darkslategrey"))+
-  labs(fill="Gear type",x="Date",y="Proportion of catches",
-       title="Proportion of catches by gear type",
-       subtitle=gear_caption)
-```
-
-\pagebreak
-
-# Fishing effort
+## Fishing effort
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
 effort_dat <-
@@ -582,41 +576,51 @@ trips %>%
 
 \pagebreak
 
-# Catch volume
+\pagebreak
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
-aggregated$month %>%
-  dplyr::mutate(
-    month = lubridate::month(date_bin_start, label = TRUE),
-    year = lubridate::year(date_bin_start)
-  ) %>%
-  dplyr::filter(!is.na(date_bin_start) & year != 2017) %>%
-  dplyr::select(year, month, date_bin_start, catch) %>%
-  ggplot(aes(x = date_bin_start, y = catch/1000000)) +
-  geom_line(color = "#447597") +
-  geom_point(color = "#447597") +
-  geom_area(fill="#447597",alpha=0.15)+
-  stat_smooth(method = "loess", color = "#976644", alpha = 0.1,size=0.5) +
-  labs(
-    x = "Date", y = "Tonnes live weight",
-    title = "Quantity of catch",
-    subtitle = "The catch revenue increased between the end of 2018 and the beginning of 2020 touching values\ngreater than 2 tons at the end of 2019, then it gradually decreased and remained stable for the\nrest of the series."
-  ) +
+## Catches by gear type
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.width=11}
+gear_prop_dat <- 
+trips %>%
+  dplyr::select(landing_date,gear_type,landing_value) %>%
+  dplyr::filter(gear_type!="NA",landing_value>0) %>%
+  dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
+                                                 "month",
+                                                 week_start = 7)) %>%
+  dplyr::group_by(gear_type) %>%
+  dplyr::count() %>% 
+  dplyr::arrange(dplyr::desc(n))
+
+gear_caption <- 
+  paste0("Gill nets nets constitute more than 50% of the catch on a monthly scale, and with",gear_prop_dat[1,2],"is by far the most used\ngear type. Following, ", paste(gear_prop_dat[2,1],gear_prop_dat[3,1],gear_prop_dat[4,1], sep=", "), " are the most used with ", paste(gear_prop_dat[2,2],gear_prop_dat[3,2],gear_prop_dat[4,2], sep=", ")," trips respectively.\nExcept before 2020 when the use of long lines was marginal, the relative usage of different gear types\nwas comparable along the time series.")
+
+trips %>%
+  dplyr::select(landing_date,gear_type,landing_value) %>%
+  dplyr::filter(gear_type!="NA",landing_value>0) %>%
+  dplyr::mutate(month_date=lubridate::floor_date(.data$landing_date,
+                                                 "month",
+                                                 week_start = 7)) %>%
+  dplyr::group_by(month_date,gear_type) %>%
+  dplyr::count(gear_type) %>%
+  ggplot(aes(x=as.Date(month_date),y=n,fill=gear_type)) +
+  geom_col(position = "fill")+
+  scale_fill_brewer(type="div",direction=1)+
+  theme_minimal(19)+
+  scale_y_continuous(labels=scales::percent)+
   scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
-               limits = c(as.Date("2018-01-01"),Sys.Date() - 31)) +
-  scale_y_continuous(labels = scales::comma, limits = c(0,NA)) +
-  theme_minimal(14) +
-  theme(
-    panel.grid.minor.x = element_blank(),
-    text = element_text(family = "Helvetica"),
-    plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 12, color = "darkslategrey")
-  )
+               limits = c(as.Date("2018-01-01"),Sys.Date() - 31))+
+  theme(text = element_text(family = "Helvetica"),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 14, color = "darkslategrey"))+
+  labs(fill="Gear type",x="Date",y="Proportion of catches",
+       title="Proportion of catches by gear type",
+       subtitle=gear_caption)
 ```
 
 \pagebreak
 
-## National species stock
+## National stock composition
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
 stock_dat <-
@@ -752,7 +756,9 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
 
 \pagebreak
 
-## Municipal species stock
+\pagebreak
+
+## Municipal stock composition
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
 p1 <-
@@ -834,7 +840,7 @@ cow1 <-
 
 \pagebreak
 
-# Catch usage
+## Catch usage
 
 ```{r, echo=FALSE, warning=FALSE, fig.height=11, fig.width=8.5,out.height="100%",out.width="100%"}
 rank_catch <-
@@ -979,9 +985,9 @@ trips %>%
 
 \pagebreak
 
-# Nutrional values
+# Nutrional properties
 
-The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] retrieved in the FishBase [Nutrient Search Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the paper public repository on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value.
+The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value.
 
 ```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=9, fig.width=8.5}
 
