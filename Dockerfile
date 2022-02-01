@@ -17,7 +17,6 @@ RUN install2.r --error --skipinstalled \
     purrr \
     Rcurl \
     readr \
-    readxl \
     stringr \
     tibble \
     tidyr \
@@ -32,12 +31,10 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    tinytest \
     rmarkdown \
     ggplot2 \
     zoo \
     bookdown \
-    kableExtra \
     cowplot \
     broom \
     ggpubr \
@@ -52,7 +49,6 @@ RUN install2.r --error --skipinstalled \
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
-#RUN R -e 'remotes::install_github("clauswilke/ungeviz")'
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

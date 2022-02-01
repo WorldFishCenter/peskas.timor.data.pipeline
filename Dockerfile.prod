@@ -28,9 +28,8 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
+    Rcurl \
     readr \
-    readxl \
     stringr \
     tibble \
     tidyr \
@@ -45,14 +44,11 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
-    tinytest \
     rmarkdown \
     ggplot2 \
     zoo \
     bookdown \
-    kableExtra \
     cowplot \
-    knitr \
     broom \
     ggpubr \
     furrr \
@@ -62,7 +58,6 @@ RUN install2.r --error --skipinstalled \
     tinytest \
     remotes \
     rfishbase \
-    knitr \
     tidytext
 
 # Install GitHub packages
