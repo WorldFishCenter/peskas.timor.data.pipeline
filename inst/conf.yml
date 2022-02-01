@@ -76,6 +76,15 @@ default:
         - 360
     nutrients:
       resource: "https://raw.githubusercontent.com/mamacneil/NutrientFishbase/master/model/Species_Nutrient_Predictions.csv"
+      RDI:
+        calcium: 1
+        iron: 0.018
+        selenium: 0.000055
+        zinc: 0.008
+        protein: 46
+        vitaminA: 0.0007
+        omega3: 1.1
+
 
   validation:
     landings:
