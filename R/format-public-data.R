@@ -34,6 +34,9 @@ format_public_data <- function(log_threshold = logger::DEBUG){
   merged_trips <- get_merged_trips(pars)
   logger::log_info("Retrieving modelled data...")
   models <- get_models(pars)
+  logger::log_info("Retrieving nutrient properties info...")
+  nutrients_table <- get_nutrients_table(pars) %>%
+    dplyr::rename(grouped_taxa = .data$interagency_code)
 
   logger::log_info("Calculating summary fields")
   merged_trips_with_addons <- add_calculated_fields(merged_trips)
@@ -52,7 +55,13 @@ format_public_data <- function(log_threshold = logger::DEBUG){
     rlang::set_names() %>%
     purrr::map(summarise_estimations, models$predictions$aggregated)
   taxa_estimations <- periods %>% rlang::set_names() %>%
-      purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+    purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+  nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
+  nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
+  aggregated_nutrients <- purrr::map(nutrients_estimates,
+                                     fill_missing_group,
+                                     nutrients_proportions,
+                                     taxa = "MZZ")
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join)
 
@@ -111,7 +120,7 @@ add_calculated_fields <- function(merged_trips){
     dplyr::mutate(n_taxa = purrr::map_int(.data$landing_catch, count_taxa)) %>%
     dplyr::mutate(taxa = purrr::map_chr(.data$landing_catch, collapse_taxa)) %>%
     dplyr::mutate(landing_date = lubridate::as_date(.data$landing_date))# %>%
-    # dplyr::mutate(fisher_proportion_woman = fisher_number_woman / (fisher_number_child + fisher_number_man + fisher_number_woman))
+  # dplyr::mutate(fisher_proportion_woman = fisher_number_woman / (fisher_number_child + fisher_number_man + fisher_number_woman))
 }
 
 #'@importFrom rlang .data
@@ -123,15 +132,13 @@ get_trips_table <- function(merged_trips_with_addons){
       .data$landing_date,
       landing_n_taxa = .data$n_taxa,
       landing_taxa = .data$taxa,
-      .data$landing_station,
-      .data$reporting_region,
-      .data$habitat,
       .data$landing_value,
       .data$landing_catch,
       .data$vessel_type,
-      .data$gear_type,
+      .data$landing_station,
+      .data$reporting_region,
+      .data$habitat,
       tidyselect::starts_with("fisher_"),
-      .data$n_gleaners,
       landing_survey_trip_duration = .data$trip_duration,
       .data$tracker_trip_start,
       .data$tracker_trip_end,
@@ -159,35 +166,35 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
     dplyr::summarise(n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
                      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T))
 
-   track_end_bin <- merged_trips_with_addons %>%
-     dplyr::mutate(tracker_trip_end = lubridate::as_date(.data$tracker_trip_end),
-                   date_bin_start = lubridate::floor_date(.data$tracker_trip_end,
-                                                          bin_unit,
-                                                          week_start = 7)) %>%
-     dplyr::group_by(.data$date_bin_start) %>%
-     dplyr::summarise(n_tracks = dplyr::n_distinct(.data$tracker_trip_id,
-                                                   na.rm = T))
+  track_end_bin <- merged_trips_with_addons %>%
+    dplyr::mutate(tracker_trip_end = lubridate::as_date(.data$tracker_trip_end),
+                  date_bin_start = lubridate::floor_date(.data$tracker_trip_end,
+                                                         bin_unit,
+                                                         week_start = 7)) %>%
+    dplyr::group_by(.data$date_bin_start) %>%
+    dplyr::summarise(n_tracks = dplyr::n_distinct(.data$tracker_trip_id,
+                                                  na.rm = T))
 
-   matched_date_bin <- merged_trips_with_addons %>%
-     dplyr::mutate(date_bin_start = lubridate::floor_date(.data$landing_date,
-                                                          bin_unit,
-                                                          week_start = 7)) %>%
-     dplyr::group_by(.data$date_bin_start) %>%
-     dplyr::summarise(n_matched = sum(!is.na(.data$landing_id) &
-                                        !is.na(.data$tracker_trip_id)))
+  matched_date_bin <- merged_trips_with_addons %>%
+    dplyr::mutate(date_bin_start = lubridate::floor_date(.data$landing_date,
+                                                         bin_unit,
+                                                         week_start = 7)) %>%
+    dplyr::group_by(.data$date_bin_start) %>%
+    dplyr::summarise(n_matched = sum(!is.na(.data$landing_id) &
+                                       !is.na(.data$tracker_trip_id)))
 
-   landing_date_bin %>%
-     dplyr::full_join(track_end_bin, by = "date_bin_start") %>%
-     dplyr::full_join(matched_date_bin, by = "date_bin_start") %>%
-     # Counts that are NA are really zero here
-     dplyr::mutate(dplyr::across(dplyr::starts_with("n_"),
-                                 tidyr::replace_na, replace = 0)) %>%
-     dplyr::mutate(prop_matched = .data$n_matched /
-                     (.data$n_landings + .data$n_tracks - .data$n_matched)) %>%
-     # For the data export we need to optimise a bit to minimise space use
-     dplyr::mutate(prop_matched = round(.data$prop_matched, 4),
-                   dplyr::across(dplyr::starts_with("n_"), as.integer)) %>%
-     dplyr::arrange(dplyr::desc(.data$date_bin_start))
+  landing_date_bin %>%
+    dplyr::full_join(track_end_bin, by = "date_bin_start") %>%
+    dplyr::full_join(matched_date_bin, by = "date_bin_start") %>%
+    # Counts that are NA are really zero here
+    dplyr::mutate(dplyr::across(dplyr::starts_with("n_"),
+                                tidyr::replace_na, replace = 0)) %>%
+    dplyr::mutate(prop_matched = .data$n_matched /
+                    (.data$n_landings + .data$n_tracks - .data$n_matched)) %>%
+    # For the data export we need to optimise a bit to minimise space use
+    dplyr::mutate(prop_matched = round(.data$prop_matched, 4),
+                  dplyr::across(dplyr::starts_with("n_"), as.integer)) %>%
+    dplyr::arrange(dplyr::desc(.data$date_bin_start))
 }
 
 summarise_estimations <- function(bin_unit = "month", aggregated_predictions, groupings = "date_bin_start"){
@@ -228,7 +235,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
                      catch = sum(.data$catch)) %>%
     dplyr::ungroup()
 
-    # remove rows where all the variables are NA
+  # remove rows where all the variables are NA
   binned_frame <- binned_frame %>%
     dplyr::filter(dplyr::if_any(where(is.numeric), ~!is.na(.)))
 
@@ -241,6 +248,53 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
   binned_frame
 
 }
+
+
+
+summarise_nutrients <- function(taxa_estimations, nutrients_table){
+  dplyr::left_join(taxa_estimations, nutrients_table) %>%
+    dplyr::transmute(
+      date_bin_start = .data$date_bin_start,
+      grouped_taxa = .data$grouped_taxa,
+      catch = .data$catch,
+      Selenium = .data$Selenium_mu * .data$catch,
+      Zinc = .data$Zinc_mu * .data$catch,
+      Protein = .data$Protein_mu * .data$catch,
+      Omega3 = .data$Omega_3_mu * .data$catch,
+      Calcium = .data$Calcium_mu * .data$catch,
+      Iron = .data$Iron_mu * catch,
+      VitaminA = .data$Vitamin_A_mu * .data$catch)
+}
+
+get_nutrients_proportions <- function(nutrients_estimates){
+  nutrients_estimates$year %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(dplyr::across(c(.data$Selenium : .data$VitaminA), ~ (.x/.data$catch) *100)) %>%
+    dplyr::ungroup() %>%
+    dplyr::summarise(dplyr::across(c(.data$Selenium : .data$VitaminA), ~ median(.x, na.rm = TRUE)))
+
+}
+
+fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa = "MZZ"){
+  nutrients_estimates %>%
+    dplyr::mutate(
+      Selenium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                  ~ (.data$catch * nutrients_proportions$Selenium) / 100, TRUE ~ .data$Selenium),
+      Zinc = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                              ~ (.data$catch * nutrients_proportions$Zinc) / 100, TRUE ~ .data$Zinc),
+      Protein = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                 ~ (.data$catch * nutrients_proportions$Protein) / 100, TRUE ~ .data$Protein),
+      Omega3 = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                ~ (.data$catch * nutrients_proportions$Omega3) / 100, TRUE ~ .data$Omega3),
+      Calcium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                 ~ (.data$catch * nutrients_proportions$Calcium) / 100, TRUE ~ .data$Calcium),
+      Iron = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                              ~ (.data$catch * nutrients_proportions$Iron) / 100, TRUE ~ .data$Iron),
+      VitaminA = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                  ~ (.data$catch * nutrients_proportions$VitaminA) / 100, TRUE ~ .data$VitaminA)
+    )
+}
+
 
 
 where <- function (fn)

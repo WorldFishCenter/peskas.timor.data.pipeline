@@ -986,7 +986,7 @@ trips %>%
 
 \pagebreak
 
-# Nutrional properties
+# Nutritional properties
 
 The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value.
 
@@ -1090,7 +1090,7 @@ The nutritional values for each catch were obtained by integrating the weight es
        y = "RDI (%)",
        fill ="",
        title = "Catches' nutritional properties",
-       subtitle = "Average nutritional properties of a catch in Timor. The orange line represent\nthe mean, shaded areas represent the limits of the 95% confidence\ninterval, with dark shades indicating high density in the distribution.")+
+       subtitle = "Average nutritional properties of Timor catches. The orange line represent\nthe mean, shaded areas represent the limits of the 95% confidence\ninterval with dark shades indicating high density in the distribution.")+
     theme(
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 17),
@@ -1151,7 +1151,7 @@ The nutritional values for each catch were obtained by integrating the weight es
     color = "",
     fill = "",
     title = "Nutrients coverage",
-    subtitle = "Monthly number of people covered by small-scale fisheries in Timor according to\nthe Recommended Daily Intake for the seven nutrients considered.\nNote the increase in vitamin A coverage over time."
+    subtitle = "Monthly number of people feed by small-scale fisheries in Timor according to\nthe Recommended Daily Intake for the seven nutrients considered.\nNote the increase in vitamin A coverage over time."
   )
 
 ```
