@@ -144,6 +144,7 @@ get_trips_table <- function(merged_trips_with_addons){
       .data$reporting_region,
       .data$habitat,
       tidyselect::starts_with("fisher_"),
+      .data$n_gleaners,
       landing_survey_trip_duration = .data$trip_duration,
       .data$tracker_trip_start,
       .data$tracker_trip_end,
