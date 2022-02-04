@@ -320,13 +320,6 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
     # dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
 }
 
-# Helper function useful to calculate total catch weight associated to join_weights
-calc_total_weight <- function(x) {
-  x$length_individuals %>%
-    purrr::map_dbl(~ sum(.$weight, na.rm = T)) %>%
-    sum()
-}
-
 
 #' Ingest species weight-length info
 #'

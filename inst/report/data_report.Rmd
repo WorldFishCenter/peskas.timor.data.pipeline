@@ -988,7 +988,8 @@ trips %>%
 
 # Nutritional properties
 
-The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value.
+The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value. 
+
 
 ```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=9, fig.width=8.5}
 
@@ -1022,7 +1023,7 @@ The nutritional values for each catch were obtained by integrating the weight es
        y = "RDI (%) from 100g portion",
        fill ="",
       title = "Fish groups nutritional contribution",
-       subtitle = "Median contribution of fish groups to Recommended Nutrient Intakes (%)\nfor the seven nutrients considered.")+
+       subtitle = "Median contribution of fish groups to the Recommended\nNutrient Intakes (%) for the seven nutrients considered.")+
     theme(
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 18),
@@ -1090,7 +1091,7 @@ The nutritional values for each catch were obtained by integrating the weight es
        y = "RDI (%)",
        fill ="",
        title = "Catches' nutritional properties",
-       subtitle = "Average nutritional properties of Timor catches. The orange line represent\nthe mean, shaded areas represent the limits of the 95% confidence\ninterval with dark shades indicating high density in the distribution.")+
+       subtitle = "Average nutritional properties of Timor catches relative to the Recommended\nDaily Intake (%). The orange line represent the mean, shaded areas represent\nthe limits of the 95% confidence interval with dark shades indicating high density\nin the distribution.")+
     theme(
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 17),
@@ -1151,7 +1152,7 @@ The nutritional values for each catch were obtained by integrating the weight es
     color = "",
     fill = "",
     title = "Nutrients coverage",
-    subtitle = "Monthly number of people feed by small-scale fisheries in Timor according to\nthe Recommended Daily Intake for the seven nutrients considered.\nNote the increase in vitamin A coverage over time."
+    subtitle = "Monthly number of people feed by small-scale fisheries in Timor according to\nthe Recommended Daily Intake for the seven nutrients considered. Note the\nincrease in vitamin A coverage over time."
   )
 
 ```
@@ -1191,7 +1192,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     text = element_text(family = "Helvetica"),
     legend.position = "bottom",
     plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 13, color = "darkslategrey")
+    plot.subtitle = element_text(size = 12.5, color = "darkslategrey")
   ) +
   labs(
     x = "",
@@ -1199,7 +1200,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     color = "",
     fill = "",
     title = "Fish groups nutrients' stock",
-    subtitle = "Contribution of fish groups to nutrients' aggregated stock. Sardines\nrepresent the main source of almost all the nutrients except for calcium\nand vitamin A. These two are mostly provided by mackerel scads and by\nthe group formed by snappers, long toms, and fusiliers respectively."
+    subtitle = "Contribution of fish groups to nutrients' aggregated stock. Sardines\nrepresent the main source of almost all the nutrients except for calcium\nand vitamin A. These two nutrients are mostly provided by mackerels and\nby the group formed by snappers, long toms, and fusiliers respectively."
   )
 
 ```
@@ -1233,7 +1234,7 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
        y = "RDI (%) from 100g portion",
        fill ="",
       title = "Nutrients distribution by habitat",
-       subtitle = "Distribution of nutrients' concentration relative to 100g of catch\nin each habitat monitored in Timor.")+
+       subtitle = "Distribution of nutrients' concentration relative to the\nRecommended Daily Intake (%) of 100g of catch\nin each habitat monitored in Timor.")+
     theme(
     text = element_text(family = "Helvetica"),
     plot.title = element_text(size = 16),

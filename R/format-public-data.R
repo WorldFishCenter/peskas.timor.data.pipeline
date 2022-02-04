@@ -61,9 +61,14 @@ format_public_data <- function(log_threshold = logger::DEBUG){
   aggregated_nutrients <- purrr::map(nutrients_estimates,
                                      fill_missing_group,
                                      nutrients_proportions,
-                                     taxa = "MZZ")
+                                     taxa = "MZZ") %>%
+    purrr::map(aggregate_nutrients)
 
-  aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join)
+  aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
+    purrr::map(dplyr::select,
+               .data$date_bin_start, .data$n_landings,
+               .data$prop_landings_woman:.data$catch,
+               .data$recorded_revenue, .data$recorded_catch)
 
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- periods %>%
@@ -80,10 +85,10 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                 options = pars$public_storage$google$options)
 
   logger::log_info("Saving and exporting public data as rds")
-  c('trips', "catch", "aggregated", "taxa_aggregated") %>%
+  c('trips', "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
-    purrr::walk2(list(trips_table, catch_table, aggregated, taxa_estimations),
+    purrr::walk2(list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients),
                  ~ readr::write_rds(.y, .x, compress = "gz")) %>%
     purrr::walk(upload_cloud_file,
                 provider = pars$public_storage$google$key,
@@ -162,8 +167,11 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons){
     dplyr::mutate(date_bin_start = lubridate::floor_date(.data$landing_date,
                                                          bin_unit,
                                                          week_start = 7)) %>%
+    get_weight(.) %>%
     dplyr::group_by(.data$date_bin_start) %>%
     dplyr::summarise(n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
+                     recorded_revenue = sum(.data$landing_value, na.rm = T),
+                     recorded_catch = sum(.data$recorded_weight, na.rm = T),
                      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T))
 
   track_end_bin <- merged_trips_with_addons %>%
@@ -262,7 +270,7 @@ summarise_nutrients <- function(taxa_estimations, nutrients_table){
       Protein = .data$Protein_mu * .data$catch,
       Omega3 = .data$Omega_3_mu * .data$catch,
       Calcium = .data$Calcium_mu * .data$catch,
-      Iron = .data$Iron_mu * catch,
+      Iron = .data$Iron_mu * .data$catch,
       VitaminA = .data$Vitamin_A_mu * .data$catch)
 }
 
@@ -295,6 +303,17 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
+aggregate_nutrients <- function(x) {
+  x %>%
+    dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
+    dplyr::group_by(.data$date_bin_start) %>%
+    dplyr::summarise_all(sum, na.rm = TRUE) %>%
+    dplyr::ungroup() %>%
+    tidyr::pivot_longer(-c(.data$date_bin_start),
+      names_to = "nutrient",
+      values_to = "weight"
+    )
+}
 
 
 where <- function (fn)
@@ -307,4 +326,16 @@ where <- function (fn)
     }
     out
   }
+}
+
+get_weight <- function(x) {
+  x %>%
+    tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
+    tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::mutate(recorded_weight = sum(.data$weight, na.rm = T),
+                  recorded_weight = .data$recorded_weight / 1000) %>% # convert to Kg
+    dplyr::ungroup() %>%
+    tidyr::nest(length_frequency = c(.data$length:.data$Vitamin_A_mu)) %>%
+    tidyr::nest(landing_catch = c(.data$catch_taxon, .data$catch_purpose, .data$length_type, .data$length_frequency))
 }
