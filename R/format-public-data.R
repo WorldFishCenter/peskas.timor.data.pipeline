@@ -267,41 +267,41 @@ summarise_nutrients <- function(taxa_estimations, nutrients_table){
       date_bin_start = .data$date_bin_start,
       grouped_taxa = .data$grouped_taxa,
       catch = .data$catch,
-      Selenium = .data$Selenium_mu * .data$catch,
-      Zinc = .data$Zinc_mu * .data$catch,
-      Protein = .data$Protein_mu * .data$catch,
-      Omega3 = .data$Omega_3_mu * .data$catch,
-      Calcium = .data$Calcium_mu * .data$catch,
-      Iron = .data$Iron_mu * .data$catch,
-      VitaminA = .data$Vitamin_A_mu * .data$catch)
+      selenium = .data$Selenium_mu * .data$catch,
+      zinc = .data$Zinc_mu * .data$catch,
+      protein = .data$Protein_mu * .data$catch,
+      omega3 = .data$Omega_3_mu * .data$catch,
+      calcium = .data$Calcium_mu * .data$catch,
+      iron = .data$Iron_mu * .data$catch,
+      vitaminA = .data$Vitamin_A_mu * .data$catch)
 }
 
 get_nutrients_proportions <- function(nutrients_estimates){
   nutrients_estimates$year %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(dplyr::across(c(.data$Selenium : .data$VitaminA), ~ (.x/.data$catch) *100)) %>%
+    dplyr::mutate(dplyr::across(c(.data$selenium : .data$vitaminA), ~ (.x/.data$catch) *100)) %>%
     dplyr::ungroup() %>%
-    dplyr::summarise(dplyr::across(c(.data$Selenium : .data$VitaminA), ~ median(.x, na.rm = TRUE)))
+    dplyr::summarise(dplyr::across(c(.data$selenium : .data$vitaminA), ~ median(.x, na.rm = TRUE)))
 
 }
 
 fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa = "MZZ"){
   nutrients_estimates %>%
     dplyr::mutate(
-      Selenium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                                  ~ (.data$catch * nutrients_proportions$Selenium) / 100, TRUE ~ .data$Selenium),
-      Zinc = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                              ~ (.data$catch * nutrients_proportions$Zinc) / 100, TRUE ~ .data$Zinc),
-      Protein = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                                 ~ (.data$catch * nutrients_proportions$Protein) / 100, TRUE ~ .data$Protein),
-      Omega3 = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                                ~ (.data$catch * nutrients_proportions$Omega3) / 100, TRUE ~ .data$Omega3),
-      Calcium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                                 ~ (.data$catch * nutrients_proportions$Calcium) / 100, TRUE ~ .data$Calcium),
-      Iron = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                              ~ (.data$catch * nutrients_proportions$Iron) / 100, TRUE ~ .data$Iron),
-      VitaminA = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
-                                  ~ (.data$catch * nutrients_proportions$VitaminA) / 100, TRUE ~ .data$VitaminA)
+      selenium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                  ~ (.data$catch * nutrients_proportions$selenium) / 100, TRUE ~ .data$selenium),
+      zinc = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                              ~ (.data$catch * nutrients_proportions$zinc) / 100, TRUE ~ .data$zinc),
+      protein = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                 ~ (.data$catch * nutrients_proportions$protein) / 100, TRUE ~ .data$protein),
+      omega3 = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                ~ (.data$catch * nutrients_proportions$omega3) / 100, TRUE ~ .data$omega3),
+      calcium = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                 ~ (.data$catch * nutrients_proportions$calcium) / 100, TRUE ~ .data$calcium),
+      iron = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                              ~ (.data$catch * nutrients_proportions$iron) / 100, TRUE ~ .data$iron),
+      vitaminA = dplyr::case_when(.data$grouped_taxa == taxa & .data$date_bin_start >= "2018-04-01"
+                                  ~ (.data$catch * nutrients_proportions$vitaminA) / 100, TRUE ~ .data$vitaminA)
     )
 }
 
@@ -309,12 +309,7 @@ aggregate_nutrients <- function(x) {
   x %>%
     dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
-    dplyr::summarise_all(sum, na.rm = TRUE) %>%
-    dplyr::ungroup() %>%
-    tidyr::pivot_longer(-c(.data$date_bin_start),
-      names_to = "nutrient",
-      values_to = "weight"
-    )
+    dplyr::summarise_all(sum, na.rm = TRUE)
 }
 
 
