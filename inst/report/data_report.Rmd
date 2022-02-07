@@ -626,7 +626,7 @@ trips %>%
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
 stock_dat <-
   dplyr::left_join(catch, trips, by = "trip_id") %>%
-  dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
+  dplyr::filter(individuals > 0) %>%
   dplyr::group_by(comm_name) %>%
   dplyr::summarise(aggregated_weight = sum(weight, na.rm = TRUE)) %>%
   dplyr::mutate(weight_proportion = aggregated_weight / total_weight * 100) %>%
@@ -641,7 +641,7 @@ stock_caption <- paste0(stock_dat[1,1]$comm_name, " represent the most important
                         ", account\nfor ", round(stock_dat[4,4],1), "% of the total stock." )
 
 dplyr::left_join(catch, trips, by = "trip_id") %>%
-  dplyr::filter(individuals > 0 & nchar(landing_taxa) == 3) %>%
+  dplyr::filter(individuals > 0) %>%
   dplyr::group_by(comm_name) %>%
   dplyr::summarise(aggregated_weight = sum(weight, na.rm = TRUE)) %>%
   dplyr::mutate(weight_proportion = aggregated_weight / total_weight * 100) %>%
@@ -988,7 +988,8 @@ trips %>%
 
 # Nutritional properties
 
-The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value.
+The nutritional values for each catch were obtained by integrating the weight estimates for each fish-group retrieved from [FishBase](https://www.fishbase.se/search.php) with modelled concentrations of seven nutrients [@hicks2019] foundable in [FishBase Nutrient Research Tool](https://www.fishbase.se/Nutrients/NutrientSearch.php) and in the public repository associated to the paper on [GitHub](https://github.com/mamacneil/NutrientFishbase). In the plots below we refer to the Recommended Daily Intake of a woman between 31 and 50 years old [@Trumbo2002] to estimate the overall nutritional value. 
+
 
 ```{r, echo=FALSE, warning=FALSE, eval=TRUE, message=FALSE, fig.height=9, fig.width=8.5}
 
@@ -1012,6 +1013,11 @@ The nutritional values for each catch were obtained by integrating the weight es
   dplyr::mutate(name = stringr::str_replace(.data$name, pattern = "_sc", "")) %>%
   dplyr::filter(!is.na(.data$value)) %>%
   dplyr::mutate(name = factor(name, levels = rev(c("Selenium", "Protein","Omega-3", "Zinc", "Calcium", "Iron", "Vitamin A")), ordered = TRUE)) %>%
+  #dplyr::group_by(taxa_group) %>% 
+  #dplyr::mutate(tot_value = sum(value)) %>% 
+  #dplyr::arrange(dplyr::desc(tot_value)) %>% 
+  #dplyr::ungroup() %>% 
+  #dplyr::top_n(n = 10*7) %>% 
   ggplot(aes(x=taxa_group,y=value,fill=name))+
   geom_col(mapping = aes(x = reorder(taxa_group, value), y = value, fill = name)) +
   scale_fill_viridis_d(direction = -1)+
