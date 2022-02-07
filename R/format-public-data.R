@@ -261,19 +261,20 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
 
 
 
-summarise_nutrients <- function(taxa_estimations, nutrients_table){
+summarise_nutrients <- function(taxa_estimations, nutrients_table) {
   dplyr::left_join(taxa_estimations, nutrients_table) %>%
     dplyr::transmute(
       date_bin_start = .data$date_bin_start,
       grouped_taxa = .data$grouped_taxa,
       catch = .data$catch,
-      selenium = .data$Selenium_mu * .data$catch,
-      zinc = .data$Zinc_mu * .data$catch,
-      protein = .data$Protein_mu * .data$catch,
-      omega3 = .data$Omega_3_mu * .data$catch,
-      calcium = .data$Calcium_mu * .data$catch,
-      iron = .data$Iron_mu * .data$catch,
-      vitaminA = .data$Vitamin_A_mu * .data$catch)
+      selenium = (.data$Selenium_mu * (.data$catch * 1000)) / 1000,
+      zinc = (.data$Zinc_mu * (.data$catch * 1000)) / 1000,
+      protein = (.data$Protein_mu * (.data$catch * 1000)) / 1000,
+      omega3 = (.data$Omega_3_mu * (.data$catch * 1000)) / 1000,
+      calcium = (.data$Calcium_mu * (.data$catch * 1000) / 1000),
+      iron = (.data$Iron_mu * (.data$catch * 1000)) / 1000,
+      vitaminA = (.data$Vitamin_A_mu * (.data$catch * 1000)) / 1000
+    )
 }
 
 get_nutrients_proportions <- function(nutrients_estimates){
