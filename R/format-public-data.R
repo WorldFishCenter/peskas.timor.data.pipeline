@@ -56,8 +56,10 @@ format_public_data <- function(log_threshold = logger::DEBUG){
     purrr::map(summarise_estimations, models$predictions$aggregated)
   taxa_estimations <- periods %>% rlang::set_names() %>%
     purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
   nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
+  # fill MZZ (miscellaneous unrecognized fishes) with average nutrients proportion of other groups
   aggregated_nutrients <- purrr::map(nutrients_estimates,
                                      fill_missing_group,
                                      nutrients_proportions,
@@ -285,6 +287,7 @@ get_nutrients_proportions <- function(nutrients_estimates){
     dplyr::summarise(dplyr::across(c(.data$selenium : .data$vitaminA), ~ median(.x, na.rm = TRUE)))
 
 }
+
 
 fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa = "MZZ"){
   nutrients_estimates %>%

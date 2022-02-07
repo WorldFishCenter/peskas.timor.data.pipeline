@@ -9,10 +9,10 @@ get_nutrients_table(pars, summarise = TRUE, convert = TRUE)
 \arguments{
 \item{pars}{The configuration file.}
 
-\item{summarise}{Wether you want to summarise the nutritional values for each
+\item{summarise}{Whether you want to summarise the nutritional values for each
 group. The function use the median by default.}
 
-\item{convert}{Wether you want to convert the nutritional values units to
+\item{convert}{Whether you want to convert the nutritional values units to
 grams. See details for the default starting units.}
 }
 \value{

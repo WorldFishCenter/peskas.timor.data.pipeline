@@ -12,9 +12,9 @@
 #'
 #'
 #' @param pars The configuration file.
-#' @param summarise Wether you want to summarise the nutritional values for each
+#' @param summarise Whether you want to summarise the nutritional values for each
 #' group. The function use the median by default.
-#' @param convert Wether you want to convert the nutritional values units to
+#' @param convert Whether you want to convert the nutritional values units to
 #' grams. See details for the default starting units.
 #'
 #'
