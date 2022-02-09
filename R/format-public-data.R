@@ -29,6 +29,7 @@ format_public_data <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
   pars <- read_config()
+  RDI <- pars$metadata$nutrients$RDI$convert
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
@@ -64,7 +65,8 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                                      fill_missing_group,
                                      nutrients_proportions,
                                      taxa = "MZZ") %>%
-    purrr::map(aggregate_nutrients)
+    purrr::map(aggregate_nutrients, RDI, pars)
+
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
     purrr::map(dplyr::select,
@@ -309,12 +311,32 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
-aggregate_nutrients <- function(x) {
-  x %>%
-    dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
-    dplyr::group_by(.data$date_bin_start) %>%
-    dplyr::summarise_all(sum, na.rm = TRUE)
+aggregate_nutrients <- function(x, RDI = NULL, pars) {
+  if (RDI == TRUE) {
+    nutrients <-
+      x %>%
+      dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
+      dplyr::group_by(.data$date_bin_start) %>%
+      dplyr::summarise_all(sum, na.rm = TRUE) %>%
+      dplyr::mutate(
+        selenium = (.data$selenium * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+        zinc = (.data$zinc * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+        protein = (.data$protein * 1000) / pars$metadata$nutrients$RDI$name$protein,
+        omega3 = (.data$omega3 * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+        calcium = (.data$calcium * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+        iron = (.data$iron * 1000) / pars$metadata$nutrients$RDI$name$iron,
+        vitaminA = (.data$vitaminA * 1000) / pars$metadata$nutrients$RDI$name$vitaminA
+      )
+  } else {
+    nutrients <-
+      x %>%
+      dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
+      dplyr::group_by(.data$date_bin_start) %>%
+      dplyr::summarise_all(sum, na.rm = TRUE)
+  }
+  nutrients
 }
+
 
 
 where <- function (fn)
