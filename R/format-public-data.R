@@ -321,13 +321,13 @@ aggregate_nutrients <- function(x, RDI, pars) {
       values_to = "nut_supply"
     ) %>%
     dplyr::mutate(nut_rdi = dplyr::case_when(
-      nutrient == "selenium" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$selenium,
-      nutrient == "zinc" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$zinc,
-      nutrient == "protein" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$protein,
-      nutrient == "omega3" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$omega3,
-      nutrient == "calcium" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$calcium,
-      nutrient == "iron" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$iron,
-      nutrient == "vitaminA" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
+      nutrient == "selenium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
       TRUE ~ NA_real_
     )) %>%
     dplyr::ungroup()
