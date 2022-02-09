@@ -311,30 +311,26 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
-aggregate_nutrients <- function(x, RDI = NULL, pars) {
-  if (RDI == TRUE) {
-    nutrients <-
-      x %>%
-      dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
-      dplyr::group_by(.data$date_bin_start) %>%
-      dplyr::summarise_all(sum, na.rm = TRUE) %>%
-      dplyr::mutate(
-        selenium = (.data$selenium * 1000) / pars$metadata$nutrients$RDI$name$selenium,
-        zinc = (.data$zinc * 1000) / pars$metadata$nutrients$RDI$name$zinc,
-        protein = (.data$protein * 1000) / pars$metadata$nutrients$RDI$name$protein,
-        omega3 = (.data$omega3 * 1000) / pars$metadata$nutrients$RDI$name$omega3,
-        calcium = (.data$calcium * 1000) / pars$metadata$nutrients$RDI$name$calcium,
-        iron = (.data$iron * 1000) / pars$metadata$nutrients$RDI$name$iron,
-        vitaminA = (.data$vitaminA * 1000) / pars$metadata$nutrients$RDI$name$vitaminA
-      )
-  } else {
-    nutrients <-
-      x %>%
-      dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
-      dplyr::group_by(.data$date_bin_start) %>%
-      dplyr::summarise_all(sum, na.rm = TRUE)
-  }
-  nutrients
+aggregate_nutrients <- function(x, RDI, pars) {
+  x %>%
+    dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
+    dplyr::group_by(.data$date_bin_start) %>%
+    dplyr::summarise_all(sum, na.rm = TRUE) %>%
+    tidyr::pivot_longer(-.data$date_bin_start,
+      names_to = "nutrient",
+      values_to = "weight"
+    ) %>%
+    dplyr::mutate(RDI_covered = dplyr::case_when(
+      nutrient == "selenium" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
+      TRUE ~ NA_real_
+    )) %>%
+    dplyr::ungroup()
 }
 
 
