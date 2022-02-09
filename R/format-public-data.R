@@ -318,9 +318,9 @@ aggregate_nutrients <- function(x, RDI, pars) {
     dplyr::summarise_all(sum, na.rm = TRUE) %>%
     tidyr::pivot_longer(-.data$date_bin_start,
       names_to = "nutrient",
-      values_to = "weight"
+      values_to = "nut_supply"
     ) %>%
-    dplyr::mutate(RDI_covered = dplyr::case_when(
+    dplyr::mutate(nut_rdi = dplyr::case_when(
       nutrient == "selenium" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$selenium,
       nutrient == "zinc" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$zinc,
       nutrient == "protein" ~ (.data$weight * 1000) / pars$metadata$nutrients$RDI$name$protein,
