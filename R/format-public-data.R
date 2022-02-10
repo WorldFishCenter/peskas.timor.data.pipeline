@@ -29,6 +29,7 @@ format_public_data <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
   pars <- read_config()
+  RDI <- pars$metadata$nutrients$RDI$convert
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
@@ -64,7 +65,8 @@ format_public_data <- function(log_threshold = logger::DEBUG){
                                      fill_missing_group,
                                      nutrients_proportions,
                                      taxa = "MZZ") %>%
-    purrr::map(aggregate_nutrients)
+    purrr::map(aggregate_nutrients, RDI, pars)
+
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
     purrr::map(dplyr::select,
@@ -309,12 +311,28 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
-aggregate_nutrients <- function(x) {
+aggregate_nutrients <- function(x, RDI, pars) {
   x %>%
     dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
-    dplyr::summarise_all(sum, na.rm = TRUE)
+    dplyr::summarise_all(sum, na.rm = TRUE) %>%
+    tidyr::pivot_longer(-.data$date_bin_start,
+      names_to = "nutrient",
+      values_to = "nut_supply"
+    ) %>%
+    dplyr::mutate(nut_rdi = dplyr::case_when(
+      nutrient == "selenium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
+      TRUE ~ NA_real_
+    )) %>%
+    dplyr::ungroup()
 }
+
 
 
 where <- function (fn)

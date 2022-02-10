@@ -103,13 +103,13 @@ total_value <- sum(trips$landing_value, na.rm = TRUE)
 total_weight <- sum(catch$weight, na.rm = TRUE)
 
 
-RDI_Protein <- pars$metadata$nutrients$RDI$protein
-RDI_VitaminA <- pars$metadata$nutrients$RDI$vitaminA
-RDI_Calcium <- pars$metadata$nutrients$RDI$calcium
-RDI_Selenium <- pars$metadata$nutrients$RDI$selenium
-RDI_Zinc <- pars$metadata$nutrients$RDI$zinc
-RDI_Iron <- pars$metadata$nutrients$RDI$iron
-RDI_Omega <- pars$metadata$nutrients$RDI$omega3
+RDI_Protein <- pars$metadata$nutrients$RDI$name$protein
+RDI_VitaminA <- pars$metadata$nutrients$RDI$name$vitaminA
+RDI_Calcium <- pars$metadata$nutrients$RDI$name$calcium
+RDI_Selenium <- pars$metadata$nutrients$RDI$name$selenium
+RDI_Zinc <- pars$metadata$nutrients$RDI$name$zinc
+RDI_Iron <- pars$metadata$nutrients$RDI$name$iron
+RDI_Omega <- pars$metadata$nutrients$RDI$name$omega3
 
 ```
 
