@@ -226,7 +226,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
 
-  release_files_names <- c(new_names, system.file("export/README.docx",
+  release_files_names <- c(new_names, system.file("export/README.html",
     package = "peskas.timor.data.pipeline"
   ))
 
