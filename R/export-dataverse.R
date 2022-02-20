@@ -285,15 +285,18 @@ generate_description <- function(...) {
         "Unique identifier of a fishing trip",
         "Date of the fishing trip",
         "Number of taxa associated to the catch",
-        "Interagency code identifying the taxa group",
+        "ISSCAAP codes identifying the taxa group",
+        "Name of the landing station",
+        "Timor municipality",
+        "Ecological habitat where the capture was made",
         "Estimated value in USD of the catch",
         "Uninformative column - for backwards compatibility only",
         "The vessel type, can be motorised or unmotorised",
-        "Name of the landing station",
-        "Timor municipality",
+        "Gear type of the boat",
         "Number of children involved in the fishing trip",
         "Number of adult males involved in the fishing trip",
         "Number of adult females involved in the fishing trip",
+        "Number of gleaners",
         "Duration of the fishing trip in hours",
         "Start of the fishing trip",
         "End of the fishing trip"
@@ -305,12 +308,13 @@ generate_description <- function(...) {
       Variable = names(catch_dat),
       Description = c(
         "Unique identifier of a fishing trip",
-        "Interagency code identifying the taxa group (https://www.fao.org/cwp-on-fishery-statistics/handbook/general-concepts/identifiers/en/)",
+        "ISSCAAP codes identifying the taxa group (https://www.fao.org/fishery/en/collection/asfis/en)",
         "Destiny of the catch, whether for sale, self-sustaining or both",
         "Type of length used for catch measurement. TL: total length, FL: fork length, ShL: shell length, CW: carapace width",
         "Average length of the individuals in the catch (cm)",
         "Number of individuals in the catch",
-        "Weight of the catch in grams"
+        "Weight of the catch in grams",
+        rep("Weight in grams",7)
       )
     )
 
@@ -327,8 +331,10 @@ generate_description <- function(...) {
         "Estimated revenue for each trip in USD",
         "Estimated weight for each trip in Kg",
         "Estimated number of landings per boat",
-        "Total revenue in USD",
-        "Total catch in Kg"
+        "Estimated total revenue in USD",
+        "Estimated total catch in Kg",
+        "Recorded total revenue in USD",
+        "Recorded total catch in Kg"
       )
     )
 

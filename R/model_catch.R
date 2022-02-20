@@ -218,7 +218,6 @@ model_catch <- function(trips){
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(.data$reporting_region))) %>%
-    dplyr::filter(!is.na(.data$landing_period), !is.na(.data$landing_value)) %>%
     dplyr::mutate(landing_id = as.character(.data$landing_id),
                   weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%

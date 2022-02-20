@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 0.18.0
+
+## New features
+
+- Added nutritional values for each catch by the function `get_nutrients_table`. The function links to the repository https://github.com/mamacneil/NutrientFishbase and join the estimated nutrients values with the FishBase species data.
+
 # peskas.timor.data.pipeline 0.17.0
 
 ## New features

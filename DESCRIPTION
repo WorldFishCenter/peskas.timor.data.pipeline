@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 0.17.0
+Version: 0.18.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
@@ -11,7 +11,8 @@ Authors@R:
       person(given = "Lorenzo",
              family = "Longobardi",
              role = c("aut"),
-             email = "l.longobardi@cgiar.org"),
+             email = "l.longobardi@cgiar.org",
+             comment = c(ORCID = "0000-0003-3126-7341")),
       person(given = "WorldFish",
              role = "cph"))
 Description: This package implements the data and modelling
@@ -33,7 +34,6 @@ Imports:
     purrr,
     RCurl,
     readr,
-    tibble,
     tidyr,
     rlang (>= 0.1.2)
 Suggests: 
@@ -49,19 +49,21 @@ Suggests:
     tinytest,
     dataverse,
     rmarkdown,
+    cowplot,
     broom,
     zoo,
     sf,
     ggplot2,
     ggpubr,
-    rfishbase,
-    taxize,
-    univOutl,
+    lubridate,
     readxl,
     stringr,
-    lubridate,
+    tibble,
     furrr, 
-    future
+    future,
+    rfishbase,
+    taxize,
+    univOutl
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

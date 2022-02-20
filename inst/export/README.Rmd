@@ -2,7 +2,7 @@
 title: "Peskas data description"
 date: "Uploaded on `r Sys.time()`"
 output:
-  word_document:
+  html_document:
     toc: true
 ---
 
@@ -45,10 +45,14 @@ Given the complexity of the data that compose Peskas, any change to the code mus
 The final steps of the pipeline produce data products that will be processed by other tools for distribution. Currently, the final products constitute a dashboard web application developed with Shiny, a data report generated with Rmarkdown, and the actual data, distributed through the open-source Dataverse portal.
 
 The figure below gives a schematic overview of the Peskas’ data infrastructure.
-
+  
+  
+  
 ```{r , echo=FALSE, warning=FALSE, include = TRUE, out.width="80%"}
 knitr::include_graphics("peskas_workflow.png")
 ```
+
+
 
 #### Workflow steps
 

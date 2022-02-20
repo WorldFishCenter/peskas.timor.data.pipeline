@@ -15,20 +15,12 @@ RUN install2.r --error --skipinstalled \
     lubridate \
     magrittr \
     purrr \
-    Rcurl \
+    RCurl \
     readr \
-    readxl \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    rfishbase
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -42,14 +34,24 @@ RUN install2.r --error --skipinstalled \
     dataverse \
     rmarkdown \
     geosphere \
+    rmarkdown \
+    ggplot2 \
+    bookdown \
     broom \
     zoo \
     ggpubr \
     cowplot \
     kableExtra \
-    bookdown \
-    ggplot2 \
-    tinytest
+    furrr \
+    future \
+    univOutl \
+    taxize \
+    tinytest \
+    remotes \
+    rfishbase \
+    tidytext
 
+# Install GitHub packages
+RUN installGithub.r wilkelab/ungeviz
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

@@ -49,9 +49,9 @@ a nested column \code{species_group} containing validated catches parameters.
 }
 \examples{
 \dontrun{
-  pars <- read_config()
-  landings <- get_merged_landings(pars)
-  validate_catch_params(landings,method="MAD",k=13)
+pars <- read_config()
+landings <- get_merged_landings(pars)
+validate_catch_params(landings, method = "MAD", k = 13)
 }
 
 }

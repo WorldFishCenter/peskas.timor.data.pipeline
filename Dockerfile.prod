@@ -30,19 +30,10 @@ RUN install2.r --error --skipinstalled \
     purrr \
     RCurl \
     readr \
-    readxl \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    rfishbase \
-    knitr
+    rlang
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -58,13 +49,23 @@ RUN install2.r --error --skipinstalled \
     geosphere \
     broom \
     zoo \
-    ggpubr \
-    cowplot \
     kableExtra \
-    bookdown \
     ggplot2 \
-    tinytest
+    bookdown \
+    cowplot \
+    broom \
+    ggpubr \
+    furrr \
+    future \
+    univOutl \
+    taxize \
+    tinytest \
+    remotes \
+    rfishbase \
+    tidytext
 
+# Install GitHub packages
+RUN installGithub.r wilkelab/ungeviz
 # Install local package
 COPY . /home
 WORKDIR /home
