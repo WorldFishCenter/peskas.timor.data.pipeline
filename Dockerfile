@@ -31,13 +31,17 @@ RUN install2.r --error --skipinstalled \
     roxygen2 \
     tidyselect \
     textclean \
+    dataverse \
+    rmarkdown \
+    geosphere \
     rmarkdown \
     ggplot2 \
-    zoo \
     bookdown \
-    cowplot \
     broom \
+    zoo \
     ggpubr \
+    cowplot \
+    kableExtra \
     furrr \
     future \
     univOutl \
@@ -49,6 +53,5 @@ RUN install2.r --error --skipinstalled \
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
-
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
