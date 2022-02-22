@@ -248,6 +248,13 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   file.remove(release_files_names)
 
+  # Restrict files "on request"
+  dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
+
+  purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
+  allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
+
+  # Publish data
    logger::log_info("Publishing data...")
    publish_last_dataset(
      key = key,
@@ -344,4 +351,47 @@ generate_description <- function(...) {
     aggr_tab = aggr_tab,
     time_range = time_range
   )
+}
+
+
+get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
+  dataverse_content <-
+    dataverse::dataverse_contents(
+      dataverse = dataverse,
+      key = key,
+      server = server
+    )
+
+  last_data <- list(
+    dataverse_ = last_dataset <- dataverse_content[length(dataverse_content)][[1]],
+    dataset_ = dataset_list <-
+      dataverse::get_dataset(
+        dataset = last_dataset,
+        version = ":latest",
+        key = key,
+        server = server
+      )
+  )
+  last_data
+}
+
+
+restrict_files <- function(key = key, server = server, dat_id = NULL) {
+  url <- paste0("https://", server, "/api/files/", dat_id, "/restrict")
+  res <- httr::PUT(
+    url = url,
+    httr::add_headers(`X-Dataverse-key` = key),
+    body = 'true'
+  )
+  res
+}
+
+allow_requests <- function(key = key, server = server, id) {
+  url <- paste0("https://", server, "/api/access/", id, "/allowAccessRequest")
+  res <- httr::PUT(
+    url = url,
+    httr::add_headers(`X-Dataverse-key` = key),
+    body = 'true'
+  )
+  res
 }

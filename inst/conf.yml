@@ -141,7 +141,7 @@ default:
        subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
        language: 'English'
        description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). '
-       creator: 'Tilley Alex'
+       creator: 'Tilley Alex, Joctan Dos Reis Lopes, Fernando Cagua, Lorenzo Longobardi'
 
   report:
     file_prefix: data_report
