@@ -254,6 +254,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
   allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
 
+  Sys.sleep(10)
   # Publish data
    logger::log_info("Publishing data...")
    publish_last_dataset(
