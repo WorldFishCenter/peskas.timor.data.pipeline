@@ -249,10 +249,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   file.remove(release_files_names)
 
   # Restrict files "on request"
-  dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
+  #dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
 
-  purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
-  allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
+  #purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
+  #allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
 
   Sys.sleep(10)
   # Publish data
