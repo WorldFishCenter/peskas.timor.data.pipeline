@@ -102,6 +102,7 @@ default:
         n_individuals:
           k: 7
       cook_dist: 21
+      mesh: 10
     pds_trips:
       max_trip_hours: 18
       min_trip_hours: 0.5

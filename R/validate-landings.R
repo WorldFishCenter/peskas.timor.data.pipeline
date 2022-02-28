@@ -88,10 +88,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     landings,
     metadata$habitat
   )
+  mesh_alerts <- validate_mesh(landings)
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
-
-  # take ready (?) columns
 
   ready_cols <- landings %>%
     dplyr::select(
@@ -113,7 +112,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          gear_type_alerts,
          site_alerts,
          n_fishers_alerts,
-         habitat_alerts) %>%
+         habitat_alerts,
+         mesh_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
@@ -144,6 +144,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
       habitat = .data$habitat_type,
       tidyselect::starts_with("fisher_number"),
       .data$gear_type,
+      .data$mesh_size,
       .data$vessel_type,
       .data$n_gleaners,
       .data$n_child_fishers,
@@ -170,7 +171,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
        gear_type_alerts,
        site_alerts,
        n_fishers_alerts,
-       habitat_alerts
+       habitat_alerts,
+       mesh_alerts
        ) %>%
     purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
     purrr::reduce(dplyr::bind_rows)
