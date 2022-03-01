@@ -1,7 +1,6 @@
 name: Upload public files to Dataverse
 
 on:
-  push:
   schedule:
     - cron:  '0 0 * * 0'
 
