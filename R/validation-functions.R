@@ -91,10 +91,10 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
           TRUE ~ NA_real_
         ),
         date = .data$date,
-        #date = dplyr::case_when(
+        # date = dplyr::case_when(
         #  is.na(alert_number) ~ .data$date,
         #  TRUE ~ NA_real_
-        #),
+        # ),
         submission_id = as.integer(.data$`_id`)
       ),
     validated_duration = data %>%
@@ -262,13 +262,19 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     dplyr::ungroup() %>%
     # Adjusting weight accordingly
     dplyr::mutate(
-      weight = dplyr::case_when(!is.na(.data$alert_number) ~ NA_real_,
-                                .data$n_individuals == 0 ~ 0
-                                , TRUE ~ .data$weight),
-      dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
-                    ~ dplyr::case_when(!is.na(.data$alert_number) ~ NA_real_,
-                                       .data$n_individuals == 0 ~ 0,
-                                       TRUE ~ .data$.x))
+      weight = dplyr::case_when(
+        !is.na(.data$alert_number) ~ NA_real_,
+        .data$n_individuals == 0 ~ 0,
+        TRUE ~ .data$weight
+      ),
+      dplyr::across(
+        c(.data$Selenium_mu:.data$Vitamin_A_mu),
+        ~ dplyr::case_when(
+          !is.na(.data$alert_number) ~ NA_real_,
+          .data$n_individuals == 0 ~ 0,
+          TRUE ~ .data$.x
+        )
+      )
     ) %>%
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
@@ -369,9 +375,10 @@ validate_price_weight <- function(surveys_catch_alerts,
       weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
       dplyr::across(
         c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
-          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_)
+          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
         )
-      ) %>%
+      )
+    ) %>%
     tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
     tidyr::nest(species_group = c(
       .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
@@ -475,23 +482,83 @@ validate_n_fishers <- function(landings, method, k) {
 }
 
 
-validate_habitat <- function(landings, metadata_habitat){
+validate_habitat <- function(landings, metadata_habitat) {
   landings %>%
-    dplyr::rename(submission_id = .data$`_id`,
-                  habitat_code = .data$`trip_group/habitat_boat`) %>%
-    dplyr::mutate(habitat_code = as.numeric(.data$habitat_code),
-                  habitat_type = dplyr::case_when(habitat_code == 1 ~ "Reef",
-                                                  habitat_code == 2 ~ "FAD",
-                                                  habitat_code == 3 ~ "Deep",
-                                                  habitat_code == 4 ~ "Beach",
-                                                  habitat_code == 5 ~ "Traditional FAD",
-                                                  habitat_code == 6 ~ "Mangrove",
-                                                  habitat_code == 7 ~ "Seagrass",
-                                                  TRUE ~ NA_character_)) %>%
+    dplyr::rename(
+      submission_id = .data$`_id`,
+      habitat_code = .data$`trip_group/habitat_boat`
+    ) %>%
+    dplyr::mutate(
+      habitat_code = as.numeric(.data$habitat_code),
+      habitat_type = dplyr::case_when(
+        habitat_code == 1 ~ "Reef",
+        habitat_code == 2 ~ "FAD",
+        habitat_code == 3 ~ "Deep",
+        habitat_code == 4 ~ "Beach",
+        habitat_code == 5 ~ "Traditional FAD",
+        habitat_code == 6 ~ "Mangrove",
+        habitat_code == 7 ~ "Seagrass",
+        TRUE ~ NA_character_
+      )
+    ) %>%
     dplyr::select(.data$submission_id, .data$habitat_code, .data$habitat_type) %>%
-    dplyr::mutate(alert_number = dplyr::case_when(!.data$habitat_code %in%  c(metadata_habitat$habitat_code, NA_integer_) ~ 19,
-                                                  TRUE ~ NA_real_),
-                  habitat_type = dplyr::case_when(is.na(alert_number) ~ .data$habitat_type,
-                                                  TRUE ~ NA_character_),
-                  submission_id = as.integer(.data$submission_id))
+    dplyr::mutate(
+      alert_number = dplyr::case_when(
+        !.data$habitat_code %in% c(metadata_habitat$habitat_code, NA_integer_) ~ 19,
+        TRUE ~ NA_real_
+      ),
+      habitat_type = dplyr::case_when(
+        is.na(alert_number) ~ .data$habitat_type,
+        TRUE ~ NA_character_
+      ),
+      submission_id = as.integer(.data$submission_id)
+    )
+}
+
+validate_mesh <- function(landings, mesh_limit) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      .data$`trip_group/mesh_size`,
+      .data$`trip_group/mesh_size_other`
+    ) %>%
+    dplyr::mutate(
+      `trip_group/mesh_size` = dplyr::case_when(
+        `trip_group/mesh_size` == "seluk" ~ NA_character_, TRUE ~ .data$`trip_group/mesh_size`
+      ),
+      mesh_size = dplyr::coalesce(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`),
+      mesh_size = as.double(.data$mesh_size),
+      alert_number = dplyr::case_when(
+        .data$mesh_size < 0 | .data$mesh_size > mesh_limit ~ 20,
+        TRUE ~ NA_real_
+      ),
+      mesh_size = dplyr::case_when(
+        is.na(alert_number) ~ .data$mesh_size,
+        TRUE ~ NA_real_
+      ),
+      submission_id = as.integer(.data$submission_id)
+    ) %>%
+    dplyr::select(-c(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`))
+}
+
+
+validate_gleaners <- function(landings, method, k_gleaners) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      n_gleaners = .data$how_many_gleaners_today
+    ) %>%
+    dplyr::mutate(
+      n_gleaners = as.double(.data$n_gleaners),
+      n_gleaners = abs(.data$n_gleaners),
+      alert_number = alert_outlier(
+        x = .data$n_gleaners,
+        alert_if_larger = 21, logt = TRUE, k = 1.5
+      ),
+      n_gleaners = dplyr::case_when(
+        is.na(alert_number) ~ .data$n_gleaners,
+        TRUE ~ NA_real_
+      ),
+      submission_id = as.integer(.data$submission_id)
+    )
 }
