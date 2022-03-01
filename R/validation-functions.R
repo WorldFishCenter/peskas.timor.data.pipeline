@@ -558,6 +558,7 @@ validate_gleaners <- function(landings, method, k_gleaners) {
       n_gleaners = dplyr::case_when(
         is.na(alert_number) ~ .data$n_gleaners,
         TRUE ~ NA_real_
-      )
+      ),
+      submission_id = as.integer(.data$submission_id)
     )
 }
