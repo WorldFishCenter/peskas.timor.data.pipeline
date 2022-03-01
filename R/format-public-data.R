@@ -148,6 +148,7 @@ get_trips_table <- function(merged_trips_with_addons){
       .data$landing_catch,
       .data$vessel_type,
       .data$gear_type,
+      .data$mesh_size,
       tidyselect::starts_with("fisher_"),
       .data$n_gleaners,
       landing_survey_trip_duration = .data$trip_duration,
