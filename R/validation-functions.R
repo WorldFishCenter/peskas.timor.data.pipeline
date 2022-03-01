@@ -515,8 +515,7 @@ validate_habitat <- function(landings, metadata_habitat) {
     )
 }
 
-
-validate_mesh <- function(landings) {
+validate_mesh <- function(landings, mesh_limit) {
   landings %>%
     dplyr::select(
       submission_id = .data$`_id`,
@@ -530,7 +529,7 @@ validate_mesh <- function(landings) {
       mesh_size = dplyr::coalesce(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`),
       mesh_size = as.double(.data$mesh_size),
       alert_number = dplyr::case_when(
-        .data$mesh_size < 0 | .data$mesh_size > pars$validation$landings$mesh ~ 20,
+        .data$mesh_size < 0 | .data$mesh_size > mesh_limit ~ 20,
         TRUE ~ NA_real_
       ),
       mesh_size = dplyr::case_when(
@@ -540,4 +539,25 @@ validate_mesh <- function(landings) {
       submission_id = as.integer(.data$submission_id)
     ) %>%
     dplyr::select(-c(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`))
+}
+
+
+validate_gleaners <- function(landings, method, k_gleaners) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      n_gleaners = .data$how_many_gleaners_today
+    ) %>%
+    dplyr::mutate(
+      n_gleaners = as.double(.data$n_gleaners),
+      n_gleaners = abs(.data$n_gleaners),
+      alert_number = alert_outlier(
+        x = .data$n_gleaners,
+        alert_if_larger = 21, logt = TRUE, k = 1.5
+      ),
+      n_gleaners = dplyr::case_when(
+        is.na(alert_number) ~ .data$n_gleaners,
+        TRUE ~ NA_real_
+      )
+    )
 }

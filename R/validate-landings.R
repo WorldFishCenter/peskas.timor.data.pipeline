@@ -88,14 +88,18 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     landings,
     metadata$habitat
   )
-  mesh_alerts <- validate_mesh(landings)
+  mesh_alerts <- validate_mesh(landings,
+                               mesh_limit = pars$validation$landings$mesh)
+  gleaners_alerts <- validate_gleaners(
+    landings,
+    method = default_method,
+    k_gleaners = pars$validation$landings$gleaners$k)
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
   ready_cols <- landings %>%
     dplyr::select(
       submission_id = .data$`_id`,
-      n_gleaners = .data$how_many_gleaners_today,
       n_child_fishers = .data$`trip_group/no_fishers/no_child_fishers`,
       n_women_fishers = .data$`trip_group/no_fishers/no_women_fishers`,
       submission_id = .data$`_id`
@@ -113,7 +117,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
          site_alerts,
          n_fishers_alerts,
          habitat_alerts,
-         mesh_alerts) %>%
+         mesh_alerts,
+         gleaners_alerts) %>%
     purrr::map(~ dplyr::select(.x,-alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
     dplyr::left_join(ready_cols, by = "submission_id") %>%
@@ -172,7 +177,8 @@ validate_landings <- function(log_threshold = logger::DEBUG){
        site_alerts,
        n_fishers_alerts,
        habitat_alerts,
-       mesh_alerts
+       mesh_alerts,
+       gleaners_alerts
        ) %>%
     purrr::map(~ dplyr::select(.x,alert_number,submission_id)) %>%
     purrr::reduce(dplyr::bind_rows)
