@@ -74,16 +74,15 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
     last_dataset$identifier
   )
 
-  for (i in 1:length(file_list)) {
-    dataverse::add_dataset_file(
-      file = file_list[i],
-      dataset = PID,
-      key = key,
-      description = "",
-      server = server
-    )
-    Sys.sleep(10)
-  }
+  purrr::walk(file_list, purrr::slowly(dataverse::add_dataset_file,
+    rate = purrr::rate_delay(5),
+    quiet = FALSE
+  ),
+  dataset = PID,
+  key = key,
+  description = "",
+  server = server
+  )
 }
 
 
@@ -250,19 +249,19 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   file.remove(release_files_names)
 
   # Restrict files "on request"
-  #dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
+  # dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
 
-  #purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
-  #allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
+  # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
+  # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
 
   Sys.sleep(10)
   # Publish data
-   logger::log_info("Publishing data...")
-   publish_last_dataset(
-     key = key,
-     dataverse = dataverse,
-     server = server
-     )
+  logger::log_info("Publishing data...")
+  publish_last_dataset(
+    key = key,
+    dataverse = dataverse,
+    server = server
+  )
 }
 
 
@@ -283,8 +282,8 @@ generate_description <- function(...) {
 
   time_range <-
     paste(zoo::as.yearmon(min(trips_dat$landing_date, na.rm = TRUE)),
-          zoo::as.yearmon(max(trips_dat$landing_date, na.rm = TRUE)),
-          sep = " - "
+      zoo::as.yearmon(max(trips_dat$landing_date, na.rm = TRUE)),
+      sep = " - "
     )
 
   trips_tab <-
@@ -302,7 +301,7 @@ generate_description <- function(...) {
         "Uninformative column - for backwards compatibility only",
         "The vessel type, can be motorised or unmotorised",
         "Gear type of the boat",
-        "Size of the mesh (cm)",
+        "Size of the mesh (inches)",
         "Number of children involved in the fishing trip",
         "Number of adult males involved in the fishing trip",
         "Number of adult females involved in the fishing trip",
@@ -324,7 +323,7 @@ generate_description <- function(...) {
         "Average length of the individuals in the catch (cm)",
         "Number of individuals in the catch",
         "Weight of the catch in grams",
-        rep("Weight in grams",7)
+        rep("Weight in grams", 7)
       )
     )
 
@@ -384,7 +383,7 @@ restrict_files <- function(key = key, server = server, dat_id = NULL) {
   res <- httr::PUT(
     url = url,
     httr::add_headers(`X-Dataverse-key` = key),
-    body = 'true'
+    body = "true"
   )
   res
 }
@@ -394,7 +393,7 @@ allow_requests <- function(key = key, server = server, id) {
   res <- httr::PUT(
     url = url,
     httr::add_headers(`X-Dataverse-key` = key),
-    body = 'true'
+    body = "true"
   )
   res
 }
