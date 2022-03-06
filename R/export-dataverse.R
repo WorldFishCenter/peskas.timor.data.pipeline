@@ -82,6 +82,7 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
       description = "",
       server = server
     )
+    Sys.sleep(10)
   }
 }
 
