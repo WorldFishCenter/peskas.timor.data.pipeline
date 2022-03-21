@@ -102,7 +102,7 @@ default:
         n_individuals:
           k: 7
       cook_dist: 21
-      mesh: 10
+      mesh: 200
       gleaners:
         k: 1.5
     pds_trips:

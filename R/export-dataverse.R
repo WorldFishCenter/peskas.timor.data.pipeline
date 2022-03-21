@@ -301,7 +301,7 @@ generate_description <- function(...) {
         "Uninformative column - for backwards compatibility only",
         "The vessel type, can be motorised or unmotorised",
         "Gear type of the boat",
-        "Size of the mesh (inches)",
+        "Size of the mesh (mm)",
         "Number of children involved in the fishing trip",
         "Number of adult males involved in the fishing trip",
         "Number of adult females involved in the fishing trip",
