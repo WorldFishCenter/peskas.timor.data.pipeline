@@ -528,6 +528,7 @@ validate_mesh <- function(landings, mesh_limit) {
       ),
       mesh_size = dplyr::coalesce(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`),
       mesh_size = as.double(.data$mesh_size),
+      mesh_size = .data$mesh_size * 25.4, # convert in mm
       alert_number = dplyr::case_when(
         .data$mesh_size < 0 | .data$mesh_size > mesh_limit ~ 20,
         TRUE ~ NA_real_
