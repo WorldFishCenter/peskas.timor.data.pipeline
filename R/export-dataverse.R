@@ -75,7 +75,7 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
   )
 
   purrr::walk(file_list, purrr::slowly(dataverse::add_dataset_file,
-    rate = purrr::rate_delay(5),
+    rate = purrr::rate_delay(60*2),
     quiet = FALSE
   ),
   dataset = PID,
@@ -229,6 +229,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   release_files_names <- c(new_names, system.file("export/README.html",
     package = "peskas.timor.data.pipeline"
   ))
+  release_files_names <- release_files_names[c(4,3,1,2)]
 
   logger::log_info("Initializing dataset in Peskas dataverse...")
   dataverse::initiate_sword_dataset(
@@ -254,14 +255,14 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
   # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
 
-  Sys.sleep(10)
+  #Sys.sleep(60*20)
   # Publish data
-  logger::log_info("Publishing data...")
-  publish_last_dataset(
-    key = key,
-    dataverse = dataverse,
-    server = server
-  )
+  #logger::log_info("Publishing data...")
+  #publish_last_dataset(
+  #  key = key,
+  #  dataverse = dataverse,
+  #  server = server
+  #)
 }
 
 
