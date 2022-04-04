@@ -332,11 +332,31 @@ validate_price_weight <- function(surveys_catch_alerts,
                                   surveys_price_alerts,
                                   cook_dist = NULL) {
 
+  # flag no-revenue catches
+  no_revenue_alerts <-
+    dplyr::left_join(surveys_price_alerts, surveys_catch_alerts, by = "submission_id") %>%
+    tidyr::unnest(.data$species_group) %>%
+    tidyr::unnest(.data$length_individuals) %>%
+    dplyr::select(
+      .data$submission_id, .data$species, .data$total_catch_value, .data$weight,
+      .data$alert_number.x, .data$alert_number.y
+    ) %>%
+    dplyr::mutate(alert_revenue = dplyr::case_when(.data$total_catch_value == 0 &
+      .data$weight > 0 ~ 22, TRUE ~ NA_real_)) %>%
+    dplyr::group_by(.data$submission_id) %>%
+    dplyr::summarise(alert_revenue = sum(.data$alert_revenue, na.rm = TRUE)) %>%
+    dplyr::mutate(alert_revenue = dplyr::case_when(.data$alert_revenue > 0 ~ 22, TRUE ~ NA_real_))
+
+  no_revenue_ids <-
+    no_revenue_alerts %>%
+    dplyr::filter(!is.na(.data$alert_revenue)) %>%
+    magrittr::extract2("submission_id")
+
   # Extract single catches IDs
   single_catches <-
     surveys_catch_alerts %>%
     dplyr::mutate(n = purrr::map_dbl(.data$species_group, nrow)) %>%
-    dplyr::filter(.data$n == 1) %>%
+    dplyr::filter(.data$n == 1 & !submission_id %in% no_revenue_ids) %>%
     magrittr::extract2("submission_id")
 
   # Extract IDs with abnormal price weight relation based on Cook's distance
@@ -389,8 +409,9 @@ validate_price_weight <- function(surveys_catch_alerts,
   #     surveys_catch_alerts = surveys_catch_alerts)
 
   dplyr::full_join(surveys_catch_alerts, surveys_price_alerts, by = c("submission_id")) %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
-    dplyr::select(-.data$alert_number.x, -.data$alert_number.y)
+    dplyr::full_join(no_revenue_alerts, by = c("submission_id")) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y, .data$alert_revenue)) %>%
+    dplyr::select(-.data$alert_number.x, -.data$alert_number.y, -.data$alert_revenue)
 }
 
 
