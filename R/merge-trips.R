@@ -166,7 +166,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   # upload
   logger::log_info("Uploading zip folder to cloud storage")
   upload_cloud_file(
-    file = "pds_matched_tracks_landings.zip",
+    file = system.file("matched_tracks_landings.zip", package = "peskas.timor.data.pipeline"),
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
