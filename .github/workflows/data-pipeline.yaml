@@ -209,6 +209,8 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
       - name: Test merged_trips
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
+      - name: Call ingest_pds_matched_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_matched_trips()'
 
   model-indicators:
     name: Model indicators
