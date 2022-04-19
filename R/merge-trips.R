@@ -153,7 +153,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
 
 
   readr::write_csv(matched_pds_tracks, "matched_pds_tracks.csv")
-  readr::write_csv(matched_pds_tracks_reduced, "matched_pds_tracks_reduced.csv")
+  readr::write_csv(matched_pds_tracks_reduced, "matched_pds_tracks_reduced_1min.csv")
   readr::write_csv(matched_pds_landings, "matched_pds_landings.csv")
 
   logger::log_info("Compressing files")
