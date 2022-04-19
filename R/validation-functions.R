@@ -338,13 +338,24 @@ validate_price_weight <- function(surveys_catch_alerts,
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%
     dplyr::select(
-      .data$submission_id, .data$species, .data$total_catch_value, .data$weight,
+      .data$submission_id, .data$species, .data$total_catch_value, .data$n_individuals,
       .data$alert_number.x, .data$alert_number.y
     ) %>%
-    dplyr::mutate(alert_revenue = dplyr::case_when(.data$total_catch_value == 0 &
-      .data$weight > 0 ~ 22, TRUE ~ NA_real_)) %>%
+    dplyr::group_by(.data$submission_id, .data$species) %>%
+    dplyr::summarise_all(sum, na.rm = TRUE) %>%
+    dplyr::ungroup() %>%
+    # flag no-revenue catches
+    # le condizioni sono: se total_catch_value > 0 & individuals <= 0
+    #                     se total_catch_value <= 0 & individuals > 0 ALLORA CI VUOLE UN FLAG
+    # INOLTRE VANNO ANNULLATI SIA IL VALUE CHE IL N INDIVIDUALS E TUTTO I DERIVATI DEL PESO: UN BEL NA_real
+    dplyr::mutate(alert_revenue = dplyr::case_when(.data$species == "0" & .data$total_catch_value > 0 |
+      .data$total_catch_value <= 0 & .data$n_individuals > 0 |
+      .data$total_catch_value > 0 & .data$n_individuals <= 0 |
+      is.na(.data$total_catch_value) & .data$n_individuals > 0 |
+      is.na(.data$n_individuals) & .data$total_catch_value > 0
+    ~ 22, TRUE ~ NA_real_)) %>%
     dplyr::group_by(.data$submission_id) %>%
-    dplyr::summarise(alert_revenue = sum(.data$alert_revenue, na.rm = TRUE)) %>%
+    dplyr::summarise(alert_revenue = sum(.data$alert_revenue)) %>%
     dplyr::mutate(alert_revenue = dplyr::case_when(.data$alert_revenue > 0 ~ 22, TRUE ~ NA_real_))
 
   no_revenue_ids <-
@@ -380,7 +391,9 @@ validate_price_weight <- function(surveys_catch_alerts,
   surveys_price_alerts %<>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
-        .data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number
+        .data$submission_id %in% alert_ids ~ 17,
+        .data$submission_id %in% no_revenue_ids ~ 22,
+        TRUE ~ alert_number
       ),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_
@@ -391,7 +404,11 @@ validate_price_weight <- function(surveys_catch_alerts,
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::mutate(
-      alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
+      alert_number = dplyr::case_when(
+        .data$submission_id %in% alert_ids ~ 17,
+        .data$submission_id %in% no_revenue_ids ~ 22,
+        TRUE ~ alert_number
+      ),
       weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
       dplyr::across(
         c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
@@ -404,9 +421,6 @@ validate_price_weight <- function(surveys_catch_alerts,
       .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
       .data$photo, .data$length_individuals, .data$length_type
     ))
-
-  # list(surveys_price_alerts = surveys_price_alerts,
-  #     surveys_catch_alerts = surveys_catch_alerts)
 
   dplyr::full_join(surveys_catch_alerts, surveys_price_alerts, by = c("submission_id")) %>%
     dplyr::full_join(no_revenue_alerts, by = c("submission_id")) %>%
