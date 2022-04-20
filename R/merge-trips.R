@@ -157,16 +157,21 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   readr::write_csv(matched_pds_landings, "matched_pds_landings.csv")
 
   logger::log_info("Compressing files")
-  zip::zip("matched_tracks_landings.zip", c(
-    "matched_pds_tracks.csv",
-    "matched_pds_tracks_reduced_1min.csv",
-    "matched_pds_landings.csv"
-  ))
+  zip::zip(
+    zipfile = "../matched_tracks_landings.zip",
+    compression_level = 9,
+    include_directories = FALSE,
+    files = c(
+      "matched_pds_tracks.csv",
+      "matched_pds_tracks_reduced_1min.csv",
+      "matched_pds_landings.csv"
+    )
+  )
 
   # upload
   logger::log_info("Uploading zip folder to cloud storage")
   upload_cloud_file(
-    file = system.file("matched_tracks_landings.zip", package = "peskas.timor.data.pipeline"),
+    file = "matched_tracks_landings.zip",
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
