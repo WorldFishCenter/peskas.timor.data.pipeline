@@ -178,7 +178,19 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
 }
 
 
-
+#' Test ingestion of zip folder
+#'
+#' Ingest a dummy zip folder to cloud storage.
+#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more
+#'   details
+#'
+#' @return no outputs. This function is used for it's side effects
+#' @importFrom rlang .data
+#'
+#' @export
+#'
 ingest_pds_matched_trips_TEST <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
