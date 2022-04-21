@@ -1,4 +1,4 @@
-name: Upload public files to Dataverse
+name: Upload dummy zip folder
 
 on:
   push:
