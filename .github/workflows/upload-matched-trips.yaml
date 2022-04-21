@@ -1,9 +1,9 @@
-name: Upload dummy zip folder
+name: Upload matched tracks and landings
 
 on:
   push:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 1 * *'
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
@@ -26,8 +26,8 @@ jobs:
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
 
-  upload-zip:
-    name: Upload test zip folder
+  upload-zip-folder:
+    name: Upload matched trips zip folder
     needs: [build-container]
     runs-on: ubuntu-20.04
     container:
@@ -39,5 +39,5 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_pds_matched_trips_TEST()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_matched_trips_TEST()'
+      - name: Call ingest_pds_matched_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_matched_trips()'
