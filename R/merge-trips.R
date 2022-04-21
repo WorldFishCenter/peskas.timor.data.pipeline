@@ -158,7 +158,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Compressing files")
   zip::zip(
-    zipfile = "../matched_tracks_landings.zip",
+    zipfile = "matched_tracks_landings.zip",
     compression_level = 9,
     include_directories = FALSE,
     files = c(
@@ -172,6 +172,34 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading zip folder to cloud storage")
   upload_cloud_file(
     file = "matched_tracks_landings.zip",
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
+}
+
+
+
+ingest_pds_matched_trips_TEST <- function(log_threshold = logger::DEBUG) {
+  pars <- read_config()
+
+  df1 <- tidyr::tibble(Y = stats::rnorm(15), Z = ceiling(stats::rnorm(15)))
+  df2 <- tidyr::tibble(X = stats::rnorm(25), Y = stats::rnorm(25), Z = ceiling(stats::rnorm(25)))
+
+  readr::write_csv(df1, "data1.csv")
+  readr::write_csv(df2, "data2.csv")
+
+  zip::zip(
+    zipfile = "data_test.zip",
+    compression_level = 9,
+    include_directories = FALSE,
+    files = c(
+      "data1.csv",
+      "data2.csv"
+    )
+  )
+  logger::log_info("Uploading zip folder to cloud storage")
+  upload_cloud_file(
+    file = "data_test.zip",
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
