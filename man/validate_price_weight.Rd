@@ -7,6 +7,7 @@
 validate_price_weight(
   surveys_catch_alerts,
   surveys_price_alerts,
+  regular_landings_alerts,
   cook_dist = NULL
 )
 }
@@ -14,6 +15,8 @@ validate_price_weight(
 \item{surveys_catch_alerts}{The dataframe of catch alerts.}
 
 \item{surveys_price_alerts}{The dataframe of price alerts.}
+
+\item{regular_landings_alerts}{The dataframe of landings regularity alerts.}
 
 \item{cook_dist}{A number that go in the formula cook_dist * (mean(cooksd)).}
 }
