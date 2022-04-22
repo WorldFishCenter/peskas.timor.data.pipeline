@@ -57,7 +57,7 @@ validate_landings <- function(log_threshold = logger::DEBUG){
   logger::log_info("Validating catches values...")
   regular_landings <- validate_landing_regularity(landings)
   regular_landings_data <- regular_landings$regular_landings
-  regular_landings_alerts <- regular_landings$regularity_alerts
+  regularity_alerts <- regular_landings$regularity_alerts
   surveys_price_alerts <- validate_catch_price(
     data = regular_landings_data,
     method = pars$validation$landings$prices$method %||% default_method,
@@ -69,9 +69,9 @@ validate_landings <- function(log_threshold = logger::DEBUG){
     k_ind = pars$validation$catch$n_individuals$k %||% default_k,
     k_length = pars$validation$catch$length$k %||% default_k)
   price_weight_alerts <- validate_price_weight(
-    surveys_catch_alerts,
-    surveys_price_alerts,
-    regular_landings_alerts,
+    catch_alerts = surveys_catch_alerts,
+    price_alerts = surveys_price_alerts,
+    non_regular_ids = regularity_alerts,
     cook_dist = cook_dist)
   vessel_type_alerts <- validate_vessel_type(
     landings,
