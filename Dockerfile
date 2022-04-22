@@ -49,7 +49,8 @@ RUN install2.r --error --skipinstalled \
     tinytest \
     remotes \
     rfishbase \
-    tidytext
+    tidytext \
+    zip
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
