@@ -101,11 +101,16 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
       dplyr::select(.data$`_id`, .data$`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = abs(as.numeric(.data$`trip_group/duration`))) %>%
       dplyr::transmute(
-        trip_duration = dplyr::case_when(.data$`trip_group/duration` > hrs |
-                                           .data$`trip_group/duration` < 1 ~ NA_real_,
-                                         TRUE ~ .data$`trip_group/duration`), # test if catch duration is longer than n hours or minor than 1 hour
-        alert_number = dplyr::case_when(.data$`trip_group/duration` > hrs ~ 5 |
-                                          .data$`trip_group/duration` < 1, TRUE ~ NA_real_),
+        trip_duration = dplyr::case_when(
+          .data$`trip_group/duration` > hrs |
+            .data$`trip_group/duration` < 1 ~ NA_real_,
+          TRUE ~ .data$`trip_group/duration`
+        ), # test if catch duration is longer than n hours or minor than 1 hour
+        alert_number = dplyr::case_when(
+          .data$`trip_group/duration` > hrs |
+            .data$`trip_group/duration` < 1 ~ 5,
+          TRUE ~ NA_real_
+        ),
         submission_id = as.integer(.data$`_id`)
       )
   )
