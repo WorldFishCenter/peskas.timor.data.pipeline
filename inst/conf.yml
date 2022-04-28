@@ -101,7 +101,7 @@ default:
       catch:
         n_individuals:
           k: 7
-      cook_dist: 17
+      cook_dist: 7
       mesh: 200
       gleaners:
         k: 1.5

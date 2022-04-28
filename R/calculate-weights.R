@@ -290,6 +290,7 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
     )) %>%
     dplyr::mutate(length_type = dplyr::case_when(
       .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",
+      .data$species == "MOO" ~ "TL",
       TRUE ~ .data$length_type
     )) %>%
     dplyr::rowwise() %>%

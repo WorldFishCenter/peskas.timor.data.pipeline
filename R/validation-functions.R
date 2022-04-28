@@ -435,8 +435,11 @@ validate_price_weight <- function(catch_alerts = NULL,
     tidyr::unnest(.data$length_individuals) %>%
     dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
     dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
+    dplyr::group_by(.data$submission_id, .data$species) %>%
+    dplyr::summarise(total_catch_value = dplyr::first(.data$total_catch_value),
+                     weight = sum(.data$weight, na.rm = T)) %>%
     dplyr::group_by(.data$species) %>%
-    dplyr::mutate(model = broom::augment(stats::lm(formula = .data$total_catch_value ~ .data$weight))) %>%
+    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value+1) ~ log(.data$weight+1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
     dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) ~ 17, TRUE ~ NA_real_)) %>%
