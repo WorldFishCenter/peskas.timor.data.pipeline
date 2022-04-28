@@ -290,7 +290,6 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
     )) %>%
     dplyr::mutate(length_type = dplyr::case_when(
       .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",
-      .data$species %in% c("MOO") ~ "TL",
       TRUE ~ .data$length_type
     )) %>%
     dplyr::rowwise() %>%
@@ -442,5 +441,7 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
 
   # I think we should use the median only at the end so that we can integrate as
   # much info as possible beforehand
-  stats::median(w$weight, na.rm = T) * n_individuals
+
+  #stats::median(w$weight, na.rm = T) * n_individuals
+  stats::quantile(w$weight, 0.95, na.rm = T) * n_individuals
 }
