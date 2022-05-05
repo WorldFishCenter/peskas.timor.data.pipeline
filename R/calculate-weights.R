@@ -262,7 +262,8 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
       catch_taxon = .data$interagency_code,
       length_type = .data$length_type
     ) %>%
-    dplyr::mutate(catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon))
+    dplyr::mutate(catch_taxon = dplyr::case_when(.data$species == "0" | is.na(.data$species) ~
+                                                   "0", TRUE ~ .data$catch_taxon))
 
   data %>%
     dplyr::mutate(
