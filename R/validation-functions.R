@@ -91,10 +91,6 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
           TRUE ~ NA_real_
         ),
         date = .data$date,
-        # date = dplyr::case_when(
-        #  is.na(alert_number) ~ .data$date,
-        #  TRUE ~ NA_real_
-        # ),
         submission_id = as.integer(.data$`_id`)
       ),
     validated_duration = data %>%
@@ -130,7 +126,6 @@ validate_landing_regularity <- function(landings) {
       n_individuals = abs(.data$n_individuals)
     ) %>%
     dplyr::group_by(.data$`_id`) %>%
-    # dplyr::filter(.data$`_id`=="102110845") %>%
     dplyr::summarise(
       species = dplyr::first(.data$species),
       total_catch_value = sum(.data$total_catch_value, na.rm = T),
@@ -138,7 +133,8 @@ validate_landing_regularity <- function(landings) {
     ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
-      alert_regularity = dplyr::case_when(.data$species == "0" & .data$n_individuals > 0 |
+      alert_regularity = dplyr::case_when(
+        .data$species == "0" & .data$n_individuals > 0 |
         .data$species == "0" & .data$total_catch_value > 0 |
         .data$total_catch_value <= 0 & .data$n_individuals > 0 |
         .data$total_catch_value > 0 & .data$n_individuals <= 0 |
