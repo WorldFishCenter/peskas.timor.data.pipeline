@@ -27,8 +27,7 @@
 #' @return No outputs. This function is used for it's side effects
 #' @keywords workflow
 #' @export
-calculate_weights <- function(log_threshold = logger::DEBUG){
-
+calculate_weights <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
@@ -47,14 +46,18 @@ calculate_weights <- function(log_threshold = logger::DEBUG){
 
   landings_with_weight_filename <- paste(pars$surveys$merged_landings$file_prefix, "weight", sep = "_") %>%
     add_version(extension = "rds")
-  readr::write_rds(x = landings_with_weight,
-                   file = landings_with_weight_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = landings_with_weight,
+    file = landings_with_weight_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {landings_with_weight_filename} to cloud sorage")
-  upload_cloud_file(file = landings_with_weight_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = landings_with_weight_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
 
 
@@ -199,7 +202,6 @@ get_fish_length <- function(taxa,
 #' }
 #'
 retrieve_lengths <- function(data, country_code) {
-
   rfish_tab <- NULL
 
   for (i in unique(data$interagency_code)) {
@@ -255,15 +257,13 @@ retrieve_lengths <- function(data, country_code) {
 #' @export
 #'
 join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
-
   catch_codes <- metadata$catch_types %>%
     dplyr::transmute(
       species = as.character(.data$catch_number),
       catch_taxon = .data$interagency_code,
       length_type = .data$length_type
     ) %>%
-    dplyr::mutate(catch_taxon = dplyr::case_when(.data$species == "0" | is.na(.data$species) ~
-                                                   "0", TRUE ~ .data$catch_taxon))
+    dplyr::mutate(catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon))
 
   data %>%
     dplyr::mutate(
@@ -282,6 +282,16 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
     ) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+    # fix conditions for "no catch" and "other" labels
+    dplyr::mutate(species = dplyr::case_when(
+      is.na(.data$species) & .data$n_individuals > 0 |
+        is.na(.data$species) & !.data$total_catch_value == "0" ~ "MZZ",
+      is.na(.data$species) & is.na(.data$n_individuals) & is.na(.data$total_catch_value) |
+        is.na(.data$species) & is.na(.data$n_individuals) & .data$total_catch_value == "0" |
+        is.na(.data$species) & .data$n_individuals == 0 & is.na(.data$total_catch_value) |
+        is.na(.data$species) & .data$n_individuals == 0 & .data$total_catch_value == "0" ~ "0",
+      TRUE ~ .data$species
+    )) %>%
     # Excluding FL and TL for weight calculation in legacy and recent landings
     # respectively. Keep group DRZ as it has FL=TL.
     dplyr::mutate(length_type = dplyr::case_when(
@@ -295,15 +305,21 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
       TRUE ~ .data$length_type
     )) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(weight = estimate_weight(length = .data$mean_length, .data$length_type,
-                                           code = .data$species, .data$n_individuals,
-                                           rfish_tab$length_weight,
-                                           rfish_tab$length_length)) %>%
+    dplyr::mutate(weight = estimate_weight(
+      length = .data$mean_length, .data$length_type,
+      code = .data$species, .data$n_individuals,
+      rfish_tab$length_weight,
+      rfish_tab$length_length
+    )) %>%
     dplyr::ungroup() %>%
-    dplyr::left_join(nutrients_table, by ="species") %>%
-    dplyr::mutate(weight = abs(.data$weight),
-                  dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu),
-                                ~ .x * .data$weight)) %>%
+    dplyr::left_join(nutrients_table, by = "species") %>%
+    dplyr::mutate(
+      weight = abs(.data$weight),
+      dplyr::across(
+        c(.data$Selenium_mu:.data$Vitamin_A_mu),
+        ~ .x * .data$weight
+      )
+    ) %>%
     tidyr::nest(length_individuals = c(
       .data$mean_length,
       .data$n_individuals,
@@ -318,8 +334,7 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
       .data$photo,
       .data$length_individuals,
       .data$length_type
-    ))# %>%
-    # dplyr::mutate(catch_weight = purrr::map_dbl(.data$species_group, calc_total_weight))
+    ))
 }
 
 
@@ -358,7 +373,6 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
 
 # get weight-length table from google cloud
 get_rfish_table <- function(pars) {
-
   rfish_rds <- cloud_object_name(
     prefix = paste(pars$metadata$rfishtable$file_prefix),
     provider = pars$storage$google$key,
@@ -378,11 +392,12 @@ get_rfish_table <- function(pars) {
 
 #
 get_morphometric_tables <- function(pars, manual_table) {
-
   rfish_table <- get_rfish_table(pars) %>%
-    dplyr::mutate(DataRef = as.character(.data$DataRef),
-                  LengthMin = as.double(.data$LengthMin),
-                  aL = as.double(.data$aL))
+    dplyr::mutate(
+      DataRef = as.character(.data$DataRef),
+      LengthMin = as.double(.data$LengthMin),
+      aL = as.double(.data$aL)
+    )
 
   # merge the two tables
   rfish_tab <- dplyr::bind_rows(rfish_table, manual_table)
@@ -398,24 +413,30 @@ get_morphometric_tables <- function(pars, manual_table) {
 
   ll <- rfish_tab %>%
     # Relationship is reciprocal and we could use that information too
-    dplyr::mutate(l1 = .data$Length1, l2 = .data$Length2, a1 = .data$aL, b1 = .data$bL,
-                  Length1 = .data$l2, Length2 = .data$l1, aL = .data$a1 / .data$b1 * (-1), bL = 1 / .data$b1) %>%
+    dplyr::mutate(
+      l1 = .data$Length1, l2 = .data$Length2, a1 = .data$aL, b1 = .data$bL,
+      Length1 = .data$l2, Length2 = .data$l1, aL = .data$a1 / .data$b1 * (-1), bL = 1 / .data$b1
+    ) %>%
     dplyr::bind_rows(rfish_tab) %>%
     dplyr::select(.data$interagency_code, .data$Species, .data$Length1, .data$Length2, .data$aL, .data$bL) %>%
     dplyr::filter(!is.na(.data$aL)) %>%
     dplyr::distinct()
 
-  list(length_weight = lw,
-       length_length = ll)
+  list(
+    length_weight = lw,
+    length_length = ll
+  )
 }
 
 
-estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
-
-  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0")
+estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
+  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0") {
     return(NA)
+  }
 
-  if (n_individuals == 0) return(0)
+  if (n_individuals == 0) {
+    return(0)
+  }
 
   this_lw <- lw %>%
     dplyr::filter(.data$interagency_code == code)
@@ -423,8 +444,10 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
   # Transform length to other types if relevant
   this_ll <- ll %>%
     dplyr::filter(.data$interagency_code == code, .data$Length2 == length_type) %>%
-    dplyr::mutate(length = .data$aL + length * .data$bL,
-                  Type = .data$Length1)
+    dplyr::mutate(
+      length = .data$aL + length * .data$bL,
+      Type = .data$Length1
+    )
 
   this_length <-
     dplyr::tibble(
@@ -433,17 +456,19 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll){
       # actual species
       Species = unique(this_lw$Species),
       length = length,
-      Type = length_type) %>%
+      Type = length_type
+    ) %>%
     # Augment the info with transformations
     dplyr::bind_rows(this_ll)
 
   w <- dplyr::full_join(this_lw, this_length,
-                        by = c("interagency_code", "Species", "Type")) %>%
-    dplyr::mutate(weight = .data$a * .data$length ^ .data$b)
+    by = c("interagency_code", "Species", "Type")
+  ) %>%
+    dplyr::mutate(weight = .data$a * .data$length^.data$b)
 
   # I think we should use the median only at the end so that we can integrate as
   # much info as possible beforehand
 
-  #stats::median(w$weight, na.rm = T) * n_individuals
+  # stats::median(w$weight, na.rm = T) * n_individuals
   stats::quantile(w$weight, 0.95, na.rm = T) * n_individuals
 }
