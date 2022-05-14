@@ -52,6 +52,8 @@ preprocess_landings <- function(log_threshold = logger::DEBUG){
     file = landings_csv,
     col_types = readr::cols(.default = readr::col_character()))
 
+  file.remove(landings_csv)
+
   logger::log_info("Nesting landings attachment fields")
   landings_nested_attachments <- pt_nest_attachments(landings_raw)
 
