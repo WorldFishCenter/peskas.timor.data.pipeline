@@ -117,8 +117,8 @@ validate_landing_regularity <- function(landings) {
   regularity_alerts <-
     landings %>%
     dplyr::select(.data$`_id`, .data$total_catch_value, .data$species_group) %>%
-    tidyr::unnest(.data$species_group) %>%
-    tidyr::unnest(.data$length_individuals) %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::select(.data$`_id`, .data$species, .data$total_catch_value, .data$n_individuals) %>%
     dplyr::mutate(
       total_catch_value = as.double(.data$total_catch_value),
@@ -163,9 +163,8 @@ validate_landing_regularity <- function(landings) {
       ),
       total_catch_value = dplyr::case_when(is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_),
       n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
-      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
       dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
+        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
           is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
         )
       )
@@ -176,7 +175,8 @@ validate_landing_regularity <- function(landings) {
       .data$photo, .data$length_individuals, .data$length_type
     ))
 
-  list(regular_landings = regular_landings, regularity_alerts = regularity_alerts)
+  list(regularity_alerts = regularity_alerts,
+       regular_landings = regular_landings)
 }
 
 #' Validate surveys' total catch values
@@ -334,15 +334,10 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
       submission_id = .data$`_id`
     ) %>%
     dplyr::ungroup() %>%
-    # Adjusting weight accordingly
+    # Adjusting weight and nutrients accordingly
     dplyr::mutate(
-      weight = dplyr::case_when(
-        !is.na(.data$alert_number) ~ NA_real_,
-        .data$n_individuals == 0 ~ 0,
-        TRUE ~ .data$weight
-      ),
       dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu),
+        c(.data$weight:.data$Vitamin_A_mu),
         ~ dplyr::case_when(
           !is.na(.data$alert_number) ~ NA_real_,
           .data$n_individuals == 0 ~ 0,
@@ -426,6 +421,7 @@ validate_price_weight <- function(catch_alerts = NULL,
   # Extract IDs with abnormal price weight relation based on Cook's distance
   cooks_alerts <-
     dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
+    dplyr::filter(is.na(alert_number.x) & is.na(alert_number.y)) %>%
     dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%
@@ -435,10 +431,12 @@ validate_price_weight <- function(catch_alerts = NULL,
     dplyr::summarise(total_catch_value = dplyr::first(.data$total_catch_value),
                      weight = sum(.data$weight, na.rm = T)) %>%
     dplyr::group_by(.data$species) %>%
-    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value+1) ~ log(.data$weight+1)))) %>%
+    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value+1)
+                                                   ~ log(.data$weight+1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
-    dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) ~ 17, TRUE ~ NA_real_)) %>%
+    dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd))
+                                                  ~ 17, TRUE ~ NA_real_)) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
@@ -482,10 +480,9 @@ validate_price_weight <- function(catch_alerts = NULL,
         .data$submission_id %in% revenue_alert ~ 6,
         TRUE ~ .data$alert_number
       ),
-      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
       n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
       dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
+        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
           is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
         )
       )
