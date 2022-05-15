@@ -32,25 +32,29 @@
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-preprocess_landings_batch_1 <- function(log_threshold = logger::DEBUG){
-
+preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(prefix = pars$surveys$landings$file_prefix,
-                                    provider = pars$storage$google$key,
-                                    extension = "csv",
-                                    version = pars$surveys$landings$version$preprocess,
-                                    options = pars$storage$google$options)
+  landings_csv <- cloud_object_name(
+    prefix = pars$surveys$landings$file_prefix,
+    provider = pars$storage$google$key,
+    extension = "csv",
+    version = pars$surveys$landings$version$preprocess,
+    options = pars$storage$google$options
+  )
 
   logger::log_info("Retrieving {landings_csv}")
-  download_cloud_file(name = landings_csv,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = landings_csv,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   landings_raw <- readr::read_csv(
     file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character()))
+    col_types = readr::cols(.default = readr::col_character())
+  )
 
 
   # split data
@@ -63,16 +67,20 @@ preprocess_landings_batch_1 <- function(log_threshold = logger::DEBUG){
   logger::log_info("Nesting landings species fields")
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
-  preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "preprocessed", "batch1", sep = "_") %>%
+  preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "step_1", "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
-  readr::write_rds(x = landngs_nested_species,
-                   file = preprocessed_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = landngs_nested_species,
+    file = preprocessed_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(file = preprocessed_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = preprocessed_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
 
 
@@ -111,8 +119,7 @@ preprocess_landings_batch_1 <- function(log_threshold = logger::DEBUG){
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-preprocess_landings_batch_2 <- function(log_threshold = logger::DEBUG){
-
+preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
@@ -125,29 +132,31 @@ preprocess_landings_batch_2 <- function(log_threshold = logger::DEBUG){
     options = pars$storage$google$options
   )
 
-  preprocessed_batch_1 <- cloud_object_name(
-    prefix = paste(pars$surveys$landings$file_prefix, "preprocessed", "batch1", sep = "_"),
+  preprocessed_step_1 <- cloud_object_name(
+    prefix = paste(pars$surveys$landings$file_prefix, "step_1", "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$surveys$landings$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {landings_csv} and {preprocessed_batch_1}")
+  logger::log_info("Retrieving {landings_csv} and {preprocessed_step_1}")
 
-  c(landings_csv, preprocessed_batch_1) %>%
-  purrr::map(download_cloud_file,
-             provider = pars$storage$google$key,
-             options = pars$storage$google$options)
+  c(landings_csv, preprocessed_step_1) %>%
+    purrr::map(download_cloud_file,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    )
 
   landings_raw <- readr::read_csv(
     file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character()))
+    col_types = readr::cols(.default = readr::col_character())
+  )
 
-  preprocessed_batch_1 <- readr::read_rds(preprocessed_batch_1)
+  preprocessed_step_1 <- readr::read_rds(preprocessed_step_1)
 
   # get ids of batch 2 to download and process
-  batch_2_ids <- setdiff(landings_raw$`_id`, preprocessed_batch_1$`_id`)
+  batch_2_ids <- setdiff(landings_raw$`_id`, preprocessed_step_1$`_id`)
 
   landings_raw <-
     landings_raw %>%
@@ -160,18 +169,24 @@ preprocess_landings_batch_2 <- function(log_threshold = logger::DEBUG){
   landings_nested_species <- pt_nest_species(landings_nested_attachments)
 
   # bind processed batch 1 and 2
-  landings_nested_species <-
-    dplyr::bind_rows(preprocessed_batch_1,
-                     landings_nested_species)
+  preprocessed <-
+    dplyr::bind_rows(
+      preprocessed_step_1,
+      landings_nested_species
+    )
 
-preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
-  readr::write_rds(x = landings_nested_species,
-                   file = preprocessed_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = preprocessed,
+    file = preprocessed_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(file = preprocessed_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = preprocessed_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
