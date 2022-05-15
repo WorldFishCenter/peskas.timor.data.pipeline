@@ -55,7 +55,7 @@ preprocess_landings_batch1 <- function(log_threshold = logger::DEBUG){
 
   # split data
   half_data <- round(nrow(landings_raw) / 2, 0)
-  landings_raw <- landings_raw[1:dat_length, ]
+  landings_raw <- landings_raw[1:half_data, ]
 
   logger::log_info("Nesting landings attachment fields")
   landings_nested_attachments <- pt_nest_attachments(landings_raw)
