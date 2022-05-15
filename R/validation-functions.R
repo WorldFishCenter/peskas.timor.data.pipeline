@@ -421,7 +421,6 @@ validate_price_weight <- function(catch_alerts = NULL,
   # Extract IDs with abnormal price weight relation based on Cook's distance
   cooks_alerts <-
     dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
-    dplyr::filter(is.na(alert_number.x) & is.na(alert_number.y)) %>%
     dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%

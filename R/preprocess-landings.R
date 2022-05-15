@@ -32,7 +32,7 @@
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-preprocess_landings_batch1 <- function(log_threshold = logger::DEBUG){
+preprocess_landings_batch_1 <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
 
@@ -111,7 +111,7 @@ preprocess_landings_batch1 <- function(log_threshold = logger::DEBUG){
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-preprocess_landings_batch2 <- function(log_threshold = logger::DEBUG){
+preprocess_landings_batch_2 <- function(log_threshold = logger::DEBUG){
 
   logger::log_threshold(log_threshold)
 

@@ -67,7 +67,7 @@ jobs:
         continue-on-error: true
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
 
-  ingest-preprocess-landings-step1:
+  ingest-preprocess-landings-step-1:
     name: "Ingest landings job 1"
     needs: build-container
     runs-on: ubuntu-20.04
@@ -83,11 +83,11 @@ jobs:
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
       - name: Call preprocess_landings_batch1()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_batch1()'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_batch_1()'
 
   preprocess-landings:
     name: Preprocess landings
-    needs: ingest-preprocess-landings-step1
+    needs: "ingest-preprocess-landings-step-1"
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
@@ -99,7 +99,7 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings_batch2()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_batch2()'
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_batch_2()'
 
 
   merge-landings:
