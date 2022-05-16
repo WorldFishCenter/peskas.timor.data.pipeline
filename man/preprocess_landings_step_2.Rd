@@ -2,7 +2,7 @@
 % Please edit documentation in R/preprocess-landings.R
 \name{preprocess_landings_step_2}
 \alias{preprocess_landings_step_2}
-\title{Pre-process Timor Landings Survey data (batch 2)}
+\title{Pre-process Timor Landings Survey data (step 2)}
 \usage{
 preprocess_landings_step_2(log_threshold = logger::DEBUG)
 }
@@ -12,15 +12,20 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \value{
-no outputs. This funcrion is used for it's side effects
+no outputs. This function is used for it's side effects
 }
 \description{
 Downloads raw structured data from cloud storage services and pre-process
 into a binary format that is easier to deal with in R.
 }
 \details{
+In order to not exceed CPU memory limits in Docker containers, the
+preprocessing of raw landings data was splitted in two containers
+(two separate jobs in GitHub actions), this function process the second half
+of raw data, while the function \code{preprocess_landings_step_1} process the first half.
+
 This function downloads the landings data from a given version (specified in
-the config file \code{conf.yml}. The parameters needed are:\preformatted{surveys:
+the config file \code{conf.yml}.The parameters needed are:\preformatted{surveys:
   landings:
     api:
     survey_id:

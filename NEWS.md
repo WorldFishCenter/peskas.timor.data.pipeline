@@ -1,3 +1,30 @@
+# peskas.timor.data.pipeline 0.20.0
+
+## Improvements
+
+- Improve the validation step by flagging those observation characterized by having positive revenue 
+(individuals) despite 0 or null individuals (revenue).
+
+- Use a log model to identify abnormal weight-revenue relationships on Cook's distance estimation.
+
+- Replace NA catch code with catch code "0" and ensure these observations having non positive 
+individuals and revenue.
+
+- Use total length for weight calculation of MOO in all the landings (weights calculated with FL seem quite unrealistic)
+
+- Use 95° quantile instead of median to summarise weight parameters for catch types, it seems to return 
+more realistic weight estimations by single individuals.
+
+## Bug fixes
+
+- Split landings preprocessing in two jobs to avoid to run out of memory (docker exit code 137)
+
+# peskas.timor.data.pipeline 0.19.0
+
+## New features
+
+- Added a new function `ingest_pds_matched_trips` to ingest matched pds tracks and survey landings in a zip folder on a monthly scale.
+
 # peskas.timor.data.pipeline 0.18.0
 
 ## New features

@@ -1,10 +1,16 @@
-#' Pre-process Timor Landings Survey data (batch 1)
+#' Pre-process Timor Landings Survey data (step 1)
 #'
 #' Downloads raw structured data from cloud storage services and pre-process
 #' into a binary format that is easier to deal with in R.
 #'
+#' In order to not exceed CPU memory limits in Docker containers, the
+#' preprocessing of raw landings data was splitted in two containers
+#' (two separate jobs in GitHub actions), this function process the first half
+#' of raw data, while the function `preprocess_landings_step_2` process the second
+#' half.
+#'
 #' This function downloads the landings data from a given version (specified in
-#' the config file `conf.yml`. The parameters needed are:
+#' the config file `conf.yml`.The parameters needed are:
 #'
 #' ```
 #' surveys:
@@ -29,7 +35,7 @@
 #' @param log_threshold
 #' @inheritParams ingest_landings
 #' @keywords workflow
-#' @return no outputs. This funcrion is used for it's side effects
+#' @return no outputs. This function is used for it's side effects
 #' @export
 #'
 preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
@@ -85,13 +91,18 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 
 
 
-#' Pre-process Timor Landings Survey data (batch 2)
+#' Pre-process Timor Landings Survey data (step 2)
 #'
 #' Downloads raw structured data from cloud storage services and pre-process
 #' into a binary format that is easier to deal with in R.
 #'
+#' In order to not exceed CPU memory limits in Docker containers, the
+#' preprocessing of raw landings data was splitted in two containers
+#' (two separate jobs in GitHub actions), this function process the second half
+#' of raw data, while the function `preprocess_landings_step_1` process the first half.
+#'
 #' This function downloads the landings data from a given version (specified in
-#' the config file `conf.yml`. The parameters needed are:
+#' the config file `conf.yml`.The parameters needed are:
 #'
 #' ```
 #' surveys:
@@ -116,7 +127,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 #' @param log_threshold
 #' @inheritParams ingest_landings
 #' @keywords workflow
-#' @return no outputs. This funcrion is used for it's side effects
+#' @return no outputs. This function is used for it's side effects
 #' @export
 #'
 preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {

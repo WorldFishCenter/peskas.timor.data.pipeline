@@ -135,12 +135,13 @@ validate_landing_regularity <- function(landings) {
     dplyr::mutate(
       alert_regularity = dplyr::case_when(
         .data$species == "0" & .data$n_individuals > 0 |
-        .data$species == "0" & .data$total_catch_value > 0 |
-        .data$total_catch_value <= 0 & .data$n_individuals > 0 |
-        .data$total_catch_value > 0 & .data$n_individuals <= 0 |
-        is.na(.data$total_catch_value) & .data$n_individuals > 0 |
-        is.na(.data$n_individuals) & .data$total_catch_value > 0
-      ~ 22, TRUE ~ NA_real_)
+          .data$species == "0" & .data$total_catch_value > 0 |
+          .data$total_catch_value <= 0 & .data$n_individuals > 0 |
+          .data$total_catch_value > 0 & .data$n_individuals <= 0 |
+          is.na(.data$total_catch_value) & .data$n_individuals > 0 |
+          is.na(.data$n_individuals) & .data$total_catch_value > 0
+        ~ 22, TRUE ~ NA_real_
+      )
     ) %>%
     dplyr::rename(submission_id = .data$`_id`)
 
@@ -175,8 +176,10 @@ validate_landing_regularity <- function(landings) {
       .data$photo, .data$length_individuals, .data$length_type
     ))
 
-  list(regularity_alerts = regularity_alerts,
-       regular_landings = regular_landings)
+  list(
+    regularity_alerts = regularity_alerts,
+    regular_landings = regular_landings
+  )
 }
 
 #' Validate surveys' total catch values
@@ -427,15 +430,17 @@ validate_price_weight <- function(catch_alerts = NULL,
     dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
     dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
     dplyr::group_by(.data$submission_id, .data$species) %>%
-    dplyr::summarise(total_catch_value = dplyr::first(.data$total_catch_value),
-                     weight = sum(.data$weight, na.rm = T)) %>%
+    dplyr::summarise(
+      total_catch_value = dplyr::first(.data$total_catch_value),
+      weight = sum(.data$weight, na.rm = T)
+    ) %>%
     dplyr::group_by(.data$species) %>%
-    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value+1)
-                                                   ~ log(.data$weight+1)))) %>%
+    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
+    ~ log(.data$weight + 1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
     dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd))
-                                                  ~ 17, TRUE ~ NA_real_)) %>%
+    ~ 17, TRUE ~ NA_real_)) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
