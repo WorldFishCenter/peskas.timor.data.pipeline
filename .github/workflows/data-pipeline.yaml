@@ -28,24 +28,6 @@ jobs:
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
 
-  ingest-preprocess-landings:
-    name: Ingest landings
-    needs: build-container
-    runs-on: ubuntu-20.04
-    container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
-      - name: Call preprocess_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
-
   ingest-preprocess-legacy-landings:
     name: Ingest legacy landings
     needs: build-container
@@ -85,9 +67,44 @@ jobs:
         continue-on-error: true
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
 
+  ingest-preprocess-landings-1:
+    name: "Ingest-process landings 1/2"
+    needs: build-container
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call ingest_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
+      - name: Call preprocess_landings_step_1()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_1()'
+
+  ingest-preprocess-landings-2:
+    name: "Ingest-process landings 2/2"
+    needs: "ingest-preprocess-landings-1"
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call preprocess_landings_step_2()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_2()'
+
+
   merge-landings:
     name: Merge landings
-    needs: [ingest-preprocess-landings, ingest-preprocess-legacy-landings, ingest-preprocess-metadata-tables]
+    needs: ["ingest-preprocess-landings-2", ingest-preprocess-legacy-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor

@@ -22,9 +22,10 @@ for outliers identification.
 }
 \details{
 The parameters needed in the config file are those required for
-\code{preprocess_landings()}, \code{preprocess_metadata_tables()}, and
-\code{ingest_validation_tables()} combined, as well as parameters needed to
-outliers identification that are  \code{hrs}, \code{method} and \code{k}.
+\code{preprocess_landings_step_1()} or \code{preprocess_landings_step_2()},
+\code{preprocess_metadata_tables()}, and \code{ingest_validation_tables()} combined,
+as well as parameters needed to outliers identification
+that are  \code{hrs}, \code{method} and \code{k}.
 
 To avoid synchronisation problems always is recommended that this called
 together with \code{ingest_validation_tables()}
