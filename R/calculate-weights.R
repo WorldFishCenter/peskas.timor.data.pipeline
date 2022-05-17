@@ -469,5 +469,5 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
   # much info as possible beforehand
 
   # stats::median(w$weight, na.rm = T) * n_individuals
-  stats::quantile(w$weight, 0.95, na.rm = T) * n_individuals
+  stats::quantile(w$weight, 0.75, na.rm = T) * n_individuals
 }
