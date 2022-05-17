@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 1.0.0
+
+## Improvements
+
+Adding option to produce Timor map filtered by fishing trips
+
 # peskas.timor.data.pipeline 0.20.0
 
 ## Improvements

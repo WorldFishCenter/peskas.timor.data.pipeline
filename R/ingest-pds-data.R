@@ -38,22 +38,22 @@
 #' @return No output. This funcrion is used for it's side effects
 #' @export
 #'
-ingest_pds_trips <- function(log_threshold = logger::DEBUG){
-
+ingest_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
-  file_list <- retrieve_pds_trips(prefix = pars$pds$trips$file_prefix,
-                              secret = pars$pds$trips$secret,
-                              token = pars$pds$trips$token)
+  file_list <- retrieve_pds_trips(
+    prefix = pars$pds$trips$file_prefix,
+    secret = pars$pds$trips$secret,
+    token = pars$pds$trips$token
+  )
 
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
   purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
 
   logger::log_success("File upload succeded")
-
 }
 
 #' Ingest Pelagic Data System tracks data
@@ -94,57 +94,64 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG){
 #' @export
 #' @importFrom rlang .data
 #'
-ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
-
+ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
   pds_trips_csv <-
-    cloud_object_name(prefix = pars$pds$trips$file_prefix,
-                      provider = pars$storage$google$key,
-                      extension = "csv",
-                      options = pars$storage$google$options)
+    cloud_object_name(
+      prefix = pars$pds$trips$file_prefix,
+      provider = pars$storage$google$key,
+      extension = "csv",
+      options = pars$storage$google$options
+    )
   logger::log_info("Retrieving {pds_trips_csv}")
   # get trips data frame
-  pds_trips_mat <- download_cloud_file(name = pds_trips_csv,
-                                       provider = pars$storage$google$key,
-                                       options = pars$storage$google$options)
+  pds_trips_mat <- download_cloud_file(
+    name = pds_trips_csv,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 
   # extract unique trip identifiers
   trips_ID <- readr::read_csv(
     pds_trips_mat,
-    col_types = readr::cols_only(Trip = readr::col_character())) %>%
+    col_types = readr::cols_only(Trip = readr::col_character())
+  ) %>%
     magrittr::extract2("Trip") %>%
     unique()
 
   if (isTRUE(pars$pds$tracks$compress)) ext <- "csv.gz" else ext <- "csv"
 
   # list id tracks already in bucket
-  file_list_id <- cloud_object_name(prefix = pars$pds$tracks$file_prefix,
-                                    provider = pars$pds_storage$google$key,
-                                    extension = ext,
-                                    options = pars$pds_storage$google$options) %>%
+  file_list_id <- cloud_object_name(
+    prefix = pars$pds$tracks$file_prefix,
+    provider = pars$pds_storage$google$key,
+    extension = ext,
+    options = pars$pds_storage$google$options
+  ) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
-  process_track <- function(id, pars){
-
+  process_track <- function(id, pars) {
     path <- paste0(pars$pds$tracks$file_prefix, "-", id) %>%
       add_version(extension = "csv")
     on.exit(file.remove(path))
 
     retrieve_pds_tracks_data(path,
-                             secret = pars$pds$trips$secret,
-                             token = pars$pds$trips$token,
-                             id = id)
+      secret = pars$pds$trips$secret,
+      token = pars$pds$trips$token,
+      id = id
+    )
 
     if (isTRUE(pars$pds$tracks$compress)) {
       logger::log_info("Compressing file...")
       csv_path <- path
       path <- paste0(path, ".gz")
       readr::read_csv(csv_path,
-                      col_types = readr::cols(.default = readr::col_character())) %>%
+        col_types = readr::cols(.default = readr::col_character())
+      ) %>%
         readr::write_csv(path)
       on.exit(file.remove(csv_path, path))
     }
@@ -156,15 +163,17 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
       .f = ~ insistent_upload_cloud_file(
         file = .,
         provider = pars$pds_storage$google$key,
-        options = pars$pds_storage$google$options)))
+        options = pars$pds_storage$google$options
+      )
+    ))
     logger::log_success("File upload succeded")
-
   }
 
   tracks_to_download <- trips_ID[!(trips_ID %in% file_list_id)]
   if (isTRUE(pars$pds$tracks$multisession$parallel)) {
     future::plan(future::multisession,
-                 workers = pars$pds$tracks$multisession$n_sessions)
+      workers = pars$pds$tracks$multisession$n_sessions
+    )
   }
   furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
 
@@ -178,13 +187,17 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
     pars$pds$tracks$bucket_content$file_prefix %>%
     add_version(extension = "rds")
 
-  readr::write_rds(x = tracks_names,
-                   file = tracks_names_filename)
+  readr::write_rds(
+    x = tracks_names,
+    file = tracks_names_filename
+  )
 
   logger::log_info("Uploading {tracks_names_filename} to cloud sorage")
-  upload_cloud_file(file = tracks_names_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = tracks_names_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
 
 #' Insistent version of `upload_cloud_file()`
@@ -200,12 +213,14 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG){
 #' @return No output. This function is used for it's side effects
 #' @export
 #'
-insistent_upload_cloud_file <- function(..., delay = 3){
+insistent_upload_cloud_file <- function(..., delay = 3) {
   purrr::insistently(upload_cloud_file,
-                     rate = purrr::rate_backoff(
-                       pause_cap = 60*5,
-                       max_times = 10),
-                     quiet = F)(...)
+    rate = purrr::rate_backoff(
+      pause_cap = 60 * 5,
+      max_times = 10
+    ),
+    quiet = F
+  )(...)
   Sys.sleep(delay)
 }
 
@@ -222,12 +237,14 @@ insistent_upload_cloud_file <- function(..., delay = 3){
 #' @return No output. This function is used for it's side effects
 #' @export
 #'
-insistent_download_cloud_file <- function(..., delay = 3){
+insistent_download_cloud_file <- function(..., delay = 3) {
   purrr::insistently(download_cloud_file,
-                     rate = purrr::rate_backoff(
-                       pause_cap = 60*5,
-                       max_times = 10),
-                     quiet = F)(...)
+    rate = purrr::rate_backoff(
+      pause_cap = 60 * 5,
+      max_times = 10
+    ),
+    quiet = F
+  )(...)
   Sys.sleep(delay)
 }
 
@@ -247,7 +264,6 @@ insistent_download_cloud_file <- function(..., delay = 3){
 #' @export
 #'
 ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
-
   c(
     pars$pds$tracks$complete$file_prefix,
     paste(pars$pds$tracks$complete$file_prefix, "trips", sep = "_")
@@ -270,29 +286,40 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
 #' showing the map of Timor divided by municipalities including the tracks paths,
 #' and upload it to cloud storage.
 #'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
+#' @param only_fishing Logical, wether to filter tracks associated to landings trips.
 #'
 #' @return No output. This function is used for it's side effects.
 #' @export
 #'
-ingest_pds_map <- function(log_threshold = logger::DEBUG) {
-
-  logger::log_threshold(log_threshold)
+ingest_pds_map <- function(only_fishing = TRUE) {
   pars <- read_config()
 
-  tracks <- get_sync_tracks(pars) %>%
-    dplyr::filter(.data$Lng>124.03 & .data$Lng<127.29 & .data$Lat> -9.74 &.data$ Lat < -7.98) #exclude track points outside borders
+  logger::log_info("Retrieving PDS tracks")
 
+  tracks <- get_sync_tracks(pars) %>%
+    dplyr::filter(.data$Lng > 124.03 & .data$Lng < 127.29 & .data$Lat > -9.74 & .data$ Lat < -7.98) # exclude track points outside borders
+
+  if (isTRUE(only_fishing)) {
+    logger::log_info("Filtering tracks by fishing trips")
+
+    merged_trips_ids <-
+      get_merged_trips(pars) %>%
+      dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
+      magrittr::extract2("tracker_trip_id") %>%
+      unique()
+
+    tracks <-
+      tracks %>%
+      dplyr::filter(.data$Trip %in% merged_trips_ids)
+  }
   logger::log_info("Opening shapefiles ...")
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
-    package = "peskas.timor.data.pipeline"
+                              package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
 
   timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
-    package = "peskas.timor.data.pipeline"
+                               package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
 
@@ -308,13 +335,16 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::mutate(
       cell = paste(findInterval(.data$Lng, gridx),
                    findInterval(.data$Lat, gridy),
-                   sep = ",")
+                   sep = ","
+      )
     ) %>%
     dplyr::group_by(.data$cell) %>%
-    dplyr::summarise(Lat = mean(.data$Lat),
-                     Lng = mean(.data$Lng),
-                     trips = dplyr::n()) %>%
-    dplyr::filter(.data$trips>2)
+    dplyr::summarise(
+      Lat = mean(.data$Lat),
+      Lng = mean(.data$Lng),
+      trips = dplyr::n()
+    ) %>%
+    dplyr::filter(.data$trips > 2)
 
   map <-
     ggplot2::ggplot() +
@@ -329,12 +359,16 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
       fontface = "bold"
     ) +
-    ggplot2::annotate(geom="text", y=-8.16, x=125.45, label="Atauro",
-                      size = 2.8, fontface = "bold")+
-    ggplot2::scale_colour_viridis_c(begin = 0.1,
-                                    trans = "log2",
-                                    breaks = c(10, 100000),
-                                    labels = c("Low boats\nactivity", "High boats\nactivity")) +
+    ggplot2::annotate(
+      geom = "text", y = -8.16, x = 125.45, label = "Atauro",
+      size = 2.8, fontface = "bold"
+    ) +
+    ggplot2::scale_colour_viridis_c(
+      begin = 0.1,
+      trans = "log2",
+      breaks = c(7.5, 7500),
+      labels = c("Low fishing\nactivity", "High fishing\nactivity")
+    ) +
     ggplot2::labs(
       x = "",
       y = "",
@@ -346,9 +380,11 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       xlim = c(124.0363, 127.2961),
       ylim = c(-9.511914, -8.139941)
     ) +
-    ggplot2::theme(legend.position = "top",
-                   legend.key.height  = ggplot2::unit(0.4, 'cm'),
-                   legend.key.width   = ggplot2::unit(1.5, 'cm'))
+    ggplot2::theme(
+      legend.position = "top",
+      legend.key.height = ggplot2::unit(0.4, "cm"),
+      legend.key.width = ggplot2::unit(1.5, "cm")
+    )
 
   map_filename <-
     paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
@@ -362,13 +398,10 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     bg = NULL,
     dpi = pars$pds$tracks$map$dpi_resolution
   )
-
-  logger::log_info("Uploading {map_filename} to cloud sorage")
-  upload_cloud_file(file = map_filename,
-                    provider = pars$public_storage$google$key,
-                    options = pars$public_storage$google$options)
-
+   logger::log_info("Uploading {map_filename} to cloud sorage")
+   upload_cloud_file(
+     file = map_filename,
+     provider = pars$public_storage$google$key,
+     options = pars$public_storage$google$options
+    )
 }
-
-
-
