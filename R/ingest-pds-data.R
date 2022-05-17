@@ -398,4 +398,10 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     bg = NULL,
     dpi = pars$pds$tracks$map$dpi_resolution
   )
+   logger::log_info("Uploading {map_filename} to cloud sorage")
+   upload_cloud_file(
+     file = map_filename,
+     provider = pars$public_storage$google$key,
+     options = pars$public_storage$google$options
+    )
 }
