@@ -1,7 +1,6 @@
 name: Upload matched tracks and landings
 
 on:
-  push:
   schedule:
     - cron:  '0 0 1 * *'
 

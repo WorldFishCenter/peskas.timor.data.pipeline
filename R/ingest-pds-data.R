@@ -292,7 +292,6 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
 #' @export
 #'
 ingest_pds_map <- function(only_fishing = TRUE) {
-
   pars <- read_config()
 
   logger::log_info("Retrieving PDS tracks")
@@ -301,7 +300,6 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     dplyr::filter(.data$Lng > 124.03 & .data$Lng < 127.29 & .data$Lat > -9.74 & .data$ Lat < -7.98) # exclude track points outside borders
 
   if (isTRUE(only_fishing)) {
-
     logger::log_info("Filtering tracks by fishing trips")
 
     merged_trips_ids <-
@@ -313,100 +311,91 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     tracks <-
       tracks %>%
       dplyr::filter(.data$Trip %in% merged_trips_ids)
-
-  } else {
-    logger::log_info("Opening shapefiles ...")
-    timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
-      package = "peskas.timor.data.pipeline"
-    ) %>%
-      sf::st_read()
-
-    timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
-      package = "peskas.timor.data.pipeline"
-    ) %>%
-      sf::st_read()
-
-    logger::log_info("Generating map...")
-
-    # Convert to grids to fill
-    degx <- degy <- 0.001 # define grid size
-    gridx <- seq(min(tracks$Lng), max(tracks$Lng) + degx, by = degx)
-    gridy <- seq(min(tracks$Lat), max(tracks$Lat) + degy, by = degy)
-
-    tracks_grid <-
-      tracks %>%
-      dplyr::mutate(
-        cell = paste(findInterval(.data$Lng, gridx),
-          findInterval(.data$Lat, gridy),
-          sep = ","
-        )
-      ) %>%
-      dplyr::group_by(.data$cell) %>%
-      dplyr::summarise(
-        Lat = mean(.data$Lat),
-        Lng = mean(.data$Lng),
-        trips = dplyr::n()
-      ) %>%
-      dplyr::filter(.data$trips > 2)
-
-    map <-
-      ggplot2::ggplot() +
-      ggplot2::theme_void() +
-      ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
-      ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
-      ggplot2::geom_point(tracks_grid,
-        mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
-        size = 0.01, alpha = 0.5
-      ) +
-      ggplot2::geom_sf_text(
-        data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
-        fontface = "bold"
-      ) +
-      ggplot2::annotate(
-        geom = "text", y = -8.16, x = 125.45, label = "Atauro",
-        size = 2.8, fontface = "bold"
-      ) +
-      ggplot2::scale_colour_viridis_c(
-        begin = 0.1,
-        trans = "log2",
-        breaks = c(10, 100000),
-        labels = c("Low boats\nactivity", "High boats\nactivity")
-      ) +
-      ggplot2::labs(
-        x = "",
-        y = "",
-        fill = "",
-        title = "",
-        color = ""
-      ) +
-      ggplot2::coord_sf(
-        xlim = c(124.0363, 127.2961),
-        ylim = c(-9.511914, -8.139941)
-      ) +
-      ggplot2::theme(
-        legend.position = "top",
-        legend.key.height = ggplot2::unit(0.4, "cm"),
-        legend.key.width = ggplot2::unit(1.5, "cm")
-      )
-
-    map_filename <-
-      paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
-
-    logger::log_info("Saving map...")
-    ggplot2::ggsave(
-      filename = map_filename,
-      plot = map,
-      width = 7,
-      height = 4,
-      bg = NULL,
-      dpi = pars$pds$tracks$map$dpi_resolution
-    )
-
-    logger::log_info("Uploading {map_filename} to cloud sorage")
-    upload_cloud_file(
-      file = map_filename,
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
-    )
   }
+  logger::log_info("Opening shapefiles ...")
+  timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
+                              package = "peskas.timor.data.pipeline"
+  ) %>%
+    sf::st_read()
+
+  timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
+                               package = "peskas.timor.data.pipeline"
+  ) %>%
+    sf::st_read()
+
+  logger::log_info("Generating map...")
+
+  # Convert to grids to fill
+  degx <- degy <- 0.001 # define grid size
+  gridx <- seq(min(tracks$Lng), max(tracks$Lng) + degx, by = degx)
+  gridy <- seq(min(tracks$Lat), max(tracks$Lat) + degy, by = degy)
+
+  tracks_grid <-
+    tracks %>%
+    dplyr::mutate(
+      cell = paste(findInterval(.data$Lng, gridx),
+                   findInterval(.data$Lat, gridy),
+                   sep = ","
+      )
+    ) %>%
+    dplyr::group_by(.data$cell) %>%
+    dplyr::summarise(
+      Lat = mean(.data$Lat),
+      Lng = mean(.data$Lng),
+      trips = dplyr::n()
+    ) %>%
+    dplyr::filter(.data$trips > 2)
+
+  map <-
+    ggplot2::ggplot() +
+    ggplot2::theme_void() +
+    ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
+    ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
+    ggplot2::geom_point(tracks_grid,
+                        mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
+                        size = 0.01, alpha = 0.5
+    ) +
+    ggplot2::geom_sf_text(
+      data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
+      fontface = "bold"
+    ) +
+    ggplot2::annotate(
+      geom = "text", y = -8.16, x = 125.45, label = "Atauro",
+      size = 2.8, fontface = "bold"
+    ) +
+    ggplot2::scale_colour_viridis_c(
+      begin = 0.1,
+      trans = "log2",
+      breaks = c(7.5, 7500),
+      labels = c("Low fishing\nactivity", "High fishing\nactivity")
+    ) +
+    ggplot2::labs(
+      x = "",
+      y = "",
+      fill = "",
+      title = "",
+      color = ""
+    ) +
+    ggplot2::coord_sf(
+      xlim = c(124.0363, 127.2961),
+      ylim = c(-9.511914, -8.139941)
+    ) +
+    ggplot2::theme(
+      legend.position = "top",
+      legend.key.height = ggplot2::unit(0.4, "cm"),
+      legend.key.width = ggplot2::unit(1.5, "cm")
+    )
+
+  map_filename <-
+    paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
+
+  logger::log_info("Saving map...")
+  ggplot2::ggsave(
+    filename = map_filename,
+    plot = map,
+    width = 7,
+    height = 4,
+    bg = NULL,
+    dpi = pars$pds$tracks$map$dpi_resolution
+  )
 }
