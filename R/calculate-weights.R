@@ -463,11 +463,16 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
   w <- dplyr::full_join(this_lw, this_length,
     by = c("interagency_code", "Species", "Type")
   ) %>%
-    dplyr::mutate(weight = .data$a * .data$length^.data$b)
+    dplyr::mutate(
+      weight = .data$a * .data$length^.data$b,
+      quantile_coeff = dplyr::case_when(
+        unique(.data$interagency_code) == "FLY" ~ 0.95,
+        unique(.data$interagency_code) == "CGX" ~ 0.75,
+        unique(.data$interagency_code) %in% c("EMP", "CLP") ~ 0.25,
+        TRUE ~ 0.50
+      )
+    ) %>%
+    dplyr::filter(!is.na(.data$weight))
 
-  # I think we should use the median only at the end so that we can integrate as
-  # much info as possible beforehand
-
-  # stats::median(w$weight, na.rm = T) * n_individuals
-  stats::quantile(w$weight, 0.95, na.rm = T) * n_individuals
+  stats::quantile(w$weight, stats::median(w$quantile_coeff)) * n_individuals
 }
