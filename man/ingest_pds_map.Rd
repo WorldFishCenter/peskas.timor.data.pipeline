@@ -4,12 +4,10 @@
 \alias{ingest_pds_map}
 \title{Generate and ingest map of Timor pds tracks}
 \usage{
-ingest_pds_map(log_threshold = logger::DEBUG)
+ingest_pds_map(only_fishing = TRUE)
 }
 \arguments{
-\item{log_threshold}{The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
-details}
+\item{only_fishing}{Logical, wether to filter tracks associated to landings trips.}
 }
 \value{
 No output. This function is used for it's side effects.

@@ -1,3 +1,19 @@
+# peskas.timor.data.pipeline 1.1.0
+
+## Improvements
+
+- Improve the estimation of some fish groups' catches by calculating the weight per individual case by case.
+
+## Bug fixes
+
+-Fix error in cleaning of legacy landings: the columns indicating the number of individuals and fish length for catches > 60cm were exchanged
+
+# peskas.timor.data.pipeline 1.0.0
+
+## Improvements
+
+Adding option to produce Timor map filtered by fishing trips
+
 # peskas.timor.data.pipeline 0.20.0
 
 ## Improvements
