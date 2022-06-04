@@ -353,11 +353,15 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
   # extract alert number
-  alert_number <- validated_length %>%
+  alert_number <-
+    validated_length %>%
     dplyr::select(.data$submission_id, .data$n, .data$alert_number) %>%
     dplyr::group_by(.data$submission_id) %>%
+    dplyr::arrange(dplyr::desc(alert_number), .by_group = TRUE) %>%
     dplyr::filter(dplyr::row_number() == 1) %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$n) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
 
   # nest validated data
   validated_length_nested <-
@@ -381,7 +385,11 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     dplyr::mutate(
       alert_number = alert_number$alert_number,
       submission_id = as.integer(.data$submission_id)
-    )
+    ) %>%
+    dplyr::left_join(alert_number, by = "submission_id") %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
+    dplyr::select(-c(.data$alert_number.x, .data$alert_number.y))
+
 
   data %>%
     dplyr::filter(!is.na(alert_number)) %>%
