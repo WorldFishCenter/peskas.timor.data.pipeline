@@ -411,7 +411,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     )
 
   map_filename <-
-    paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
+    paste(pars$pds$tracks$map$png$file_prefix, pars$pds$tracks$map$png$extension, sep = ".")
 
   ggplot2::ggsave(
     filename = map_filename,
@@ -419,7 +419,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     width = 7,
     height = 4,
     bg = NULL,
-    dpi = pars$pds$tracks$map$dpi_resolution
+    dpi = pars$pds$tracks$map$png$dpi_resolution
   )
   logger::log_info("Uploading {map_filename} to cloud sorage")
   upload_cloud_file(
