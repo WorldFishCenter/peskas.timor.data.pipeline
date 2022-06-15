@@ -50,7 +50,9 @@ RUN install2.r --error --skipinstalled \
     remotes \
     rfishbase \
     tidytext \
-    zip
+    zip \
+    leaflet \
+    htmltools
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz

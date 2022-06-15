@@ -280,18 +280,22 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
 }
 
 
-#' Generate and ingest map of Timor pds tracks
+#' Generate and ingest Timor maps
 #'
 #' This function downloads pds tracks coordinates, generates a png image
 #' showing the map of Timor divided by municipalities including the tracks paths,
-#' and upload it to cloud storage.
+#' and upload it to cloud storage. It also upload the data frame splitted by grids
+#' to produce leaflet maps in the portal.
 #'
-#' @param only_fishing Logical, wether to filter tracks associated to landings trips.
-#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#' threshold for the logging infrastructure. See [logger::log_levels] for more
+#' details
 #' @return No output. This function is used for it's side effects.
 #' @export
 #'
-ingest_pds_map <- function(only_fishing = TRUE) {
+ingest_pds_map <- function(log_threshold = logger::DEBUG) {
+  logger::log_threshold(log_threshold)
+
   pars <- read_config()
 
   logger::log_info("Retrieving PDS tracks")
@@ -299,43 +303,61 @@ ingest_pds_map <- function(only_fishing = TRUE) {
   tracks <- get_sync_tracks(pars) %>%
     dplyr::filter(.data$Lng > 124.03 & .data$Lng < 127.29 & .data$Lat > -9.74 & .data$ Lat < -7.98) # exclude track points outside borders
 
-  if (isTRUE(only_fishing)) {
-    logger::log_info("Filtering tracks by fishing trips")
+  logger::log_info("Retrieving merged trips")
 
-    merged_trips_ids <-
-      get_merged_trips(pars) %>%
-      dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
-      magrittr::extract2("tracker_trip_id") %>%
-      unique()
+  merged_trips <-
+    get_merged_trips(pars) %>%
+    dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
+    tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
+    tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
+    dplyr::summarise(
+      region = dplyr::first(.data$reporting_region),
+      trip = dplyr::first(.data$tracker_trip_id),
+      duration = dplyr::first(.data$trip_duration),
+      n_fishermen = dplyr::first(.data$n_fishermen),
+      landing_value = dplyr::first(.data$landing_value),
+      weight = sum(.data$weight, na.rm = TRUE)
+    ) %>%
+    dplyr::mutate(
+      CPE = (.data$weight / .data$n_fishermen) / .data$duration,
+      RPE = (.data$landing_value / .data$n_fishermen) / .data$duration
+    )
 
-    tracks <-
-      tracks %>%
-      dplyr::filter(.data$Trip %in% merged_trips_ids)
-  }
   logger::log_info("Opening shapefiles ...")
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
-                              package = "peskas.timor.data.pipeline"
+    package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
 
   timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
-                               package = "peskas.timor.data.pipeline"
+    package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
 
-  logger::log_info("Generating map...")
+  ### produce png map
+  merged_trips_ids <-
+    merged_trips %>%
+    magrittr::extract2("trip") %>%
+    unique()
+
+  tracks_ids <-
+    tracks %>%
+    dplyr::rename(trip = .data$Trip) %>%
+    dplyr::filter(.data$trip %in% merged_trips_ids)
 
   # Convert to grids to fill
   degx <- degy <- 0.001 # define grid size
-  gridx <- seq(min(tracks$Lng), max(tracks$Lng) + degx, by = degx)
-  gridy <- seq(min(tracks$Lat), max(tracks$Lat) + degy, by = degy)
+  gridx <- seq(min(tracks_ids$Lng), max(tracks_ids$Lng) + degx, by = degx)
+  gridy <- seq(min(tracks_ids$Lat), max(tracks_ids$Lat) + degy, by = degy)
 
   tracks_grid <-
-    tracks %>%
+    tracks_ids %>%
     dplyr::mutate(
       cell = paste(findInterval(.data$Lng, gridx),
-                   findInterval(.data$Lat, gridy),
-                   sep = ","
+        findInterval(.data$Lat, gridy),
+        sep = ","
       )
     ) %>%
     dplyr::group_by(.data$cell) %>%
@@ -344,7 +366,9 @@ ingest_pds_map <- function(only_fishing = TRUE) {
       Lng = mean(.data$Lng),
       trips = dplyr::n()
     ) %>%
-    dplyr::filter(.data$trips > 2)
+    dplyr::filter(.data$trips > 0)
+
+  logger::log_info("Generating png file")
 
   map <-
     ggplot2::ggplot() +
@@ -352,8 +376,8 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
     ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
     ggplot2::geom_point(tracks_grid,
-                        mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
-                        size = 0.01, alpha = 0.5
+      mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
+      size = 0.01, alpha = 0.5
     ) +
     ggplot2::geom_sf_text(
       data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
@@ -366,7 +390,7 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     ggplot2::scale_colour_viridis_c(
       begin = 0.1,
       trans = "log2",
-      breaks = c(7.5, 7500),
+      breaks = c(4, 7500),
       labels = c("Low fishing\nactivity", "High fishing\nactivity")
     ) +
     ggplot2::labs(
@@ -387,21 +411,88 @@ ingest_pds_map <- function(only_fishing = TRUE) {
     )
 
   map_filename <-
-    paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = ".")
+    paste(pars$pds$tracks$map$png$file_prefix, pars$pds$tracks$map$png$extension, sep = ".")
 
-  logger::log_info("Saving map...")
   ggplot2::ggsave(
     filename = map_filename,
     plot = map,
     width = 7,
     height = 4,
     bg = NULL,
-    dpi = pars$pds$tracks$map$dpi_resolution
+    dpi = pars$pds$tracks$map$png$dpi_resolution
   )
-   logger::log_info("Uploading {map_filename} to cloud sorage")
-   upload_cloud_file(
-     file = map_filename,
-     provider = pars$public_storage$google$key,
-     options = pars$public_storage$google$options
+  logger::log_info("Uploading {map_filename} to cloud sorage")
+  upload_cloud_file(
+    file = map_filename,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )
+
+  ### produce indicators map grid
+
+  tracks_ids_summarised <-
+    tracks_ids %>%
+    dplyr::group_by(.data$trip) %>%
+    dplyr::summarise(
+      Lat = stats::median(.data$Lat),
+      Lng = stats::median(.data$Lng)
     )
+
+  landings_geo <-
+    merged_trips %>%
+    dplyr::left_join(tracks_ids_summarised, by = "trip")
+
+  degx <- degy <- 0.01 # define grid size
+  gridx <- seq(min(tracks_ids_summarised$Lng), max(tracks_ids_summarised$Lng) + degx, by = degx)
+  gridy <- seq(min(tracks_ids_summarised$Lat), max(tracks_ids_summarised$Lat) + degy, by = degy)
+
+  logger::log_info("Generating indicators data frame...")
+
+  tracks_grid <-
+    landings_geo %>%
+    dplyr::filter(!is.na(.data$Lat)) %>%
+    dplyr::mutate(
+      cell = paste(findInterval(.data$Lng, gridx),
+        findInterval(.data$Lat, gridy),
+        sep = ","
+      )
+    ) %>%
+    dplyr::mutate(
+      CPE = dplyr::case_when(is.infinite(.data$CPE) ~ NA_real_, TRUE ~ .data$CPE),
+      RPE = dplyr::case_when(is.infinite(.data$RPE) ~ NA_real_, TRUE ~ .data$RPE)
+    ) %>%
+    dplyr::group_by(.data$region) %>%
+    dplyr::mutate(
+      CPE = .data$CPE / 1000,
+      CPE_log = log(.data$CPE + 1),
+      region_cpe = round(mean(.data$CPE, na.rm = TRUE), 2),
+      region_rpe = round(mean(.data$RPE, na.rm = TRUE), 2)
+    ) %>%
+    dplyr::group_by(.data$cell) %>%
+    dplyr::summarise(
+      region = dplyr::first(.data$region),
+      Lat = stats::median(.data$Lat),
+      Lng = stats::median(.data$Lng),
+      trips = dplyr::n(),
+      weight = sum(.data$weight, na.rm = T) / 1000,
+      region_cpe = dplyr::first(.data$region_cpe),
+      region_rpe = dplyr::first(.data$region_rpe),
+      CPE = round(stats::median(.data$CPE, na.rm = TRUE), 2),
+      RPE = round(stats::median(.data$RPE, na.rm = TRUE), 2),
+      CPE_log = round(stats::median(.data$CPE_log, na.rm = TRUE), 2)
+    ) %>%
+    dplyr::ungroup()
+
+  map_grid_name <-
+    paste(pars$pds$tracks$map$map_grid$file_prefix) %>%
+    add_version(extension = pars$pds$tracks$map$map_grid$extension)
+
+  readr::write_rds(tracks_grid, map_grid_name)
+
+  logger::log_info("Uploading {map_grid_name} to cloud sorage")
+  upload_cloud_file(
+    file = map_grid_name,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )
 }

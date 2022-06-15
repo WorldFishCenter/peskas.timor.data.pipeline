@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 1.2.0
+
+## New features
+
+- Added a new feature in the function `ingest_pds_map`. The function process and upload a data frame containing the number of trips, CPE (catch per unit effort) and RPE (revenue per unit effort) splitted by grids to produce leaflet maps in the web portal.
+
 # peskas.timor.data.pipeline 1.1.0
 
 ## Improvements

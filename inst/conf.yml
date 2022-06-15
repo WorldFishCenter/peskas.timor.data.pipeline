@@ -45,9 +45,13 @@ default:
       bucket_content:
         file_prefix: pds-track-list
       map:
-        file_prefix: tracks-map
-        extension: png
-        dpi_resolution: 450
+        png:
+          file_prefix: tracks-map
+          extension: png
+          dpi_resolution: 450
+        map_grid:
+          file_prefix: indicators_gridded
+          extension: rds
   metadata:
     airtable:
       name: metadata-tables
