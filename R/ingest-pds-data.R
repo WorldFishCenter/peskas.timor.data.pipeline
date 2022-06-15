@@ -442,7 +442,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     merged_trips %>%
     dplyr::left_join(tracks_ids_summarised, by = "trip")
 
-  degx <- degy <- 0.01 # define grid size
+  degx <- degy <- 0.1 # define grid size (0.1 is 11.1 km)
   gridx <- seq(min(tracks_ids_summarised$Lng), max(tracks_ids_summarised$Lng) + degx, by = degx)
   gridy <- seq(min(tracks_ids_summarised$Lat), max(tracks_ids_summarised$Lat) + degy, by = degy)
 
