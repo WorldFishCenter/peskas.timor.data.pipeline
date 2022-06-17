@@ -313,12 +313,13 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::group_by(.data$landing_id) %>%
     dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
     dplyr::summarise(
+      gear_type = dplyr::first(.data$gear_type),
       region = dplyr::first(.data$reporting_region),
       trip = dplyr::first(.data$tracker_trip_id),
       duration = dplyr::first(.data$trip_duration),
       n_fishermen = dplyr::first(.data$n_fishermen),
       landing_value = dplyr::first(.data$landing_value),
-      weight = sum(.data$weight, na.rm = TRUE)
+      weight = sum(.data$weight, na.rm = TRUE) / 1000
     ) %>%
     dplyr::mutate(
       CPE = (.data$weight / .data$n_fishermen) / .data$duration,
@@ -463,8 +464,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ) %>%
     dplyr::group_by(.data$region) %>%
     dplyr::mutate(
-      CPE = .data$CPE / 1000,
-      CPE_log = log(.data$CPE + 1),
       region_cpe = round(mean(.data$CPE, na.rm = TRUE), 2),
       region_rpe = round(mean(.data$RPE, na.rm = TRUE), 2)
     ) %>%
@@ -473,13 +472,15 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       region = dplyr::first(.data$region),
       Lat = stats::median(.data$Lat),
       Lng = stats::median(.data$Lng),
+      weight = sum(.data$weight, na.rm = T),
       trips = dplyr::n(),
-      weight = sum(.data$weight, na.rm = T) / 1000,
+      trips_log = log(.data$trips+1),
       region_cpe = dplyr::first(.data$region_cpe),
       region_rpe = dplyr::first(.data$region_rpe),
       CPE = round(stats::median(.data$CPE, na.rm = TRUE), 2),
       RPE = round(stats::median(.data$RPE, na.rm = TRUE), 2),
-      CPE_log = round(stats::median(.data$CPE_log, na.rm = TRUE), 2)
+      CPE_log = round(stats::median(log(.data$CPE + 1), na.rm = TRUE), 2),
+      RPE_log = round(stats::median(log(.data$RPE + 1), na.rm = TRUE), 2)
     ) %>%
     dplyr::ungroup()
 
