@@ -70,6 +70,7 @@ default:
         - stations
         - reporting_units
         - habitat
+        - fishing_vessel_statistics
     version:
       preprocess: latest
     rfishtable:
