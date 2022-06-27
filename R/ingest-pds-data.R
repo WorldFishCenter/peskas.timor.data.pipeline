@@ -310,7 +310,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
     tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
-    dplyr::group_by(.data$landing_id) %>%
+    dplyr::group_by(.data$landing_id, .data$landing_date) %>%
     dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
     dplyr::summarise(
       gear_type = dplyr::first(.data$gear_type),
@@ -464,17 +464,20 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ) %>%
     dplyr::group_by(.data$region) %>%
     dplyr::mutate(
+      month_date = lubridate::floor_date(.data$landing_date, unit = "month"),
+      month_date = as.Date(.data$month_date, tz = "Asia/Dili"),
+      gear_type = stringr::str_to_sentence(.data$gear_type),
       region_cpe = round(mean(.data$CPE, na.rm = TRUE), 2),
       region_rpe = round(mean(.data$RPE, na.rm = TRUE), 2)
     ) %>%
-    dplyr::group_by(.data$cell) %>%
+    dplyr::group_by(.data$cell, .data$month_date, .data$gear_type) %>%
     dplyr::summarise(
       region = dplyr::first(.data$region),
       Lat = stats::median(.data$Lat),
       Lng = stats::median(.data$Lng),
       weight = sum(.data$weight, na.rm = T),
       trips = dplyr::n(),
-      trips_log = log(.data$trips+1),
+      trips_log = log(.data$trips + 1),
       region_cpe = dplyr::first(.data$region_cpe),
       region_rpe = dplyr::first(.data$region_rpe),
       CPE = round(stats::median(.data$CPE, na.rm = TRUE), 2),
