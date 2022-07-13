@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 1.3.0
+
+## New features
+
+- Integrated taxa selection and filtering in tracks file deemed to the leaflet map in the portal
+
 # peskas.timor.data.pipeline 1.2.0
 
 ## New features
