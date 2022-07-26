@@ -240,8 +240,8 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call model_indicators()
-        run: Rscript -e 'peskas.timor.data.pipeline::model_indicators()'
+      - name: Call generate_estimates()
+        run: Rscript -e 'peskas.timor.data.pipeline::generate_estimates()'
 
   export-trips:
     name: Export trips
