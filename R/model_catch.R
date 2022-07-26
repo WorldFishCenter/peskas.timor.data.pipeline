@@ -29,7 +29,6 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   trips <- get_merged_trips(pars)
   vessels_stats <- get_preprocessed_metadata(pars)$vessels_stats
 
-  # run models on the national scale
   landings_model <- model_landings(trips)
   value_model <- model_value(trips)
   catch_model <- model_catch(trips)
@@ -43,21 +42,6 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   readr::write_rds(results, models_filename, compress = "gz")
   upload_cloud_file(
     models_filename,
-    pars$storage$google$key,
-    pars$storage$google$options
-  )
-
-  # run models on municipalities
-
-  municipal_models <-
-    unique(na.omit(trips$reporting_region)) %>%
-    purrr::set_names(unique(na.omit(trips$reporting_region))) %>%
-    purrr::map(run_models, pars = pars, trips = trips, vessels_metadata = vessels_stats)
-
-  municipal_models_filename <- add_version(paste0(pars$models$file_prefix, "_municipal"), "rds")
-  readr::write_rds(municipal_models, municipal_models_filename, compress = "gz")
-  upload_cloud_file(
-    municipal_models_filename,
     pars$storage$google$key,
     pars$storage$google$options
   )
@@ -321,7 +305,8 @@ model_catch_per_taxa <- function(trips, modelled_taxa) {
   models
 }
 
-run_models <- function(pars, trips, region, vessels_metadata) {
+
+run_models <- function(pars, trips, region, vessels_metadata, model_family) {
   trips_region <-
     trips %>%
     dplyr::filter(.data$reporting_region == region)
@@ -333,7 +318,6 @@ run_models <- function(pars, trips, region, vessels_metadata) {
     dplyr::filter(.data$reporting_region == region) %>%
     dplyr::summarise(n_boats = sum(.data$n_boats, na.rm = T)) %>%
     magrittr::extract2("n_boats")
-
 
   landings_model <- model_landings(trips_region)
   value_model <- model_value(trips_region)
