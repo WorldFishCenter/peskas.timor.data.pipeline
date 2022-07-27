@@ -308,10 +308,11 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   merged_trips <-
     get_merged_trips(pars) %>%
     dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
+    dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
     tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
-    dplyr::group_by(.data$landing_id) %>%
-    dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
+    dplyr::group_by(.data$landing_id, .data$landing_date) %>%
+    dplyr::arrange(dplyr::desc(.data$weight), .by_group = TRUE) %>%
     dplyr::summarise(
       gear_type = dplyr::first(.data$gear_type),
       region = dplyr::first(.data$reporting_region),
@@ -319,12 +320,18 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       duration = dplyr::first(.data$trip_duration),
       n_fishermen = dplyr::first(.data$n_fishermen),
       landing_value = dplyr::first(.data$landing_value),
+      catch_taxon = dplyr::first(.data$catch_taxon),
       weight = sum(.data$weight, na.rm = TRUE) / 1000
     ) %>%
+    dplyr::mutate(remove_label = dplyr::case_when(!.data$catch_taxon == "0" & .data$weight == 0
+    ~ "remove", TRUE ~ "keep")) %>%
+    dplyr::filter(.data$remove_label == "keep") %>%
+    dplyr::select(-.data$remove_label) %>%
     dplyr::mutate(
       CPE = (.data$weight / .data$n_fishermen) / .data$duration,
       RPE = (.data$landing_value / .data$n_fishermen) / .data$duration
-    )
+    ) %>%
+    dplyr::ungroup()
 
   logger::log_info("Opening shapefiles ...")
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
@@ -337,7 +344,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   ) %>%
     sf::st_read()
 
-  ### produce png map
   merged_trips_ids <-
     merged_trips %>%
     magrittr::extract2("trip") %>%
@@ -348,6 +354,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::rename(trip = .data$Trip) %>%
     dplyr::filter(.data$trip %in% merged_trips_ids)
 
+  # Produce png map
   # Convert to grids to fill
   degx <- degy <- 0.001 # define grid size
   gridx <- seq(min(tracks_ids$Lng), max(tracks_ids$Lng) + degx, by = degx)
@@ -374,12 +381,12 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   map <-
     ggplot2::ggplot() +
     ggplot2::theme_void() +
-    ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
-    ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
     ggplot2::geom_point(tracks_grid,
       mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
       size = 0.01, alpha = 0.5
     ) +
+    ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
+    ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
     ggplot2::geom_sf_text(
       data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
       fontface = "bold"
@@ -391,7 +398,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ggplot2::scale_colour_viridis_c(
       begin = 0.1,
       trans = "log2",
-      breaks = c(4, 7500),
+      breaks = c(2, 7200),
       labels = c("Low fishing\nactivity", "High fishing\nactivity")
     ) +
     ggplot2::labs(
@@ -464,24 +471,29 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     ) %>%
     dplyr::group_by(.data$region) %>%
     dplyr::mutate(
+      month_date = lubridate::floor_date(.data$landing_date, unit = "month"),
+      month_date = as.Date(.data$month_date, tz = "Asia/Dili"),
+      gear_type = stringr::str_to_sentence(.data$gear_type),
       region_cpe = round(mean(.data$CPE, na.rm = TRUE), 2),
       region_rpe = round(mean(.data$RPE, na.rm = TRUE), 2)
     ) %>%
-    dplyr::group_by(.data$cell) %>%
+    dplyr::group_by(.data$cell, .data$month_date, .data$gear_type, .data$catch_taxon) %>%
     dplyr::summarise(
       region = dplyr::first(.data$region),
       Lat = stats::median(.data$Lat),
       Lng = stats::median(.data$Lng),
       weight = sum(.data$weight, na.rm = T),
       trips = dplyr::n(),
-      trips_log = log(.data$trips+1),
+      trips_log = log(.data$trips + 1),
       region_cpe = dplyr::first(.data$region_cpe),
       region_rpe = dplyr::first(.data$region_rpe),
-      CPE = round(stats::median(.data$CPE, na.rm = TRUE), 2),
-      RPE = round(stats::median(.data$RPE, na.rm = TRUE), 2),
-      CPE_log = round(stats::median(log(.data$CPE + 1), na.rm = TRUE), 2),
-      RPE_log = round(stats::median(log(.data$RPE + 1), na.rm = TRUE), 2)
+      CPE = round(mean(.data$CPE, na.rm = TRUE), 2),
+      RPE = round(mean(.data$RPE, na.rm = TRUE), 2),
+      CPE_log = round(mean(log(.data$CPE + 1), na.rm = TRUE), 2),
+      RPE_log = round(mean(log(.data$RPE + 1), na.rm = TRUE), 2)
     ) %>%
+    convert_taxa_names(pars) %>%
+    dplyr::filter(!is.na(.data$catch_taxon)) %>%
     dplyr::ungroup()
 
   map_grid_name <-
@@ -496,4 +508,50 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )
+}
+
+
+
+
+#' Convert taxa codes to common names
+#'
+#' @param data A dataframe with taxa codes under a column named "catch_taxon"
+#' @param pars The config file
+#'
+#' @return A dataframe with taxa common names
+#' @export
+#'
+convert_taxa_names <- function(data, pars) {
+  catch_types <-
+    peskas.timor.data.pipeline::get_preprocessed_metadata(pars)$catch_types %>%
+    dplyr::filter(!.data$catch_name_en %in% c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")) %>%
+    dplyr::select(
+      catch_taxon = .data$interagency_code,
+      "Common name" = .data$catch_name_en
+    ) %>%
+    dplyr::mutate("Common name" = dplyr::case_when(
+      catch_taxon == "RAX" ~ "Short mackerel",
+      catch_taxon == "CGX" ~ "Jacks/Trevally",
+      catch_taxon == "CLP" ~ "Sardines",
+      catch_taxon == "TUN" ~ "Tuna/Bonito",
+      catch_taxon == "SNA" ~ "Snapper",
+      TRUE ~ .data$`Common name`
+    ))
+  data %>%
+    dplyr::left_join(catch_types, by = "catch_taxon") %>%
+    dplyr::mutate(fish_group = dplyr::case_when(
+      catch_taxon %in% c("COZ") ~ "Molluscs",
+      catch_taxon %in% c("PEZ") ~ "Shrimps",
+      catch_taxon %in% c("MZZ") ~ "Unknown",
+      catch_taxon %in% c("SLV", "CRA") ~ "Crustaceans",
+      catch_taxon %in% c("OCZ", "IAX") ~ "Cephalopods",
+      catch_taxon %in% c("SKH", "SRX") ~ "Sharks and rays",
+      catch_taxon %in% c("SNA", "GPX", "PWT", "SUR", "GRX", "MUI", "BGX") ~ "Large demersals",
+      catch_taxon %in% c("CGX", "TUN", "BEN", "LWX", "BAR", "SFA", "CBA", "DOX", "ECN", "DOS") ~ "Large pelagics",
+      catch_taxon %in% c("YDX", "SPI", "EMP", "SUR", "TRI", "MOJ", "WRA", "MOO", "BWH", "LGE", "MOB", "MHL", "GOX", "THO", "IHX", "APO", "IHX", "PUX", "DRZ") ~ "Small demersals",
+      catch_taxon %in% c("RAX", "SDX", "CJX", "CLP", "GZP", "FLY", "KYX", "CLP", "MUL", "DSF", "MIL", "THF") ~ "Small pelagics",
+      TRUE ~ NA_character_
+    )) %>%
+    dplyr::select(-.data$catch_taxon) %>%
+    dplyr::rename(catch_taxon = .data$`Common name`)
 }
