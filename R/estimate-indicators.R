@@ -39,20 +39,7 @@ generate_estimates <- function(log_threshold = logger::DEBUG) {
       vessels_metadata = vessels_stats
     )
 
-  national_estimates <-
-    municipal_estimates %>%
-    purrr::reduce(dplyr::bind_rows) %>%
-    dplyr::select(-.data$region) %>%
-    dplyr::group_by(.data$period, .data$month, .data$landing_period) %>%
-    dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
-      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
-      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
-      revenue = sum(.data$revenue, na.rm = TRUE),
-      catch = sum(.data$catch, na.rm = TRUE)
-    ) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(.data$landing_period)
+  national_estimates <- get_national_aggregates(municipal_estimates)
 
   results <-
     list(
@@ -72,19 +59,7 @@ generate_estimates <- function(log_threshold = logger::DEBUG) {
       modelled_taxa = pars$models$modelled_taxa
     )
 
-  national_estimates_taxa <-
-    municipal_estimates_taxa %>%
-    purrr::reduce(dplyr::bind_rows) %>%
-    dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$grouped_taxa) %>%
-    dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
-      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
-      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
-      revenue = sum(.data$revenue, na.rm = TRUE),
-      catch = sum(.data$catch, na.rm = TRUE)
-    ) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(.data$landing_period)
+  national_estimates_taxa <- get_national_aggregates_taxa(municipal_estimates_taxa)
 
   results_per_taxa <-
     list(
@@ -149,9 +124,9 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
     ) %>%
     dplyr::ungroup() %>%
     # Need to account for months that are no present in the data
-    tidyr::complete(.data$tracker_imei, .data$landing_period,
-      fill = list(n_landings = 0)
-    ) %>%
+    # tidyr::complete(.data$tracker_imei, .data$landing_period,
+    #                fill = list(n_landings = 0)
+    # ) %>%
     dplyr::group_by(.data$tracker_imei) %>%
     # Removing observations from the first and last month as they are not complete
     dplyr::filter(
@@ -161,13 +136,13 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
     dplyr::select(-.data$first_trip, -.data$last_seen) %>%
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
-      month = as.character(lubridate::month(.data$landing_period))
+      month = as.character(lubridate::month(.data$landing_period)),
+      period = paste(.data$year, .data$month, sep = "-")
     ) %>%
     dplyr::group_by(.data$year, .data$month, .data$landing_period) %>%
     dplyr::summarise(n_landings_per_boat = mean(.data$n_landings)) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::ungroup()
-
 
   value_df <-
     trips_df %>%
@@ -180,7 +155,7 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
       month = as.character(lubridate::month(.data$landing_period)),
     ) %>%
     dplyr::group_by(.data$year, .data$month, .data$landing_period) %>%
-    dplyr::summarise(landing_revenue = mean(.data$landing_value)) %>%
+    dplyr::summarise(landing_revenue = stats::median(.data$landing_value)) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::ungroup()
 
@@ -207,7 +182,7 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
     ) %>%
-    dplyr::group_by(.data$year, .data$ month, .data$landing_period) %>%
+    dplyr::group_by(.data$year, .data$month, .data$landing_period) %>%
     dplyr::summarise(landing_weight = mean(.data$landing_weight)) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::ungroup()
@@ -311,7 +286,15 @@ estimate_indicators_taxa <- function(trips, municipal_estimates, vessels_metadat
       .data$period, .data$month, .data$landing_period,
       .data$landing_weight, .data$grouped_taxa, .data$landing_revenue,
       .data$n_landings_per_boat, .data$revenue, .data$catch
-    )
+    ) %>%
+    dplyr::mutate(dplyr::across(
+      .cols = c(
+        .data$landing_revenue, .data$n_landings_per_boat,
+        .data$landing_weight, .data$revenue, .data$catch
+      ),
+      ~ dplyr::case_when(.x %in% c(0, NaN) ~ NA_real_, TRUE ~ .x)
+    )) %>%
+    as.data.frame()
 }
 
 #' Get updated vessels records
@@ -378,4 +361,53 @@ fill_missing_regions <- function(trips = NULL) {
       TRUE ~ reporting_region
     )) %>%
     dplyr::select(-.data$reporting_region_fill)
+}
+
+
+get_national_aggregates <- function(municipal_estimations = NULL) {
+  municipal_estimations %>%
+    purrr::reduce(dplyr::bind_rows) %>%
+    dplyr::select(-.data$region) %>%
+    dplyr::group_by(.data$period, .data$month, .data$landing_period) %>%
+    dplyr::summarise(
+      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
+      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
+      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
+      revenue = sum(.data$revenue, na.rm = TRUE),
+      catch = sum(.data$catch, na.rm = TRUE)
+    ) %>%
+    dplyr::mutate(dplyr::across(
+      .cols = c(
+        .data$landing_revenue, .data$n_landings_per_boat,
+        .data$landing_weight, .data$revenue, .data$catch
+      ),
+      ~ dplyr::case_when(.x %in% c(0, NaN) ~ NA_real_, TRUE ~ .x)
+    )) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$landing_period) %>%
+    as.data.frame()
+}
+
+
+get_national_aggregates_taxa <- function(municipal_estimations_taxa = NULL) {
+  municipal_estimations_taxa %>%
+    purrr::reduce(dplyr::bind_rows) %>%
+    dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$grouped_taxa) %>%
+    dplyr::summarise(
+      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
+      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
+      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
+      revenue = sum(.data$revenue, na.rm = TRUE),
+      catch = sum(.data$catch, na.rm = TRUE)
+    ) %>%
+    dplyr::mutate(dplyr::across(
+      .cols = c(
+        .data$landing_revenue, .data$n_landings_per_boat,
+        .data$landing_weight, .data$revenue, .data$catch
+      ),
+      ~ dplyr::case_when(.x %in% c(0, NaN) ~ NA_real_, TRUE ~ .x)
+    )) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$landing_period) %>%
+    as.data.frame()
 }
