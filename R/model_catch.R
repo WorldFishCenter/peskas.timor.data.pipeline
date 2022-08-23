@@ -171,7 +171,7 @@ model_catch <- function(trips) {
       season = as.character(lubridate::round_date(.data$landing_period, "season"))
     )
 
-  if (unique(trips$reporting_region) %in% c("Viqueque", "Baucau")) {
+  if (unique(trips$reporting_region) %in% c("Covalima","Viqueque", "Baucau")) {
     family <- "gaussian"
   } else {
     family <- "poisson"
@@ -356,7 +356,6 @@ model_catch_per_taxa <- function(trips, modelled_taxa) {
   models
 }
 
-
 run_models <- function(pars, trips, region, vessels_metadata, model_family) {
   trips_region <-
     trips %>%
@@ -375,7 +374,7 @@ run_models <- function(pars, trips, region, vessels_metadata, model_family) {
   catch_model <- model_catch(trips_region)
   results <- estimate_statistics(landings_model, value_model, catch_model, n_boats = region_boats)
 
-  message("Modelling ", region, " taxa")
+  #message("Modelling ", region, " taxa")
 
   #catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = pars$models$modelled_taxa)
   #results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
