@@ -27,13 +27,11 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   trips <-
-    # get_merged_trips(pars) %>%
-    readr::read_rds("all_trips__20220808111407_e0c5df6__.rds") %>%
+    get_merged_trips(pars) %>%
     fill_missing_regions()
 
   vessels_stats <-
-    readr::read_rds("metadata-tables_preprocessed__20220808094618_e0c5df6__.rds")$vessels_stats %>%
-    # get_preprocessed_metadata(pars)$vessels_stats %>%
+    get_preprocessed_metadata(pars)$vessels_stats %>%
     dplyr::group_by(.data$reporting_region) %>%
     dplyr::summarise(n_boats = sum(.data$n_boats)) %>%
     dplyr::ungroup()
@@ -52,11 +50,6 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
         municipal = municipal_models
       )
     )
-
-  # landings_model <- model_landings(trips)
-  # value_model <- model_value(trips)
-  # catch_model <- model_catch(trips)
-  # results <- estimate_statistics(landings_model, value_model, catch_model, vessels_stats)
 
   catch_taxa_models <- model_catch_per_taxa(trips, modelled_taxa = pars$models$modelled_taxa)
   results_per_taxa <- estimates_per_taxa(catch_taxa_models, national_models, n_boats = sum(vessels_stats$n_boats))
@@ -293,7 +286,7 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
 #' @importFrom stats predict
 predict_variable <- function(model, var) {
   frame <-
-    dplyr::tibble(landing_period = seq(as.Date("2017-6-1"), Sys.Date(), by = "month")) %>%
+    dplyr::tibble(landing_period = seq(as.Date("2018-1-1"), Sys.Date(), by = "month")) %>%
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
