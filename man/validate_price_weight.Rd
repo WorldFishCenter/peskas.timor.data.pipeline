@@ -8,7 +8,9 @@ validate_price_weight(
   catch_alerts = NULL,
   price_alerts = NULL,
   non_regular_ids = NULL,
-  cook_dist = NULL
+  cook_dist = NULL,
+  price_weight_min = NULL,
+  price_weight_max = NULL
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ validate_price_weight(
 \item{non_regular_ids}{The dataframe of landings regularity alerts.}
 
 \item{cook_dist}{A number that go in the formula cook_dist * (mean(cooksd)).}
+
+\item{price_weight_min}{Min price per weight value threshold.}
+
+\item{price_weight_max}{Max price per weight value threshold.}
 }
 \value{
 The price and catch alert' dataframes including outlier identification
