@@ -327,8 +327,15 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
         is.na(.data$alert_n_individuals) ~ .data$n_individuals,
         TRUE ~ NA_real_
       ),
+      mean_length_valid = dplyr::case_when(
+        .data$n_individuals > 0 ~ .data$mean_length,
+        TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::group_by(.data$species) %>%
+    dplyr::mutate(
       alert_length = alert_outlier(
-        x = .data$mean_length,
+        x = .data$mean_length_valid,
         alert_if_larger = 7, logt = TRUE, k = k_length
       ),
       mean_length = dplyr::case_when(
@@ -338,6 +345,7 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
       alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`
     ) %>%
+    dplyr::select(-.data$mean_length_valid) %>%
     dplyr::ungroup() %>%
     # Adjusting weight and nutrients accordingly
     dplyr::mutate(
@@ -414,7 +422,8 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
 #' @param price_alerts The dataframe of price alerts.
 #' @param non_regular_ids The dataframe of landings regularity alerts.
 #' @param cook_dist A number that go in the formula cook_dist * (mean(cooksd)).
-#'
+#' @param price_weight_min Min price per weight value threshold.
+#' @param price_weight_max Max price per weight value threshold.
 #' @return The price and catch alert' dataframes including outlier identification
 #' based on Cook's distance.
 #' @export
@@ -422,7 +431,9 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
 validate_price_weight <- function(catch_alerts = NULL,
                                   price_alerts = NULL,
                                   non_regular_ids = NULL,
-                                  cook_dist = NULL) {
+                                  cook_dist = NULL,
+                                  price_weight_min = NULL,
+                                  price_weight_max = NULL) {
 
   # Extract single catches IDs
   single_catches <-
@@ -432,7 +443,7 @@ validate_price_weight <- function(catch_alerts = NULL,
     magrittr::extract2("submission_id")
 
   # Extract IDs with abnormal price weight relation based on Cook's distance
-  cooks_alerts <-
+  price_per_weight_alerts <-
     dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
     dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
@@ -449,8 +460,14 @@ validate_price_weight <- function(catch_alerts = NULL,
     ~ log(.data$weight + 1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
-    dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd))
-    ~ 17, TRUE ~ NA_real_)) %>%
+    dplyr::mutate(
+      weight_kg = .data$weight / 1000,
+      pk = .data$total_catch_value / .data$weight_kg,
+      alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) |
+        .data$pk < price_weight_min |
+        .data$pk > price_weight_max
+      ~ 17, TRUE ~ NA_real_)
+    ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
@@ -474,7 +491,7 @@ validate_price_weight <- function(catch_alerts = NULL,
   price_alerts %<>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
-        .data$submission_id %in% cooks_alerts ~ 17,
+        .data$submission_id %in% price_per_weight_alerts ~ 17,
         .data$submission_id %in% regularity_alerts ~ 22,
         .data$submission_id %in% n_individuals_alert ~ 11,
         TRUE ~ .data$alert_number
@@ -489,7 +506,7 @@ validate_price_weight <- function(catch_alerts = NULL,
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
-        .data$submission_id %in% cooks_alerts ~ 17,
+        .data$submission_id %in% price_per_weight_alerts ~ 17,
         .data$submission_id %in% regularity_alerts ~ 22,
         .data$submission_id %in% revenue_alert ~ 6,
         TRUE ~ .data$alert_number
@@ -592,7 +609,7 @@ validate_n_fishers <- function(landings, method, k) {
     ) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child, .data$fisher_number_man, .data$fisher_number_woman)) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child_alert, .data$fisher_number_man_alert, .data$fisher_number_woman_alert)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
     dplyr::select(-tidyselect::ends_with("alert")) %>%
     # Fixing types

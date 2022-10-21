@@ -77,7 +77,9 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     catch_alerts = surveys_catch_alerts,
     price_alerts = surveys_price_alerts,
     non_regular_ids = regularity_alerts,
-    cook_dist = cook_dist
+    cook_dist = cook_dist,
+    price_weight_min = pars$validation$landings$price_per_weight$min_limit,
+    price_weight_max = pars$validation$landings$price_per_weight$max_limit
   )
   vessel_type_alerts <- validate_vessel_type(
     landings,
