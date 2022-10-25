@@ -40,25 +40,16 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 
   municipal_models <-
     unique(na.omit(trips$reporting_region)) %>%
-    purrr::set_names(unique(na.omit(trips$reporting_region))) %>%
-    purrr::map(run_models, pars = pars, trips = trips, vessels_metadata = vessels_stats) %>%
-    dplyr::bind_rows(.id = "region") %>%
-    split(., f = .$region)
+    purrr::set_names() %>%
+    purrr::map(run_models, pars = pars, trips = trips, vessels_metadata = vessels_stats)
 
   national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
   results <-
     list(
-      predictions = list(
-        aggregated = national_models,
-        municipal = municipal_models
-      )
+      national = national_models,
+      municipal = municipal_models
     )
-
-  catch_taxa_models <- model_catch_per_taxa(trips, modelled_taxa = pars$models$modelled_taxa)
-  results_per_taxa <- estimates_per_taxa(catch_taxa_models, national_models, n_boats = sum(vessels_stats$n_boats))
-
-  results <- c(results, results_per_taxa)
 
   models_filename <- add_version(pars$models$file_prefix, "rds")
   readr::write_rds(results, models_filename, compress = "gz")
@@ -248,15 +239,18 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
 
   estimations_per_taxa <- estimations %>%
     dplyr::left_join(national_estimates) %>%
-    dplyr::mutate( # revenue = .data$landing_revenue * .data$n_landings_per_boat * 2334,
+    dplyr::mutate(
+      # revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
     dplyr::arrange(.data$landing_period)
 
-  list(
-    predictions_taxa = list(aggregated = estimations_per_taxa) # ,
-    # models = models
-  )
+  estimations_per_taxa
+
+  # list(
+  #  predictions_taxa = list(aggregated = estimations_per_taxa) # ,
+  #  # models = models
+  # )
   #
   #   to_check <- estimations_per_taxa %>%
   #     dplyr::group_by(landing_period) %>%
@@ -389,59 +383,59 @@ run_models <- function(pars, trips, region, vessels_metadata, model_family) {
   catch_model <- model_catch(trips_region)
   results <- estimate_statistics(landings_model, value_model, catch_model, n_boats = region_boats)
 
-  # message("Modelling ", region, " taxa")
+  message("Modelling ", region, " taxa")
 
-  # catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = pars$models$modelled_taxa)
-  # results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
+  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = pars$models$modelled_taxa)
+  results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
 
-  # results <- c(results, results_per_taxa)
-  results
+  all_results <-
+    list(
+      aggregated = results,
+      taxa = results_per_taxa
+    )
 }
 
 
 get_national_estimates <- function(municipal_estimations = NULL) {
-  municipal_estimations %>%
+  summarise_national <- function(x) {
+    x %>%
+      dplyr::summarise(
+        landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
+        n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
+        landing_weight = mean(.data$landing_weight, na.rm = TRUE),
+        revenue = sum(.data$revenue),
+        catch = sum(.data$catch)
+      ) %>%
+      dplyr::ungroup() %>%
+      dplyr::arrange(.data$landing_period) %>%
+      as.data.frame()
+  }
+
+  aggregated <-
+    municipal_estimations %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("aggregated")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(municipal_estimations)) %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$landing_period) %>%
-    dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
-      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
-      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
-      revenue = sum(.data$revenue),
-      catch = sum(.data$catch)
-    ) %>%
-    dplyr::mutate(dplyr::across(
-      .cols = c(
-        .data$landing_revenue, .data$n_landings_per_boat,
-        .data$landing_weight, .data$revenue, .data$catch
-      ),
-      ~ dplyr::case_when(.x %in% c(0, NaN) ~ NA_real_, TRUE ~ .x)
-    )) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(.data$landing_period) %>%
-    as.data.frame()
-}
+    summarise_national()
 
 
-get_national_estimates_taxa <- function(municipal_estimations_taxa = NULL) {
-  municipal_estimations_taxa %>%
-    purrr::reduce(dplyr::bind_rows) %>%
+  aggregated_taxa <-
+    municipal_estimations %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("taxa")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(municipal_estimations)) %>%
+    dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$grouped_taxa) %>%
-    dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
-      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
-      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
-      revenue = sum(.data$revenue, na.rm = TRUE),
-      catch = sum(.data$catch, na.rm = TRUE)
-    ) %>%
-    dplyr::mutate(dplyr::across(
-      .cols = c(
-        .data$landing_revenue, .data$n_landings_per_boat,
-        .data$landing_weight, .data$revenue, .data$catch
-      ),
-      ~ dplyr::case_when(.x %in% c(0, NaN) ~ NA_real_, TRUE ~ .x)
-    )) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(.data$landing_period) %>%
-    as.data.frame()
+    summarise_national()
+
+  list(
+    aggregated = aggregated,
+    aggregated_taxa = aggregated_taxa
+  )
 }
