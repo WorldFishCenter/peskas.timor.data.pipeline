@@ -55,15 +55,15 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   aggregated_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$predictions$aggregated)
-  #aggregated_estimations_municipal <-
+    purrr::map(summarise_estimations, models$national$aggregated)
+  # aggregated_estimations_municipal <-
   #  periods %>%
   #  rlang::set_names() %>%
-  #  purrr::map(summarise_estimations, models$predictions$municipal$Baucau)
+  #  purrr::map(summarise_estimations, models$municipal$Covalima$aggregated)
   taxa_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+    purrr::map(summarise_estimations, models$national$aggregated_taxa, c("date_bin_start", "grouped_taxa"))
   # taxa_estimations_municipal <-
   #  periods %>%
   #  rlang::set_names() %>%
@@ -87,6 +87,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       .data$prop_landings_woman:.data$catch,
       .data$recorded_revenue, .data$recorded_catch
     )
+
 
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- periods %>%

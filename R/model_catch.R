@@ -41,7 +41,12 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   municipal_models <-
     unique(na.omit(trips$reporting_region)) %>%
     purrr::set_names() %>%
-    purrr::map(run_models, pars = pars, trips = trips, vessels_metadata = vessels_stats)
+    purrr::map(run_models,
+      pars = pars,
+      trips = trips,
+      modelled_taxa = "selected",
+      vessels_metadata = vessels_stats
+    )
 
   national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
@@ -100,13 +105,26 @@ model_landings <- function(trips) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
-      season = as.character(lubridate::round_date(.data$landing_period, "season"))
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
     ) %>%
     dplyr::ungroup()
 
-  glmmTMB(n_landings ~ (1 | month) + (1 | season) + (1 | period),
+  glmmTMB(n_landings ~ (1 | month) + (1 | period) + (1 | half) + (1 | covid),
     family = "poisson",
-    ziformula = ~ (1 | month) + (1 | season) + (1 | period),
+    ziformula = ~ (1 | month) + (1 | period) + (1 | half) + (1 | covid),
     data = landings_df
   )
 }
@@ -127,7 +145,20 @@ model_value <- function(trips) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
-      season = as.character(lubridate::round_date(.data$landing_period, "season"))
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
     )
 
   # Using a zero inflated zero poisson model here. I also checked a gaussian,
@@ -135,8 +166,8 @@ model_value <- function(trips) {
   # to perform best. Not much difference though. The model predictions fit the
   # real data very poorly but that's expected given the limited number of
   # predictors here
-  glmmTMB(landing_value ~ (1 | month) + (1 | season) + (1 | period),
-    ziformula = ~ (1 | month) + (1 | season) + (1 | period),
+  glmmTMB(landing_value ~ (1 | month) + (1 | half) + (1 | period) + (1 | covid),
+    ziformula = ~ (1 | month) + (1 | half) + (1 | period) + (1 | covid),
     family = "poisson",
     data = value_df
   )
@@ -166,8 +197,22 @@ model_catch <- function(trips) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
-      season = as.character(lubridate::round_date(.data$landing_period, "season"))
-    )
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
+    ) %>%
+    dplyr::ungroup()
 
   # if (unique(trips$reporting_region) %in% c("Covalima", "Viqueque", "Baucau")) {
   #  family <- "gaussian"
@@ -175,8 +220,8 @@ model_catch <- function(trips) {
   #  family <- "poisson"
   # }
 
-  glmmTMB(landing_weight ~ (1 | month) + (1 | season) + (1 | period),
-    ziformula = ~ (1 | month) + (1 | season) + (1 | period),
+  glmmTMB(landing_weight ~ (1 | month) + (1 | half) + (1 | period) + (1 | covid),
+    ziformula = ~ (1 | month) + (1 | half) + (1 | period) + (1 | covid),
     # family = family,
     family = "poisson",
     data = catch_df
@@ -203,23 +248,28 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
         .data$n_landings_per_boat
       ),
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
-      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
-    ) %>%
-    dplyr::select(-.data$season) %>%
-    dplyr::mutate(
+      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
       dplyr::across(
         c(.data$landing_revenue, .data$n_landings_per_boat, .data$landing_weight, .data$revenue, .data$catch),
         ~ dplyr::case_when(.data$landing_weight < 0.5 ~ NA_real_, TRUE ~ .)
       )
     ) %>%
+    dplyr::right_join(get_frame(), by = c("period", "month", "landing_period", "half", "covid")) %>%
+    dplyr::arrange(.data$landing_period) %>%
+    dplyr::mutate(
+      is_imputed = ifelse(is.na(.$landing_weight), "yes", "no"),
+      n_landings_per_boat = imputeTS::na_interpolation(.$n_landings_per_boat, option = "spline"),
+      landing_revenue = imputeTS::na_interpolation(.$landing_revenue, option = "spline"),
+      landing_weight = imputeTS::na_interpolation(.$landing_weight, option = "spline"),
+      n_landings_per_boat = dplyr::case_when(.data$n_landings_per_boat < 0 ~ 0, TRUE ~ .data$n_landings_per_boat),
+      landing_revenue = dplyr::case_when(.data$landing_revenue < 0 ~ 0, TRUE ~ .data$landing_revenue),
+      landing_weight = dplyr::case_when(.data$landing_weight < 0 ~ 0, TRUE ~ .data$landing_weight),
+      revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
+      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
+    ) %>%
+    dplyr::select(-c(.data$half, .data$covid)) %>%
     dplyr::arrange(.data$landing_period)
 
-  # list(
-  #  predictions = list(
-  #    aggregated = estimations_total
-  #  ) # ,
-  #  # models = models
-  # )
   estimations_total
 }
 
@@ -238,11 +288,25 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
     purrr::reduce(dplyr::bind_rows)
 
   estimations_per_taxa <- estimations %>%
-    dplyr::left_join(national_estimates) %>%
+    dplyr::select(-c(.data$half, .data$covid)) %>%
+    dplyr::left_join(national_estimates, by = c("period", "month", "landing_period")) %>%
     dplyr::mutate(
       # revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
+    split(.$grouped_taxa) %>%
+    purrr::map(~ dplyr::left_join(get_frame(), ., by = c("period", "month", "landing_period"))) %>%
+    purrr::map(~ dplyr::mutate(., grouped_taxa = rep(na.omit(unique(.$grouped_taxa)), nrow(.)))) %>%
+    purrr::map(~ dplyr::mutate(.,
+      is_imputed = ifelse(is.na(landing_weight), "yes", "no"),
+      n_landings_per_boat = imputeTS::na_interpolation(.$n_landings_per_boat, option = "spline"),
+      landing_weight = imputeTS::na_interpolation(.$landing_weight, option = "spline"),
+      n_landings_per_boat = ifelse(n_landings_per_boat < 0, 0, n_landings_per_boat),
+      landing_weight = ifelse(landing_weight < 0, 0, landing_weight),
+      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
+      catch = ifelse(catch < 0, 0, catch)
+    )) %>%
+    dplyr::bind_rows() %>%
     dplyr::arrange(.data$landing_period)
 
   estimations_per_taxa
@@ -300,14 +364,30 @@ predict_variable <- function(model, var) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
-      season = as.character(lubridate::round_date(.data$landing_period, "season"))
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
     ) %>%
-    dplyr::select(.data$period, .data$month, .data$season)
+    dplyr::select(.data$period, .data$month, .data$covid, .data$half)
+
+  # new_levels <- setdiff(frame$period, models$landing_revenue$frame$period)
+  # common_levels <- intersect(frame$period, models$landing_revenue$frame$period)
 
   model$frame %>%
-    dplyr::select(.data$period, .data$month, .data$season) %>%
+    dplyr::select(.data$period, .data$month, .data$half, .data$covid) %>%
     dplyr::distinct() %>%
-    dplyr::right_join(frame) %>%
+    # dplyr::right_join(frame) %>%
     dplyr::mutate(
       landing_period = lubridate::ym(.data$period),
       {{ var }} := predict(model, type = "response", newdata = .)
@@ -315,7 +395,13 @@ predict_variable <- function(model, var) {
 }
 
 
-model_catch_per_taxa <- function(trips, modelled_taxa) {
+model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
+  if (isTRUE(modelled_taxa == "selected")) {
+    taxa_list <- pars$models$modelled_taxa
+  } else {
+    taxa_list <- pars$models$all_taxa
+  }
+
   catch_df <- trips %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
       unit = "month"
@@ -323,12 +409,12 @@ model_catch_per_taxa <- function(trips, modelled_taxa) {
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
-    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon)), all(!is.na(.data$reporting_region))) %>%
+    dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon))) %>%
     dplyr::mutate(
       landing_id = as.character(.data$landing_id),
       weight = dplyr::if_else(.data$weight < 0, NA_real_, .data$weight)
     ) %>%
-    dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(modelled_taxa, "0"), .data$catch_taxon, "MZZ")) %>%
+    dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(taxa_list, "0"), .data$catch_taxon, "MZZ")) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
     dplyr::summarise(
       landing_weight = sum(.data$weight, na.rm = FALSE) / 1000,
@@ -343,19 +429,33 @@ model_catch_per_taxa <- function(trips, modelled_taxa) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
-      season = as.character(lubridate::round_date(.data$landing_period, "season"))
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
     ) %>%
-    dplyr::filter(.data$grouped_taxa != "0")
+    dplyr::filter(.data$grouped_taxa != "0") %>%
+    dplyr::ungroup()
 
-  modelled_taxa <- intersect(unique(catch_df$grouped_taxa), modelled_taxa)
-  modelled_taxa <- c(modelled_taxa, "MZZ")
+  modelled_taxa <- intersect(unique(catch_df$grouped_taxa), taxa_list)
+  # modelled_taxa <- c(modelled_taxa, "MZZ")
   models <- vector(mode = "list", length(modelled_taxa))
   names(models) <- modelled_taxa
 
   for (taxon in modelled_taxa) {
     message("  Evaluating model for ", taxon)
     models[[taxon]] <- glmmTMB(
-      landing_weight ~ (1 | month) + (1 | season) + (1 | period),
+      landing_weight ~ (1 | month) + (1 | half) + (1 | period) + (1 | covid),
       # ziformula = ~ (1 | month) + (1 | period),
       family = "poisson",
       data = dplyr::filter(catch_df, .data$grouped_taxa == taxon)
@@ -365,7 +465,10 @@ model_catch_per_taxa <- function(trips, modelled_taxa) {
   models
 }
 
-run_models <- function(pars, trips, region, vessels_metadata, model_family) {
+run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family) {
+  #region <- "Covalima"
+  #vessels_metadata <- vessels_stats
+
   trips_region <-
     trips %>%
     dplyr::filter(.data$reporting_region == region)
@@ -385,7 +488,7 @@ run_models <- function(pars, trips, region, vessels_metadata, model_family) {
 
   message("Modelling ", region, " taxa")
 
-  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = pars$models$modelled_taxa)
+  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
   results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
 
   all_results <-
@@ -438,4 +541,29 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     aggregated = aggregated,
     aggregated_taxa = aggregated_taxa
   )
+}
+
+
+get_frame <- function() {
+  dplyr::tibble(landing_period = seq(as.Date("2018-1-1"), Sys.Date(), by = "month")) %>%
+    dplyr::mutate(
+      year = as.character(lubridate::year(.data$landing_period)),
+      month = as.character(lubridate::month(.data$landing_period)),
+      period = paste(.data$year, .data$month, sep = "-"),
+      # season = dplyr::case_when(
+      #  .data$month %in% c("1", "2", "3") ~ "winter",
+      #  .data$month %in% c("4", "5", "6") ~ "spring",
+      #  .data$month %in% c("7", "8", "9") ~ "summer",
+      #  .data$month %in% c("10", "11", "12") ~ "fall"
+      # ),
+      half = dplyr::case_when(
+        .data$month %in% c("1", "2", "3", "4", "5", "6") ~ "first_thalf",
+        .data$month %in% c("7", "8", "9", "10", "11", "12") ~ "second_half"
+      ),
+      covid = dplyr::case_when(
+        .data$landing_period <= "2020-03-04" ~ "pre_covid",
+        .data$landing_period > "2020-03-04" ~ "post_covid"
+      )
+    ) %>%
+    dplyr::select(.data$landing_period, .data$period, .data$month, .data$half, .data$covid)
 }
