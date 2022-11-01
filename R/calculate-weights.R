@@ -101,11 +101,13 @@ get_catch_types <- function(pars) {
         name == "Thunnini" ~ "Tuna",
         name == "Selachimorpha" ~ "Shark",
         name == "Rajiformes" ~ "Myliobatiformes",
+        name == "Hyporhamphus quoyi" ~ "Garfish",
         TRUE ~ .data$name
       ),
       taxa_rank = dplyr::case_when(
         name == "Tuna" ~ "comm_name",
         name == "Shark" ~ "comm_name",
+        name == "Garfish" ~ "comm_name",
         TRUE ~ .data$taxa_rank
       )
     )
@@ -466,10 +468,10 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
     dplyr::mutate(
       weight = .data$a * .data$length^.data$b,
       quantile_coeff = dplyr::case_when(
-        unique(.data$interagency_code) == "FLY" ~ 0.95,
+        unique(.data$interagency_code) == "FLY" ~ 0.75,
         unique(.data$interagency_code) == "CGX" ~ 0.75,
         unique(.data$interagency_code) %in% c("EMP", "CLP") ~ 0.25,
-        TRUE ~ 0.50
+        TRUE ~ 0.25
       )
     ) %>%
     dplyr::filter(!is.na(.data$weight))
