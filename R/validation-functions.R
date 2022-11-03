@@ -91,22 +91,97 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
           TRUE ~ NA_real_
         ),
         date = .data$date,
-        # date = dplyr::case_when(
-        #  is.na(alert_number) ~ .data$date,
-        #  TRUE ~ NA_real_
-        # ),
         submission_id = as.integer(.data$`_id`)
       ),
     validated_duration = data %>%
       dplyr::select(.data$`_id`, .data$`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = abs(as.numeric(.data$`trip_group/duration`))) %>%
       dplyr::transmute(
-        trip_duration = dplyr::case_when(.data$`trip_group/duration` > hrs ~ NA_real_, TRUE ~ .data$`trip_group/duration`), # test if catch duration is longer than n hours
-        alert_number = dplyr::case_when(.data$`trip_group/duration` > hrs ~ 5, TRUE ~ NA_real_),
+        trip_duration = dplyr::case_when(
+          .data$`trip_group/duration` > hrs |
+            .data$`trip_group/duration` < 1 ~ NA_real_,
+          TRUE ~ .data$`trip_group/duration`
+        ), # test if catch duration is longer than n hours or minor than 1 hour
+        alert_number = dplyr::case_when(
+          .data$`trip_group/duration` > hrs |
+            .data$`trip_group/duration` < 1 ~ 5,
+          TRUE ~ NA_real_
+        ),
         submission_id = as.integer(.data$`_id`)
       )
   )
   validated_time
+}
+
+validate_landing_regularity <- function(landings) {
+  regularity_alerts <-
+    landings %>%
+    dplyr::select(.data$`_id`, .data$total_catch_value, .data$species_group) %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+    dplyr::select(.data$`_id`, .data$species, .data$total_catch_value, .data$n_individuals) %>%
+    dplyr::mutate(
+      total_catch_value = as.double(.data$total_catch_value),
+      total_catch_value = abs(.data$total_catch_value),
+      n_individuals = abs(.data$n_individuals)
+    ) %>%
+    dplyr::group_by(.data$`_id`) %>%
+    dplyr::summarise(
+      species = dplyr::first(.data$species),
+      total_catch_value = sum(.data$total_catch_value, na.rm = T),
+      n_individuals = sum(.data$n_individuals, na.rm = T)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      alert_regularity = dplyr::case_when(
+        .data$species == "0" & .data$n_individuals > 0 |
+          .data$species == "0" & .data$total_catch_value > 0 |
+          !.data$species == "0" & .data$n_individuals <= 0 |
+          !.data$species == "0" & .data$total_catch_value <= 0 |
+          .data$total_catch_value <= 0 & .data$n_individuals > 0 |
+          .data$total_catch_value > 0 & .data$n_individuals <= 0 |
+          is.na(.data$total_catch_value) & .data$n_individuals > 0 |
+          is.na(.data$n_individuals) & .data$total_catch_value > 0
+        ~ 22, TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::rename(submission_id = .data$`_id`)
+
+  no_regular_ids <-
+    regularity_alerts %>%
+    dplyr::filter(!is.na(.data$alert_regularity)) %>%
+    magrittr::extract2("submission_id")
+
+  regular_landings <-
+    landings %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+    dplyr::mutate(
+      total_catch_value = as.double(.data$total_catch_value),
+      total_catch_value = abs(.data$total_catch_value),
+      n_individuals = abs(.data$n_individuals),
+      alert_number = dplyr::case_when(
+        .data$`_id` %in% no_regular_ids ~ 22,
+        TRUE ~ NA_real_
+      ),
+      total_catch_value = dplyr::case_when(is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_),
+      n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
+      dplyr::across(
+        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
+          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
+        )
+      )
+    ) %>%
+    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
+    tidyr::nest(species_group = c(
+      .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
+      .data$photo, .data$length_individuals, .data$length_type
+    ))
+
+  list(
+    regularity_alerts = regularity_alerts,
+    regular_landings = regular_landings
+  )
 }
 
 #' Validate surveys' total catch values
@@ -131,17 +206,14 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
 #' }
 #'
 validate_catch_price <- function(data, method = NULL, k = NULL) {
-  validated_price <- data %>%
+  validated_price <-
+    data %>%
+    dplyr::filter(is.na(.data$alert_number)) %>%
     dplyr::select(.data$`_id`, .data$total_catch_value) %>%
-    dplyr::mutate(total_catch_value = as.numeric(.data$total_catch_value)) %>%
     dplyr::transmute(
       alert_number = alert_outlier(
         x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
         logt = TRUE, k = k, method = method
-      ),
-      alert_number = dplyr::case_when(
-        .data$total_catch_value < 0 ~ 8,
-        TRUE ~ .data$alert_number
       ),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value,
@@ -150,7 +222,12 @@ validate_catch_price <- function(data, method = NULL, k = NULL) {
       submission_id = as.integer(.data$`_id`)
     )
 
-  validated_price
+  data %>%
+    dplyr::filter(!is.na(.data$alert_number)) %>%
+    dplyr::select(.data$`_id`, .data$total_catch_value, .data$alert_number) %>%
+    dplyr::rename(submission_id = .data$`_id`) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::bind_rows(validated_price)
 }
 
 #' Generate an alert vector based on the `univOutl::LocScaleB()` function
@@ -226,17 +303,19 @@ alert_outlier <- function(x,
 #' }
 #'
 validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = NULL) {
-  catches_dat_unnested <- data %>%
+  catches_dat_unnested <-
+    data %>%
+    dplyr::filter(is.na(alert_number)) %>%
     dplyr::select(.data$`_id`, .data$`trip_group/gear_type`, .data$species_group) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE)
 
-  validated_length <- catches_dat_unnested %>%
+  validated_length <-
+    catches_dat_unnested %>%
     dplyr::group_by(.data$`trip_group/gear_type`, .data$species) %>%
     dplyr::mutate(
       n_individuals = dplyr::case_when(
         .data$n_individuals == 0 ~ NA_real_,
-        .data$n_individuals < 0 ~ .data$n_individuals * -1,
         TRUE ~ n_individuals
       ),
       alert_n_individuals = alert_outlier(
@@ -248,8 +327,15 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
         is.na(.data$alert_n_individuals) ~ .data$n_individuals,
         TRUE ~ NA_real_
       ),
+      mean_length_valid = dplyr::case_when(
+        .data$n_individuals > 0 ~ .data$mean_length,
+        TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::group_by(.data$species) %>%
+    dplyr::mutate(
       alert_length = alert_outlier(
-        x = .data$mean_length,
+        x = .data$mean_length_valid,
         alert_if_larger = 7, logt = TRUE, k = k_length
       ),
       mean_length = dplyr::case_when(
@@ -259,16 +345,12 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
       alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`
     ) %>%
+    dplyr::select(-.data$mean_length_valid) %>%
     dplyr::ungroup() %>%
-    # Adjusting weight accordingly
+    # Adjusting weight and nutrients accordingly
     dplyr::mutate(
-      weight = dplyr::case_when(
-        !is.na(.data$alert_number) ~ NA_real_,
-        .data$n_individuals == 0 ~ 0,
-        TRUE ~ .data$weight
-      ),
       dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu),
+        c(.data$weight:.data$Vitamin_A_mu),
         ~ dplyr::case_when(
           !is.na(.data$alert_number) ~ NA_real_,
           .data$n_individuals == 0 ~ 0,
@@ -279,10 +361,15 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
 
   # extract alert number
-  alert_number <- validated_length %>%
+  alert_number <-
+    validated_length %>%
     dplyr::select(.data$submission_id, .data$n, .data$alert_number) %>%
     dplyr::group_by(.data$submission_id) %>%
-    dplyr::filter(dplyr::row_number() == 1)
+    dplyr::arrange(dplyr::desc(alert_number), .by_group = TRUE) %>%
+    dplyr::filter(dplyr::row_number() == 1) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$n) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
 
   # nest validated data
   validated_length_nested <-
@@ -292,7 +379,9 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu))
 
   # replace validated catches params in original data
-  validated_catch_params <- data %>%
+  validated_catch_params <-
+    data %>%
+    dplyr::filter(is.na(.data$alert_number)) %>%
     dplyr::rename(submission_id = .data$`_id`) %>%
     dplyr::select(.data$submission_id, .data$species_group) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
@@ -304,9 +393,18 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     dplyr::mutate(
       alert_number = alert_number$alert_number,
       submission_id = as.integer(.data$submission_id)
-    )
+    ) %>%
+    dplyr::left_join(alert_number, by = "submission_id") %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
+    dplyr::select(-c(.data$alert_number.x, .data$alert_number.y))
 
-  validated_catch_params
+
+  data %>%
+    dplyr::filter(!is.na(alert_number)) %>%
+    dplyr::select(.data$`_id`, .data$species_group, .data$alert_number) %>%
+    dplyr::rename(submission_id = .data$`_id`) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::bind_rows(validated_catch_params)
 }
 
 #' Outlier identification based on Cook's distance
@@ -320,61 +418,102 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
 #'
 #' Currently, cook_dist is set to 21 as default value.
 #'
-#' @param surveys_catch_alerts The dataframe of catch alerts.
-#' @param surveys_price_alerts The dataframe of price alerts.
+#' @param catch_alerts The dataframe of catch alerts.
+#' @param price_alerts The dataframe of price alerts.
+#' @param non_regular_ids The dataframe of landings regularity alerts.
 #' @param cook_dist A number that go in the formula cook_dist * (mean(cooksd)).
-#'
+#' @param price_weight_min Min price per weight value threshold.
+#' @param price_weight_max Max price per weight value threshold.
 #' @return The price and catch alert' dataframes including outlier identification
 #' based on Cook's distance.
 #' @export
 #'
-validate_price_weight <- function(surveys_catch_alerts,
-                                  surveys_price_alerts,
-                                  cook_dist = NULL) {
+validate_price_weight <- function(catch_alerts = NULL,
+                                  price_alerts = NULL,
+                                  non_regular_ids = NULL,
+                                  cook_dist = NULL,
+                                  price_weight_min = NULL,
+                                  price_weight_max = NULL) {
 
   # Extract single catches IDs
   single_catches <-
-    surveys_catch_alerts %>%
+    catch_alerts %>%
     dplyr::mutate(n = purrr::map_dbl(.data$species_group, nrow)) %>%
     dplyr::filter(.data$n == 1) %>%
     magrittr::extract2("submission_id")
 
   # Extract IDs with abnormal price weight relation based on Cook's distance
-  alert_ids <-
-    dplyr::left_join(surveys_price_alerts, surveys_catch_alerts, by = "submission_id") %>%
+  price_per_weight_alerts <-
+    dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
     dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%
     dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
     dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
+    dplyr::group_by(.data$submission_id, .data$species) %>%
+    dplyr::summarise(
+      total_catch_value = dplyr::first(.data$total_catch_value),
+      weight = sum(.data$weight, na.rm = T)
+    ) %>%
     dplyr::group_by(.data$species) %>%
-    dplyr::mutate(model = broom::augment(stats::lm(formula = .data$weight ~ .data$total_catch_value))) %>%
+    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
+    ~ log(.data$weight + 1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
-    dplyr::mutate(alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) ~ 17, TRUE ~ NA_real_)) %>%
+    dplyr::mutate(
+      weight_kg = .data$weight / 1000,
+      pk = .data$total_catch_value / .data$weight_kg,
+      alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) |
+        .data$pk < price_weight_min |
+        .data$pk > price_weight_max
+      ~ 17, TRUE ~ NA_real_)
+    ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
 
+  regularity_alerts <-
+    non_regular_ids %>%
+    dplyr::filter(!is.na(.data$alert_regularity)) %>%
+    magrittr::extract2("submission_id")
+
+  n_individuals_alert <-
+    catch_alerts %>%
+    dplyr::filter(!is.na(.data$alert_number)) %>%
+    magrittr::extract2("submission_id")
+
+  revenue_alert <-
+    price_alerts %>%
+    dplyr::filter(!is.na(.data$alert_number)) %>%
+    magrittr::extract2("submission_id")
+
   # Integrate new alert to prices and weights
-  surveys_price_alerts %<>%
+  price_alerts %<>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
-        .data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number
+        .data$submission_id %in% price_per_weight_alerts ~ 17,
+        .data$submission_id %in% regularity_alerts ~ 22,
+        .data$submission_id %in% n_individuals_alert ~ 11,
+        TRUE ~ .data$alert_number
       ),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_
       )
     )
 
-  surveys_catch_alerts %<>%
+  catch_alerts %<>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::mutate(
-      alert_number = dplyr::case_when(.data$submission_id %in% alert_ids ~ 17, TRUE ~ alert_number),
-      weight = dplyr::case_when(is.na(.data$alert_number) ~ .data$weight, TRUE ~ NA_real_),
+      alert_number = dplyr::case_when(
+        .data$submission_id %in% price_per_weight_alerts ~ 17,
+        .data$submission_id %in% regularity_alerts ~ 22,
+        .data$submission_id %in% revenue_alert ~ 6,
+        TRUE ~ .data$alert_number
+      ),
+      n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
       dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ dplyr::case_when(
+        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
           is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
         )
       )
@@ -385,14 +524,10 @@ validate_price_weight <- function(surveys_catch_alerts,
       .data$photo, .data$length_individuals, .data$length_type
     ))
 
-  # list(surveys_price_alerts = surveys_price_alerts,
-  #     surveys_catch_alerts = surveys_catch_alerts)
-
-  dplyr::full_join(surveys_catch_alerts, surveys_price_alerts, by = c("submission_id")) %>%
+  dplyr::full_join(catch_alerts, price_alerts, by = c("submission_id")) %>%
     dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
     dplyr::select(-.data$alert_number.x, -.data$alert_number.y)
 }
-
 
 # Ideally this function would in the future, check for the integrity of the boat type
 validate_vessel_type <- function(landings, metadata_vessel_table) {
@@ -474,7 +609,7 @@ validate_n_fishers <- function(landings, method, k) {
     ) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child, .data$fisher_number_man, .data$fisher_number_woman)) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child_alert, .data$fisher_number_man_alert, .data$fisher_number_woman_alert)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
     dplyr::select(-tidyselect::ends_with("alert")) %>%
     # Fixing types

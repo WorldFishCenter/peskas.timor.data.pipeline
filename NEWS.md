@@ -1,3 +1,58 @@
+# peskas.timor.data.pipeline 1.3.0
+
+## New features
+
+- Integrated taxa selection and filtering in tracks file deemed to the leaflet map in the portal
+
+# peskas.timor.data.pipeline 1.2.0
+
+## New features
+
+- Added a new feature in the function `ingest_pds_map`. The function process and upload a data frame containing the number of trips, CPE (catch per unit effort) and RPE (revenue per unit effort) splitted by grids to produce leaflet maps in the web portal.
+
+# peskas.timor.data.pipeline 1.1.0
+
+## Improvements
+
+- Improve the estimation of some fish groups' catches by calculating the weight per individual case by case.
+
+## Bug fixes
+
+-Fix error in cleaning of legacy landings: the columns indicating the number of individuals and fish length for catches > 60cm were exchanged
+
+# peskas.timor.data.pipeline 1.0.0
+
+## Improvements
+
+Adding option to produce Timor map filtered by fishing trips
+
+# peskas.timor.data.pipeline 0.20.0
+
+## Improvements
+
+- Improve the validation step by flagging those observation characterized by having positive revenue 
+(individuals) despite 0 or null individuals (revenue).
+
+- Use a log model to identify abnormal weight-revenue relationships on Cook's distance estimation.
+
+- Replace NA catch code with catch code "0" and ensure these observations having non positive 
+individuals and revenue.
+
+- Use total length for weight calculation of MOO in all the landings (weights calculated with FL seem quite unrealistic)
+
+- Use 95° quantile instead of median to summarise weight parameters for catch types, it seems to return 
+more realistic weight estimations by single individuals.
+
+## Bug fixes
+
+- Split landings preprocessing in two jobs to avoid to run out of memory (docker exit code 137)
+
+# peskas.timor.data.pipeline 0.19.0
+
+## New features
+
+- Added a new function `ingest_pds_matched_trips` to ingest matched pds tracks and survey landings in a zip folder on a monthly scale.
+
 # peskas.timor.data.pipeline 0.18.0
 
 ## New features

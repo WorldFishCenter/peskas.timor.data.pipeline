@@ -30,7 +30,6 @@
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams preprocess_landings
 #' @inheritParams preprocess_legacy_landings
 #' @return No outputs. This function is used for it's side effects
 #' @keywords workflow

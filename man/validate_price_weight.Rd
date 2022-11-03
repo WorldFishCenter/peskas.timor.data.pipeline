@@ -5,17 +5,26 @@
 \title{Outlier identification based on Cook's distance}
 \usage{
 validate_price_weight(
-  surveys_catch_alerts,
-  surveys_price_alerts,
-  cook_dist = NULL
+  catch_alerts = NULL,
+  price_alerts = NULL,
+  non_regular_ids = NULL,
+  cook_dist = NULL,
+  price_weight_min = NULL,
+  price_weight_max = NULL
 )
 }
 \arguments{
-\item{surveys_catch_alerts}{The dataframe of catch alerts.}
+\item{catch_alerts}{The dataframe of catch alerts.}
 
-\item{surveys_price_alerts}{The dataframe of price alerts.}
+\item{price_alerts}{The dataframe of price alerts.}
+
+\item{non_regular_ids}{The dataframe of landings regularity alerts.}
 
 \item{cook_dist}{A number that go in the formula cook_dist * (mean(cooksd)).}
+
+\item{price_weight_min}{Min price per weight value threshold.}
+
+\item{price_weight_max}{Max price per weight value threshold.}
 }
 \value{
 The price and catch alert' dataframes including outlier identification

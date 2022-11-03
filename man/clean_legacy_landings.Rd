@@ -21,18 +21,21 @@ the same format and syntax as recent landings.
 \examples{
 \dontrun{
 authentication_details <- readLines("location_of_json_file.json")
- # obtain the latest version of all files corresponding to timor-landings-v1
- legacy_data <-
- cloud_object_name(
- prefix = "timor-landings-v1",
- version = "latest",
- provider = "gcs",
- options = list(service_account_key = authentication_details,
-                bucket = "my-bucket"))
+# obtain the latest version of all files corresponding to timor-landings-v1
+legacy_data <-
+  cloud_object_name(
+    prefix = "timor-landings-v1",
+    version = "latest",
+    provider = "gcs",
+    options = list(
+      service_account_key = authentication_details,
+      bucket = "my-bucket"
+    )
+  )
 
- legacy_raw <-
- readr::read_csv(file = legacy_data, col_types = readr::cols(.default = readr::col_character()))
+legacy_raw <-
+  readr::read_csv(file = legacy_data, col_types = readr::cols(.default = readr::col_character()))
 
- clean_legacy_landings(legacy_raw)
+clean_legacy_landings(legacy_raw)
 }
 }

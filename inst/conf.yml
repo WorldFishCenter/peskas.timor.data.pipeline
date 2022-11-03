@@ -45,9 +45,13 @@ default:
       bucket_content:
         file_prefix: pds-track-list
       map:
-        file_prefix: tracks-map
-        extension: png
-        dpi_resolution: 450
+        png:
+          file_prefix: tracks-map
+          extension: png
+          dpi_resolution: 450
+        map_grid:
+          file_prefix: indicators_gridded
+          extension: rds
   metadata:
     airtable:
       name: metadata-tables
@@ -101,7 +105,10 @@ default:
       catch:
         n_individuals:
           k: 7
-      cook_dist: 21
+      cook_dist: 5
+      price_per_weight:
+        min_limit: 0.5
+        max_limit: 70
       mesh: 200
       gleaners:
         k: 1.5

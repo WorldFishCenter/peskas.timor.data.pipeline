@@ -2,7 +2,7 @@
 % Please edit documentation in R/ingest-pds-data.R
 \name{ingest_pds_map}
 \alias{ingest_pds_map}
-\title{Generate and ingest map of Timor pds tracks}
+\title{Generate and ingest Timor maps}
 \usage{
 ingest_pds_map(log_threshold = logger::DEBUG)
 }
@@ -17,5 +17,6 @@ No output. This function is used for it's side effects.
 \description{
 This function downloads pds tracks coordinates, generates a png image
 showing the map of Timor divided by municipalities including the tracks paths,
-and upload it to cloud storage.
+and upload it to cloud storage. It also upload the data frame splitted by grids
+to produce leaflet maps in the portal.
 }

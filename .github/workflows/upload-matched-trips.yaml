@@ -1,0 +1,42 @@
+name: Upload matched tracks and landings
+
+on:
+  schedule:
+    - cron:  '0 0 1 * *'
+
+env:
+  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+
+jobs:
+
+  build-container:
+    name: Build R container
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Build image with cache
+        id: build-docker
+        uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: $GITHUB_ACTOR
+          password: "${{ secrets.GITHUB_TOKEN }}"
+          registry: docker.pkg.github.com
+          image_name: r-runner-peskas-timor
+          dockerfile: Dockerfile.prod
+
+  upload-zip-folder:
+    name: Upload matched trips zip folder
+    needs: [build-container]
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call ingest_pds_matched_trips()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_matched_trips()'
