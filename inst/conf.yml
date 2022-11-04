@@ -143,14 +143,14 @@ default:
     file_prefix: timor
 
   export_dataverse:
-    server: 'demo.dataverse.org'
+    server: 'dataverse.harvard.edu'
     dataverse_id: 'peskas'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
     metadata:
        title: 'Peskas - National Fisheries Monitoring System of Timor-Leste'
        subject: 'Fish, Fisheries, Monitoring, Management, Production, Digital, Pipeline, Automated analytics'
        language: 'English'
-       description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). '
+       description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). Read README file for detailed info.'
        creator: 'Tilley Alex, Joctan Dos Reis Lopes, Fernando Cagua, Lorenzo Longobardi'
 
   report:
