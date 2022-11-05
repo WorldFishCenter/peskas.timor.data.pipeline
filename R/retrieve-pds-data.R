@@ -14,20 +14,22 @@
 #' @examples
 #' retrieve_pds_trips_data("test.csv")
 #' file.remove("test.csv")
-#'
-retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_date= NULL,
-                                end_date=NULL, overwrite = TRUE){
+retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_date = NULL,
+                                    end_date = NULL, overwrite = TRUE) {
+  request_url <- paste("https://analytics.pelagicdata.com/api", token,
+    "v1/trips", start_date, end_date,
+    sep = "/"
+  )
 
-  request_url <- paste("https://analytics.pelagicdata.com/api",token,
-                       "v1/trips",start_date, end_date, sep = "/")
-
-  httr::GET(url = request_url,
-            config = httr::add_headers('X-API-SECRET' = secret),
-            query = list(
-              deviceInfo = TRUE,
-              withLastSeen = TRUE
-            ),
-            httr::write_disk(path, overwrite = overwrite))
+  httr::GET(
+    url = request_url,
+    config = httr::add_headers("X-API-SECRET" = secret),
+    query = list(
+      deviceInfo = TRUE,
+      withLastSeen = TRUE
+    ),
+    httr::write_disk(path, overwrite = overwrite)
+  )
   path
 }
 
@@ -48,19 +50,22 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
 #'
 #' @examples
 #' \dontrun{
-#'   retrieve_pds_trips(prefix = "my-trips", secret = "abcXXXXXX",
-#'                   token = "123XXXXXX", start_date= "2018-07-01",
-#'                   end_date=Sys.Date())
-#'   # To download in a different path
-#'   dir.create("my-data-dir")
-#'   retrieve_pds_trips(prefix = "my-data-dir/my-trips", secret = "abcXXXXXX",
-#'                   token = "123XXXXXX", start_date= "2018-07-01",
-#'                   end_date=Sys.Date())
+#' retrieve_pds_trips(
+#'   prefix = "my-trips", secret = "abcXXXXXX",
+#'   token = "123XXXXXX", start_date = "2018-07-01",
+#'   end_date = Sys.Date()
+#' )
+#' # To download in a different path
+#' dir.create("my-data-dir")
+#' retrieve_pds_trips(
+#'   prefix = "my-data-dir/my-trips", secret = "abcXXXXXX",
+#'   token = "123XXXXXX", start_date = "2018-07-01",
+#'   end_date = Sys.Date()
+#' )
 #' }
-retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date= "2018-07-01",
-                           end_date=Sys.Date(),
-                           append_version = TRUE){
-
+retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date = "2018-07-01",
+                               end_date = Sys.Date(),
+                               append_version = TRUE) {
   data_filename <- paste(prefix, sep = "_")
 
   if (isTRUE(append_version)) {
@@ -71,8 +76,10 @@ retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date= 
 
 
   logger::log_info("Downloading trips csv data as {csv_filename}...")
-  retrieve_pds_trips_data(csv_filename, secret, token,
-                          start_date, end_date)
+  retrieve_pds_trips_data(
+    csv_filename, secret, token,
+    start_date, end_date
+  )
   logger::log_success("Trips csv data download succeeded")
 
   csv_filename
@@ -94,15 +101,18 @@ retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date= 
 #' retrieve_pds_tracks_data("test.csv")
 #' file.remove("test.csv")
 retrieve_pds_tracks_data <- function(path, secret = NULL, token = NULL,
-                                 id = NULL, overwrite = TRUE){
-
+                                     id = NULL, overwrite = TRUE) {
   request_url <- paste("https://analytics.pelagicdata.com/api", token,
-                       "v1/trips", id, "points", sep = "/")
+    "v1/trips", id, "points",
+    sep = "/"
+  )
 
-  httr::GET(url = request_url,
-            config = httr::add_headers('X-API-SECRET' = secret),
-            query = list(format = "csv"),
-            httr::write_disk(path, overwrite = overwrite))
+  httr::GET(
+    url = request_url,
+    config = httr::add_headers("X-API-SECRET" = secret),
+    query = list(format = "csv"),
+    httr::write_disk(path, overwrite = overwrite)
+  )
   path
 }
 
@@ -121,16 +131,19 @@ retrieve_pds_tracks_data <- function(path, secret = NULL, token = NULL,
 #'
 #' @examples
 #' \dontrun{
-#'   retrieve_pds_tracks(prefix = "my-tracks", secret = "abcXXXXXX",
-#'                   token = "123XXXXXX", id="2327722")
-#'   # To download in a different path
-#'   dir.create("my-data-dir")
-#'   retrieve_pds_tracks(prefix = "my-data-dir/my-tracks", secret = "abcXXXXXX",
-#'                   token = "123XXXXXX", id="2327722")
+#' retrieve_pds_tracks(
+#'   prefix = "my-tracks", secret = "abcXXXXXX",
+#'   token = "123XXXXXX", id = "2327722"
+#' )
+#' # To download in a different path
+#' dir.create("my-data-dir")
+#' retrieve_pds_tracks(
+#'   prefix = "my-data-dir/my-tracks", secret = "abcXXXXXX",
+#'   token = "123XXXXXX", id = "2327722"
+#' )
 #' }
-retrieve_pds_tracks <- function(prefix, secret, token,id){
-
-  data_filename <- paste(prefix,"raw",id,".csv",sep = "_")
+retrieve_pds_tracks <- function(prefix, secret, token, id) {
+  data_filename <- paste(prefix, "raw", id, ".csv", sep = "_")
 
   filenames <- character()
 
@@ -141,5 +154,3 @@ retrieve_pds_tracks <- function(prefix, secret, token,id){
 
   filenames
 }
-
-

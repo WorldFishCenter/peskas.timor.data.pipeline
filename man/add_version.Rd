@@ -34,7 +34,6 @@ versioning is added.
 }
 \examples{
 if (git2r::in_repository()) {
-add_version("my_file", "csv")
+  add_version("my_file", "csv")
 }
-
 }

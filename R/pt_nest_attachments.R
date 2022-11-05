@@ -34,19 +34,20 @@
 #'   `_attachments.1.download_url` = "http://url-2.com",
 #'   `_attachments.1.id` = "02",
 #'   `_attachments.2.download_url` = NA,
-#'   `_attachments.2.id` = NA)
+#'   `_attachments.2.id` = NA
+#' )
 #' pt_nest_attachments(dummy_landings)
-#'
-pt_nest_attachments <- function(x){
-
+pt_nest_attachments <- function(x) {
   nested_attachments <- x %>%
     # Using the .data pronoun to avoid RMD check notes
     dplyr::select(.data$`_id`, dplyr::starts_with("_attachments")) %>%
     # Column names follow the form "_attachments.0.download_large_url"
-    tidyr::pivot_longer(cols = -.data$`_id`,
-                        names_to = c("n", "field"),
-                        names_prefix = "_attachments.",
-                        names_sep = "\\.") %>%
+    tidyr::pivot_longer(
+      cols = -.data$`_id`,
+      names_to = c("n", "field"),
+      names_prefix = "_attachments.",
+      names_sep = "\\."
+    ) %>%
     # We want one attachment per row and fields as columns
     tidyr::pivot_wider(names_from = "field", values_from = "value") %>%
     # Attachments already have id and this column is superfluous
@@ -58,7 +59,8 @@ pt_nest_attachments <- function(x){
     # If there are no attachments empty the nested data frames
     dplyr::mutate(`_attachments` = purrr::map(
       .data$`_attachments`,
-      ~ dplyr::filter(., !is.na(.data$id))))
+      ~ dplyr::filter(., !is.na(.data$id))
+    ))
 
   x %>%
     dplyr::select(-dplyr::starts_with("_attachments")) %>%

@@ -21,28 +21,28 @@
 #' @export
 #'
 #' @examples
-#'
 #' \dontrun{
 #' # Get all records for the table boats
 #' air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak")
 #'
 #' # Get records only in a specified view
 #' air_get_records("boats", "appjEVaN8kBNXAWak",
-#'                 query = list(view = "Boats with wrong registration"))
+#'   query = list(view = "Boats with wrong registration")
+#' )
 #'
 #' # Get only the first 5 records
 #' air_get_records("boats", "appjEVaN8kBNXAWak", query = list(maxRecords = 5))
-#'
 #' }
 #'
 air_get_records <- function(table, base_id,
-                          api_key = Sys.getenv("AIRTABLE_KEY"),
-                          query = list()){
-
-  this_response <- httr::GET(url = "https://api.airtable.com",
-                        path = c("v0", base_id, table),
-                        httr::add_headers(Authorization = api_key),
-                        query = query)
+                            api_key = Sys.getenv("AIRTABLE_KEY"),
+                            query = list()) {
+  this_response <- httr::GET(
+    url = "https://api.airtable.com",
+    path = c("v0", base_id, table),
+    httr::add_headers(Authorization = api_key),
+    query = query
+  )
 
   this_content <- httr::content(this_response)
   multipage_response <- "offset" %in% names(this_content)
@@ -52,10 +52,12 @@ air_get_records <- function(table, base_id,
     out <- list(records = list())
     # The Airtable API limit queries to 5 per second, this delay ensures we stay
     # within these limits
-    Sys.sleep(1/4)
+    Sys.sleep(1 / 4)
     query$offset <- this_content$offset
-    out$records <- c(this_content$records,
-                     air_get_records(table, base_id, api_key, query)$records)
+    out$records <- c(
+      this_content$records,
+      air_get_records(table, base_id, api_key, query)$records
+    )
   } else {
     out <- this_content
   }
@@ -76,35 +78,40 @@ air_get_records <- function(table, base_id,
 #' @export
 #'
 #' @examples
-#'
 #' \dontrun{
 #' # Get all records for the table boats
 #' air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak") %>%
 #'   air_record_to_tibble()
 #' }
-air_records_to_tibble <- function(records){
+air_records_to_tibble <- function(records) {
   # Determine the maximum length of a record
-  max_field_length <- purrr::map_dfr(.x = records$records,
-                                     .f = field_length) %>%
+  max_field_length <- purrr::map_dfr(
+    .x = records$records,
+    .f = field_length
+  ) %>%
     purrr::map(max, na.rm = TRUE)
   # Convert each record to a data frame and put them together by row
-  purrr::map_dfr(.x = records$records,
-                 .f = record_to_data_frame,
-                 max_field_length)
+  purrr::map_dfr(
+    .x = records$records,
+    .f = record_to_data_frame,
+    max_field_length
+  )
 }
 
 # Iterate over all fiealds in a record to determine its length
-field_length <- function(this_record){
+field_length <- function(this_record) {
   purrr::map(this_record$fields, length)
 }
 
 # Iterate over each record and convert it to an one-row data frame. Use the
 # field length information to determine whether the field should be nested
-record_to_data_frame <- function(this_record, max_field_length){
+record_to_data_frame <- function(this_record, max_field_length) {
   # Records contain multiple fields
-  from_fields <- purrr::imap(.x = this_record$fields,
-                             .f = extract_value,
-                             max_field_length) %>%
+  from_fields <- purrr::imap(
+    .x = this_record$fields,
+    .f = extract_value,
+    max_field_length
+  ) %>%
     purrr::compact() %>%
     tibble::as_tibble()
   # But record also contain information not visible as fields
@@ -116,7 +123,7 @@ record_to_data_frame <- function(this_record, max_field_length){
 
 # If the maximum length of fields is 1 just get the value as a vector, otherwise
 # as a list that can be nested in the tibble
-extract_value <- function(x, y, max_field_length){
+extract_value <- function(x, y, max_field_length) {
   if (max_field_length[y][[1]] > 1) {
     list(c(unlist(x)))
   } else {
@@ -142,14 +149,14 @@ extract_value <- function(x, y, max_field_length){
 #' @export
 #'
 air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = NULL,
-                                  max_records = 10){
+                                  max_records = 10) {
 
   # Convert data frame to list. It it's not a link field, unbox it
-  as_list_air <- function(..., link_fields = NULL){
+  as_list_air <- function(..., link_fields = NULL) {
     dots <- rlang::list2(...)
 
     if (!is.null(link_fields)) {
-      purrr::imap(dots, function(x, name){
+      purrr::imap(dots, function(x, name) {
         if (name %in% link_fields) {
           x
         } else {
@@ -163,8 +170,9 @@ air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = N
   records <- this_tibble %>%
     dplyr::select(-!!id_fields) %>%
     purrr::pmap(as_list_air,
-                link_fields = link_fields) %>%
-    purrr::map(~list(fields = .))
+      link_fields = link_fields
+    ) %>%
+    purrr::map(~ list(fields = .))
 
   # Fill list with blocks
   n_partitions <- length(records) %/% max_records + 1
@@ -199,26 +207,28 @@ air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = N
 #' @export
 air_upload_records <- function(body, table, base_id,
                                api_key = Sys.getenv("AIRTABLE_KEY"),
-                               request_type = c("create", "update")){
-
+                               request_type = c("create", "update")) {
   if (request_type[1] == "create") {
     curl_fun <- httr::POST
   } else if (request_type[1] == "update") {
     curl_fun <- httr::PATCH
   }
 
-  post_request <- function(this_body){
-    Sys.sleep(1/4)
-    response <- curl_fun(url = "https://api.airtable.com",
-                           path = c("v0", base_id, table),
-                           httr::add_headers(Authorization = api_key),
-                           body = jsonlite::toJSON(this_body),
-                           httr::content_type("application/json"))
-    logger::log_info("Uploading records. Status code: ",
-                     httr::status_code(response))
+  post_request <- function(this_body) {
+    Sys.sleep(1 / 4)
+    response <- curl_fun(
+      url = "https://api.airtable.com",
+      path = c("v0", base_id, table),
+      httr::add_headers(Authorization = api_key),
+      body = jsonlite::toJSON(this_body),
+      httr::content_type("application/json")
+    )
+    logger::log_info(
+      "Uploading records. Status code: ",
+      httr::status_code(response)
+    )
     response
   }
 
   purrr::map(body, post_request)
-
 }

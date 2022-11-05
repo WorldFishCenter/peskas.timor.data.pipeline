@@ -21,19 +21,20 @@
 #'
 #' get_host_url("unhcr")
 #' get_host_url("https://kobocat.unhcr.org/api/v1/")
-#'
 get_host_url <- function(api, version = "v1") {
-  if (api %in% c("kobo", "kobohr", "ona","unhcr")) {
+  if (api %in% c("kobo", "kobohr", "ona", "unhcr")) {
     if (version == "v1") {
       switch(api,
-             kobo = "https://kc.kobotoolbox.org/api/v1",
-             kobohr = "https://kc.humanitarianresponse.info/api/v1",
-             ona = "https://api.ona.io/api/v1",
-             unhcr = "https://kobocat.unhcr.org/api/v1")
+        kobo = "https://kc.kobotoolbox.org/api/v1",
+        kobohr = "https://kc.humanitarianresponse.info/api/v1",
+        ona = "https://api.ona.io/api/v1",
+        unhcr = "https://kobocat.unhcr.org/api/v1"
+      )
     } else if (version == "v2") {
       switch(api,
-             kobo = "https://kc.kobotoolbox.org/api/v2",
-             kobohr = "https://kobo.humanitarianresponse.info/api/v2")
+        kobo = "https://kc.kobotoolbox.org/api/v2",
+        kobohr = "https://kobo.humanitarianresponse.info/api/v2"
+      )
     }
   } else {
     api
@@ -62,32 +63,36 @@ get_host_url <- function(api, version = "v1") {
 #' file.remove("test.json")
 #' }
 retrieve_survey_data <- function(path, id = NULL, token = NULL,
-                               api = "kobohr",
-                               overwrite = TRUE){
-
+                                 api = "kobohr",
+                                 overwrite = TRUE) {
   api_limit <- 30000
 
   request_url <- paste(get_host_url(api, "v1"),
-                       "data", id, sep = "/")
+    "data", id,
+    sep = "/"
+  )
 
   message(request_url)
 
   # Function to get a page of survey
-  retrieve_survey_page <- function(start = 0){
-
+  retrieve_survey_page <- function(start = 0) {
     message("Retrieving survey. Starting at record ", start)
 
     resp <- httr::RETRY(
       verb = "GET",
       url = request_url,
       config = httr::add_headers(Authorization = token),
-      query = list(start = start,
-                   limit = api_limit),
+      query = list(
+        start = start,
+        limit = api_limit
+      ),
       times = 12,
-      pause_cap = 180)
+      pause_cap = 180
+    )
 
-    if (!(resp$status_code %in% 200:299))
+    if (!(resp$status_code %in% 200:299)) {
       stop("Unsuccessful response from server")
+    }
 
     content <- httr::content(resp)
     if ("results" %in% names(content)) content <- content$results
@@ -115,7 +120,6 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 
   jsonlite::write_json(results, path, auto_unbox = TRUE)
   path
-
 }
 
 #' Download survey metadata
@@ -129,13 +133,12 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 #' @export
 #'
 #' @examples
-#'
 #' \dontrun{
-#'   # It's only possible to donwload survey metadata with the account Token
-#'   retrieve_survey_metadata(753491, token = "123XXXXXX")
+#' # It's only possible to donwload survey metadata with the account Token
+#' retrieve_survey_metadata(753491, token = "123XXXXXX")
 #' }
 #'
-retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
+retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr") {
 
   # If the token is not provided is not possible to get the
   no_token <- length(token) == 0 | is.null(token)
@@ -148,21 +151,24 @@ retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr"){
   # the version 2 of the api returns much richer information about the surveys
   httr::GET(
     url = paste(get_host_url(api, version = "v2"), "assets",
-                survey_basic_metadata$id_string, sep = "/"),
-    config = httr::add_headers(Authorization = token)) %>%
+      survey_basic_metadata$id_string,
+      sep = "/"
+    ),
+    config = httr::add_headers(Authorization = token)
+  ) %>%
     httr::content() %>%
     c(survey_basic_metadata)
 }
 
 # Help function to retrieve basic metadata from the v1 api - Same params as in
 # retrieve_survey_metadata
-retrieve_basic_survey_metadata <- function(id, token, api){
-
-   assets_v1_raw <- httr::GET(
+retrieve_basic_survey_metadata <- function(id, token, api) {
+  assets_v1_raw <- httr::GET(
     url = paste(get_host_url(api, version = "v1"), "data", sep = "/"),
-    config = httr::add_headers(Authorization = token))
+    config = httr::add_headers(Authorization = token)
+  )
 
-   purrr::keep(httr::content(assets_v1_raw), ~.$id == id)[[1]]
+  purrr::keep(httr::content(assets_v1_raw), ~ .$id == id)[[1]]
 }
 
 
@@ -187,17 +193,20 @@ retrieve_basic_survey_metadata <- function(id, token, api){
 #'
 #' @examples
 #' \dontrun{
-#'   # It's only possible to donwload survey metadata with the account Token
-#'   retrieve_survey(prefix = "my-survey", api = "kobohr", id = 753491,
-#'                   token = "123XXXXXX")
-#'   # To download in a different path
-#'   dir.create("my-data-dir")
-#'   retrieve_survey(prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
-#'                   token = "123XXXXXX")
+#' # It's only possible to donwload survey metadata with the account Token
+#' retrieve_survey(
+#'   prefix = "my-survey", api = "kobohr", id = 753491,
+#'   token = "123XXXXXX"
+#' )
+#' # To download in a different path
+#' dir.create("my-data-dir")
+#' retrieve_survey(
+#'   prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
+#'   token = "123XXXXXX"
+#' )
 #' }
 retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
-                            metadata = TRUE, append_version = TRUE){
-
+                            metadata = TRUE, append_version = TRUE) {
   metadata_filename <- paste(prefix, "metadata", sep = "_")
   data_filename <- paste(prefix, "raw", sep = "_")
 
@@ -222,7 +231,7 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
   }
 
   logger::log_info("Downloading survey json data as {json_filename}...")
-  retrieve_survey_data(json_filename, id, token, api )
+  retrieve_survey_data(json_filename, id, token, api)
   logger::log_success("Survey json data download succeeded")
 
   if ("csv" %in% format) {
@@ -239,7 +248,6 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
   }
 
   filenames
-
 }
 
 # Convert a Kobo survey in json format to a csv format that respects the
@@ -252,7 +260,7 @@ survey_json_to_csv <- function(json_path, csv_path) {
   csv_path
 }
 
-flatten_row <- function(x){
+flatten_row <- function(x) {
   x %>%
     # Each row is composed of several fields
     purrr::imap(flatten_field) %>%
@@ -260,14 +268,17 @@ flatten_row <- function(x){
     tibble::as_tibble()
 }
 
-flatten_field <- function(x, p){
+flatten_field <- function(x, p) {
   # If the field is a simple vector do nothing but if the field is a list we
   # need more logic
   if (class(x) == "list") {
     if (length(x) > 0) {
       if (purrr::vec_depth(x) == 2) {
         # If the field-list has named elements is we just need to rename the list
-        x <- list(x) %>% rlang::set_names(p) %>% unlist() %>% as.list()
+        x <- list(x) %>%
+          rlang::set_names(p) %>%
+          unlist() %>%
+          as.list()
       } else {
         # If the field-list is an "array" we need to iterate over its children
         x <- purrr::imap(x, rename_child, p = p)
@@ -280,19 +291,17 @@ flatten_field <- function(x, p){
 }
 
 # Appends parent name or number to element
-rename_child <- function(x, i, p){
+rename_child <- function(x, i, p) {
   if (length(x) == 0) {
     if (is.null(x)) x <- NA
     x <- list(x)
     x <- rlang::set_names(x, paste(p, i - 1, sep = "."))
   } else {
     if (class(i) == "character") {
-      x <-  rlang::set_names(x, paste(p, i, sep = "."))
+      x <- rlang::set_names(x, paste(p, i, sep = "."))
     } else if (class(i) == "integer") {
-      x <-  rlang::set_names(x, paste(p, i - 1, names(x), sep = "."))
+      x <- rlang::set_names(x, paste(p, i - 1, names(x), sep = "."))
     }
   }
   x
 }
-
-

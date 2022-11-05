@@ -36,13 +36,17 @@ Download pelagic data system trips
 }
 \examples{
 \dontrun{
-  retrieve_pds_trips(prefix = "my-trips", secret = "abcXXXXXX",
-                  token = "123XXXXXX", start_date= "2018-07-01",
-                  end_date=Sys.Date())
-  # To download in a different path
-  dir.create("my-data-dir")
-  retrieve_pds_trips(prefix = "my-data-dir/my-trips", secret = "abcXXXXXX",
-                  token = "123XXXXXX", start_date= "2018-07-01",
-                  end_date=Sys.Date())
+retrieve_pds_trips(
+  prefix = "my-trips", secret = "abcXXXXXX",
+  token = "123XXXXXX", start_date = "2018-07-01",
+  end_date = Sys.Date()
+)
+# To download in a different path
+dir.create("my-data-dir")
+retrieve_pds_trips(
+  prefix = "my-data-dir/my-trips", secret = "abcXXXXXX",
+  token = "123XXXXXX", start_date = "2018-07-01",
+  end_date = Sys.Date()
+)
 }
 }

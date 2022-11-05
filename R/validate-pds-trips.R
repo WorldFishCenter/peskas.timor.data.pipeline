@@ -1,12 +1,12 @@
 #' Validate Pelagic Data System trips
 #'
-#'Downloads the preprocessed version of pds trips and pds tracks disgnostics
-#'from cloud storage services and validates a range of information so that it
-#'can be safely used for analysis.
+#' Downloads the preprocessed version of pds trips and pds tracks disgnostics
+#' from cloud storage services and validates a range of information so that it
+#' can be safely used for analysis.
 #'
-#'The parameters needed in the config file are those required for
-#'`preprocess_pds_trips()`, as well as parameters needed to identify anomalous
-#'trips.
+#' The parameters needed in the config file are those required for
+#' `preprocess_pds_trips()`, as well as parameters needed to identify anomalous
+#' trips.
 #'
 #' @param log_threshold
 #' @inheritParams ingest_pds_trips
@@ -15,8 +15,7 @@
 #' @export
 #' @importFrom rlang .data
 #'
-validate_pds_trips <- function(log_threshold = logger::DEBUG){
-
+validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
   pds_trips <- get_preprocessed_trips(pars)
@@ -29,8 +28,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
   se_km <- pars$validation$pds_trips$start_end_km
   outl <- pars$validation$pds_trips$outliers
   timet <- pars$validation$pds_trips$timetrace
-  consecutive_time <-  pars$validation$pds_trips$consecutive_time
-  consecutive_distance <-  pars$validation$pds_trips$consecutive_distance
+  consecutive_time <- pars$validation$pds_trips$consecutive_time
+  consecutive_distance <- pars$validation$pds_trips$consecutive_distance
 
 
   # remove duplicated trips, join trips with tracks diagnostics and merge consecutive trips
@@ -43,59 +42,74 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
     dplyr::group_by(.data$Boat) %>%
     dplyr::mutate(
       end_start_time = difftime(dplyr::lead(.data$Started),
-                                .data$Ended,
-                                units = "mins"
+        .data$Ended,
+        units = "mins"
       ),
       end_start_time = as.double(.data$end_start_time)
     ) %>%
     dplyr::left_join(pds_tracks, by = c("Trip", "Boat")) %>%
     dplyr::ungroup() %>%
-    merge_consecutive_trips(consecutive_time = consecutive_time,
-                            consecutive_distance = consecutive_distance)
+    merge_consecutive_trips(
+      consecutive_time = consecutive_time,
+      consecutive_distance = consecutive_distance
+    )
 
   logger::log_info("Validating pds trips...")
   pds_alerts <- validate_pds_data(pds_full,
-                                  max_hrs=max_hrs,
-                                  min_hrs=min_hrs,
-                                  km=km,
-                                  se_km=se_km,
-                                  outl=outl,
-                                  timet=timet)
+    max_hrs = max_hrs,
+    min_hrs = min_hrs,
+    km = km,
+    se_km = se_km,
+    outl = outl,
+    timet = timet
+  )
 
   ready_cols <- pds_full %>%
-    dplyr::select(.data$`Last Seen`,
-                  .data$IMEI,
-                  .data$Trip,
-                  .data$`Device Id`)
+    dplyr::select(
+      .data$`Last Seen`,
+      .data$IMEI,
+      .data$Trip,
+      .data$`Device Id`
+    )
 
   validated_trips <-
-    list(pds_alerts$validated_pds_duration,
-         pds_alerts$validated_pds_distance,
-         pds_alerts$validated_pds_quality) %>%
-    purrr::map(~ dplyr::select(.x,-alert_number)) %>%
+    list(
+      pds_alerts$validated_pds_duration,
+      pds_alerts$validated_pds_distance,
+      pds_alerts$validated_pds_quality
+    ) %>%
+    purrr::map(~ dplyr::select(.x, -alert_number)) %>%
     purrr::reduce(dplyr::left_join) %>%
     dplyr::left_join(ready_cols) %>%
     # rename columns that better align with the ontology terms
-    dplyr::rename(tracker_trip_duration = .data$`Duration (Seconds)`,
-                  tracker_trip_start = .data$Started,
-                  tracker_trip_end = .data$Ended,
-                  tracker_trip_id = .data$Trip,
-                  tracker_imei = .data$IMEI,
-                  tracker_device_id = .data$`Device Id`,
-                  tracker_last_seen = .data$`Last Seen`,
-                  tracker_trip_distance = .data$`Distance (Meters)`)
+    dplyr::rename(
+      tracker_trip_duration = .data$`Duration (Seconds)`,
+      tracker_trip_start = .data$Started,
+      tracker_trip_end = .data$Ended,
+      tracker_trip_id = .data$Trip,
+      tracker_imei = .data$IMEI,
+      tracker_device_id = .data$`Device Id`,
+      tracker_last_seen = .data$`Last Seen`,
+      tracker_trip_distance = .data$`Distance (Meters)`
+    )
 
   validated_trips_filename <- paste(pars$pds$trips$file_prefix,
-                                    "validated", sep = "_") %>%
+    "validated",
+    sep = "_"
+  ) %>%
     add_version(extension = "rds")
 
-  readr::write_rds(x = validated_trips,
-                   file = validated_trips_filename,compress = "gz")
+  readr::write_rds(
+    x = validated_trips,
+    file = validated_trips_filename, compress = "gz"
+  )
 
   logger::log_info("Uploading {validated_trips_filename} to cloud sorage")
-  upload_cloud_file(file = validated_trips_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = validated_trips_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   logger::log_success("File upload succeded")
 }
 
@@ -127,25 +141,25 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG){
 #'
 #' @examples
 #' \dontrun{
-#'   pars <- read_config()
-#'   pds_trips <- get_preprocessed_trips()
-#'   validate_pds(pds_trips)
+#' pars <- read_config()
+#' pds_trips <- get_preprocessed_trips()
+#' validate_pds(pds_trips)
 #' }
 #'
 validate_pds_data <- function(data,
                               max_hrs = NULL,
                               min_hrs = NULL,
                               km = NULL,
-                              se_km=NULL,
-                              outl=NULL,
-                              timet=NULL){
+                              se_km = NULL,
+                              outl = NULL,
+                              timet = NULL) {
   validated_pds_list <- list(
     validated_pds_duration = data %>%
       dplyr::transmute(
         alert_number =
-          # test if trip duration is longer or shorter than n hours
+        # test if trip duration is longer or shorter than n hours
           dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
-                             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+            .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
         dplyr::across(
           .cols = c(
             .data$`Duration (Seconds)`,
@@ -174,9 +188,9 @@ validate_pds_data <- function(data,
     validated_pds_quality = data %>%
       dplyr::transmute(
         alert_number =
-          # test quality of trips
+        # test quality of trips
           dplyr::case_when(.data$outliers_proportion > outl |
-                             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
+            .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
         dplyr::across(
           .cols = c(
             .data$`Duration (Seconds)`,
@@ -195,17 +209,20 @@ validate_pds_data <- function(data,
 }
 
 
-get_preprocessed_trips <- function(pars){
+get_preprocessed_trips <- function(pars) {
   pds_trips_rds <- cloud_object_name(
-    prefix = paste(pars$pds$trips$file_prefix, 'preprocessed', sep = "_"),
+    prefix = paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$pds$trips$version$preprocess,
-    options = pars$storage$google$options)
+    options = pars$storage$google$options
+  )
   logger::log_info("Downloading {pds_trips_rds}...")
-  download_cloud_file(name = pds_trips_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = pds_trips_rds,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   readr::read_rds(file = pds_trips_rds)
 }
 
@@ -241,8 +258,8 @@ merge_consecutive_trips <- function(x,
     ) %>%
     dplyr::group_by(.data$Boat) %>%
     dplyr::mutate(start_end_diff = difftime(dplyr::lead(.data$Started),
-                                            .data$Ended,
-                                            units = "mins"
+      .data$Ended,
+      units = "mins"
     )) %>%
     dplyr::mutate(
       associated_to = dplyr::case_when(
@@ -284,10 +301,14 @@ merge_consecutive_trips <- function(x,
     dplyr::ungroup() %>%
     dplyr::select(-.data$associated_to) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(start_end_distance =
-                    geosphere::distm(x = cbind(.data$start_lng, .data$start_lat),
-                                     y = cbind(.data$end_lng, .data$end_lat),
-                                     fun = geosphere::distGeo)) %>%
+    dplyr::mutate(
+      start_end_distance =
+        geosphere::distm(
+          x = cbind(.data$start_lng, .data$start_lat),
+          y = cbind(.data$end_lng, .data$end_lat),
+          fun = geosphere::distGeo
+        )
+    ) %>%
     dplyr::select(-c(.data$start_lat:.data$end_lng)) %>%
     dplyr::ungroup()
 }

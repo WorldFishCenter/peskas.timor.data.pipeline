@@ -31,8 +31,7 @@
 #' @keywords workflow
 #'
 #' @examples
-ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
-
+ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
@@ -43,16 +42,17 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
   pars$metadata$airtable$tables %>%
     rlang::set_names() %>%
     purrr::map(air_get_records,
-               base_id = pars$metadata$airtable$base_id,
-               api_key = pars$metadata$airtable$api_key) %>%
+      base_id = pars$metadata$airtable$base_id,
+      api_key = pars$metadata$airtable$api_key
+    ) %>%
     purrr::map(air_records_to_tibble) %>%
     readr::write_rds(metadata_filename,
-                     compress = "gz")
+      compress = "gz"
+    )
 
   logger::log_success("Uploading to the cloud...")
   upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
   logger::log_success("File upload succeded")
-
 }
 
 
@@ -88,8 +88,7 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG){
 #' @keywords workflow
 #'
 #' @examples
-ingest_validation_tables <- function(log_threshold = logger::DEBUG){
-
+ingest_validation_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
@@ -100,14 +99,15 @@ ingest_validation_tables <- function(log_threshold = logger::DEBUG){
   pars$validation$airtable$tables %>%
     rlang::set_names() %>%
     purrr::map(air_get_records,
-               base_id = pars$validation$airtable$base_id,
-               api_key = pars$validation$airtable$api_key) %>%
+      base_id = pars$validation$airtable$base_id,
+      api_key = pars$validation$airtable$api_key
+    ) %>%
     purrr::map(air_records_to_tibble) %>%
     readr::write_rds(flags_filename,
-                     compress = "gz")
+      compress = "gz"
+    )
 
   logger::log_success("Uploading to the cloud...")
   upload_cloud_file(flags_filename, pars$storage$google$key, pars$storage$google$options)
   logger::log_success("File upload succeded")
-
 }

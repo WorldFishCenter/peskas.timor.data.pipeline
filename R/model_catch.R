@@ -466,8 +466,8 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family) {
-  #region <- "Covalima"
-  #vessels_metadata <- vessels_stats
+  # region <- "Covalima"
+  # vessels_metadata <- vessels_stats
 
   trips_region <-
     trips %>%

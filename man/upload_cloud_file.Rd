@@ -39,12 +39,15 @@ the file.
 
 # Google Cloud Services
 \dontrun{
-  authentication_details <- readLines("location_of_json_file.json")
-  upload_cloud_file(
-    file = "table_to_upload.csv",
-    provider = "gcs",
-    options = list(service_account_key = authentication_details,
-                   bucket = "my-bucket"))
+authentication_details <- readLines("location_of_json_file.json")
+upload_cloud_file(
+  file = "table_to_upload.csv",
+  provider = "gcs",
+  options = list(
+    service_account_key = authentication_details,
+    bucket = "my-bucket"
+  )
+)
 }
 
 }

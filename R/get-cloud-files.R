@@ -8,7 +8,7 @@
 #' @return A dataframe of validated survey landings.
 #' @export
 #'
-get_validated_landings <- function(log_threshold = logger::DEBUG){
+get_validated_landings <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   landings_rds <- cloud_object_name(
@@ -17,39 +17,46 @@ get_validated_landings <- function(log_threshold = logger::DEBUG){
     extension = "rds",
     version = pars$surveys$validated_landings$version,
     options = pars$storage$google$options,
-    exact_match = TRUE)
+    exact_match = TRUE
+  )
   logger::log_info("Downloading {landings_rds}...")
-  download_cloud_file(name = landings_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = landings_rds,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   readr::read_rds(file = landings_rds)
 }
 
-get_validated_pds_trips <- function(pars){
+get_validated_pds_trips <- function(pars) {
   cloud_object_name(
     prefix = paste0(pars$pds$trips$file_prefix, "_", "validated"),
     provider = pars$storage$google$key,
-    options = pars$storage$google$options) %>%
+    options = pars$storage$google$options
+  ) %>%
     download_cloud_file(
       provider = pars$storage$google$key,
-      options = pars$storage$google$options) %>%
+      options = pars$storage$google$options
+    ) %>%
     readr::read_rds()
 }
 
 
-get_merged_trips <- function(pars, ...){
+get_merged_trips <- function(pars, ...) {
   cloud_object_name(
     prefix = paste0(pars$merged_trips$file_prefix),
     provider = pars$storage$google$key,
     options = pars$storage$google$options,
-    ...) %>%
+    ...
+  ) %>%
     download_cloud_file(
       provider = pars$storage$google$key,
-      options = pars$storage$google$options) %>%
+      options = pars$storage$google$options
+    ) %>%
     readr::read_rds()
 }
 
-get_public_files <- function(pars){
+get_public_files <- function(pars) {
   c("trips", "catch", "aggregated") %>%
     rlang::set_names() %>%
     purrr::map(~ paste0(pars$export$file_prefix, "_", .)) %>%
@@ -57,22 +64,26 @@ get_public_files <- function(pars){
       .f = cloud_object_name,
       extension = "rds",
       provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options) %>%
+      options = pars$public_storage$google$options
+    ) %>%
     purrr::map(
       .f = download_cloud_file,
       provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options) %>%
+      options = pars$public_storage$google$options
+    ) %>%
     purrr::map(readr::read_rds)
 }
 
-get_models <- function(pars){
+get_models <- function(pars) {
   cloud_object_name(
     prefix = paste0(pars$models$file_prefix),
     provider = pars$storage$google$key,
-    options = pars$storage$google$options) %>%
+    options = pars$storage$google$options
+  ) %>%
     download_cloud_file(
       provider = pars$storage$google$key,
-      options = pars$storage$google$options) %>%
+      options = pars$storage$google$options
+    ) %>%
     readr::read_rds()
 }
 
@@ -82,18 +93,21 @@ get_models <- function(pars){
 #'
 #' @param pars The configuration file
 #' @export
-get_preprocessed_metadata <- function(pars){
+get_preprocessed_metadata <- function(pars) {
   metadata_rds <- cloud_object_name(
-    prefix = paste(pars$metadata$airtable$name, 'preprocessed', sep = "_"),
+    prefix = paste(pars$metadata$airtable$name, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
-    options = pars$storage$google$options)
+    options = pars$storage$google$options
+  )
   logger::log_info("Downloading {metadata_rds}...")
-  download_cloud_file(name = metadata_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = metadata_rds,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   readr::read_rds(file = metadata_rds)
-  }
+}
 
 #' Download and synchronize tracks data in a single file
 #'
@@ -108,7 +122,6 @@ get_preprocessed_metadata <- function(pars){
 #' @export
 #'
 get_sync_tracks <- function(pars) {
-
   logger::log_info("Downloading all tracks...")
   full_tracks <- get_full_tracks(pars)
   # remove after loading to save memory
@@ -129,11 +142,8 @@ get_sync_tracks <- function(pars) {
   new_trips <- setdiff(updated_trips, check_trips)
 
   if (isTRUE(length(new_trips) < pars$pds$tracks$complete$new_trips)) {
-
     full_tracks
-
   } else {
-
     logger::log_info("Syncing {length(new_trips)} tracks...")
     new_tracks <-
       get_tracks_ids(pars) %>%
@@ -159,8 +169,9 @@ get_sync_tracks <- function(pars) {
 
     logger::log_info("Uploading new file to cloud...")
     ingest_complete_tracks(pars,
-                           data = complete_tracks,
-                           trips = complete_tracks_trips)
+      data = complete_tracks,
+      trips = complete_tracks_trips
+    )
 
     complete_tracks
   }

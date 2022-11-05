@@ -17,5 +17,4 @@ test_that("host URLs are resolved correctly", {
     purrr::map_lgl(RCurl::url.exists) %>%
     all() %>%
     expect_true()
-
 })
