@@ -176,4 +176,3 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
     options = pars$storage$google$options
   )
 }
-

@@ -88,7 +88,6 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       .data$recorded_revenue, .data$recorded_catch
     )
 
-
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- periods %>%
     paste0("aggregated-", .) %>%
