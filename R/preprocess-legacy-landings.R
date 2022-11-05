@@ -33,25 +33,29 @@
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export
 #'
-preprocess_legacy_landings <- function(log_threshold = logger::DEBUG){
-
+preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(prefix = pars$surveys$landings_legacy$file_prefix,
-                                    provider = pars$storage$google$key,
-                                    extension = "csv",
-                                    version = pars$surveys$landings_legacy$version$preprocess,
-                                    options = pars$storage$google$options)
+  landings_csv <- cloud_object_name(
+    prefix = pars$surveys$landings_legacy$file_prefix,
+    provider = pars$storage$google$key,
+    extension = "csv",
+    version = pars$surveys$landings_legacy$version$preprocess,
+    options = pars$storage$google$options
+  )
 
   logger::log_info("Retrieving {landings_csv}")
-  download_cloud_file(name = landings_csv,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = landings_csv,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   landings_raw <- readr::read_csv(
     file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character()))
+    col_types = readr::cols(.default = readr::col_character())
+  )
 
   logger::log_info("Cleaning and recoding data")
   cleaned_landings_raw <- clean_legacy_landings(landings_raw)
@@ -64,12 +68,16 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG){
 
   preprocessed_filename <- paste(pars$surveys$landings_legacy$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
-  readr::write_rds(x = landngs_nested_species,
-                   file = preprocessed_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = landngs_nested_species,
+    file = preprocessed_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(file = preprocessed_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = preprocessed_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }

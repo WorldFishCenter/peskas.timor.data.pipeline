@@ -24,10 +24,9 @@
 #'
 #' @examples
 #' if (git2r::in_repository()) {
-#' add_version("my_file", "csv")
+#'   add_version("my_file", "csv")
 #' }
-#'
-add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__"){
+add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__") {
 
   # Git sha are 40 characters long
   stopifnot(sha_nchar <= 40)
@@ -61,12 +60,13 @@ add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__"){
 #' @return the environment parameters
 #' @export
 #'
-read_config <- function(){
+read_config <- function() {
   logger::log_info("Loading configuration file...")
 
   pars <- config::get(
     config = Sys.getenv("R_CONFIG_ACTIVE", "default"),
-    file = system.file("conf.yml", package = "peskas.timor.data.pipeline"))
+    file = system.file("conf.yml", package = "peskas.timor.data.pipeline")
+  )
 
   logger::log_info("Using configutation: {attr(pars, 'config')}")
   logger::log_debug("Running with parameters {pars}")

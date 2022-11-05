@@ -21,7 +21,6 @@ Fields that have a only one item are stored as a vector while fields that
 accept multiple items are stored as a nested list column
 }
 \examples{
-
 \dontrun{
 # Get all records for the table boats
 air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak") \%>\%

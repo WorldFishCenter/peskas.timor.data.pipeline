@@ -37,18 +37,17 @@ this function will automatically download all records until \code{maxRecords} ha
 been reached.
 }
 \examples{
-
 \dontrun{
 # Get all records for the table boats
 air_get_records(table = "boats", base_id = "appjEVaN8kBNXAWak")
 
 # Get records only in a specified view
 air_get_records("boats", "appjEVaN8kBNXAWak",
-                query = list(view = "Boats with wrong registration"))
+  query = list(view = "Boats with wrong registration")
+)
 
 # Get only the first 5 records
 air_get_records("boats", "appjEVaN8kBNXAWak", query = list(maxRecords = 5))
-
 }
 
 }

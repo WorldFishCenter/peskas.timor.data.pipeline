@@ -56,23 +56,29 @@ the file.
 
 #' # Google Cloud Services
 \dontrun{
-  authentication_details <- readLines("location_of_json_file.json")
-  # obtain the latest version of all files corresponding to timor-landings-v2
-  cloud_object_name(
-    prefix = "timor-landings-v2",
-    version = "latest",
-    provider = "gcs",
-    options = list(service_account_key = authentication_details,
-                   bucket = "my-bucket"))
+authentication_details <- readLines("location_of_json_file.json")
+# obtain the latest version of all files corresponding to timor-landings-v2
+cloud_object_name(
+  prefix = "timor-landings-v2",
+  version = "latest",
+  provider = "gcs",
+  options = list(
+    service_account_key = authentication_details,
+    bucket = "my-bucket"
+  )
+)
 
- # obtain a specific version of the structured data from timor-landings-v2
-  cloud_object_name(
-    prefix = "timor-landings-v2_raw",
-    version = "20210326084600_54617b",
-    extension = "csv",
-    provider = "gcs",
-    options = list(service_account_key = authentication_details,
-                   bucket = "my-bucket"))
+# obtain a specific version of the structured data from timor-landings-v2
+cloud_object_name(
+  prefix = "timor-landings-v2_raw",
+  version = "20210326084600_54617b",
+  extension = "csv",
+  provider = "gcs",
+  options = list(
+    service_account_key = authentication_details,
+    bucket = "my-bucket"
+  )
+)
 }
 
 }

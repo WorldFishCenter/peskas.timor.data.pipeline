@@ -32,39 +32,49 @@
 #' @export
 #'
 preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
-
   pars <- read_config()
 
-  pds_trips_csv <- cloud_object_name(prefix = pars$pds$trips$file_prefix,
-                                     provider = pars$storage$google$key,
-                                     extension = "csv",
-                                     version = pars$pds$trips$version$preprocess,
-                                     options = pars$storage$google$options)
+  pds_trips_csv <- cloud_object_name(
+    prefix = pars$pds$trips$file_prefix,
+    provider = pars$storage$google$key,
+    extension = "csv",
+    version = pars$pds$trips$version$preprocess,
+    options = pars$storage$google$options
+  )
 
   logger::log_info("Retrieving {pds_trips_csv}")
-  download_cloud_file(name = pds_trips_csv,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = pds_trips_csv,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   pds_trips_raw <- readr::read_csv(
     file = pds_trips_csv,
-    col_types = "iTTicccdddccc") %>%
+    col_types = "iTTicccdddccc"
+  ) %>%
     dplyr::mutate(
       Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
       `Last Seen` = lubridate::as_datetime(.data$`Last Seen`,
-                                           format = "%a %b %d %X UTC %Y",
-                                           tz = "UTC"))
+        format = "%a %b %d %X UTC %Y",
+        tz = "UTC"
+      )
+    )
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
-  readr::write_rds(x = pds_trips_raw,
-                   file = preprocessed_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = pds_trips_raw,
+    file = preprocessed_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(file = preprocessed_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = preprocessed_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
 
 
@@ -85,7 +95,6 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 get_tracks_descriptors <- function(Trip, pars, tracks_list) {
-
   tracks_descriptors <- data.frame()
 
   track_id <- paste(pars$pds$tracks$file_prefix, as.character(Trip), sep = "-")
@@ -175,7 +184,8 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
     ))
 
   future::plan(future::multisession,
-               workers = pars$pds$tracks$multisession$n_sessions)
+    workers = pars$pds$tracks$multisession$n_sessions
+  )
 
   # avoid to operate on tracks already preprocessed
   if (nrow(preprocessed_files) == 0) {
@@ -214,22 +224,26 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
     .f = ~ insistent_upload_cloud_file(
       file = .,
       provider = pars$storage$google$key,
-      options = pars$storage$google$options)))
+      options = pars$storage$google$options
+    )
+  ))
   logger::log_success("File upload succeded")
-
 }
 
 # Download preprocessed tracks
-get_preprocessed_tracks <- function(pars){
+get_preprocessed_tracks <- function(pars) {
   pds_tracks_rds <- cloud_object_name(
-    prefix = paste(pars$pds$tracks$file_prefix, 'preprocessed', sep = "_"),
+    prefix = paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$pds$tracks$version$preprocess,
-    options = pars$storage$google$options)
+    options = pars$storage$google$options
+  )
   logger::log_info("Downloading {pds_tracks_rds}...")
-  download_cloud_file(name = pds_tracks_rds,
-                      provider = pars$storage$google$key,
-                      options = pars$storage$google$options)
+  download_cloud_file(
+    name = pds_tracks_rds,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   readr::read_rds(file = pds_tracks_rds)
 }

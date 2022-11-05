@@ -24,11 +24,15 @@ Download pelagic data system tracks
 }
 \examples{
 \dontrun{
-  retrieve_pds_tracks(prefix = "my-tracks", secret = "abcXXXXXX",
-                  token = "123XXXXXX", id="2327722")
-  # To download in a different path
-  dir.create("my-data-dir")
-  retrieve_pds_tracks(prefix = "my-data-dir/my-tracks", secret = "abcXXXXXX",
-                  token = "123XXXXXX", id="2327722")
+retrieve_pds_tracks(
+  prefix = "my-tracks", secret = "abcXXXXXX",
+  token = "123XXXXXX", id = "2327722"
+)
+# To download in a different path
+dir.create("my-data-dir")
+retrieve_pds_tracks(
+  prefix = "my-data-dir/my-tracks", secret = "abcXXXXXX",
+  token = "123XXXXXX", id = "2327722"
+)
 }
 }

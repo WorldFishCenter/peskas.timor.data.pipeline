@@ -34,53 +34,64 @@
 #' @return No outputs. This function is used for it's side effects
 #' @keywords workflow
 #' @export
-merge_landings <- function(log_threshold = logger::DEBUG){
-
+merge_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
   preprocessed_landings <-
-    cloud_object_name(prefix = paste(pars$surveys$landings$file_prefix,
-                                     "preprocessed", sep = "_"),
-                      provider = pars$storage$google$key,
-                      extension = "rds",
-                      version = pars$surveys$landings$version$preprocess,
-                      options = pars$storage$google$options)
+    cloud_object_name(
+      prefix = paste(pars$surveys$landings$file_prefix,
+        "preprocessed",
+        sep = "_"
+      ),
+      provider = pars$storage$google$key,
+      extension = "rds",
+      version = pars$surveys$landings$version$preprocess,
+      options = pars$storage$google$options
+    )
 
   preprocessed_legacy_landings <-
-    cloud_object_name(prefix = paste(pars$surveys$landings_legacy$file_prefix,
-                                    "preprocessed", sep = "_"),
-                      provider = pars$storage$google$key,
-                      extension = "rds",
-                      version = pars$surveys$landings$version$preprocess,
-                      options = pars$storage$google$options)
+    cloud_object_name(
+      prefix = paste(pars$surveys$landings_legacy$file_prefix,
+        "preprocessed",
+        sep = "_"
+      ),
+      provider = pars$storage$google$key,
+      extension = "rds",
+      version = pars$surveys$landings$version$preprocess,
+      options = pars$storage$google$options
+    )
 
   logger::log_info("Retrieving preprocessed data")
-  purrr::map(c(preprocessed_landings,preprocessed_legacy_landings),
-             download_cloud_file,
-             provider = pars$storage$google$key,
-             options = pars$storage$google$options)
+  purrr::map(c(preprocessed_landings, preprocessed_legacy_landings),
+    download_cloud_file,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 
   # adding a column "survey_version"
   prep_landings <- readRDS(preprocessed_landings)
   prep_landings <- prep_landings %>%
-    dplyr::mutate(survey_version = rep("v2",nrow(prep_landings)))
+    dplyr::mutate(survey_version = rep("v2", nrow(prep_landings)))
   prep_legacy_landings <- readRDS(preprocessed_legacy_landings)
   prep_legacy_landings <- prep_legacy_landings %>%
-    dplyr::mutate(survey_version = rep("v1",nrow(prep_legacy_landings)))
+    dplyr::mutate(survey_version = rep("v1", nrow(prep_legacy_landings)))
 
-  merged_landings <- dplyr::bind_rows(prep_landings,prep_legacy_landings)
+  merged_landings <- dplyr::bind_rows(prep_landings, prep_legacy_landings)
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%
     add_version(extension = "rds")
 
-  readr::write_rds(x = merged_landings,
-                   file = merged_filename,
-                   compress = "gz")
+  readr::write_rds(
+    x = merged_landings,
+    file = merged_filename,
+    compress = "gz"
+  )
 
   logger::log_info("Uploading {merged_filename} to cloud sorage")
-  upload_cloud_file(file = merged_filename,
-                    provider = pars$storage$google$key,
-                    options = pars$storage$google$options)
+  upload_cloud_file(
+    file = merged_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }
-

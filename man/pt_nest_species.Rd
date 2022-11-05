@@ -37,18 +37,19 @@ models.
 }
 \examples{
 dummy_landings <- tidyr::tibble(
-    `_id` = "123",
-    `species_group.0.species_group/species` = "sp01",
-    `species_group.0.species_group/food_or_sale` = "food",
-    `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` = 10,
-    `species_group.0.species_group/no_fish_by_length_group/no_individuals_5_10` = 10,
-    `species_group.0.species_group/no_fish_by_length_group/fish_length_over60` = 80,
-    `species_group.0.species_group/no_fish_by_length_group/no_individuals_over60` = 1,
-    `species_group.1.species_group/species` = "sp02",
-    `species_group.1.species_group/food_or_sale` = "sale",
-    `species_group.1.species_group/no_fish_by_length_group/no_individuals_20_25` = 5,
-    `species_group.1.species_group/no_fish_by_length_group/no_individuals_5_10` = 20,
-    `species_group.1.species_group/no_fish_by_length_group/fish_length_over60` = 70,
-    `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` = 2)
+  `_id` = "123",
+  `species_group.0.species_group/species` = "sp01",
+  `species_group.0.species_group/food_or_sale` = "food",
+  `species_group.0.species_group/no_fish_by_length_group/no_individuals_10_15` = 10,
+  `species_group.0.species_group/no_fish_by_length_group/no_individuals_5_10` = 10,
+  `species_group.0.species_group/no_fish_by_length_group/fish_length_over60` = 80,
+  `species_group.0.species_group/no_fish_by_length_group/no_individuals_over60` = 1,
+  `species_group.1.species_group/species` = "sp02",
+  `species_group.1.species_group/food_or_sale` = "sale",
+  `species_group.1.species_group/no_fish_by_length_group/no_individuals_20_25` = 5,
+  `species_group.1.species_group/no_fish_by_length_group/no_individuals_5_10` = 20,
+  `species_group.1.species_group/no_fish_by_length_group/fish_length_over60` = 70,
+  `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` = 2
+)
 pt_nest_species(dummy_landings)
 }

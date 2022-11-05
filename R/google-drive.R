@@ -6,13 +6,11 @@
 #'
 #' @export
 #'
-authenticate_google_drive <- function(
-  options = list(method = "service_account_key")){
-
+authenticate_google_drive <- function(options = list(method = "service_account_key")) {
   if (options$method == "service_account_key") {
     service_account_key <- options$service_account_key
-    temp_auth_file <- tempfile(fileext = 'json')
-    writeLines(service_account_key,temp_auth_file)
+    temp_auth_file <- tempfile(fileext = "json")
+    writeLines(service_account_key, temp_auth_file)
     googledrive::drive_auth(path = temp_auth_file)
   } else if (options$method == "OAuth") {
     googledrive::drive_auth(use_oob = TRUE)

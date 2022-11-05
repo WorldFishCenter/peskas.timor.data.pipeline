@@ -26,11 +26,14 @@ Download object from the cloud storage to a local file
 
 # Google Cloud Services
 \dontrun{
-  authentication_details <- readLines("location_of_json_file.json")
-  download_cloud_file(
-    name = "timor-landings-v2_metadata__20210326084600_54617b3__.json",
-    provider = "gcs",
-    options = list(service_account_key = authentication_details,
-                   bucket = "my-bucket"))
+authentication_details <- readLines("location_of_json_file.json")
+download_cloud_file(
+  name = "timor-landings-v2_metadata__20210326084600_54617b3__.json",
+  provider = "gcs",
+  options = list(
+    service_account_key = authentication_details,
+    bucket = "my-bucket"
+  )
+)
 }
 }

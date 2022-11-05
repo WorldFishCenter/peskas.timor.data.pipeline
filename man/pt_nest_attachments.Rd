@@ -41,7 +41,7 @@ dummy_landings <- tidyr::tibble(
   `_attachments.1.download_url` = "http://url-2.com",
   `_attachments.1.id` = "02",
   `_attachments.2.download_url` = NA,
-  `_attachments.2.id` = NA)
+  `_attachments.2.id` = NA
+)
 pt_nest_attachments(dummy_landings)
-
 }

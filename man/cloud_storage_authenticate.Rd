@@ -27,12 +27,15 @@ authenticate.
 }
 \examples{
 
- # Google Cloud Services
+# Google Cloud Services
 \dontrun{
-  authentication_details <- readLines("location_of_json_file.json")
-  cloud_storage_authenticate(
-    provider = "gcs",
-    options = list(service_account_key = authentication_details,
-                   bucket = "my-bucket"))
+authentication_details <- readLines("location_of_json_file.json")
+cloud_storage_authenticate(
+  provider = "gcs",
+  options = list(
+    service_account_key = authentication_details,
+    bucket = "my-bucket"
+  )
+)
 }
 }

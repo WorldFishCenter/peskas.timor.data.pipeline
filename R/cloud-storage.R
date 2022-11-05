@@ -20,22 +20,24 @@
 #'
 #' @examples
 #'
-#'  # Google Cloud Services
+#' # Google Cloud Services
 #' \dontrun{
-#'   authentication_details <- readLines("location_of_json_file.json")
-#'   cloud_storage_authenticate(
-#'     provider = "gcs",
-#'     options = list(service_account_key = authentication_details,
-#'                    bucket = "my-bucket"))
+#' authentication_details <- readLines("location_of_json_file.json")
+#' cloud_storage_authenticate(
+#'   provider = "gcs",
+#'   options = list(
+#'     service_account_key = authentication_details,
+#'     bucket = "my-bucket"
+#'   )
+#' )
 #' }
 cloud_storage_authenticate <- function(provider, options) {
-
   if ("gcs" %in% provider) {
     # Only need to authenticate if there is no token for downstream requests
     if (isFALSE(googleAuthR::gar_has_token())) {
       service_account_key <- options$service_account_key
-      temp_auth_file <- tempfile(fileext = 'json')
-      writeLines(service_account_key,temp_auth_file)
+      temp_auth_file <- tempfile(fileext = "json")
+      writeLines(service_account_key, temp_auth_file)
       googleCloudStorageR::gcs_auth(json_file = temp_auth_file)
     }
   }
@@ -69,16 +71,18 @@ cloud_storage_authenticate <- function(provider, options) {
 #'
 #' # Google Cloud Services
 #' \dontrun{
-#'   authentication_details <- readLines("location_of_json_file.json")
-#'   upload_cloud_file(
-#'     file = "table_to_upload.csv",
-#'     provider = "gcs",
-#'     options = list(service_account_key = authentication_details,
-#'                    bucket = "my-bucket"))
+#' authentication_details <- readLines("location_of_json_file.json")
+#' upload_cloud_file(
+#'   file = "table_to_upload.csv",
+#'   provider = "gcs",
+#'   options = list(
+#'     service_account_key = authentication_details,
+#'     bucket = "my-bucket"
+#'   )
+#' )
 #' }
 #'
-upload_cloud_file <- function(file, provider, options, name = file){
-
+upload_cloud_file <- function(file, provider, options, name = file) {
   cloud_storage_authenticate(provider, options)
 
   out <- list()
@@ -91,7 +95,9 @@ upload_cloud_file <- function(file, provider, options, name = file){
         file = .x,
         bucket = options$bucket,
         name = .y,
-        predefinedAcl = "bucketLevel"))
+        predefinedAcl = "bucketLevel"
+      )
+    )
 
     out <- c(out, google_output)
   }
@@ -139,46 +145,53 @@ upload_cloud_file <- function(file, provider, options, name = file){
 #'
 #' #' # Google Cloud Services
 #' \dontrun{
-#'   authentication_details <- readLines("location_of_json_file.json")
-#'   # obtain the latest version of all files corresponding to timor-landings-v2
-#'   cloud_object_name(
-#'     prefix = "timor-landings-v2",
-#'     version = "latest",
-#'     provider = "gcs",
-#'     options = list(service_account_key = authentication_details,
-#'                    bucket = "my-bucket"))
+#' authentication_details <- readLines("location_of_json_file.json")
+#' # obtain the latest version of all files corresponding to timor-landings-v2
+#' cloud_object_name(
+#'   prefix = "timor-landings-v2",
+#'   version = "latest",
+#'   provider = "gcs",
+#'   options = list(
+#'     service_account_key = authentication_details,
+#'     bucket = "my-bucket"
+#'   )
+#' )
 #'
-#'  # obtain a specific version of the structured data from timor-landings-v2
-#'   cloud_object_name(
-#'     prefix = "timor-landings-v2_raw",
-#'     version = "20210326084600_54617b",
-#'     extension = "csv",
-#'     provider = "gcs",
-#'     options = list(service_account_key = authentication_details,
-#'                    bucket = "my-bucket"))
+#' # obtain a specific version of the structured data from timor-landings-v2
+#' cloud_object_name(
+#'   prefix = "timor-landings-v2_raw",
+#'   version = "20210326084600_54617b",
+#'   extension = "csv",
+#'   provider = "gcs",
+#'   options = list(
+#'     service_account_key = authentication_details,
+#'     bucket = "my-bucket"
+#'   )
+#' )
 #' }
 #'
 cloud_object_name <- function(prefix, version = "latest", extension = "",
-                              provider, exact_match = FALSE, options){
-
+                              provider, exact_match = FALSE, options) {
   cloud_storage_authenticate(provider, options)
 
   if ("gcs" %in% provider) {
-
     gcs_files <- googleCloudStorageR::gcs_list_objects(
       bucket = options$bucket,
-      prefix = prefix)
+      prefix = prefix
+    )
 
     if (nrow(gcs_files) == 0) {
       return(character(0))
     }
 
     gcs_files_formatted <- gcs_files %>%
-      tidyr::separate(col = .data$name,
-                      into = c("base_name", "version", "ext"),
-                      # Version is separated with the "__" string
-                      sep = "__",
-                      remove = FALSE) %>%
+      tidyr::separate(
+        col = .data$name,
+        into = c("base_name", "version", "ext"),
+        # Version is separated with the "__" string
+        sep = "__",
+        remove = FALSE
+      ) %>%
       dplyr::filter(stringr::str_detect(.data$ext, paste0(extension, "$"))) %>%
       dplyr::group_by(.data$base_name, .data$ext)
 
@@ -192,12 +205,10 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
     if (version == "latest") {
       selected_rows <- selected_rows %>%
         dplyr::filter(max(.data$updated) == .data$updated)
-
     } else {
       this_version <- version
       selected_rows <- selected_rows %>%
         dplyr::filter(.data$version == this_version)
-
     }
 
     selected_rows$name
@@ -224,19 +235,20 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
 #'
 #' # Google Cloud Services
 #' \dontrun{
-#'   authentication_details <- readLines("location_of_json_file.json")
-#'   download_cloud_file(
-#'     name = "timor-landings-v2_metadata__20210326084600_54617b3__.json",
-#'     provider = "gcs",
-#'     options = list(service_account_key = authentication_details,
-#'                    bucket = "my-bucket"))
+#' authentication_details <- readLines("location_of_json_file.json")
+#' download_cloud_file(
+#'   name = "timor-landings-v2_metadata__20210326084600_54617b3__.json",
+#'   provider = "gcs",
+#'   options = list(
+#'     service_account_key = authentication_details,
+#'     bucket = "my-bucket"
+#'   )
+#' )
 #' }
-download_cloud_file <- function(name, provider, options, file = name){
-
+download_cloud_file <- function(name, provider, options, file = name) {
   cloud_storage_authenticate(provider, options)
 
   if ("gcs" %in% provider) {
-
     purrr::map2(
       name, file,
       ~ googleCloudStorageR::gcs_get_object(
@@ -246,9 +258,7 @@ download_cloud_file <- function(name, provider, options, file = name){
         overwrite = ifelse(is.null(options$overwrite), TRUE, options$overwrite)
       )
     )
-
   }
 
   file
 }
-

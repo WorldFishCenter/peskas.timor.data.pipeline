@@ -48,12 +48,16 @@ through the function is tracked using the package \emph{logger}.
 }
 \examples{
 \dontrun{
-  # It's only possible to donwload survey metadata with the account Token
-  retrieve_survey(prefix = "my-survey", api = "kobohr", id = 753491,
-                  token = "123XXXXXX")
-  # To download in a different path
-  dir.create("my-data-dir")
-  retrieve_survey(prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
-                  token = "123XXXXXX")
+# It's only possible to donwload survey metadata with the account Token
+retrieve_survey(
+  prefix = "my-survey", api = "kobohr", id = 753491,
+  token = "123XXXXXX"
+)
+# To download in a different path
+dir.create("my-data-dir")
+retrieve_survey(
+  prefix = "my-data-dir/my-survey", api = "kobohr", id = 753491,
+  token = "123XXXXXX"
+)
 }
 }

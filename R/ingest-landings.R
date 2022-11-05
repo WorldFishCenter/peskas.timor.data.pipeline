@@ -39,16 +39,16 @@
 #' @return No output. This funcrion is used for it's side effects
 #' @export
 #'
-ingest_landings <- function(log_threshold = logger::DEBUG){
-
+ingest_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
   file_list <- retrieve_survey(pars$surveys$landings$file_prefix,
-                               api = pars$surveys$landings$api,
-                               id = pars$surveys$landings$survey_id,
-                               token = pars$surveys$landings$token)
+    api = pars$surveys$landings$api,
+    id = pars$surveys$landings$survey_id,
+    token = pars$surveys$landings$token
+  )
 
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
@@ -97,19 +97,19 @@ ingest_landings <- function(log_threshold = logger::DEBUG){
 #' @return No output. This funcrion is used for it's side effects
 #' @export
 #'
-ingest_legacy_landings <- function(log_threshold = logger::DEBUG){
-
+ingest_legacy_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
 
   file_list <- retrieve_survey(pars$surveys$landings_legacy$file_prefix,
-                               api = pars$surveys$landings_legacy$api,
-                               id = pars$surveys$landings_legacy$survey_id,
-                               token = pars$surveys$landings_legacy$token)
+    api = pars$surveys$landings_legacy$api,
+    id = pars$surveys$landings_legacy$survey_id,
+    token = pars$surveys$landings_legacy$token
+  )
 
-    logger::log_info("Uploading files to cloud...")
-    # Iterate over multiple storage providers if there are more than one
-    purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
-    logger::log_success("File upload succeded")
+  logger::log_info("Uploading files to cloud...")
+  # Iterate over multiple storage providers if there are more than one
+  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
+  logger::log_success("File upload succeded")
 }

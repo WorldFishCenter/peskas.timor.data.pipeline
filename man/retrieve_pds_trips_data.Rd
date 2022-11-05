@@ -35,5 +35,4 @@ Download pelagic data system trips in as csv or json
 \examples{
 retrieve_pds_trips_data("test.csv")
 file.remove("test.csv")
-
 }

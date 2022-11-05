@@ -220,8 +220,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Generating metadata...")
-  metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
-
+  #metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
 
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
@@ -231,8 +230,10 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   ))
   release_files_names <- release_files_names[c(4,3,1,2)]
 
+  metadat <- httr::upload_file(system.file("export/dataset-fields.json", package = "peskas.timor.data.pipeline"))
+
   logger::log_info("Initializing dataset in Peskas dataverse...")
-  dataverse::initiate_sword_dataset(
+  dataverse::create_dataset(
     dataverse = dataverse,
     server = server,
     key = key,
@@ -255,14 +256,13 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
   # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
 
-  #Sys.sleep(60*20)
-  # Publish data
-  #logger::log_info("Publishing data...")
-  #publish_last_dataset(
-  #  key = key,
-  #  dataverse = dataverse,
-  #  server = server
-  #)
+  Sys.sleep(60*20)
+  logger::log_info("Publishing data...")
+  publish_last_dataset(
+    key = key,
+    dataverse = dataverse,
+    server = server
+  )
 }
 
 
@@ -277,7 +277,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 generate_description <- function(...) {
-  trips_dat <- readr::read_tsv(grep("trips", list.files(), value = TRUE))
+  trips_dat <- readr::read_tsv(grep("timor_trips", list.files(), value = TRUE))
   catch_dat <- readr::read_tsv(grep("catch", list.files(), value = TRUE))
   aggr_dat <- readr::read_tsv(grep("aggregated", list.files(), value = TRUE))
 
