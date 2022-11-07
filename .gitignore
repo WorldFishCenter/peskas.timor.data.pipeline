@@ -42,5 +42,4 @@ docs
 *.rds
 *.xlsx
 *.csv
-*.json
 *.tsv
