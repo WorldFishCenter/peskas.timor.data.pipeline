@@ -28,7 +28,7 @@
 format_public_data <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
-  RDI <- pars$metadata$nutrients$RDI$convert
+  RDI <- pars$metadata$nutrients$RDI
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
@@ -351,7 +351,7 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
-aggregate_nutrients <- function(x, RDI, pars) {
+aggregate_nutrients <- function(x, pars) {
   x %>%
     dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
@@ -399,3 +399,47 @@ get_weight <- function(x) {
     tidyr::nest(length_frequency = c(.data$length:.data$Vitamin_A_mu)) %>%
     tidyr::nest(landing_catch = c(.data$catch_taxon, .data$catch_purpose, .data$length_type, .data$length_frequency))
 }
+
+
+get_municipal_nutrients <- function(nutrients_table = NULL,
+                                    municipal_estimates = NULL,
+                                    region = NULL,
+                                    pars) {
+  municipalities_list[[region]]$taxa %>%
+    dplyr::left_join(nutrients_table, by = "grouped_taxa") %>%
+    # convert nutrients in Kg
+    dplyr::mutate(
+      selenium = (.data$Selenium_mu * (.data$catch * 1000)) / 1000,
+      zinc = (.data$Zinc_mu * (.data$catch * 1000)) / 1000,
+      protein = (.data$Protein_mu * (.data$catch * 1000)) / 1000,
+      omega3 = (.data$Omega_3_mu * (.data$catch * 1000)) / 1000,
+      calcium = (.data$Calcium_mu * (.data$catch * 1000) / 1000),
+      iron = (.data$Iron_mu * (.data$catch * 1000)) / 1000,
+      vitaminA = (.data$Vitamin_A_mu * (.data$catch * 1000)) / 1000
+    ) %>%
+    dplyr::group_by(landing_period) %>%
+    dplyr::summarise(catch = dplyr::first(.data$catch),
+                     dplyr::across(c(.data$selenium:.data$vitaminA), sum, na.rm = TRUE)) %>%
+    tidyr::pivot_longer(-c(.data$landing_period, .data$catch),
+      names_to = "nutrient",
+      values_to = "nut_supply"
+    ) %>%
+    dplyr::mutate(nut_rdi = dplyr::case_when(
+      nutrient == "selenium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
+      TRUE ~ NA_real_
+    ))
+}
+
+#purrr::set_names(names(models$municipal)) %>%
+#  purrr::map(get_municipal_nutrients,
+#             nutrients_table = nutrients_table,
+#             municipal_estimates = models$municipal,
+#             pars = pars
+#  ) %>%
+#  dplyr::bind_rows(.id = "region")
