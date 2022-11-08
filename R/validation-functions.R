@@ -610,7 +610,7 @@ validate_n_fishers <- function(landings, method, k) {
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
     dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
     dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child_alert, .data$fisher_number_man_alert, .data$fisher_number_woman_alert)) %>%
-    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(is.na(alert_number), NA_real_, .))) %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(!is.na(alert_number), NA_real_, .))) %>%
     dplyr::select(-tidyselect::ends_with("alert")) %>%
     # Fixing types
     dplyr::mutate(submission_id = as.integer(.data$submission_id))

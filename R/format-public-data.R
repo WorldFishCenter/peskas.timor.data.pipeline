@@ -405,7 +405,7 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
                                     municipal_estimates = NULL,
                                     region = NULL,
                                     pars) {
-  municipalities_list[[region]]$taxa %>%
+  municipal_estimates[[region]]$taxa %>%
     dplyr::left_join(nutrients_table, by = "grouped_taxa") %>%
     # convert nutrients in Kg
     dplyr::mutate(
@@ -417,7 +417,7 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
       iron = (.data$Iron_mu * (.data$catch * 1000)) / 1000,
       vitaminA = (.data$Vitamin_A_mu * (.data$catch * 1000)) / 1000
     ) %>%
-    dplyr::group_by(landing_period) %>%
+    dplyr::group_by(.data$landing_period) %>%
     dplyr::summarise(catch = dplyr::first(.data$catch),
                      dplyr::across(c(.data$selenium:.data$vitaminA), sum, na.rm = TRUE)) %>%
     tidyr::pivot_longer(-c(.data$landing_period, .data$catch),
