@@ -28,7 +28,6 @@
 format_public_data <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
-  RDI <- pars$metadata$nutrients$RDI
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars)
@@ -77,7 +76,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     nutrients_proportions,
     taxa = "MZZ"
   ) %>%
-    purrr::map(aggregate_nutrients, RDI, pars)
+    purrr::map(aggregate_nutrients, pars)
 
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
