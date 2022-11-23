@@ -30,7 +30,9 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   logger::log_info("Retrieving merged trips...")
-  merged_trips <- get_merged_trips(pars)
+  merged_trips <- get_merged_trips(pars) %>%
+    dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
+
   logger::log_info("Retrieving modelled data...")
   models <- get_models(pars)
   logger::log_info("Retrieving nutrient properties info...")
@@ -50,11 +52,14 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   aggregated_trips <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_trips, merged_trips_with_addons)
+    purrr::map(summarise_trips, merged_trips_with_addons) %>%
+    purrr::imap(~ .x %>% dplyr::filter(!is.na(.data$date_bin_start)))
   aggregated_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$aggregated)
+    purrr::map(summarise_estimations, models$national$aggregated) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+
 
   municipal_aggregated <-
     models$municipal %>%
@@ -65,15 +70,18 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month))
+    dplyr::select(-c(.data$period, .data$month)) %>%
+    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+
 
   taxa_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$aggregated_taxa, c("date_bin_start", "grouped_taxa"))
+    purrr::map(summarise_estimations, models$national$aggregated_taxa, c("date_bin_start", "grouped_taxa")) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+
 
   municipal_taxa <-
-    aggregated_estimations_municipal <-
     models$municipal %>%
     purrr::map(~ purrr::keep(.x, stringr::str_detect(
       names(.x), stringr::fixed("taxa")
@@ -82,9 +90,11 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month))
+    dplyr::select(-c(.data$period, .data$month)) %>%
+    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
+
   nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
   # fill MZZ (miscellaneous unrecognized fishes) with average nutrients proportion of other groups
   aggregated_nutrients <- purrr::map(nutrients_estimates,
@@ -92,7 +102,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     nutrients_proportions,
     taxa = "MZZ"
   ) %>%
-    purrr::map(aggregate_nutrients, pars)
+    purrr::map(aggregate_nutrients, pars) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
