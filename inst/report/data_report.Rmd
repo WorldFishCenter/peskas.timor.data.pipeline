@@ -781,8 +781,7 @@ p1 <-
   theme_minimal(15)+
   labs(x="Catches composition",
        y="",
-       title="Municipal species composition and stock",
-       subtitle = "Species composition is quite different among municipalities, Atauro is by far the municipality\nwith the largest stock.")+
+       title="Municipal species composition and stock")+
   scale_fill_viridis_d()+
   theme(
     panel.grid.minor.x = element_blank(),

@@ -55,18 +55,34 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     periods %>%
     rlang::set_names() %>%
     purrr::map(summarise_estimations, models$national$aggregated)
-  # aggregated_estimations_municipal <-
-  #  periods %>%
-  #  rlang::set_names() %>%
-  #  purrr::map(summarise_estimations, models$municipal$Covalima$aggregated)
+
+  municipal_aggregated <-
+    models$municipal %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("aggregated")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(models$municipal)) %>%
+    dplyr::bind_rows(.id = "region") %>%
+    dplyr::rename(date_bin_start = .data$landing_period) %>%
+    dplyr::select(-c(.data$period, .data$month))
+
   taxa_estimations <-
     periods %>%
     rlang::set_names() %>%
     purrr::map(summarise_estimations, models$national$aggregated_taxa, c("date_bin_start", "grouped_taxa"))
-  # taxa_estimations_municipal <-
-  #  periods %>%
-  #  rlang::set_names() %>%
-  #  purrr::map(summarise_estimations, models$predictions_taxa$municipal$Covalima, c("date_bin_start", "grouped_taxa"))
+
+  municipal_taxa <-
+    aggregated_estimations_municipal <-
+    models$municipal %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("taxa")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(models$municipal)) %>%
+    dplyr::bind_rows(.id = "region") %>%
+    dplyr::rename(date_bin_start = .data$landing_period) %>%
+    dplyr::select(-c(.data$period, .data$month))
 
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
   nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
@@ -94,22 +110,32 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "tsv")
 
+  tsv_filenames_municipal <-
+    c("aggregated", "taxa") %>%
+    paste0("municipal-", .) %>%
+    paste0(pars$export$file_prefix, "_", .) %>%
+    purrr::map_chr(add_version, extension = "tsv")
+
+  tsv_filenames <- c(tsv_filenames, tsv_filenames_municipal)
+
   tsv_filenames %T>%
     purrr::walk2(
-      c(list(trips_table, catch_table), aggregated),
+      c(list(trips_table, catch_table), aggregated, list(municipal_aggregated, municipal_taxa)),
       ~ readr::write_tsv(.y, .x)
     ) %>%
     purrr::walk(upload_cloud_file,
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
+                provider = pars$public_storage$google$key,
+                options = pars$public_storage$google$options
     )
 
   logger::log_info("Saving and exporting public data as rds")
-  c("trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated") %>%
+  c("trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated",
+    "municipal_aggregated", "municipal_taxa") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
     purrr::walk2(
-      list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients),
+      list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients,
+           municipal_aggregated, municipal_taxa),
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
     purrr::walk(upload_cloud_file,
@@ -417,8 +443,10 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
       vitaminA = (.data$Vitamin_A_mu * (.data$catch * 1000)) / 1000
     ) %>%
     dplyr::group_by(.data$landing_period) %>%
-    dplyr::summarise(catch = dplyr::first(.data$catch),
-                     dplyr::across(c(.data$selenium:.data$vitaminA), sum, na.rm = TRUE)) %>%
+    dplyr::summarise(
+      catch = dplyr::first(.data$catch),
+      dplyr::across(c(.data$selenium:.data$vitaminA), sum, na.rm = TRUE)
+    ) %>%
     tidyr::pivot_longer(-c(.data$landing_period, .data$catch),
       names_to = "nutrient",
       values_to = "nut_supply"
@@ -435,7 +463,7 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
     ))
 }
 
-#purrr::set_names(names(models$municipal)) %>%
+# purrr::set_names(names(models$municipal)) %>%
 #  purrr::map(get_municipal_nutrients,
 #             nutrients_table = nutrients_table,
 #             municipal_estimates = models$municipal,

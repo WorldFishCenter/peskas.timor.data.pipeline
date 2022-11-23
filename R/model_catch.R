@@ -307,6 +307,7 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
       catch = ifelse(catch < 0, 0, catch)
     )) %>%
     dplyr::bind_rows() %>%
+    dplyr::select(-c(.data$half, .data$covid)) %>%
     dplyr::arrange(.data$landing_period)
 
   estimations_per_taxa
