@@ -265,9 +265,10 @@ metadata$boats %>%
 
 # National indicators
 
+
 ## Number of trips
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=4, fig.width=8}
+```{r echo=FALSE, fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
 
 estimates$national$aggregated %>%
   dplyr::mutate(n = n_landings_per_boat * 2334) %>%
