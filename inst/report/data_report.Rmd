@@ -498,6 +498,105 @@ estimates$national$aggregated %>%
 
 \pagebreak
 
+## Catch usage
+
+```{r, echo=FALSE, warning=FALSE, fig.height=11, fig.width=8.5,out.height="100%",out.width="100%"}
+rank_catch <-
+  catch %>%
+  dplyr::filter(individuals != 0 & comm_name != "NA") %>%
+  dplyr::count(comm_name, catch_purpose) %>%
+  ggplot() +
+  geom_col(mapping = aes(x = reorder(comm_name, n), y = n, fill = catch_purpose)) +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  theme(legend.position = "") +
+  scale_fill_manual(values = catch_use_palette) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(y = "number of catches", x = "", fill = "") +
+  coord_flip()
+
+tot_catch <-
+  catch %>%
+  dplyr::filter(individuals != 0) %>%
+  dplyr::count(catch_purpose) %>%
+  dplyr::mutate(
+    dummy_var = rep("dummycol", nrow(.)),
+    total_catches = sum(n),
+    proportion = n / total_catches * 100
+  ) %>%
+  ggplot(aes(x = dummy_var, y = n, fill = catch_purpose)) +
+  geom_col(width = 5) +
+  geom_text(aes(label = paste0(round(proportion, 1), "%")),
+    position = position_stack(vjust = 0.5),
+    color = "white",
+    fontface = "bold"
+  ) +
+  theme_minimal(14) +
+  theme(
+    legend.position = "top",
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  ) +
+  labs(
+    y = "", x = "", fill = "Catch usage",
+    title = "Catches final usage",
+    subtitle = "Sardines and pilchards are by far the most fished species followed by scads\nand emperor fishes. Overall, more than 70% of the catch is doomed for sale,\nexcept for some groups caught for sustenance as unicornfish and soldierfish."
+  ) +
+  scale_fill_manual(values = catch_use_palette) +
+  coord_flip()
+
+cowplot::plot_grid(tot_catch,
+  rank_catch,
+  ncol = 1,
+  rel_heights = c(2.5, 9),
+  align = "v"
+)
+```
+
+\pagebreak
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE, fig.height=5, fig.width=8}
+dplyr::left_join(catch, trips, by = "trip_id") %>%
+  dplyr::filter(individuals != 0) %>%
+  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
+  dplyr::group_by(landing_date_month) %>%
+  dplyr::count(catch_purpose) %>%
+  dplyr::mutate(
+    tot = sum(n, na.rm = TRUE),
+    usage_proportion = n / tot * 100
+  ) %>%
+  ggplot(aes(landing_date_month, usage_proportion, group = catch_purpose, color = catch_purpose)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x = "month", y = "Usage proportion",
+    color = "usage proportion",
+    title = "Time series of catches final usage",
+    subtitle = "Since 2019 catches sale is constantly increasing relatively to other usages."
+  ) +
+  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
+               limits = c(as.Date("2018-01-01"),Sys.Date() - 31)) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_color_manual(values = catch_use_palette) +
+  theme_minimal(15) +
+  theme(
+    text = element_text(family = "Helvetica"),
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 12, color = "darkslategrey")
+  )
+```
+
+\pagebreak
+
 ## Stock composition
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
@@ -761,6 +860,48 @@ estimates$municipal %>%
 
 \pagebreak
 
+## Catch usage 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=8, fig.width=10}
+catch_usage <- 
+  catch %>% 
+  dplyr::group_by(trip_id) %>% 
+  dplyr::summarise(catch_purpose = dplyr::first(.data$catch_purpose)) %>% 
+  dplyr::ungroup()
+trips_usage <- 
+  trips %>% 
+  dplyr::filter(!is.na(.data$tracker_trip_start)) %>% 
+  dplyr::group_by(trip_id) %>% 
+  dplyr::summarise(reporting_region = dplyr::first(.data$reporting_region)) %>% 
+  dplyr::ungroup()
+
+region_usage <- 
+  dplyr::full_join(trips_usage, catch_usage, by = "trip_id") %>% 
+  dplyr::filter(!is.na(.data$reporting_region) & !is.na(.data$catch_purpose)) %>% 
+  dplyr::group_by(.data$reporting_region) %>% 
+  dplyr::count(.data$catch_purpose) %>% 
+  dplyr::group_by(.data$reporting_region) %>% 
+  dplyr::mutate(tot_obs = sum(n)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(obs_perc = .data$n / .data$tot_obs *100)
+  
+
+region_usage %>% 
+  ggplot() +
+  #geom_col(mapping = aes(x = reorder(reporting_region, obs_perc), y = obs_perc, fill = catch_purpose)) +
+  geom_col(mapping = aes(x = reporting_region, y = obs_perc, fill = catch_purpose)) +
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  theme(legend.position = "right") +
+  scale_fill_manual(values = catch_use_palette) +
+  scale_y_continuous(labels = scales::comma, expand = c(0, 0)) +
+  labs(y = "Catch usage (%)", x = "", fill = "") +
+  coord_flip()
+```
+
+\pagebreak
+
+
 ## Stock composition
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=9,out.height="100%",out.width="100%"}
@@ -843,6 +984,42 @@ p1
 ```
 
 \pagebreak
+
+## Interannual fish groups composition
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=9, fig.width=11,out.height="100%",out.width="100%"}
+
+municipal_taxa <-
+  estimates$municipal %>%
+  purrr::map(~ purrr::keep(.x, stringr::str_detect(
+    names(.x), stringr::fixed("taxa")
+  ))) %>%
+  purrr::flatten() %>%
+  purrr::set_names(names(estimates$municipal)) %>%
+  dplyr::bind_rows(.id = "region") %>%
+  dplyr::rename(date_bin_start = .data$landing_period) %>%
+  dplyr::select(-c(.data$period, .data$month))
+
+municipal_taxa %>% 
+  dplyr::select(.data$region, .data$date_bin_start, .data$grouped_taxa, .data$catch) %>% 
+  dplyr::rename(catch_taxon = .data$grouped_taxa) %>% 
+  dplyr::left_join(catch_types, by = "catch_taxon") %>% 
+  dplyr::rename(comm_name = `Common name`) %>% 
+  ggplot(aes(date_bin_start, catch/1000, fill = comm_name))+
+  facet_wrap(.~region, scales = "free", ncol = 3)+
+  geom_col(alpha = 0.7)+
+  theme_minimal(14) +
+  theme(text = element_text(family = "Helvetica")) +
+  #scale_fill_viridis_d()+
+  scale_fill_brewer(palette = "Paired")+
+  theme(legend.position = "bottom") +
+  scale_x_date(expand = c(0, 0)) +
+  labs(x = "", y = "Catch (tons)", fill = "")
+
+```
+
+\pagebreak
+
 
 # Boat tracking
 
@@ -939,105 +1116,6 @@ dplyr::left_join(catch, trips, by = "trip_id") %>%
     legend.position="bottom",
     plot.title = element_text(size = 18),
     plot.subtitle = element_text(size = 13, color = "darkslategrey")
-  )
-```
-
-\pagebreak
-
-# Catch usage
-
-```{r, echo=FALSE, warning=FALSE, fig.height=11, fig.width=8.5,out.height="100%",out.width="100%"}
-rank_catch <-
-  catch %>%
-  dplyr::filter(individuals != 0 & comm_name != "NA") %>%
-  dplyr::count(comm_name, catch_purpose) %>%
-  ggplot() +
-  geom_col(mapping = aes(x = reorder(comm_name, n), y = n, fill = catch_purpose)) +
-  theme_minimal(14) +
-  theme(text = element_text(family = "Helvetica")) +
-  theme(legend.position = "") +
-  scale_fill_manual(values = catch_use_palette) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(y = "number of catches", x = "", fill = "") +
-  coord_flip()
-
-tot_catch <-
-  catch %>%
-  dplyr::filter(individuals != 0) %>%
-  dplyr::count(catch_purpose) %>%
-  dplyr::mutate(
-    dummy_var = rep("dummycol", nrow(.)),
-    total_catches = sum(n),
-    proportion = n / total_catches * 100
-  ) %>%
-  ggplot(aes(x = dummy_var, y = n, fill = catch_purpose)) +
-  geom_col(width = 5) +
-  geom_text(aes(label = paste0(round(proportion, 1), "%")),
-    position = position_stack(vjust = 0.5),
-    color = "white",
-    fontface = "bold"
-  ) +
-  theme_minimal(14) +
-  theme(
-    legend.position = "top",
-    panel.border = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.y = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 12, color = "darkslategrey")
-  ) +
-  labs(
-    y = "", x = "", fill = "Catch usage",
-    title = "Catches final usage",
-    subtitle = "Sardines and pilchards are by far the most fished species followed by scads\nand emperor fishes. Overall, more than 70% of the catch is doomed for sale,\nexcept for some groups caught for sustenance as unicornfish and soldierfish."
-  ) +
-  scale_fill_manual(values = catch_use_palette) +
-  coord_flip()
-
-cowplot::plot_grid(tot_catch,
-  rank_catch,
-  ncol = 1,
-  rel_heights = c(2.5, 9),
-  align = "v"
-)
-```
-
-\pagebreak
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE, fig.height=5, fig.width=8}
-dplyr::left_join(catch, trips, by = "trip_id") %>%
-  dplyr::filter(individuals != 0) %>%
-  dplyr::mutate(landing_date_month = lubridate::floor_date(landing_date, unit = "month")) %>%
-  dplyr::group_by(landing_date_month) %>%
-  dplyr::count(catch_purpose) %>%
-  dplyr::mutate(
-    tot = sum(n, na.rm = TRUE),
-    usage_proportion = n / tot * 100
-  ) %>%
-  ggplot(aes(landing_date_month, usage_proportion, group = catch_purpose, color = catch_purpose)) +
-  geom_line() +
-  geom_point() +
-  labs(
-    x = "month", y = "Usage proportion",
-    color = "usage proportion",
-    title = "Time series of catches final usage",
-    subtitle = "Since 2019 catches sale is constantly increasing relatively to other usages."
-  ) +
-  scale_x_date(date_breaks = "3 month", minor_breaks = NULL, labels = label_date,
-               limits = c(as.Date("2018-01-01"),Sys.Date() - 31)) +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  scale_color_manual(values = catch_use_palette) +
-  theme_minimal(15) +
-  theme(
-    text = element_text(family = "Helvetica"),
-    legend.position = "top",
-    legend.title = element_blank(),
-    plot.title = element_text(size = 18),
-    plot.subtitle = element_text(size = 12, color = "darkslategrey")
   )
 ```
 

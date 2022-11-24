@@ -445,28 +445,29 @@ validate_price_weight <- function(catch_alerts = NULL,
   # Extract IDs with abnormal price weight relation based on Cook's distance
   price_per_weight_alerts <-
     dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
-    dplyr::filter(.data$submission_id %in% single_catches) %>%
+    #dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%
     dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
     dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
-    dplyr::group_by(.data$submission_id, .data$species) %>%
+    #dplyr::group_by(.data$submission_id, .data$species) %>%
+    dplyr::group_by(.data$submission_id) %>%
     dplyr::summarise(
       total_catch_value = dplyr::first(.data$total_catch_value),
-      weight = sum(.data$weight, na.rm = T)
+      weight = sum(.data$weight, na.rm = T),
     ) %>%
-    dplyr::group_by(.data$species) %>%
+    #dplyr::group_by(.data$species) %>%
     dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
-    ~ log(.data$weight + 1)))) %>%
+                                                   ~ log(.data$weight/1000 + 1)))) %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
     dplyr::mutate(
       weight_kg = .data$weight / 1000,
       pk = .data$total_catch_value / .data$weight_kg,
       alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) |
-        .data$pk < price_weight_min |
-        .data$pk > price_weight_max
-      ~ 17, TRUE ~ NA_real_)
+                                        .data$pk < price_weight_min |
+                                        .data$pk > price_weight_max
+                                      ~ 17, TRUE ~ NA_real_)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
