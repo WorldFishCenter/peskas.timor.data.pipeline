@@ -48,7 +48,17 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
       vessels_metadata = vessels_stats
     )
 
-  national_models <- get_national_estimates(municipal_estimations = municipal_models)
+  national_models <-
+    run_models(
+      pars = pars,
+      trips = trips,
+      modelled_taxa = "selected",
+      vessels_metadata = vessels_stats,
+      nation = TRUE,
+      region = "Timor"
+    )
+
+  #national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
   results <-
     list(
@@ -466,21 +476,24 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
   models
 }
 
-run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family) {
-  # region <- "Covalima"
-  # vessels_metadata <- vessels_stats
+run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national = FALSE) {
+  if (isTRUE(national)) {
+    trips_region <- trips
+    region_boats <- 2334
+    region <- "Timor"
+  } else {
+    trips_region <-
+      trips %>%
+      dplyr::filter(.data$reporting_region == region)
 
-  trips_region <-
-    trips %>%
-    dplyr::filter(.data$reporting_region == region)
+    region_boats <-
+      vessels_metadata %>%
+      dplyr::filter(.data$reporting_region == region) %>%
+      dplyr::summarise(n_boats = sum(.data$n_boats, na.rm = T)) %>%
+      magrittr::extract2("n_boats")
+  }
 
   message("Modelling ", region)
-
-  region_boats <-
-    vessels_metadata %>%
-    dplyr::filter(.data$reporting_region == region) %>%
-    dplyr::summarise(n_boats = sum(.data$n_boats, na.rm = T)) %>%
-    magrittr::extract2("n_boats")
 
   landings_model <- model_landings(trips_region)
   value_model <- model_value(trips_region)

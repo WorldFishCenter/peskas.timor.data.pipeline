@@ -57,8 +57,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   aggregated_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$aggregated) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+    purrr::map(summarise_estimations, models$national$aggregated)
+    #purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   municipal_aggregated <-
@@ -70,15 +70,15 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month)) %>%
-    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+    dplyr::select(-c(.data$period, .data$month))
+    #dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
 
 
   taxa_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$aggregated_taxa, c("date_bin_start", "grouped_taxa")) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+    purrr::map(summarise_estimations, models$national$taxa, c("date_bin_start", "grouped_taxa"))
+    #purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   municipal_taxa <-
@@ -90,8 +90,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month)) %>%
-    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+    dplyr::select(-c(.data$period, .data$month))
+    #dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
 
@@ -102,8 +102,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     nutrients_proportions,
     taxa = "MZZ"
   ) %>%
-    purrr::map(aggregate_nutrients, pars) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+    purrr::map(aggregate_nutrients, pars)
+    #purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
