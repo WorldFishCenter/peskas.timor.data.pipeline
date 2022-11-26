@@ -640,7 +640,7 @@ trips %>%
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.height=8, fig.width=9,out.height="100%",out.width="100%"}
 
-estimates$national$aggregated_taxa %>% 
+estimates$national$taxa %>% 
   dplyr::rename(catch_taxon = grouped_taxa) %>% 
   dplyr::left_join(catch_types, by = "catch_taxon") %>% 
   dplyr::rename(comm_name = `Common name`) %>% 
