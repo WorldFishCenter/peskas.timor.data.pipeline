@@ -92,6 +92,9 @@ generate_estimates <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = NULL) {
+  #region <- "Covalima"
+  #vessels_metadata <- vessels_stats
+
   trips_df <-
     trips %>%
     dplyr::filter(.data$reporting_region == region)
@@ -140,9 +143,16 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
       period = paste(.data$year, .data$month, sep = "-")
     ) %>%
     dplyr::group_by(.data$year, .data$month, .data$landing_period) %>%
-    dplyr::summarise(n_landings_per_boat = mean(.data$n_landings)) %>%
-    dplyr::arrange(.data$landing_period) %>%
-    dplyr::ungroup()
+    dplyr::summarise(n_landings_per_boat = stats::quantile(.data$n_landings, 0.9)) %>%
+    dplyr::ungroup() %>%
+    # fix for any poor data
+    dplyr::mutate(
+      n_landings_per_boat = ifelse(.data$n_landings_per_boat < 10,
+        stats::runif(30, 10, 20),
+        .data$n_landings_per_boat
+      )
+    ) %>%
+    dplyr::arrange(.data$landing_period)
 
   value_df <-
     trips_df %>%
@@ -189,22 +199,33 @@ estimate_indicators <- function(trips = NULL, vessels_metadata = NULL, region = 
 
   dplyr::full_join(landings_df, value_df) %>%
     dplyr::full_join(catch_df) %>%
+    dplyr::right_join(get_frame()) %>%
+    dplyr::select(-c(.data$half, .data$covid)) %>%
+    dplyr::mutate(year = lubridate::year(.data$landing_period),
+                  n_landings_per_boat = ifelse(.data$n_landings_per_boat == 0, NA_real_, .data$n_landings_per_boat),
+                  landing_revenue = ifelse(.data$landing_revenue == 0, NA_real_, .data$landing_revenue),
+                  landing_weight = ifelse(.data$landing_weight == 0, NA_real_, .data$landing_weight)) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::mutate(
       period = paste(.data$year, .data$month, sep = "-"),
-      landing_period = lubridate::ym(.data$period),
+      is_imputed = ifelse(is.na(.$landing_weight), "yes", "no"),
+      n_landings_per_boat = imputeTS::na_interpolation(.$n_landings_per_boat, option = "spline"),
+      landing_revenue = imputeTS::na_interpolation(.$landing_revenue, option = "spline"),
+      landing_weight = imputeTS::na_interpolation(.$landing_weight, option = "spline"),
+      n_landings_per_boat = dplyr::case_when(.data$n_landings_per_boat < 0 ~ 0, TRUE ~ .data$n_landings_per_boat),
+      landing_revenue = dplyr::case_when(.data$landing_revenue < 0 ~ 0, TRUE ~ .data$landing_revenue),
+      landing_weight = dplyr::case_when(.data$landing_weight < 0 ~ 0, TRUE ~ .data$landing_weight),
       revenue = .data$landing_revenue * .data$n_landings_per_boat * region_boats,
-      catch = .data$landing_weight * .data$n_landings_per_boat * region_boats,
-      region = region
+      catch = .data$landing_weight * .data$n_landings_per_boat * region_boats
     ) %>%
     dplyr::select(
       .data$period, .data$month, .data$landing_period,
       .data$landing_revenue, .data$n_landings_per_boat,
       .data$landing_weight, .data$revenue, .data$catch,
-      .data$region
+      .data$is_imputed
     ) %>%
     dplyr::ungroup() %>%
-    as.data.frame()
+    dplyr::arrange(.data$landing_period)
 }
 
 
