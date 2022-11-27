@@ -35,7 +35,8 @@ Imports:
     RCurl,
     readr,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
+    imputeTS
 Suggests: 
     covr,
     pkgdown,

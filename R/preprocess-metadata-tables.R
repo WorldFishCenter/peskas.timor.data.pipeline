@@ -69,7 +69,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
     gear_types = pt_validate_gear_types(metadata_tables$gear_types),
     stations = pt_validate_stations(metadata_tables$stations),
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
-    habitat = pt_validate_habitat(metadata_tables$habitat)
+    habitat = pt_validate_habitat(metadata_tables$habitat),
+    vessels_stats = pt_validate_vessels_stats(metadata_tables$fishing_vessel_statistics)
   )
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
@@ -273,4 +274,14 @@ pt_validate_reporting_unit <- function(x) {
 
 pt_validate_habitat <- function(x) {
   x
+}
+
+pt_validate_vessels_stats <- function(vessels_stats_table) {
+  vessels_stats_table %>%
+    tidyr::separate(.data$boat_numbers,
+      into = c("reporting_region", "type", NA),
+      sep = "([|])"
+    ) %>%
+    dplyr::select(.data$reporting_region, .data$type, .data$n_boats, .data$info_date) %>%
+    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
 }

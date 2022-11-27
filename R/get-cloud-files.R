@@ -74,6 +74,13 @@ get_public_files <- function(pars) {
     purrr::map(readr::read_rds)
 }
 
+#' Download models estimates
+#'
+#' @param pars Configuration file
+#'
+#' @return A list of dataframes with national and municipal estimations
+#' @export
+#'
 get_models <- function(pars) {
   cloud_object_name(
     prefix = paste0(pars$models$file_prefix),
@@ -233,7 +240,7 @@ get_full_trips <- function(pars) {
 #'
 get_tracks_map <- function(pars) {
   download_cloud_file(
-    name = paste(pars$pds$tracks$map$file_prefix, pars$pds$tracks$map$extension, sep = "."),
+    name = paste(pars$pds$tracks$map$png$file_prefix, pars$pds$tracks$map$png$extension, sep = "."),
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )

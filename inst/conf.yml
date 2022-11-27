@@ -70,6 +70,7 @@ default:
         - stations
         - reporting_units
         - habitat
+        - fishing_vessel_statistics
     version:
       preprocess: latest
     rfishtable:
@@ -137,7 +138,8 @@ default:
 
   models:
     file_prefix: model_predictions
-    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, GZP]
+    all_taxa: [APO, BAR, BEN, BGX, BWH, CBA, CGX, CJX, CLP, COZ, CRA, CUX, DOS, DOX, DRZ, DSF, ECN, EMP, FLY, GOX, GPX, GRX, GZP, IAX,IHX, KYX, LGE, LWX, MHL, MIL, MOB, MOJ, MOO, MUI, MUL, OCZ, PEZ, PUX, PWT, RAX, SDX, SFA, SKH, SLV, SNA, SPI, SRX, SUR, SWX, THF, THO, TRI, TUN, WRA, YDX, MZZ]
+    modelled_taxa: [CLP, CJX, SDX, BEN, TUN, EMP, FLY, SNA, RAX, CGX, GZP, MZZ]
 
   export:
     file_prefix: timor

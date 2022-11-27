@@ -28,10 +28,11 @@
 format_public_data <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
-  RDI <- pars$metadata$nutrients$RDI$convert
 
   logger::log_info("Retrieving merged trips...")
-  merged_trips <- get_merged_trips(pars)
+  merged_trips <- get_merged_trips(pars) %>%
+    dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
+
   logger::log_info("Retrieving modelled data...")
   models <- get_models(pars)
   logger::log_info("Retrieving nutrient properties info...")
@@ -48,17 +49,52 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Aggregating data")
   periods <- c("day", "week", "month", "year")
-  aggregated_trips <- periods %>%
+  aggregated_trips <-
+    periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_trips, merged_trips_with_addons)
-  aggregated_estimations <- periods %>%
+    purrr::map(summarise_trips, merged_trips_with_addons) %>%
+    purrr::imap(~ .x %>% dplyr::filter(!is.na(.data$date_bin_start)))
+  aggregated_estimations <-
+    periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$predictions$aggregated)
-  taxa_estimations <- periods %>%
+    purrr::map(summarise_estimations, models$national$aggregated) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+
+
+  municipal_aggregated <-
+    models$municipal %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("aggregated")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(models$municipal)) %>%
+    dplyr::bind_rows(.id = "region") %>%
+    dplyr::rename(date_bin_start = .data$landing_period) %>%
+    dplyr::select(-c(.data$period, .data$month)) %>%
+    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+
+
+  taxa_estimations <-
+    periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$predictions_taxa$aggregated, c("date_bin_start", "grouped_taxa"))
+    purrr::map(summarise_estimations, models$national$taxa, c("date_bin_start", "grouped_taxa")) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+
+
+  municipal_taxa <-
+    models$municipal %>%
+    purrr::map(~ purrr::keep(.x, stringr::str_detect(
+      names(.x), stringr::fixed("taxa")
+    ))) %>%
+    purrr::flatten() %>%
+    purrr::set_names(names(models$municipal)) %>%
+    dplyr::bind_rows(.id = "region") %>%
+    dplyr::rename(date_bin_start = .data$landing_period) %>%
+    dplyr::select(-c(.data$period, .data$month)) %>%
+    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
+
   nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
   # fill MZZ (miscellaneous unrecognized fishes) with average nutrients proportion of other groups
   aggregated_nutrients <- purrr::map(nutrients_estimates,
@@ -66,7 +102,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     nutrients_proportions,
     taxa = "MZZ"
   ) %>%
-    purrr::map(aggregate_nutrients, RDI, pars)
+    purrr::map(aggregate_nutrients, pars) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
@@ -84,22 +121,32 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "tsv")
 
+  tsv_filenames_municipal <-
+    c("aggregated", "taxa") %>%
+    paste0("municipal-", .) %>%
+    paste0(pars$export$file_prefix, "_", .) %>%
+    purrr::map_chr(add_version, extension = "tsv")
+
+  tsv_filenames <- c(tsv_filenames, tsv_filenames_municipal)
+
   tsv_filenames %T>%
     purrr::walk2(
-      c(list(trips_table, catch_table), aggregated),
+      c(list(trips_table, catch_table), aggregated, list(municipal_aggregated, municipal_taxa)),
       ~ readr::write_tsv(.y, .x)
     ) %>%
     purrr::walk(upload_cloud_file,
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
+                provider = pars$public_storage$google$key,
+                options = pars$public_storage$google$options
     )
 
   logger::log_info("Saving and exporting public data as rds")
-  c("trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated") %>%
+  c("trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated",
+    "municipal_aggregated", "municipal_taxa") %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
     purrr::walk2(
-      list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients),
+      list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients,
+           municipal_aggregated, municipal_taxa),
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
     purrr::walk(upload_cloud_file,
@@ -340,7 +387,7 @@ fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa 
     )
 }
 
-aggregate_nutrients <- function(x, RDI, pars) {
+aggregate_nutrients <- function(x, pars) {
   x %>%
     dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
@@ -388,3 +435,49 @@ get_weight <- function(x) {
     tidyr::nest(length_frequency = c(.data$length:.data$Vitamin_A_mu)) %>%
     tidyr::nest(landing_catch = c(.data$catch_taxon, .data$catch_purpose, .data$length_type, .data$length_frequency))
 }
+
+
+get_municipal_nutrients <- function(nutrients_table = NULL,
+                                    municipal_estimates = NULL,
+                                    region = NULL,
+                                    pars) {
+  municipal_estimates[[region]]$taxa %>%
+    dplyr::left_join(nutrients_table, by = "grouped_taxa") %>%
+    # convert nutrients in Kg
+    dplyr::mutate(
+      selenium = (.data$Selenium_mu * (.data$catch * 1000)) / 1000,
+      zinc = (.data$Zinc_mu * (.data$catch * 1000)) / 1000,
+      protein = (.data$Protein_mu * (.data$catch * 1000)) / 1000,
+      omega3 = (.data$Omega_3_mu * (.data$catch * 1000)) / 1000,
+      calcium = (.data$Calcium_mu * (.data$catch * 1000) / 1000),
+      iron = (.data$Iron_mu * (.data$catch * 1000)) / 1000,
+      vitaminA = (.data$Vitamin_A_mu * (.data$catch * 1000)) / 1000
+    ) %>%
+    dplyr::group_by(.data$landing_period) %>%
+    dplyr::summarise(
+      catch = dplyr::first(.data$catch),
+      dplyr::across(c(.data$selenium:.data$vitaminA), sum, na.rm = TRUE)
+    ) %>%
+    tidyr::pivot_longer(-c(.data$landing_period, .data$catch),
+      names_to = "nutrient",
+      values_to = "nut_supply"
+    ) %>%
+    dplyr::mutate(nut_rdi = dplyr::case_when(
+      nutrient == "selenium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
+      TRUE ~ NA_real_
+    ))
+}
+
+# purrr::set_names(names(models$municipal)) %>%
+#  purrr::map(get_municipal_nutrients,
+#             nutrients_table = nutrients_table,
+#             municipal_estimates = models$municipal,
+#             pars = pars
+#  ) %>%
+#  dplyr::bind_rows(.id = "region")

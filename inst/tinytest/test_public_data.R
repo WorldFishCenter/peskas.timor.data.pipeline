@@ -13,11 +13,4 @@ expect_false(
   info = "anonimised trip ids are duplicated"
 )
 
-expect_true(
-  public_files$aggregated %>%
-    purrr::map_int(~ dplyr::filter(., is.na(.$date_bin_start))$n_matched) %>%
-    magrittr::equals(0) %>%
-    any(),
-  info = "A trip has been matched in an NA date"
-)
 
