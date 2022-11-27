@@ -54,7 +54,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
       trips = trips,
       modelled_taxa = "selected",
       vessels_metadata = vessels_stats,
-      nation = TRUE,
+      national_level = TRUE,
       region = "Timor"
     )
 
@@ -476,8 +476,8 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
   models
 }
 
-run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national = FALSE) {
-  if (isTRUE(national)) {
+run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
+  if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- 2334
     region <- "Timor"
