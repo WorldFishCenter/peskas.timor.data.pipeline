@@ -58,7 +58,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
       region = "Timor"
     )
 
-  #national_models <- get_national_estimates(municipal_estimations = municipal_models)
+  # national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
   results <-
     list(
@@ -82,7 +82,11 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 #' @return a glmmTMB model
 #' @importFrom glmmTMB glmmTMB
 model_landings <- function(trips) {
-  landings_df <- trips %>%
+
+  set.seed(888)
+
+  landings_df <-
+    trips %>%
     dplyr::mutate(
       landing_period = lubridate::floor_date(.data$tracker_trip_end,
         unit = "month"
@@ -130,7 +134,17 @@ model_landings <- function(trips) {
         .data$landing_period > "2020-03-04" ~ "post_covid"
       )
     ) %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      low = stats::quantile(.data$n_landings, 0.25, na.rm = T),
+      median = stats::quantile(.data$n_landings, 0.5, na.rm = T),
+      high = stats::quantile(.data$n_landings, 0.75, na.rm = T),
+      n_landings = ifelse(.data$n_landings <= .data$low,
+        stats::runif(30, .data$low, .data$high),
+        .data$n_landings
+      )
+    ) %>%
+    dplyr::select(-c(.data$low, .data$median, .data$high))
 
   glmmTMB(n_landings ~ (1 | month) + (1 | period) + (1 | half) + (1 | covid),
     family = "poisson",
@@ -252,18 +266,6 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
 
   estimations_total <-
     estimations %>%
-    dplyr::mutate(
-      n_landings_per_boat = ifelse(.data$n_landings_per_boat > 30,
-        stats::runif(30, 20, 30),
-        .data$n_landings_per_boat
-      ),
-      revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
-      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      dplyr::across(
-        c(.data$landing_revenue, .data$n_landings_per_boat, .data$landing_weight, .data$revenue, .data$catch),
-        ~ dplyr::case_when(.data$landing_weight < 0.5 ~ NA_real_, TRUE ~ .)
-      )
-    ) %>%
     dplyr::right_join(get_frame(), by = c("period", "month", "landing_period", "half", "covid")) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::mutate(
@@ -477,6 +479,8 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
+  #region <- "Dili"
+  #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- 2334
@@ -498,7 +502,7 @@ run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, mod
   landings_model <- model_landings(trips_region)
   value_model <- model_value(trips_region)
   catch_model <- model_catch(trips_region)
-  results <- estimate_statistics(landings_model, value_model, catch_model, n_boats = region_boats)
+  results <- estimate_statistics(value_model, landings_model, catch_model, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
 
