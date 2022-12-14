@@ -139,7 +139,6 @@ retrieve_survey_data <- function(path, id = NULL, token = NULL,
 #' }
 #'
 retrieve_survey_metadata <- function(id = NULL, token = NULL, api = "kobohr") {
-
   # If the token is not provided is not possible to get the
   no_token <- length(token) == 0 | is.null(token)
   if (no_token) {
@@ -271,7 +270,7 @@ flatten_row <- function(x) {
 flatten_field <- function(x, p) {
   # If the field is a simple vector do nothing but if the field is a list we
   # need more logic
-  if (class(x) == "list") {
+  if (inherits(x, "list")) {
     if (length(x) > 0) {
       if (purrr::vec_depth(x) == 2) {
         # If the field-list has named elements is we just need to rename the list
@@ -297,9 +296,9 @@ rename_child <- function(x, i, p) {
     x <- list(x)
     x <- rlang::set_names(x, paste(p, i - 1, sep = "."))
   } else {
-    if (class(i) == "character") {
+    if (inherits(i, "character")) {
       x <- rlang::set_names(x, paste(p, i, sep = "."))
-    } else if (class(i) == "integer") {
+    } else if (inherits(i, "integer")) {
       x <- rlang::set_names(x, paste(p, i - 1, names(x), sep = "."))
     }
   }
