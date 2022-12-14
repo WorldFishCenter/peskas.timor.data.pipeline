@@ -25,7 +25,9 @@ services. File names used contain a
 versioning string that includes the date-time and, if available, the first 7
 digits of the git commit sha. This is acomplished using \code{\link[=add_version]{add_version()}}
 
-The parameters needed in \code{conf.yml} are:\preformatted{surveys:
+The parameters needed in \code{conf.yml} are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
   landings:
     api:
     survey_id:
@@ -38,7 +40,7 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

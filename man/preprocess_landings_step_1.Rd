@@ -26,7 +26,9 @@ of raw data, while the function \code{preprocess_landings_step_2} process the se
 half.
 
 This function downloads the landings data from a given version (specified in
-the config file \code{conf.yml}.The parameters needed are:\preformatted{surveys:
+the config file \code{conf.yml}.The parameters needed are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
   landings:
     api:
     survey_id:
@@ -41,7 +43,7 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

@@ -22,7 +22,9 @@ storage services.
 The function  downloads and uploads only tracks data that are not yet
 stored in the bucket.
 
-The parameters needed in \code{conf.yml} are:\preformatted{pds:
+The parameters needed in \code{conf.yml} are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{pds:
   tracks:
     token:
     secret:
@@ -34,7 +36,7 @@ pds_storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

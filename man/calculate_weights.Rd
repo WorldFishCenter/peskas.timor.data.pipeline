@@ -19,7 +19,9 @@ Downloads merged landings and calculates the weight of the catch.
 }
 \details{
 The  file is then uploaded to the cloud. The name is the same as for merged
-landings but with "_weight" at the end. The parameters needed are:\preformatted{surveys:
+landings but with "_weight" at the end. The parameters needed are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
   merged_landings:
     file_prefix:
     version:
@@ -30,7 +32,7 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

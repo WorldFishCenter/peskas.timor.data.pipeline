@@ -19,7 +19,9 @@ Downloads pre-processed versions of recent and legacy landings from cloud and
 merge in a rds-format file using the function \link[dplyr:mutate-joins]{dplyr::full_join}.
 }
 \details{
-The merged file is then uploaded to the cloud. The parameters needed are:\preformatted{surveys:
+The merged file is then uploaded to the cloud. The parameters needed are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
   landings:
     file_prefix:
     version:
@@ -38,7 +40,7 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

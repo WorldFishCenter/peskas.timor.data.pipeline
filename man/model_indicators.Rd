@@ -15,7 +15,9 @@ details}
 Uses the trip data to model various fisheries statistics.
 }
 \details{
-The parameters needed in \code{conf.yml} are:\preformatted{models:
+The parameters needed in \code{conf.yml} are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{models:
   file_prefix:
 storage:
   storage_name:
@@ -24,6 +26,6 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 }
 \keyword{workflow}

@@ -22,7 +22,9 @@ into a binary format that is easier to deal with in R.
 The preprocessed file consists of a dataframe containing PDS tracks' diagnostics
 useful to the following validation step.
 
-The parameters needed are:\preformatted{pds:
+The parameters needed are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{pds:
  tracks:
   token: !expr Sys.getenv('PDS_TOKEN')
   secret: !expr Sys.getenv('PDS_SECRET')
@@ -31,7 +33,7 @@ pds_storage:
   google:
    options:
     bucket: pds-timor
-}
+}\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.
 }

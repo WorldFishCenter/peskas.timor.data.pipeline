@@ -17,7 +17,9 @@ the table and uploads it to a drive location. These tables include
 information about boats, devices, municipalities, etc.
 }
 \details{
-The parameters needed in \code{conf.yml} are:\preformatted{metadata:
+The parameters needed in \code{conf.yml} are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{metadata:
   airtable:
     base_id:
     name:
@@ -32,6 +34,6 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 }
 \keyword{workflow}

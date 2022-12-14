@@ -24,7 +24,9 @@ Specifically this function:
 }
 
 This function requires no arguments because it retrieves the parameters from
-\code{conf.yml}. The fields required are:\preformatted{metadata:
+\code{conf.yml}. The fields required are:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{metadata:
   spreadsheet:
     name:
   version:
@@ -36,6 +38,6 @@ storage:
       project:
       bucket:
       service_account_key:
-}
+}\if{html}{\out{</div>}}
 }
 \keyword{workflow}

@@ -22,7 +22,9 @@ and rds in a storage bucket with public access.
 }
 \details{
 #'The parameters needed in the config file are those required for
-\code{merge_trips()} in addition to:\preformatted{public_storage:
+\code{merge_trips()} in addition to:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{public_storage:
  google:
    key: gcs
    options:
@@ -31,6 +33,6 @@ and rds in a storage bucket with public access.
      service_account_key:
 export:
  file_prefix:
-}
+}\if{html}{\out{</div>}}
 }
 \keyword{workflow}
