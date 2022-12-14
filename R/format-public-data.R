@@ -106,13 +106,17 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
-  aggregated <- purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
+  aggregated <-
+    purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
     purrr::map(
       dplyr::select,
       .data$date_bin_start, .data$n_landings,
       .data$prop_landings_woman:.data$catch,
       .data$recorded_revenue, .data$recorded_catch
-    )
+    ) %>%
+    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month") &
+      .data$date_bin_start >= "2018-01-01"))
+
 
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- periods %>%
@@ -135,18 +139,22 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       ~ readr::write_tsv(.y, .x)
     ) %>%
     purrr::walk(upload_cloud_file,
-                provider = pars$public_storage$google$key,
-                options = pars$public_storage$google$options
+      provider = pars$public_storage$google$key,
+      options = pars$public_storage$google$options
     )
 
   logger::log_info("Saving and exporting public data as rds")
-  c("trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated",
-    "municipal_aggregated", "municipal_taxa") %>%
+  c(
+    "trips", "catch", "aggregated", "taxa_aggregated", "nutrients_aggregated",
+    "municipal_aggregated", "municipal_taxa"
+  ) %>%
     paste0(pars$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
     purrr::walk2(
-      list(trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients,
-           municipal_aggregated, municipal_taxa),
+      list(
+        trips_table, catch_table, aggregated, taxa_estimations, aggregated_nutrients,
+        municipal_aggregated, municipal_taxa
+      ),
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
     purrr::walk(upload_cloud_file,
