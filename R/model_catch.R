@@ -26,7 +26,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
-  set.seed(888)
+  set.seed(666)
 
   trips <-
     get_merged_trips(pars) %>%
@@ -280,7 +280,8 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
     dplyr::select(-c(.data$half, .data$covid)) %>%
-    dplyr::arrange(.data$landing_period)
+    dplyr::arrange(.data$landing_period) %>%
+    dplyr::mutate(n_boats = rep(n_boats))
 
   estimations_total
 }
@@ -479,7 +480,7 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-  #region <- "Dili"
+  #region <- "Manufahi"
   #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
