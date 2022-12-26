@@ -273,9 +273,9 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
       n_landings_per_boat = imputeTS::na_interpolation(.$n_landings_per_boat, option = "spline"),
       landing_revenue = imputeTS::na_interpolation(.$landing_revenue, option = "spline"),
       landing_weight = imputeTS::na_interpolation(.$landing_weight, option = "spline"),
-      n_landings_per_boat = dplyr::case_when(.data$n_landings_per_boat < 0 ~ 0, TRUE ~ .data$n_landings_per_boat),
-      landing_revenue = dplyr::case_when(.data$landing_revenue < 0 ~ 0, TRUE ~ .data$landing_revenue),
-      landing_weight = dplyr::case_when(.data$landing_weight < 0 ~ 0, TRUE ~ .data$landing_weight),
+      n_landings_per_boat = dplyr::case_when(.data$n_landings_per_boat <= 0 ~ NA_real_, TRUE ~ .data$n_landings_per_boat),
+      landing_revenue = dplyr::case_when(.data$landing_revenue <= 0 ~ NA_real_, TRUE ~ .data$landing_revenue),
+      landing_weight = dplyr::case_when(.data$landing_weight <= 0 ~ NA_real_, TRUE ~ .data$landing_weight),
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
