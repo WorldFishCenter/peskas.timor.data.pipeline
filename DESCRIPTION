@@ -34,8 +34,7 @@ Imports:
     purrr,
     readr,
     tidyr,
-    rlang (>= 0.1.2),
-    imputeTS
+    rlang (>= 0.1.2)
 Suggests: 
     covr,
     pkgdown,
@@ -67,7 +66,9 @@ Suggests:
     univOutl,
     zip,
     leaflet,
-    htmltools
+    htmltools,
+    imputeTS,
+    Amelia
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

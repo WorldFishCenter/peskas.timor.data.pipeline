@@ -52,7 +52,8 @@ RUN install2.r --error --skipinstalled \
     tidytext \
     zip \
     leaflet \
-    htmltools
+    htmltools \
+    Amelia
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
