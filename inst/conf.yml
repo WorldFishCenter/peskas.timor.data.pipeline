@@ -71,6 +71,7 @@ default:
         - reporting_units
         - habitat
         - fishing_vessel_statistics
+        - registered_boats
     version:
       preprocess: latest
     rfishtable:
