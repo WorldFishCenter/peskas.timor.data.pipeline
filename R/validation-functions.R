@@ -211,10 +211,11 @@ validate_catch_price <- function(data, method = NULL, k = NULL) {
     dplyr::filter(is.na(.data$alert_number)) %>%
     dplyr::select(.data$`_id`, .data$total_catch_value) %>%
     dplyr::transmute(
-      alert_number = alert_outlier(
-        x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
-        logt = TRUE, k = k, method = method
-      ),
+      alert_number = ifelse(.data$total_catch_value > 1500, 6, NA_integer_),
+      #alert_number = alert_outlier(
+      #  x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
+      #  logt = TRUE, k = k, method = method
+      #),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value,
         TRUE ~ NA_real_
