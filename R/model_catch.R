@@ -292,7 +292,7 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
     estimations %>%
     dplyr::group_by(.data$grouped_taxa) %>%
     dplyr::count(is.na(.data$landing_weight)) %>%
-    dplyr::filter(.data$`is.na(landing_weight)` == TRUE)
+    dplyr::filter(.data$`is.na(.data$landing_weight)` == TRUE)
 
   if (nrow(miss_df) == 0) {
     imputed_df <- estimations
