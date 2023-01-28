@@ -56,6 +56,6 @@ RUN install2.r --error --skipinstalled \
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
-RUN "install_version('glmmTMB', version = '1.1.5', dependencies= T)"
+RUN Rscript -e "install_version('glmmTMB', version = '1.1.5')"
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json
