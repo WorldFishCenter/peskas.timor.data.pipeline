@@ -29,7 +29,7 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       show_col_types = FALSE
     ) %>%
     dplyr::rename(SpecCode = .data$spec_code) %>%
-    dplyr::mutate(SpecCode = as.character(.data$SpecCode)) %>%
+    dplyr::mutate(SpecCode = as.integer(.data$SpecCode)) %>%
     dplyr::select(.data$species, .data$SpecCode, tidyselect::contains("_mu")) %>%
     dplyr::right_join(rfish_tab, by = "SpecCode") %>%
     dplyr::select(.data$interagency_code, tidyselect::contains("_mu"))
