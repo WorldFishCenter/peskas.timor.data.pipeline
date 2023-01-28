@@ -245,7 +245,17 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
       landing_weight = ifelse(.data$landing_weight < 0.1, NA_real_, .data$landing_weight),
       landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue),
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
-      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
+      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
+      price_kg = .data$revenue / .data$catch,
+      # upper bound interpolation of price per weight
+      #upp_bound_price = univOutl::LocScaleB(.data$price_kg, method = "MAD", k = 5)$bounds[2],
+      #price_kg = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$price_kg),
+      #catch = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$catch),
+      #revenue = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$revenue),
+      #price_kg = imputeTS::na_interpolation(.data$price_kg,option = "spline"),
+      #catch = imputeTS::na_interpolation(.data$catch,option = "spline"),
+      #revenue = imputeTS::na_interpolation(.data$revenue,option = "spline"),
+      #price_kg = .data$revenue / .data$catch
     ) %>%
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
@@ -253,15 +263,16 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
 
   estimations_total
 }
-
 estimates_per_taxa <- function(catch_models, general_results, n_boats) {
-  national_estimates <- general_results %>%
+  national_estimates <-
+    general_results %>%
     dplyr::select(-.data$landing_weight) %>%
     dplyr::mutate(
       landing_revenue = NA,
       revenue = NA,
       catch = NA
-    )
+    ) %>%
+    dplyr::select(-.data$price_kg)
 
   estimations <-
     catch_models %>%
@@ -269,19 +280,52 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
     purrr::imap(~ dplyr::mutate(.x, grouped_taxa = .y)) %>%
     purrr::reduce(dplyr::bind_rows) %>%
     dplyr::mutate(month = as.integer(.data$month)) %>%
-    dplyr::right_join(get_frame(),
-                      by = c("period", "month", "landing_period", "version")
-    ) %>%
+    split(.$grouped_taxa) %>%
+    purrr::map(dplyr::right_join, get_frame()) %>%
+    purrr::map(~ .x %>% dplyr::mutate(grouped_taxa = rep_len(unique(.data$grouped_taxa)[1], nrow(.x)))) %>%
+    dplyr::bind_rows() %>%
     dplyr::group_by(.data$grouped_taxa) %>%
-    dplyr::arrange(.data$landing_period, .by_group = T)
+    dplyr::arrange(.data$landing_period, .by_group = T) %>%
+    dplyr::ungroup()
 
+  miss_df <-
+    estimations %>%
+    dplyr::group_by(.data$grouped_taxa) %>%
+    dplyr::count(is.na(.data$landing_weight)) %>%
+    dplyr::filter(.data$`is.na(landing_weight)` == TRUE)
+
+  if (nrow(miss_df) == 0) {
+    imputed_df <- estimations
+  } else {
+    set.seed(666)
+    imputed_df <-
+      estimations %>%
+      split(.$grouped_taxa) %>%
+      purrr::map(as.data.frame) %>%
+      purrr::map(Amelia::amelia,
+        m = 10,
+        ts = "landing_period",
+        idvars = c("period", "version", "grouped_taxa"),
+        sqrts = c("landing_weight", "month"),
+        boot.type = "ordinary"
+      ) %>%
+      purrr::map(~ purrr::keep(.x, stringr::str_detect(
+        names(.x), stringr::fixed("imputations")
+      ))) %>%
+      purrr::map(purrr::flatten) %>%
+      purrr::map(dplyr::bind_rows) %>%
+      dplyr::bind_rows() %>%
+      dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period, .data$grouped_taxa) %>%
+      dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+      dplyr::ungroup()
+  }
 
   estimations_per_taxa <-
-    estimations %>%
+    imputed_df %>%
     dplyr::select(-c(.data$version)) %>%
+    dplyr::arrange(.data$landing_period) %>%
     dplyr::left_join(national_estimates, by = c("period", "month", "landing_period")) %>%
     dplyr::mutate(
-      # revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
     split(.$grouped_taxa) %>%
@@ -416,7 +460,7 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-   #region <- "Atauro"
+   #region <- "Covalima"
    #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
