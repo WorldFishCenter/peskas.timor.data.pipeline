@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.1.1
+FROM rocker/geospatial:4.2
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -69,7 +69,7 @@ RUN install2.r --error --skipinstalled \
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
-RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
+RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 # Install local package
 COPY . /home
 WORKDIR /home
