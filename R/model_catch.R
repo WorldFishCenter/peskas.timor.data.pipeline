@@ -197,6 +197,43 @@ model_catch <- function(trips) {
   )
 }
 
+run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
+  #region <- "Manufahi"
+  #vessels_metadata <- vessels_stats
+  if (isTRUE(national_level)) {
+    trips_region <- trips
+    region_boats <- sum(vessels_metadata$n_boats)
+    region <- "Timor"
+  } else {
+    trips_region <-
+      trips %>%
+      dplyr::filter(.data$reporting_region == region)
+
+    region_boats <-
+      vessels_metadata %>%
+      dplyr::filter(.data$reporting_region == region) %>%
+      dplyr::summarise(n_boats = sum(.data$n_boats, na.rm = T)) %>%
+      magrittr::extract2("n_boats")
+  }
+
+  message("Modelling ", region)
+
+  landings_model <- model_landings(trips_region)
+  value_model <- model_value(trips_region)
+  catch_model <- model_catch(trips_region)
+  results <- estimate_statistics(value_model, landings_model, catch_model, n_boats = region_boats)
+
+  message("Modelling ", region, " taxa")
+
+  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
+  results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
+
+  all_results <-
+    list(
+      aggregated = results,
+      taxa = results_per_taxa
+    )
+}
 
 estimate_statistics <- function(value_model, landings_model, catch_model, n_boats) {
   models <- list(
@@ -244,6 +281,8 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
     dplyr::mutate(
       landing_weight = ifelse(.data$landing_weight < 0.1, NA_real_, .data$landing_weight),
       landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue),
+      landing_weight = imputeTS::na_interpolation(.data$landing_weight, option = "spline"),
+      landing_revenue = imputeTS::na_interpolation(.data$landing_revenue, option = "spline"),
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
       price_kg = .data$revenue / .data$catch,
@@ -263,6 +302,7 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
 
   estimations_total
 }
+
 estimates_per_taxa <- function(catch_models, general_results, n_boats) {
   national_estimates <-
     general_results %>%
@@ -292,7 +332,7 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
     estimations %>%
     dplyr::group_by(.data$grouped_taxa) %>%
     dplyr::count(is.na(.data$landing_weight)) %>%
-    dplyr::filter(.data$`is.na(landing_weight)` == TRUE)
+    dplyr::filter(.data$`is.na(.data$landing_weight)` == TRUE)
 
   if (nrow(miss_df) == 0) {
     imputed_df <- estimations
@@ -380,7 +420,6 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
   #     geom_col(aes(fill = grouped_taxa))
 }
 
-
 #' @importFrom stats predict
 predict_variable <- function(model, var) {
   model$frame %>%
@@ -392,7 +431,6 @@ predict_variable <- function(model, var) {
       {{ var }} := predict(model, type = "response", newdata = .)
     )
 }
-
 
 model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
   if (isTRUE(modelled_taxa == "selected")) {
@@ -459,45 +497,6 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
   models
 }
 
-run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-   #region <- "Covalima"
-   #vessels_metadata <- vessels_stats
-  if (isTRUE(national_level)) {
-    trips_region <- trips
-    region_boats <- sum(vessels_metadata$n_boats)
-    region <- "Timor"
-  } else {
-    trips_region <-
-      trips %>%
-      dplyr::filter(.data$reporting_region == region)
-
-    region_boats <-
-      vessels_metadata %>%
-      dplyr::filter(.data$reporting_region == region) %>%
-      dplyr::summarise(n_boats = sum(.data$n_boats, na.rm = T)) %>%
-      magrittr::extract2("n_boats")
-  }
-
-  message("Modelling ", region)
-
-  landings_model <- model_landings(trips_region)
-  value_model <- model_value(trips_region)
-  catch_model <- model_catch(trips_region)
-  results <- estimate_statistics(value_model, landings_model, catch_model, n_boats = region_boats)
-
-  message("Modelling ", region, " taxa")
-
-  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
-  results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
-
-  all_results <-
-    list(
-      aggregated = results,
-      taxa = results_per_taxa
-    )
-}
-
-
 get_national_estimates <- function(municipal_estimations = NULL) {
   summarise_national <- function(x) {
     x %>%
@@ -541,7 +540,6 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     aggregated_taxa = aggregated_taxa
   )
 }
-
 
 get_frame <- function() {
   dplyr::tibble(landing_period = seq(as.Date("2018-1-1"), Sys.Date(), by = "month")) %>%
