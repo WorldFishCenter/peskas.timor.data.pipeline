@@ -31,7 +31,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars) %>%
-    dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
+    dplyr::filter(.data$landing_date >= "2018-01-01")
+  # dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   logger::log_info("Retrieving modelled data...")
   models <- get_models(pars)
@@ -57,8 +58,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   aggregated_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$aggregated) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
+    purrr::map(summarise_estimations, models$national$aggregated)
+  # purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
 
   municipal_aggregated <-
@@ -70,16 +71,13 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month)) %>%
-    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+    dplyr::select(-c(.data$period, .data$month))
 
 
   taxa_estimations <-
     periods %>%
     rlang::set_names() %>%
-    purrr::map(summarise_estimations, models$national$taxa, c("date_bin_start", "grouped_taxa")) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
-
+    purrr::map(summarise_estimations, models$national$taxa, groupings = c("date_bin_start", "grouped_taxa"))
 
   municipal_taxa <-
     models$municipal %>%
@@ -90,33 +88,31 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     purrr::set_names(names(models$municipal)) %>%
     dplyr::bind_rows(.id = "region") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
-    dplyr::select(-c(.data$period, .data$month)) %>%
-    dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month"))
+    dplyr::select(-c(.data$period, .data$month))
 
   nutrients_estimates <- purrr::map(taxa_estimations, summarise_nutrients, nutrients_table)
-
   nutrients_proportions <- get_nutrients_proportions(nutrients_estimates)
   # fill MZZ (miscellaneous unrecognized fishes) with average nutrients proportion of other groups
-  aggregated_nutrients <- purrr::map(nutrients_estimates,
-    fill_missing_group,
-    nutrients_proportions,
-    taxa = "MZZ"
-  ) %>%
-    purrr::map(aggregate_nutrients, pars) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month")))
 
+  aggregated_nutrients <-
+    purrr::map(nutrients_estimates,
+      fill_missing_group,
+      nutrients_proportions,
+      taxa = "MZZ"
+    ) %>%
+    purrr::map(aggregate_nutrients, pars)
 
   aggregated <-
     purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
     purrr::map(
       dplyr::select,
-      .data$date_bin_start, .data$n_landings,
+      .data$date_bin_start,
+      .data$n_landings,
       .data$prop_landings_woman:.data$catch,
-      .data$recorded_revenue, .data$recorded_catch
-    ) %>%
-    purrr::imap(~ .x %>% dplyr::filter(.data$date_bin_start < lubridate::floor_date(Sys.Date(), unit = "month") &
-      .data$date_bin_start >= "2018-01-01"))
-
+      .data$price_kg,
+      .data$recorded_revenue,
+      .data$recorded_catch
+    )
 
   logger::log_info("Saving and exporting public data as tsv")
   tsv_filenames <- periods %>%
@@ -167,7 +163,6 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 #' @importFrom digest digest
 #' @importFrom stats na.omit
 add_calculated_fields <- function(merged_trips) {
-
   # Helper functions
   count_taxa <- function(x) {
     if (is.null(x)) {
@@ -237,7 +232,6 @@ get_catch_table <- function(merged_trips_with_addons) {
 
 #' @importFrom rlang .data
 summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
-
   # We need to count landings and tracks separately because they have different
   # base dates
   landing_date_bin <- merged_trips_with_addons %>%
@@ -252,6 +246,10 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
       recorded_revenue = sum(.data$landing_value, na.rm = T),
       recorded_catch = sum(.data$recorded_weight, na.rm = T),
       prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T)
+    ) %>%
+    dplyr::mutate(
+      recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
+      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch)
     )
 
   track_end_bin <- merged_trips_with_addons %>%
@@ -303,38 +301,77 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
 
   today <- Sys.Date()
 
-  standardised_predictions <- aggregated_predictions %>%
-    dplyr::rename(date_bin_start = .data$landing_period) %>%
-    tidyr::complete(date_bin_start = all_months) %>%
-    # Correct last month as predictions are for the full month but we should present only the estimates to date
-    dplyr::mutate(
-      current_period =
-        today >= .data$date_bin_start &
-          today < dplyr::lead(.data$date_bin_start),
-      elapsed = as.numeric(today - .data$date_bin_start + 1),
-      period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
-      n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
-      revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
-      catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)
-    ) %>%
-    dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
-    dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
-      bin_unit,
-      week_start = 7
-    )) %>%
-    dplyr::filter(dplyr::across(dplyr::all_of(groupings), ~ !is.na(.))) %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
+  if (length(groupings) > 1) {
+    standardised_predictions <- aggregated_predictions %>%
+      dplyr::rename(date_bin_start = .data$landing_period) %>%
+      tidyr::complete(date_bin_start = all_months) %>%
+      # Correct last month as predictions are for the full month but we should present only the estimates to date
+      dplyr::mutate(
+        current_period =
+          today >= .data$date_bin_start &
+            today < dplyr::lead(.data$date_bin_start),
+        elapsed = as.numeric(today - .data$date_bin_start + 1),
+        period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
+        n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
+        revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+        catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch),
+      ) %>%
+      dplyr::filter(.data$elapsed > 0) %>%
+      dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
+      dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
+        bin_unit,
+        week_start = 7
+      )) %>%
+      dplyr::filter(dplyr::across(dplyr::all_of(groupings), ~ !is.na(.))) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
 
-  binned_frame <- standardised_predictions %>%
-    dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue),
-      landing_weight = mean(.data$landing_weight),
-      n_landings_per_boat = sum(.data$n_landings_per_boat),
-      revenue = sum(.data$revenue),
-      catch = sum(.data$catch)
-    ) %>%
-    dplyr::ungroup()
+    binned_frame <-
+      standardised_predictions %>%
+      dplyr::summarise(
+        landing_revenue = mean(.data$landing_revenue, na.rm = T),
+        landing_weight = mean(.data$landing_weight, na.rm = T),
+        n_landings_per_boat = sum(.data$n_landings_per_boat), na.rm = T,
+        revenue = sum(.data$revenue, na.rm = T),
+        catch = sum(.data$catch, na.rm = T)
+      ) %>%
+      dplyr::ungroup()
+  } else {
+    standardised_predictions <- aggregated_predictions %>%
+      dplyr::rename(date_bin_start = .data$landing_period) %>%
+      tidyr::complete(date_bin_start = all_months) %>%
+      # Correct last month as predictions are for the full month but we should present only the estimates to date
+      dplyr::mutate(
+        current_period =
+          today >= .data$date_bin_start &
+            today < dplyr::lead(.data$date_bin_start),
+        elapsed = as.numeric(today - .data$date_bin_start + 1),
+        period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
+        n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
+        revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+        catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch),
+        price_kg = dplyr::if_else(.data$current_period, .data$price_kg * .data$elapsed / .data$period_length, .data$price_kg)
+      ) %>%
+      dplyr::filter(.data$elapsed > 0) %>%
+      dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
+      dplyr::mutate(date_bin_start = lubridate::floor_date(.data$date_bin_start,
+        bin_unit,
+        week_start = 7
+      )) %>%
+      dplyr::filter(dplyr::across(dplyr::all_of(groupings), ~ !is.na(.))) %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
 
+    binned_frame <-
+      standardised_predictions %>%
+      dplyr::summarise(
+        landing_revenue = mean(.data$landing_revenue, na.rm = T),
+        landing_weight = mean(.data$landing_weight, na.rm = T),
+        n_landings_per_boat = sum(.data$n_landings_per_boat, na.rm = T),
+        revenue = sum(.data$revenue, na.rm = T),
+        catch = sum(.data$catch, na.rm = T),
+        price_kg = mean(.data$price_kg, na.rm = T)
+      ) %>%
+      dplyr::ungroup()
+  }
   # remove rows where all the variables are NA
   binned_frame <- binned_frame %>%
     dplyr::filter(dplyr::if_any(where(is.numeric), ~ !is.na(.)))
@@ -347,8 +384,6 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
 
   binned_frame
 }
-
-
 
 summarise_nutrients <- function(taxa_estimations, nutrients_table) {
   dplyr::left_join(taxa_estimations, nutrients_table) %>%
@@ -373,7 +408,6 @@ get_nutrients_proportions <- function(nutrients_estimates) {
     dplyr::ungroup() %>%
     dplyr::summarise(dplyr::across(c(.data$selenium:.data$vitaminA), ~ median(.x, na.rm = TRUE)))
 }
-
 
 fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa = "MZZ") {
   nutrients_estimates %>%
@@ -417,8 +451,6 @@ aggregate_nutrients <- function(x, pars) {
     dplyr::ungroup()
 }
 
-
-
 where <- function(fn) {
   predicate <- rlang::as_function(fn)
   function(x, ...) {
@@ -436,7 +468,7 @@ get_weight <- function(x) {
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::mutate(
-      recorded_weight = sum(.data$weight, na.rm = T),
+      recorded_weight = sum(.data$weight),
       recorded_weight = .data$recorded_weight / 1000
     ) %>% # convert to Kg
     dplyr::ungroup() %>%
@@ -481,11 +513,3 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
       TRUE ~ NA_real_
     ))
 }
-
-# purrr::set_names(names(models$municipal)) %>%
-#  purrr::map(get_municipal_nutrients,
-#             nutrients_table = nutrients_table,
-#             municipal_estimates = models$municipal,
-#             pars = pars
-#  ) %>%
-#  dplyr::bind_rows(.id = "region")
