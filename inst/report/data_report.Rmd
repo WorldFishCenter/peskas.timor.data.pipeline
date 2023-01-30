@@ -92,7 +92,8 @@ catch <-
   dplyr::ungroup()
 
 # palettes
-year_palette <- rev(c("#bda639", "#1b5767", "#629a9b", "#c51f5d", "#92684d"))
+year_palette <- 
+  rev(c("#bda639", "#1b5767", "#629a9b", "#c51f5d", "#92684d", "#9ECE9A"))
 catch_use_palette <- rev(c("#9f8985", "#87bdbc", "#dbdbc9"))
 
 # help functions
