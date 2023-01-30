@@ -1,3 +1,17 @@
+# peskas.timor.data.pipeline 1.4.0
+
+## Improvements
+
+- Improve national and municipal estimates combining packags `Amelia` and
+`mice` for missing and outliers data imputation.
+
+- Integrating price per kg into export data
+
+## Bug fixes
+
+- Improved revenue outliers identification based on empirical information
+
+
 # peskas.timor.data.pipeline 1.3.0
 
 ## New features
