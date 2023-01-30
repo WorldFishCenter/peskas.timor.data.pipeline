@@ -198,7 +198,7 @@ model_catch <- function(trips) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-  #region <- "Manufahi"
+  #region <- "Ainaro"
   #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
@@ -279,22 +279,22 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
     dplyr::arrange(.data$landing_period) %>%
     dplyr::bind_cols(imputed_id) %>%
     dplyr::mutate(
-      landing_weight = ifelse(.data$landing_weight < 0.1, NA_real_, .data$landing_weight),
-      landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue),
-      landing_weight = imputeTS::na_interpolation(.data$landing_weight, option = "spline"),
-      landing_revenue = imputeTS::na_interpolation(.data$landing_revenue, option = "spline"),
+      landing_weight = ifelse(.data$landing_weight < 0.25, NA_real_, .data$landing_weight),
+      landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue)
+    ) %>%
+    mice::mice(m = 5, maxit = 500, method = "pmm", seed = 666, printFlag = F) %>%
+    mice::complete(action = "all") %>%
+    purrr::map(dplyr::bind_rows) %>%
+    dplyr::bind_rows() %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period, .data$is_imputed) %>%
+    dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$landing_period) %>%
+    dplyr::mutate(
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      price_kg = .data$revenue / .data$catch,
-      # upper bound interpolation of price per weight
-      #upp_bound_price = univOutl::LocScaleB(.data$price_kg, method = "MAD", k = 5)$bounds[2],
-      #price_kg = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$price_kg),
-      #catch = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$catch),
-      #revenue = ifelse(.data$price_kg > upp_bound_price, NA_real_, .data$revenue),
-      #price_kg = imputeTS::na_interpolation(.data$price_kg,option = "spline"),
-      #catch = imputeTS::na_interpolation(.data$catch,option = "spline"),
-      #revenue = imputeTS::na_interpolation(.data$revenue,option = "spline"),
-      #price_kg = .data$revenue / .data$catch
+      price_kg = .data$revenue / .data$catch
     ) %>%
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
