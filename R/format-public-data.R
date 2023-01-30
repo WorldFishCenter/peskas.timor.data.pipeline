@@ -302,6 +302,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
   today <- Sys.Date()
 
   if (length(groupings) > 1) {
+
     standardised_predictions <- aggregated_predictions %>%
       dplyr::rename(date_bin_start = .data$landing_period) %>%
       tidyr::complete(date_bin_start = all_months) %>%
@@ -330,7 +331,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
       dplyr::summarise(
         landing_revenue = mean(.data$landing_revenue, na.rm = T),
         landing_weight = mean(.data$landing_weight, na.rm = T),
-        n_landings_per_boat = sum(.data$n_landings_per_boat), na.rm = T,
+        n_landings_per_boat = sum(.data$n_landings_per_boat, na.rm = T),
         revenue = sum(.data$revenue, na.rm = T),
         catch = sum(.data$catch, na.rm = T)
       ) %>%
