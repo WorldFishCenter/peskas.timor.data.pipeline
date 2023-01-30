@@ -1,11 +1,10 @@
-FROM rocker/geospatial:4.1.1
+FROM rocker/geospatial:4.2
 
 # Install imports
 RUN install2.r --error --skipinstalled \
     config \
     dplyr \
     git2r \
-    glmmTMB \
     googleAuthR \
     googleCloudStorageR \
     googledrive \
@@ -52,9 +51,13 @@ RUN install2.r --error --skipinstalled \
     tidytext \
     zip \
     leaflet \
-    htmltools
+    htmltools \
+    Amelia \
+    mice
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
+RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
+#RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

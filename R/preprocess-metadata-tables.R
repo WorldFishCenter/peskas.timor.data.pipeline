@@ -70,7 +70,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
     stations = pt_validate_stations(metadata_tables$stations),
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
     habitat = pt_validate_habitat(metadata_tables$habitat),
-    vessels_stats = pt_validate_vessels_stats(metadata_tables$fishing_vessel_statistics)
+    vessels_stats = pt_validate_vessels_stats(metadata_tables$fishing_vessel_statistics),
+    registered_boats = pt_validate_reg_boats(metadata_tables$registered_boats)
   )
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
@@ -284,4 +285,17 @@ pt_validate_vessels_stats <- function(vessels_stats_table) {
     ) %>%
     dplyr::select(.data$reporting_region, .data$type, .data$n_boats, .data$info_date) %>%
     dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
+}
+
+pt_validate_reg_boats <- function(reg_boats_table) {
+  reg_boats_table %>%
+    dplyr::select(
+      reporting_region = .data$Municipality,
+      boats_2016 = .data$registered_boats_2016,
+      boats_2022 = .data$registered_boats_2022
+    ) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(n_boats = sum(.data$boats_2016, .data$boats_2022, na.rm = T)) %>%
+    dplyr::select(-c(.data$boats_2016, .data$boats_2022)) %>%
+    dplyr::ungroup()
 }
