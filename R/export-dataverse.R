@@ -1,3 +1,97 @@
+#' Upload and publish a dataset on Dataverse
+#'
+#' This function upload and publish data on a specific Dataverse repository
+#' including associated metadata information.
+#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more
+#'   details
+#'
+#' @export
+#'
+upload_dataverse <- function(log_threshold = logger::DEBUG) {
+  logger::log_threshold(log_threshold)
+  pars <- read_config()
+
+  dataverse <- pars$export_dataverse$dataverse_id
+  key <- pars$export_dataverse$token
+  server <- pars$export_dataverse$server
+
+  prefixes <- c("trips", "catch", "aggregated-month")
+  files_names <-
+    purrr::map(prefixes, ~ cloud_object_name(
+      prefix = paste(pars$export$file_prefix, .x, sep = "_"),
+      version = "latest",
+      extension = "tsv",
+      provider = pars$public_storage$google$key,
+      options = pars$public_storage$google$options
+    )) %>%
+    do.call("rbind", .) %>%
+    as.character() %>%
+    unique()
+
+  logger::log_info("Retrieving public data to release...")
+  purrr::map(files_names,
+             download_cloud_file,
+             provider = pars$public_storage$google$key,
+             options = pars$public_storage$google$options
+  )
+
+  data_description <- generate_description()
+
+
+  logger::log_info("Generating README...")
+  rmarkdown::render(
+    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline")
+  )
+
+  logger::log_info("Generating metadata...")
+  # metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
+
+  new_names <- gsub("__[^>]+__", "", files_names)
+  file.rename(from = files_names, to = new_names)
+
+  release_files_names <- c(new_names, system.file("export/README.html",
+                                                  package = "peskas.timor.data.pipeline"
+  ))
+  release_files_names <- release_files_names[c(4, 3, 1, 2)]
+
+  metadat <- httr::upload_file(system.file("export/dataset-fields.json", package = "peskas.timor.data.pipeline"))
+
+  logger::log_info("Initializing dataset in Peskas dataverse...")
+  dataverse::create_dataset(
+    dataverse = dataverse,
+    server = server,
+    key = key,
+    body = metadat
+  )
+
+  logger::log_info("Exporting files...")
+  upload_files(
+    file_list = release_files_names,
+    key = key,
+    dataverse = dataverse,
+    server = server
+  )
+
+  file.remove(release_files_names)
+
+  # Restrict files "on request"
+  # dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
+
+  # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
+  # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
+
+  Sys.sleep(60 * 20)
+  logger::log_info("Publishing data...")
+  publish_last_dataset(
+    key = key,
+    dataverse = dataverse,
+    server = server
+  )
+}
+
+
 #' Publish a Dataverse repository
 #'
 #' This function publish a specific Dataverse repository.
@@ -172,100 +266,6 @@ publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
   )
 }
 
-#' Upload and publish a dataset on Dataverse
-#'
-#' This function upload and publish data on a specific Dataverse repository
-#' including associated metadata information.
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @export
-#'
-upload_dataverse <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-  pars <- read_config()
-
-  dataverse <- pars$export_dataverse$dataverse_id
-  key <- pars$export_dataverse$token
-  server <- pars$export_dataverse$server
-
-  prefixes <- c("trips", "catch", "aggregated-month")
-  files_names <-
-    purrr::map(prefixes, ~ cloud_object_name(
-      prefix = paste(pars$export$file_prefix, .x, sep = "_"),
-      version = "latest",
-      extension = "tsv",
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
-    )) %>%
-    do.call("rbind", .) %>%
-    as.character() %>%
-    unique()
-
-  logger::log_info("Retrieving public data to release...")
-  purrr::map(files_names,
-    download_cloud_file,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
-  )
-
-  data_description <- generate_description()
-
-
-  logger::log_info("Generating README...")
-  rmarkdown::render(
-    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline")
-  )
-
-  logger::log_info("Generating metadata...")
-  # metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
-
-  new_names <- gsub("__[^>]+__", "", files_names)
-  file.rename(from = files_names, to = new_names)
-
-  release_files_names <- c(new_names, system.file("export/README.html",
-    package = "peskas.timor.data.pipeline"
-  ))
-  release_files_names <- release_files_names[c(4, 3, 1, 2)]
-
-  metadat <- httr::upload_file(system.file("export/dataset-fields.json", package = "peskas.timor.data.pipeline"))
-
-  logger::log_info("Initializing dataset in Peskas dataverse...")
-  dataverse::create_dataset(
-    dataverse = dataverse,
-    server = server,
-    key = key,
-    body = metadat
-  )
-
-  logger::log_info("Exporting files...")
-  upload_files(
-    file_list = release_files_names,
-    key = key,
-    dataverse = dataverse,
-    server = server
-  )
-
-  file.remove(release_files_names)
-
-  # Restrict files "on request"
-  # dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
-
-  # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
-  # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
-
-  Sys.sleep(60 * 20)
-  logger::log_info("Publishing data...")
-  publish_last_dataset(
-    key = key,
-    dataverse = dataverse,
-    server = server
-  )
-}
-
-
 
 #' Generate data description
 #'
@@ -344,7 +344,8 @@ generate_description <- function(...) {
         "Estimated total revenue in USD",
         "Estimated total catch in Kg",
         "Recorded total revenue in USD",
-        "Recorded total catch in Kg"
+        "Recorded total catch in Kg",
+        "Price per Kg"
       )
     )
 
