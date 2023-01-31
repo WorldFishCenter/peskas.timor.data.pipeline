@@ -42,17 +42,19 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
       vessels_metadata = vessels_stats
     )
 
-  national_models <-
-    run_models(
-      pars = pars,
-      trips = trips,
-      modelled_taxa = "selected",
-      vessels_metadata = vessels_stats,
-      national_level = TRUE,
-      region = "Timor"
-    )
+  national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
-  # national_models <- get_national_estimates(municipal_estimations = municipal_models)
+
+  #national_models <-
+  #  run_models(
+  #    pars = pars,
+  #    trips = trips,
+  #    modelled_taxa = "selected",
+  #    vessels_metadata = vessels_stats,
+  #    national_level = TRUE,
+  #    region = "Timor"
+  #  )
+
 
   results <-
     list(
@@ -498,20 +500,6 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 }
 
 get_national_estimates <- function(municipal_estimations = NULL) {
-  summarise_national <- function(x) {
-    x %>%
-      dplyr::summarise(
-        landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
-        n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
-        landing_weight = mean(.data$landing_weight, na.rm = TRUE),
-        revenue = sum(.data$revenue),
-        catch = sum(.data$catch)
-      ) %>%
-      dplyr::ungroup() %>%
-      dplyr::arrange(.data$landing_period) %>%
-      as.data.frame()
-  }
-
   aggregated <-
     municipal_estimations %>%
     purrr::map(~ purrr::keep(.x, stringr::str_detect(
@@ -521,7 +509,16 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     purrr::set_names(names(municipal_estimations)) %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$landing_period) %>%
-    summarise_national()
+    dplyr::summarise(
+      landing_revenue = mean(.data$landing_revenue),
+      n_landings_per_boat = mean(.data$n_landings_per_boat),
+      landing_weight = mean(.data$landing_weight),
+      revenue = sum(.data$revenue),
+      catch = sum(.data$catch),
+      price_kg = mean(.data$price_kg)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$landing_period)
 
 
   aggregated_taxa <-
@@ -533,7 +530,15 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     purrr::set_names(names(municipal_estimations)) %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$grouped_taxa) %>%
-    summarise_national()
+    dplyr::summarise(
+      landing_revenue = mean(.data$landing_revenue, na.rm = TRUE),
+      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = TRUE),
+      landing_weight = mean(.data$landing_weight, na.rm = TRUE),
+      revenue = sum(.data$revenue),
+      catch = sum(.data$catch)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$landing_period)
 
   list(
     aggregated = aggregated,
