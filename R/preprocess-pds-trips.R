@@ -103,14 +103,14 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
 
   # download the track
   track <-
-    purrr::map(pars$pds_storage, ~ purrr::walk(
+    purrr::walk(
       .x = track_file[1],
-      .f = ~ insistent_download_cloud_file(
+      .f = ~ download_cloud_file(
         name = .,
         provider = pars$pds_storage$google$key,
         options = pars$pds_storage$google$options
       )
-    )) %>%
+    ) %>%
     readr::read_csv(show_col_types = FALSE)
 
   file.remove(track_file)
