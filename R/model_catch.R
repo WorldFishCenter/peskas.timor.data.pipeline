@@ -45,7 +45,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
   national_models <- get_national_estimates(municipal_estimations = municipal_models)
 
 
-  #national_models <-
+  # national_models <-
   #  run_models(
   #    pars = pars,
   #    trips = trips,
@@ -119,9 +119,15 @@ model_landings <- function(trips) {
     ) %>%
     dplyr::ungroup()
 
+  if (unique(trips$reporting_region) == "Lautém") {
+    family <- "poisson"
+  } else {
+    family <- "Gamma"
+  }
+
   glmmTMB(n_landings ~ (1 | month) + (1 | period) + (1 | version),
-    family = "Gamma",
-    data = landings_df
+    family = family,
+    data = landings_df,
   )
 }
 
@@ -200,8 +206,8 @@ model_catch <- function(trips) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-  #region <- "Ainaro"
-  #vessels_metadata <- vessels_stats
+  # region <- "Lautém"
+  # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- sum(vessels_metadata$n_boats)
@@ -443,12 +449,12 @@ model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
 
   catch_df <- trips %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-                                                         unit = "month"
+      unit = "month"
     )) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
-    #dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon))) %>%
+    # dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon))) %>%
     dplyr::mutate(
       landing_id = as.character(.data$landing_id),
       weight = .data$weight / 1000,
@@ -521,7 +527,7 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     dplyr::arrange(.data$landing_period)
 
 
-  aggregated_taxa <-
+  taxa <-
     municipal_estimations %>%
     purrr::map(~ purrr::keep(.x, stringr::str_detect(
       names(.x), stringr::fixed("taxa")
@@ -542,7 +548,7 @@ get_national_estimates <- function(municipal_estimations = NULL) {
 
   list(
     aggregated = aggregated,
-    aggregated_taxa = aggregated_taxa
+    taxa = taxa
   )
 }
 
