@@ -166,7 +166,7 @@ validate_pds_data <- function(data,
             .data$Ended
           ),
           .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .x,
+            is.na(.data$alert_number) ~ .,
             TRUE ~ lubridate::NA_POSIXct_
           )
         ),
@@ -306,10 +306,10 @@ merge_consecutive_trips <- function(x,
           x = cbind(.data$start_lng, .data$start_lat),
           y = cbind(.data$end_lng, .data$end_lat),
           fun = geosphere::distGeo
-        )
+        )[ ,1]
     ) %>%
-    dplyr::select(-c(.data$start_lat:.data$end_lng)) %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::select(-c(.data$start_lat:.data$end_lng))
 }
 
 #' Estimate distance between consecutive trips
