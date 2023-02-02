@@ -158,15 +158,15 @@ validate_pds_data <- function(data,
       dplyr::transmute(
         alert_number =
         # test if trip duration is longer or shorter than n hours
-          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
-            .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+          dplyr::case_when("Duration (Seconds)" > max_hrs * 60^2 |
+            "Duration (Seconds)" < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
         dplyr::across(
           .cols = c(
-            .data$Started,
-            .data$Ended
+            "Started",
+            "Ended"
           ),
           .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .,
+            is.na(.data$alert_number) ~ .x,
             TRUE ~ lubridate::NA_POSIXct_
           )
         ),
@@ -192,12 +192,12 @@ validate_pds_data <- function(data,
             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
         dplyr::across(
           .cols = c(
-            .data$`Duration (Seconds)`,
-            .data$Started,
-            .data$Ended
+            "Duration (Seconds)",
+            "Started",
+            "Ended"
           ),
           .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .,
+            is.na(.data$alert_number) ~ .x,
             TRUE ~ NA_real_
           )
         ),
