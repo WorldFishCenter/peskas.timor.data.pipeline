@@ -162,13 +162,12 @@ validate_pds_data <- function(data,
             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
         dplyr::across(
           .cols = c(
-            .data$`Duration (Seconds)`,
             .data$Started,
             .data$Ended
           ),
           .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .,
-            TRUE ~ NA_real_
+            is.na(.data$alert_number) ~ .x,
+            TRUE ~ lubridate::NA_POSIXct_
           )
         ),
         .data$Trip
