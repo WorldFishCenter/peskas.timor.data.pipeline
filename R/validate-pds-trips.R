@@ -21,6 +21,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   pds_trips <- get_preprocessed_trips(pars)
   pds_tracks <- get_preprocessed_tracks(pars)
 
+
   # call validation coefficients
   max_hrs <- pars$validation$pds_trips$max_trip_hours
   min_hrs <- pars$validation$pds_trips$min_trip_hours
@@ -53,6 +54,13 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
       consecutive_time = consecutive_time,
       consecutive_distance = consecutive_distance
     )
+
+  readr::write_rds(pds_full, "pds_full.rds")
+  upload_cloud_file(
+    file = "pds_full.rds",
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 
   logger::log_info("Validating pds trips...")
   pds_alerts <- validate_pds_data(pds_full,
