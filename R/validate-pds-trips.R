@@ -55,13 +55,6 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
       consecutive_distance = consecutive_distance
     )
 
-  readr::write_rds(pds_full, "pds_full.rds")
-  upload_cloud_file(
-    file = "pds_full.rds",
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-
   logger::log_info("Validating pds trips...")
   pds_alerts <- validate_pds_data(pds_full,
     max_hrs = max_hrs,
@@ -166,18 +159,11 @@ validate_pds_data <- function(data,
       dplyr::transmute(
         alert_number =
         # test if trip duration is longer or shorter than n hours
-          dplyr::case_when("Duration (Seconds)" > max_hrs * 60^2 |
-            "Duration (Seconds)" < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
-        dplyr::across(
-          .cols = c(
-            "Started",
-            "Ended"
-          ),
-          .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .x,
-            TRUE ~ lubridate::NA_POSIXct_
-          )
-        ),
+          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
+                             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+        `Duration (Seconds)` = ifelse(is.na(.data$alert_number), .data$`Duration (Seconds)`, NA_real_),
+        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
+        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
         .data$Trip
       ),
     validated_pds_distance = data %>%
@@ -188,8 +174,8 @@ validate_pds_data <- function(data,
             .data$`Distance (Meters)` > km * 1000 ~ 9, TRUE ~ NA_real_,
             .data$start_end_distance > se_km * 100 ~ 12, TRUE ~ NA_real_
           ),
-        `Distance (Meters)` =
-          dplyr::case_when(.data$`Distance (Meters)` > km * 1000 ~ NA_real_, TRUE ~ .data$`Distance (Meters)`),
+        `Distance (Meters)` = dplyr::case_when(.data$`Distance (Meters)` > km * 1000 ~ NA_real_,
+                           TRUE ~ .data$`Distance (Meters)`),
         Trip = .data$Trip
       ),
     validated_pds_quality = data %>%
@@ -198,17 +184,9 @@ validate_pds_data <- function(data,
         # test quality of trips
           dplyr::case_when(.data$outliers_proportion > outl |
             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
-        dplyr::across(
-          .cols = c(
-            "Duration (Seconds)",
-            "Started",
-            "Ended"
-          ),
-          .fns = ~ dplyr::case_when(
-            is.na(.data$alert_number) ~ .x,
-            TRUE ~ NA_real_
-          )
-        ),
+        `Distance (Meters)` = ifelse(is.na(.data$alert_number), .data$`Duration (Seconds)`, NA_real_),
+        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
+        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
         .data$Trip
       )
   )
