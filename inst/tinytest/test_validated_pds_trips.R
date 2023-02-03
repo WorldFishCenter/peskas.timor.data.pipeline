@@ -8,12 +8,9 @@ pars <- peskas.timor.data.pipeline::read_config()
 
 pds_trips <- peskas.timor.data.pipeline:::get_validated_pds_trips(pars)
 
-trips <- pds_trips %>%
-  dplyr::mutate(
-    interval = lubridate::interval(
-      start = pds_trips$tracker_trip_start,
-      end = pds_trips$tracker_trip_end),
-    duration = lubridate::as.duration(interval))
+trips <-
+  pds_trips %>%
+  dplyr::mutate(duration = difftime(pds_trips$tracker_trip_end, pds_trips$tracker_trip_start, units = "sec"))
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_start) < Sys.time()),
