@@ -46,6 +46,7 @@ reference:
 
 - title: Helper functions
 - subtitle: Data preprocessing
+  desc: Functions dedicated to data processing.
   contents:
   - matches("nest")
   - matches("pt_validate")
@@ -54,6 +55,23 @@ reference:
   - merge_consecutive_trips
   - join_weights
   - retrieve_lengths
+  - fill_missing_regions
+- subtitle: Taxonomy
+  contents:
+  - convert_taxa_names
+- subtitle: Utils
+  contents:
+  - read_config
+
+- title: Publishing
+- subtitle: Data sharing
+  desc: Functions that help and interact with with Dataverse portal.
+  contents:
+  - matches("dataverse")
+  - matches("dataset")
+  - upload_files
+  - generate_metadata
+  - generate_description
 - subtitle: Utils
   contents:
   - read_config
