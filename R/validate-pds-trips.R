@@ -158,13 +158,19 @@ validate_pds_data <- function(data,
     validated_pds_duration = data %>%
       dplyr::transmute(
         alert_number =
-        # test if trip duration is longer or shorter than n hours
-          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 | .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
-        `Duration (Seconds)` = dplyr::case_when(is.na(.data$alert_number) ~ .data$`Duration (Seconds)`, TRUE ~ NA_real_),
-        Started = dplyr::case_when(is.na(.data$alert_number) ~ .data$Started, TRUE ~ NA_real_),
-        Ended = dplyr::case_when(is.na(.data$alert_number) ~ .data$Ended, TRUE ~ NA_real_),
+          # test if trip duration is longer or shorter than n hours
+          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
+                             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+        `Duration (Seconds)` = dplyr::case_when(is.na(.data$alert_number) ~
+                                                  .data$`Duration (Seconds)`, TRUE ~ NA_real_),
+        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
+        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
         .data$Trip
-      ),
+      ) %>%
+      dplyr::mutate(dplyr::across(
+        .cols = c(.data$Started, .data$Ended),
+        ~ lubridate::as_datetime(.x, tz = "Asia/Dili")
+      )),
     validated_pds_distance = data %>%
       dplyr::transmute(
         alert_number =
@@ -173,25 +179,30 @@ validate_pds_data <- function(data,
             .data$`Distance (Meters)` > km * 1000 ~ 9, TRUE ~ NA_real_,
             .data$start_end_distance > se_km * 100 ~ 12, TRUE ~ NA_real_
           ),
-        `Distance (Meters)` = dplyr::case_when(.data$`Distance (Meters)` > km * 1000 ~ NA_real_,
-                           TRUE ~ .data$`Distance (Meters)`),
+        `Distance (Meters)` = dplyr::case_when(
+          .data$`Distance (Meters)` > km * 1000 ~ NA_real_,
+          TRUE ~ .data$`Distance (Meters)`
+        ),
         Trip = .data$Trip
       ),
     validated_pds_quality = data %>%
       dplyr::transmute(
         alert_number =
-        # test quality of trips
+          # test quality of trips
           dplyr::case_when(.data$outliers_proportion > outl |
-            .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
+                             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
         `Distance (Meters)` = dplyr::case_when(is.na(.data$alert_number) ~ .data$`Distance (Meters)`, TRUE ~ NA_real_),
-        Started = dplyr::case_when(is.na(.data$alert_number) ~ .data$Started, TRUE ~ NA_real_),
-        Ended = dplyr::case_when(is.na(.data$alert_number) ~ .data$Ended, TRUE ~ NA_real_),
+        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
+        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
         .data$Trip
-      )
+      ) %>%
+      dplyr::mutate(dplyr::across(
+        .cols = c(.data$Started, .data$Ended),
+        ~ lubridate::as_datetime(.x, tz = "Asia/Dili")
+      ))
   )
   validated_pds_list
 }
-
 
 get_preprocessed_trips <- function(pars) {
   pds_trips_rds <- cloud_object_name(
