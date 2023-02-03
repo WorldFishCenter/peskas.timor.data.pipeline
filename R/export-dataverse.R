@@ -380,22 +380,22 @@ get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
 }
 
 
-restrict_files <- function(key = key, server = server, dat_id = NULL) {
-  url <- paste0("https://", server, "/api/files/", dat_id, "/restrict")
-  res <- httr::PUT(
-    url = url,
-    httr::add_headers(`X-Dataverse-key` = key),
-    body = "true"
-  )
-  res
-}
+#restrict_files <- function(key = key, server = server, dat_id = NULL) {
+#  url <- paste0("https://", server, "/api/files/", dat_id, "/restrict")
+#  res <- httr::PUT(
+#    url = url,
+#    httr::add_headers(`X-Dataverse-key` = key),
+#    body = "true"
+#  )
+#  res
+#}
 
-allow_requests <- function(key = key, server = server, id) {
-  url <- paste0("https://", server, "/api/access/", id, "/allowAccessRequest")
-  res <- httr::PUT(
-    url = url,
-    httr::add_headers(`X-Dataverse-key` = key),
-    body = "true"
-  )
-  res
-}
+#allow_requests <- function(key = key, server = server, id) {
+#  url <- paste0("https://", server, "/api/access/", id, "/allowAccessRequest")
+#  res <- httr::PUT(
+#    url = url,
+#    httr::add_headers(`X-Dataverse-key` = key),
+#    body = "true"
+#  )
+#  res
+#}
