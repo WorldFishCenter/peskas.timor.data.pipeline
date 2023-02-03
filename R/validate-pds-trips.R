@@ -159,11 +159,10 @@ validate_pds_data <- function(data,
       dplyr::transmute(
         alert_number =
         # test if trip duration is longer or shorter than n hours
-          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
-                             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
-        `Duration (Seconds)` = ifelse(is.na(.data$alert_number), .data$`Duration (Seconds)`, NA_real_),
-        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
-        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
+          dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 | .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+        `Duration (Seconds)` = dplyr::case_when(is.na(.data$alert_number) ~ .data$`Duration (Seconds)`, TRUE ~ NA_real_),
+        Started = dplyr::case_when(is.na(.data$alert_number) ~ .data$Started, TRUE ~ NA_real_),
+        Ended = dplyr::case_when(is.na(.data$alert_number) ~ .data$Ended, TRUE ~ NA_real_),
         .data$Trip
       ),
     validated_pds_distance = data %>%
@@ -184,9 +183,9 @@ validate_pds_data <- function(data,
         # test quality of trips
           dplyr::case_when(.data$outliers_proportion > outl |
             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
-        `Distance (Meters)` = ifelse(is.na(.data$alert_number), .data$`Duration (Seconds)`, NA_real_),
-        Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
-        Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
+        `Distance (Meters)` = dplyr::case_when(is.na(.data$alert_number) ~ .data$`Distance (Meters)`, TRUE ~ NA_real_),
+        Started = dplyr::case_when(is.na(.data$alert_number) ~ .data$Started, TRUE ~ NA_real_),
+        Ended = dplyr::case_when(is.na(.data$alert_number) ~ .data$Ended, TRUE ~ NA_real_),
         .data$Trip
       )
   )
