@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -47,32 +47,41 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">air_get_records</span><span class="op">(</span>
-  <span class="va">table</span>,
-  <span class="va">base_id</span>,
-  api_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AIRTABLE_KEY"</span><span class="op">)</span>,
-  query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">air_get_records</span><span class="op">(</span></span>
+<span>  <span class="va">table</span>,</span>
+<span>  <span class="va">base_id</span>,</span>
+<span>  api_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AIRTABLE_KEY"</span><span class="op">)</span>,</span>
+<span>  query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>table</dt>
 <dd><p>name of the table (string)</p></dd>
+
+
 <dt>base_id</dt>
 <dd><p>id of the Airtable base where the table is located</p></dd>
+
+
 <dt>api_key</dt>
 <dd><p>API key for Airtable. By default it looks at the
 <code>AIRTABLE_KEY</code> environment variable.</p></dd>
+
+
 <dt>query</dt>
 <dd><p>additional parameters for the airtable query like for example
 fields, view, pageSize, maxRecords, sort, filterByFormula, cellFormat,
 timeZone, userLocale, etc... See the airtable documentation for more
 details.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a list with a results field containing all records</p>
+    
+
+<p>a list with a results field containing all records</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -88,20 +97,19 @@ been reached.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># Get all records for the table boats</span></span>
-<span class="r-in"><span class="fu">air_get_records</span><span class="op">(</span>table <span class="op">=</span> <span class="st">"boats"</span>, base_id <span class="op">=</span> <span class="st">"appjEVaN8kBNXAWak"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Get records only in a specified view</span></span>
-<span class="r-in"><span class="fu">air_get_records</span><span class="op">(</span><span class="st">"boats"</span>, <span class="st">"appjEVaN8kBNXAWak"</span>,</span>
-<span class="r-in">                query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>view <span class="op">=</span> <span class="st">"Boats with wrong registration"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Get only the first 5 records</span></span>
-<span class="r-in"><span class="fu">air_get_records</span><span class="op">(</span><span class="st">"boats"</span>, <span class="st">"appjEVaN8kBNXAWak"</span>, query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>maxRecords <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># Get all records for the table boats</span></span></span>
+<span class="r-in"><span><span class="fu">air_get_records</span><span class="op">(</span>table <span class="op">=</span> <span class="st">"boats"</span>, base_id <span class="op">=</span> <span class="st">"appjEVaN8kBNXAWak"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get records only in a specified view</span></span></span>
+<span class="r-in"><span><span class="fu">air_get_records</span><span class="op">(</span><span class="st">"boats"</span>, <span class="st">"appjEVaN8kBNXAWak"</span>,</span></span>
+<span class="r-in"><span>  query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>view <span class="op">=</span> <span class="st">"Boats with wrong registration"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get only the first 5 records</span></span></span>
+<span class="r-in"><span><span class="fu">air_get_records</span><span class="op">(</span><span class="st">"boats"</span>, <span class="st">"appjEVaN8kBNXAWak"</span>, query <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>maxRecords <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -116,7 +124,7 @@ been reached.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

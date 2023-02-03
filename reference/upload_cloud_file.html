@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -47,7 +47,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">upload_cloud_file</span><span class="op">(</span><span class="va">file</span>, <span class="va">provider</span>, <span class="va">options</span>, name <span class="op">=</span> <span class="va">file</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">upload_cloud_file</span><span class="op">(</span><span class="va">file</span>, <span class="va">provider</span>, <span class="va">options</span>, name <span class="op">=</span> <span class="va">file</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -55,16 +55,25 @@
     <dl><dt>file</dt>
 <dd><p>a file-path (character) to upload. A vector with multiple files
 is also supported.</p></dd>
+
+
 <dt>provider</dt>
 <dd><p>cloud provider to use, either "gcs" or "aws"</p></dd>
+
+
 <dt>options</dt>
 <dd><p>named list with cloud provider options, see details</p></dd>
+
+
 <dt>name</dt>
 <dd><p>What to call the file once uploaded. Default is the filepath</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>If <code>provider</code> is "gcs" and if successful a list of medatada objects</p>
+    
+
+<p>If <code>provider</code> is "gcs" and if successful a list of medatada objects</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -86,17 +95,20 @@ the file.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="co"># Google Cloud Services</span></span>
-<span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in">  <span class="va">authentication_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="st">"location_of_json_file.json"</span><span class="op">)</span></span>
-<span class="r-in">  <span class="fu">upload_cloud_file</span><span class="op">(</span></span>
-<span class="r-in">    file <span class="op">=</span> <span class="st">"table_to_upload.csv"</span>,</span>
-<span class="r-in">    provider <span class="op">=</span> <span class="st">"gcs"</span>,</span>
-<span class="r-in">    options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>service_account_key <span class="op">=</span> <span class="va">authentication_details</span>,</span>
-<span class="r-in">                   bucket <span class="op">=</span> <span class="st">"my-bucket"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Google Cloud Services</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">authentication_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="st">"location_of_json_file.json"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">upload_cloud_file</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  file <span class="op">=</span> <span class="st">"table_to_upload.csv"</span>,</span></span>
+<span class="r-in"><span>  provider <span class="op">=</span> <span class="st">"gcs"</span>,</span></span>
+<span class="r-in"><span>  options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    service_account_key <span class="op">=</span> <span class="va">authentication_details</span>,</span></span>
+<span class="r-in"><span>    bucket <span class="op">=</span> <span class="st">"my-bucket"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -111,7 +123,7 @@ the file.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

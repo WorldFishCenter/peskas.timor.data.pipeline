@@ -18,7 +18,7 @@ weight-length parameters from each species group."><!-- mathjax --><script src="
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -49,30 +49,35 @@ weight-length parameters from each species group.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">retrieve_lengths</span><span class="op">(</span><span class="va">data</span>, <span class="va">country_code</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">retrieve_lengths</span><span class="op">(</span><span class="va">data</span>, <span class="va">country_code</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A table returned from <code>get_catch_types</code></p></dd>
+
+
 <dt>country_code</dt>
 <dd><p>The code of the country associated to FishBase database, default
 code include Timor-Leste and Indonesia. Full list at
 <a href="https://www.fishbase.se/country/ListOfCountryCodes.php" class="external-link">https://www.fishbase.se/country/ListOfCountryCodes.php</a>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data frame containing species length parameters</p>
+    
+
+<p>A data frame containing species length parameters</p>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">rank_tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_catch_types.html">get_catch_types</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">retrieve_lengths</span><span class="op">(</span><span class="va">rank_tab</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">rank_tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_catch_types.html">get_catch_types</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">retrieve_lengths</span><span class="op">(</span><span class="va">rank_tab</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -87,7 +92,7 @@ code include Timor-Leste and Indonesia. Full list at
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

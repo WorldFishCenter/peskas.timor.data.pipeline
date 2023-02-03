@@ -20,7 +20,7 @@ and rds in a storage bucket with public access."><!-- mathjax --><script src="ht
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -53,7 +53,7 @@ and rds in a storage bucket with public access.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">format_public_data</span><span class="op">(</span>log_threshold <span class="op">=</span> <span class="fu">logger</span><span class="fu">::</span><span class="va"><a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">DEBUG</a></span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">format_public_data</span><span class="op">(</span>log_threshold <span class="op">=</span> <span class="fu">logger</span><span class="fu">::</span><span class="va"><a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">DEBUG</a></span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -62,25 +62,27 @@ and rds in a storage bucket with public access.</p>
 <dd><p>The (standard Apache logj4) log level used as a
 threshold for the logging infrastructure. See <a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">logger::log_levels</a> for more
 details</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>no outputs. This function is used for it's side effects</p>
+    
+
+<p>no outputs. This function is used for it's side effects</p>
     </div>
     <div id="details">
     <h2>Details</h2>
     <p>#'The parameters needed in the config file are those required for
-<code><a href="merge_trips.html">merge_trips()</a></code> in addition to:</p><div class="sourceCode"><pre><code>public_storage:
- google:
-   key: gcs
-   options:
-     project:
-     bucket:
-     service_account_key:
-export:
- file_prefix:
-</code></pre></div>
-
+<code><a href="merge_trips.html">merge_trips()</a></code> in addition to:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1"></a>public_storage<span class="op">:</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="st"> </span>google<span class="op">:</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="st">   </span>key<span class="op">:</span><span class="st"> </span>gcs</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   options<span class="op">:</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="st">     </span>project<span class="op">:</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="st">     </span>bucket<span class="op">:</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="st">     </span>service_account_key<span class="op">:</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>export<span class="op">:</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st"> </span>file_prefix<span class="op">:</span></span></code></pre><p></p></div>
     </div>
 
   </div>
@@ -95,7 +97,7 @@ export:
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

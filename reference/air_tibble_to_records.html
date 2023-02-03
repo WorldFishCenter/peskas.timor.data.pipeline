@@ -20,7 +20,7 @@ about the format of the body request"><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -53,30 +53,39 @@ about the format of the body request</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">air_tibble_to_records</span><span class="op">(</span>
-  <span class="va">this_tibble</span>,
-  id_fields <span class="op">=</span> <span class="cn">NULL</span>,
-  link_fields <span class="op">=</span> <span class="cn">NULL</span>,
-  max_records <span class="op">=</span> <span class="fl">10</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">air_tibble_to_records</span><span class="op">(</span></span>
+<span>  <span class="va">this_tibble</span>,</span>
+<span>  id_fields <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  link_fields <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_records <span class="op">=</span> <span class="fl">10</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>this_tibble</dt>
 <dd><p>A data frame with the fields to be uploaded to Airtable</p></dd>
+
+
 <dt>id_fields</dt>
 <dd><p>Character vector with the name of the column storing the id</p></dd>
+
+
 <dt>link_fields</dt>
 <dd><p>Character vector with the name of the columns that are
 link fields (fields that contain the id of another row's table)</p></dd>
+
+
 <dt>max_records</dt>
 <dd><p>Records are grouped into batches of max_records. Defaults
 to 10 which is the current limit imposed by the Airtable API.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a list with records</p>
+    
+
+<p>a list with records</p>
     </div>
 
   </div>
@@ -91,7 +100,7 @@ to 10 which is the current limit imposed by the Airtable API.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -47,31 +47,42 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">alert_outlier</span><span class="op">(</span>
-  <span class="va">x</span>,
-  no_alert_value <span class="op">=</span> <span class="cn">NA_real_</span>,
-  alert_if_larger <span class="op">=</span> <span class="va">no_alert_value</span>,
-  alert_if_smaller <span class="op">=</span> <span class="va">no_alert_value</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">alert_outlier</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  no_alert_value <span class="op">=</span> <span class="cn">NA_real_</span>,</span>
+<span>  alert_if_larger <span class="op">=</span> <span class="va">no_alert_value</span>,</span>
+<span>  alert_if_smaller <span class="op">=</span> <span class="va">no_alert_value</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>numeric vector where outliers will be checked</p></dd>
+
+
 <dt>no_alert_value</dt>
 <dd><p>value to put in the output when there is no alert (x is within bounds)</p></dd>
+
+
 <dt>alert_if_larger</dt>
 <dd><p>alert for when x is above the bounds found by <code><a href="https://rdrr.io/pkg/univOutl/man/LocScaleB.html" class="external-link">univOutl::LocScaleB()</a></code></p></dd>
+
+
 <dt>alert_if_smaller</dt>
 <dd><p>alert for when x is below the bounds found by <code><a href="https://rdrr.io/pkg/univOutl/man/LocScaleB.html" class="external-link">univOutl::LocScaleB()</a></code></p></dd>
+
+
 <dt>...</dt>
 <dd><p>arguments for <code><a href="https://rdrr.io/pkg/univOutl/man/LocScaleB.html" class="external-link">univOutl::LocScaleB()</a></code></p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a vector of the same lenght as x</p>
+    
+
+<p>a vector of the same lenght as x</p>
     </div>
 
   </div>
@@ -86,7 +97,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

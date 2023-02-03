@@ -20,7 +20,7 @@ for outliers identification."><!-- mathjax --><script src="https://cdnjs.cloudfl
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -53,7 +53,7 @@ for outliers identification.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">validate_landings</span><span class="op">(</span>log_threshold <span class="op">=</span> <span class="fu">logger</span><span class="fu">::</span><span class="va"><a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">DEBUG</a></span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_landings</span><span class="op">(</span>log_threshold <span class="op">=</span> <span class="fu">logger</span><span class="fu">::</span><span class="va"><a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">DEBUG</a></span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -62,17 +62,21 @@ for outliers identification.</p>
 <dd><p>The (standard Apache logj4) log level used as a
 threshold for the logging infrastructure. See <a href="https://daroczig.github.io/logger/reference/log_levels.html" class="external-link">logger::log_levels</a> for more
 details</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>no outputs. This function is used for it's side effects</p>
+    
+
+<p>no outputs. This function is used for it's side effects</p>
     </div>
     <div id="details">
     <h2>Details</h2>
     <p>The parameters needed in the config file are those required for
-<code><a href="preprocess_landings.html">preprocess_landings()</a></code>, <code><a href="preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code>, and
-<code><a href="ingest_validation_tables.html">ingest_validation_tables()</a></code> combined, as well as parameters needed to
-outliers identification that are  <code>hrs</code>, <code>method</code> and <code>k</code>.</p>
+<code><a href="preprocess_landings_step_1.html">preprocess_landings_step_1()</a></code> or <code><a href="preprocess_landings_step_2.html">preprocess_landings_step_2()</a></code>,
+<code><a href="preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code>, and <code><a href="ingest_validation_tables.html">ingest_validation_tables()</a></code> combined,
+as well as parameters needed to outliers identification
+that are  <code>hrs</code>, <code>method</code> and <code>k</code>.</p>
 <p>To avoid synchronisation problems always is recommended that this called
 together with <code><a href="ingest_validation_tables.html">ingest_validation_tables()</a></code></p>
     </div>
@@ -89,7 +93,7 @@ together with <code><a href="ingest_validation_tables.html">ingest_validation_ta
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

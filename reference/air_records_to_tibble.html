@@ -18,7 +18,7 @@ using air_get_records) into a data frame."><!-- mathjax --><script src="https://
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -49,17 +49,20 @@ using <code>air_get_records</code>) into a data frame.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">air_records_to_tibble</span><span class="op">(</span><span class="va">records</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">air_records_to_tibble</span><span class="op">(</span><span class="va">records</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>records</dt>
 <dd><p>List of records from an airtable table</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a tibble</p>
+    
+
+<p>a tibble</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -69,12 +72,11 @@ accept multiple items are stored as a nested list column</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"></span>
-<span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># Get all records for the table boats</span></span>
-<span class="r-in"><span class="fu"><a href="air_get_records.html">air_get_records</a></span><span class="op">(</span>table <span class="op">=</span> <span class="st">"boats"</span>, base_id <span class="op">=</span> <span class="st">"appjEVaN8kBNXAWak"</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span>
-<span class="r-in">  <span class="fu">air_record_to_tibble</span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># Get all records for the table boats</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="air_get_records.html">air_get_records</a></span><span class="op">(</span>table <span class="op">=</span> <span class="st">"boats"</span>, base_id <span class="op">=</span> <span class="st">"appjEVaN8kBNXAWak"</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">air_record_to_tibble</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -89,7 +91,7 @@ accept multiple items are stored as a nested list column</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -22,7 +22,7 @@ cook_dist is the average Cook's distance relatively to each species."><!-- mathj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -57,25 +57,47 @@ cook_dist is the average Cook's distance relatively to each species.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">validate_price_weight</span><span class="op">(</span>
-  <span class="va">surveys_catch_alerts</span>,
-  <span class="va">surveys_price_alerts</span>,
-  cook_dist <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_price_weight</span><span class="op">(</span></span>
+<span>  catch_alerts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  price_alerts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  non_regular_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cook_dist <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  price_weight_min <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  price_weight_max <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>surveys_catch_alerts</dt>
+    <dl><dt>catch_alerts</dt>
 <dd><p>The dataframe of catch alerts.</p></dd>
-<dt>surveys_price_alerts</dt>
+
+
+<dt>price_alerts</dt>
 <dd><p>The dataframe of price alerts.</p></dd>
+
+
+<dt>non_regular_ids</dt>
+<dd><p>The dataframe of landings regularity alerts.</p></dd>
+
+
 <dt>cook_dist</dt>
 <dd><p>A number that go in the formula cook_dist * (mean(cooksd)).</p></dd>
+
+
+<dt>price_weight_min</dt>
+<dd><p>Min price per weight value threshold.</p></dd>
+
+
+<dt>price_weight_max</dt>
+<dd><p>Max price per weight value threshold.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The price and catch alert' dataframes including outlier identification
+    
+
+<p>The price and catch alert' dataframes including outlier identification
 based on Cook's distance.</p>
     </div>
     <div id="details">
@@ -95,7 +117,7 @@ based on Cook's distance.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -89,9 +89,13 @@
         </td>
         <td><p>Model fisheries indicators</p></td>
       </tr><tr><td>
-          <p><code><a href="preprocess_landings.html">preprocess_landings()</a></code> </p>
+          <p><code><a href="preprocess_landings_step_1.html">preprocess_landings_step_1()</a></code> </p>
         </td>
-        <td><p>Pre-process Timor Landings Survey data</p></td>
+        <td><p>Pre-process Timor Landings Survey data (step 1)</p></td>
+      </tr><tr><td>
+          <p><code><a href="preprocess_landings_step_2.html">preprocess_landings_step_2()</a></code> </p>
+        </td>
+        <td><p>Pre-process Timor Landings Survey data (step 2)</p></td>
       </tr><tr><td>
           <p><code><a href="preprocess_legacy_landings.html">preprocess_legacy_landings()</a></code> </p>
         </td>
@@ -173,6 +177,10 @@
         </td>
         <td><p>Select server from kobo</p></td>
       </tr><tr><td>
+          <p><code><a href="get_models.html">get_models()</a></code> </p>
+        </td>
+        <td><p>Download models estimates</p></td>
+      </tr><tr><td>
           <p><code><a href="get_nutrients_table.html">get_nutrients_table()</a></code> </p>
         </td>
         <td><p>Get taxa nutritional values</p></td>
@@ -219,7 +227,11 @@
       </tr><tr><td>
           <p><code><a href="ingest_pds_map.html">ingest_pds_map()</a></code> </p>
         </td>
-        <td><p>Generate and ingest map of Timor pds tracks</p></td>
+        <td><p>Generate and ingest Timor maps</p></td>
+      </tr><tr><td>
+          <p><code><a href="ingest_pds_matched_trips.html">ingest_pds_matched_trips()</a></code> </p>
+        </td>
+        <td><p>Ingest PDS matched trip</p></td>
       </tr><tr><td>
           <p><code><a href="ingest_pds_tracks.html">ingest_pds_tracks()</a></code> </p>
         </td>
@@ -303,7 +315,11 @@
       </tr></tbody><tbody><tr><td>
           <p><code><a href="ingest_pds_map.html">ingest_pds_map()</a></code> </p>
         </td>
-        <td><p>Generate and ingest map of Timor pds tracks</p></td>
+        <td><p>Generate and ingest Timor maps</p></td>
+      </tr><tr><td>
+          <p><code><a href="ingest_pds_matched_trips.html">ingest_pds_matched_trips()</a></code> </p>
+        </td>
+        <td><p>Ingest PDS matched trip</p></td>
       </tr><tr><td>
           <p><code><a href="ingest_pds_tracks.html">ingest_pds_tracks()</a></code> </p>
         </td>
@@ -349,6 +365,10 @@
           <p class="section-desc"></p><p>Functions dedicated to data modeling.</p>
         </th>
       </tr></tbody><tbody><tr><td>
+          <p><code><a href="get_models.html">get_models()</a></code> </p>
+        </td>
+        <td><p>Download models estimates</p></td>
+      </tr><tr><td>
           <p><code><a href="model_indicators.html">model_indicators()</a></code> </p>
         </td>
         <td><p>Model fisheries indicators</p></td>
@@ -438,7 +458,7 @@
         </th>
       </tr></tbody><tbody><tr><th colspan="2">
           <h3 id="data-preprocessing">Data preprocessing <a href="#data-preprocessing" class="anchor" aria-hidden="true"></a></h3>
-          <p class="section-desc"></p>
+          <p class="section-desc"></p><p>Functions dedicated to data processing.</p>
         </th>
       </tr></tbody><tbody><tr><td>
           <p><code><a href="pt_nest_attachments.html">pt_nest_attachments()</a></code> </p>
@@ -504,6 +524,66 @@
           <p><code><a href="retrieve_lengths.html">retrieve_lengths()</a></code> </p>
         </td>
         <td><p>Retrieve weight-length parameters</p></td>
+      </tr><tr><td>
+          <p><code><a href="fill_missing_regions.html">fill_missing_regions()</a></code> </p>
+        </td>
+        <td><p>Fill missing regions</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h3 id="taxonomy">Taxonomy <a href="#taxonomy" class="anchor" aria-hidden="true"></a></h3>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="convert_taxa_names.html">convert_taxa_names()</a></code> </p>
+        </td>
+        <td><p>Convert taxa codes to common names</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h3 id="utils">Utils <a href="#utils" class="anchor" aria-hidden="true"></a></h3>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="read_config.html">read_config()</a></code> </p>
+        </td>
+        <td><p>Read configuration file</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="publishing">Publishing <a href="#publishing" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h3 id="data-sharing">Data sharing <a href="#data-sharing" class="anchor" aria-hidden="true"></a></h3>
+          <p class="section-desc"></p><p>Functions that help and interact with with Dataverse portal.</p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="delete_dataverse.html">delete_dataverse()</a></code> </p>
+        </td>
+        <td><p>Delete a dataverse collection</p></td>
+      </tr><tr><td>
+          <p><code><a href="publish_dataverse.html">publish_dataverse()</a></code> </p>
+        </td>
+        <td><p>Publish a Dataverse repository</p></td>
+      </tr><tr><td>
+          <p><code><a href="upload_dataverse.html">upload_dataverse()</a></code> </p>
+        </td>
+        <td><p>Upload and publish a dataset on Dataverse</p></td>
+      </tr><tr><td>
+          <p><code><a href="delete_dataset.html">delete_dataset()</a></code> </p>
+        </td>
+        <td><p>Delete a dataset of a dataverse collection</p></td>
+      </tr><tr><td>
+          <p><code><a href="publish_last_dataset.html">publish_last_dataset()</a></code> </p>
+        </td>
+        <td><p>Publish latest dataset created</p></td>
+      </tr><tr><td>
+          <p><code><a href="upload_files.html">upload_files()</a></code> </p>
+        </td>
+        <td><p>Upload files to Dataverse</p></td>
+      </tr><tr><td>
+          <p><code><a href="generate_metadata.html">generate_metadata()</a></code> </p>
+        </td>
+        <td><p>Generate a list of metadata</p></td>
+      </tr><tr><td>
+          <p><code><a href="generate_description.html">generate_description()</a></code> </p>
+        </td>
+        <td><p>Generate data description</p></td>
       </tr></tbody><tbody><tr><th colspan="2">
           <h3 id="utils">Utils <a href="#utils" class="anchor" aria-hidden="true"></a></h3>
           <p class="section-desc"></p>
@@ -525,7 +605,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -19,7 +19,7 @@ each record. Each element of body must be up to 10 records long.'><!-- mathjax -
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -51,34 +51,45 @@ each record. Each element of body must be up to 10 records long.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">air_upload_records</span><span class="op">(</span>
-  <span class="va">body</span>,
-  <span class="va">table</span>,
-  <span class="va">base_id</span>,
-  api_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AIRTABLE_KEY"</span><span class="op">)</span>,
-  request_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"create"</span>, <span class="st">"update"</span><span class="op">)</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">air_upload_records</span><span class="op">(</span></span>
+<span>  <span class="va">body</span>,</span>
+<span>  <span class="va">table</span>,</span>
+<span>  <span class="va">base_id</span>,</span>
+<span>  api_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AIRTABLE_KEY"</span><span class="op">)</span>,</span>
+<span>  request_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"create"</span>, <span class="st">"update"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>body</dt>
 <dd><p>list with the records, as formatted by <code>tibble_to_air_records()</code></p></dd>
+
+
 <dt>table</dt>
 <dd><p>name of the table (string)</p></dd>
+
+
 <dt>base_id</dt>
 <dd><p>id of the Airtable base where the table is located</p></dd>
+
+
 <dt>api_key</dt>
 <dd><p>API key for Airtable. By default it looks at the
 <code>AIRTABLE_KEY</code> environment variable.</p></dd>
+
+
 <dt>request_type</dt>
 <dd><p>Whether to create a new record or update an existing one.
 If updating an existing one, an <code>id_field</code> needs to be specified when
 calling <code>tibble_to_air_records()</code></p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>List of request responses</p>
+    
+
+<p>List of request responses</p>
     </div>
 
   </div>
@@ -93,7 +104,7 @@ calling <code>tibble_to_air_records()</code></p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

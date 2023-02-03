@@ -64,10 +64,28 @@
     <loc>/reference/coalist.html</loc>
   </url>
   <url>
+    <loc>/reference/convert_taxa_names.html</loc>
+  </url>
+  <url>
+    <loc>/reference/delete_dataset.html</loc>
+  </url>
+  <url>
+    <loc>/reference/delete_dataverse.html</loc>
+  </url>
+  <url>
     <loc>/reference/download_cloud_file.html</loc>
   </url>
   <url>
+    <loc>/reference/fill_missing_regions.html</loc>
+  </url>
+  <url>
     <loc>/reference/format_public_data.html</loc>
+  </url>
+  <url>
+    <loc>/reference/generate_description.html</loc>
+  </url>
+  <url>
+    <loc>/reference/generate_metadata.html</loc>
   </url>
   <url>
     <loc>/reference/get_catch_types.html</loc>
@@ -86,6 +104,9 @@
   </url>
   <url>
     <loc>/reference/get_host_url.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_models.html</loc>
   </url>
   <url>
     <loc>/reference/get_nutrients_table.html</loc>
@@ -125,6 +146,9 @@
   </url>
   <url>
     <loc>/reference/ingest_pds_map.html</loc>
+  </url>
+  <url>
+    <loc>/reference/ingest_pds_matched_trips.html</loc>
   </url>
   <url>
     <loc>/reference/ingest_pds_tracks.html</loc>
@@ -169,7 +193,10 @@
     <loc>/reference/pipe.html</loc>
   </url>
   <url>
-    <loc>/reference/preprocess_landings.html</loc>
+    <loc>/reference/preprocess_landings_step_1.html</loc>
+  </url>
+  <url>
+    <loc>/reference/preprocess_landings_step_2.html</loc>
   </url>
   <url>
     <loc>/reference/preprocess_legacy_landings.html</loc>
@@ -214,6 +241,12 @@
     <loc>/reference/pt_validate_vms_installs.html</loc>
   </url>
   <url>
+    <loc>/reference/publish_dataverse.html</loc>
+  </url>
+  <url>
+    <loc>/reference/publish_last_dataset.html</loc>
+  </url>
+  <url>
     <loc>/reference/read_config.html</loc>
   </url>
   <url>
@@ -245,6 +278,12 @@
   </url>
   <url>
     <loc>/reference/upload_cloud_file.html</loc>
+  </url>
+  <url>
+    <loc>/reference/upload_dataverse.html</loc>
+  </url>
+  <url>
+    <loc>/reference/upload_files.html</loc>
   </url>
   <url>
     <loc>/reference/validate_catch_params.html</loc>

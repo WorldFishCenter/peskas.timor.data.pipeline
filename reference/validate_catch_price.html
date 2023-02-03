@@ -19,7 +19,7 @@ the distribution of the total catch values associated to surveys."><!-- mathjax 
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -51,13 +51,15 @@ the distribution of the total catch values associated to surveys.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">validate_catch_price</span><span class="op">(</span><span class="va">data</span>, method <span class="op">=</span> <span class="cn">NULL</span>, k <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_catch_price</span><span class="op">(</span><span class="va">data</span>, method <span class="op">=</span> <span class="cn">NULL</span>, k <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A preprocessed data frame</p></dd>
+
+
 <dt>method</dt>
 <dd><p>character identifying how to estimate the scale of the distribution. Available choices are:</p>		
 <p><code>method='IQR'</code> for using the Inter-Quartile Range, i.e. Q3-Q1;</p> 
@@ -70,22 +72,27 @@ the distribution of the total catch values associated to surveys.</p>
 <p>When <code>method='dQ'</code> the estimated scale for the left tail is (Q2-Q1)/0.6745, while for the right tail it is considered (Q3-Q2)/0.6745 (Q2 is the median); this double estimate should be able to account for slight skewness.</p>		
 <p>When <code>method='dD'</code> the estimated scale for the left tail is (P50-P10)/1.2816, while for the right tail it is considered (P90-P50)/1.2816 (P50 is the median); this double estimate should be able to account for skewness.</p>		
 <p>Finally, when <code>method='AdjOut'</code>, bounds are based on the adjusted outlyingness method as proposed by Hubert and Van der Veeken (2008).</p></dd>
+
+
 <dt>k</dt>
 <dd><p>Nonnegative constant that determines the extension of bounds. Commonly used values are 2, 2.5 and 3 (default).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data frame containing validated catch values.</p>
+    
+
+<p>A data frame containing validated catch values.</p>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu">get_merged_landings</span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">validate_catch_value</span><span class="op">(</span><span class="va">landings</span>, method <span class="op">=</span> <span class="st">"MAD"</span>, k <span class="op">=</span> <span class="fl">13</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu">get_merged_landings</span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">validate_catch_value</span><span class="op">(</span><span class="va">landings</span>, method <span class="op">=</span> <span class="st">"MAD"</span>, k <span class="op">=</span> <span class="fl">13</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -100,7 +107,7 @@ the distribution of the total catch values associated to surveys.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

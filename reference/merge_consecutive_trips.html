@@ -20,7 +20,7 @@ trips that start before 180 minutes from the following within a range of 2 km.">
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -53,25 +53,35 @@ trips that start before 180 minutes from the following within a range of 2 km.</
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">merge_consecutive_trips</span><span class="op">(</span>
-  <span class="va">x</span>,
-  consecutive_time <span class="op">=</span> <span class="cn">NULL</span>,
-  consecutive_distance <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">merge_consecutive_trips</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  consecutive_time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  consecutive_distance <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>A data frame containing raw pds trips data.</p></dd>
+
+
 <dt>consecutive_time</dt>
 <dd><p>Time between consecutive trips (hrs).</p></dd>
+
+
 <dt>consecutive_distance</dt>
 <dd><p>Distance between consecutive trips (Km).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A dataframe with pds trips including a new column <code>associated_to</code>indicating the consecutive trips to be merged.</p>
+    
+
+<p>A dataframe with pds trips including a new column <code>associated_to</code></p>
+
+
+<p>indicating the consecutive trips to be merged.</p>
     </div>
 
   </div>
@@ -86,7 +96,7 @@ trips that start before 180 minutes from the following within a range of 2 km.</
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

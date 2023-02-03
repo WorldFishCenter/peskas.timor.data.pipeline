@@ -18,7 +18,7 @@ landings survey"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -49,17 +49,20 @@ landings survey</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">pt_nest_attachments</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">pt_nest_attachments</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>A data frame containing raw landings data from the Timor operations.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Landings data in which the information about multiple attachments has
+    
+
+<p>Landings data in which the information about multiple attachments has
 been nested into a single column (<code>_attachments</code>) this column contains a
 tibble for every row. This, attachment tibble has as many rows as there are
 attachments.</p>
@@ -81,20 +84,20 @@ models.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">dummy_landings</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span class="r-in">  `_id` <span class="op">=</span> <span class="st">"123"</span>,</span>
-<span class="r-in">  `_attachments.0.download_url` <span class="op">=</span> <span class="st">"http://url-1.com"</span>,</span>
-<span class="r-in">  `_attachments.0.id` <span class="op">=</span> <span class="st">"01"</span>,</span>
-<span class="r-in">  `_attachments.1.download_url` <span class="op">=</span> <span class="st">"http://url-2.com"</span>,</span>
-<span class="r-in">  `_attachments.1.id` <span class="op">=</span> <span class="st">"02"</span>,</span>
-<span class="r-in">  `_attachments.2.download_url` <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span class="r-in">  `_attachments.2.id` <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">pt_nest_attachments</span><span class="op">(</span><span class="va">dummy_landings</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">dummy_landings</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  `_id` <span class="op">=</span> <span class="st">"123"</span>,</span></span>
+<span class="r-in"><span>  `_attachments.0.download_url` <span class="op">=</span> <span class="st">"http://url-1.com"</span>,</span></span>
+<span class="r-in"><span>  `_attachments.0.id` <span class="op">=</span> <span class="st">"01"</span>,</span></span>
+<span class="r-in"><span>  `_attachments.1.download_url` <span class="op">=</span> <span class="st">"http://url-2.com"</span>,</span></span>
+<span class="r-in"><span>  `_attachments.1.id` <span class="op">=</span> <span class="st">"02"</span>,</span></span>
+<span class="r-in"><span>  `_attachments.2.download_url` <span class="op">=</span> <span class="cn">NA</span>,</span></span>
+<span class="r-in"><span>  `_attachments.2.id` <span class="op">=</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">pt_nest_attachments</span><span class="op">(</span><span class="va">dummy_landings</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 2</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   `_id` `_attachments`  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 123   <span style="color: #949494;">&lt;tibble [2 × 2]&gt;</span></span>
-<span class="r-in"></span>
 </code></pre></div>
     </div>
   </div>
@@ -109,7 +112,7 @@ models.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

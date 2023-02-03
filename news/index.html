@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">peskas.timor.data.pipeline</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.18.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0</span>
       </span>
     </div>
 
@@ -42,11 +42,70 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="1.4.0" id="peskastimordatapipeline-140">peskas.timor.data.pipeline 1.4.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-140"></a></h2>
+<div class="section level3">
+<h3 id="improvements-1-4-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-4-0"></a></h3>
+<ul><li><p>Improve national and municipal estimates combining packags <code>Amelia</code> and <code>mice</code> for missing and outliers data imputation.</p></li>
+<li><p>Integrating price per kg into export data</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-4-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-4-0"></a></h3>
+<ul><li>Improved revenue outliers identification based on empirical information</li></ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.3.0" id="peskastimordatapipeline-130">peskas.timor.data.pipeline 1.3.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-130"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-3-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-3-0"></a></h3>
+<ul><li>Integrated taxa selection and filtering in tracks file deemed to the leaflet map in the portal</li></ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.2.0" id="peskastimordatapipeline-120">peskas.timor.data.pipeline 1.2.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-120"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-2-0"></a></h3>
+<ul><li>Added a new feature in the function <code>ingest_pds_map</code>. The function process and upload a data frame containing the number of trips, CPE (catch per unit effort) and RPE (revenue per unit effort) splitted by grids to produce leaflet maps in the web portal.</li></ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.1.0" id="peskastimordatapipeline-110">peskas.timor.data.pipeline 1.1.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-110"></a></h2>
+<div class="section level3">
+<h3 id="improvements-1-1-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-1-0"></a></h3>
+<ul><li>Improve the estimation of some fish groups’ catches by calculating the weight per individual case by case.</li></ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-0"></a></h3>
+<p>-Fix error in cleaning of legacy landings: the columns indicating the number of individuals and fish length for catches &gt; 60cm were exchanged</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.0.0" id="peskastimordatapipeline-100">peskas.timor.data.pipeline 1.0.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-100"></a></h2>
+<div class="section level3">
+<h3 id="improvements-1-0-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-0-0"></a></h3>
+<p>Adding option to produce Timor map filtered by fishing trips</p>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.20.0" id="peskastimordatapipeline-0200">peskas.timor.data.pipeline 0.20.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0200"></a></h2>
+<div class="section level3">
+<h3 id="improvements-0-20-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-20-0"></a></h3>
+<ul><li><p>Improve the validation step by flagging those observation characterized by having positive revenue (individuals) despite 0 or null individuals (revenue).</p></li>
+<li><p>Use a log model to identify abnormal weight-revenue relationships on Cook’s distance estimation.</p></li>
+<li><p>Replace NA catch code with catch code “0” and ensure these observations having non positive individuals and revenue.</p></li>
+<li><p>Use total length for weight calculation of MOO in all the landings (weights calculated with FL seem quite unrealistic)</p></li>
+<li><p>Use 95° quantile instead of median to summarise weight parameters for catch types, it seems to return more realistic weight estimations by single individuals.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-20-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-20-0"></a></h3>
+<ul><li>Split landings preprocessing in two jobs to avoid to run out of memory (docker exit code 137)</li></ul></div>
+</div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.19.0" id="peskastimordatapipeline-0190">peskas.timor.data.pipeline 0.19.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0190"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-19-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-19-0"></a></h3>
+<ul><li>Added a new function <code>ingest_pds_matched_trips</code> to ingest matched pds tracks and survey landings in a zip folder on a monthly scale.</li></ul></div>
+</div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="0.18.0" id="peskastimordatapipeline-0180">peskas.timor.data.pipeline 0.18.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0180"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-18-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-18-0"></a></h3>
-<ul><li>Added nutritional values for each catch by the function <code>get_nutrients_table</code>. The function links to the repository <a href="https://github.com/mamacneil/NutrientFishbase" class="external-link uri">https://github.com/mamacneil/NutrientFishbase</a> and join the estimated nutrients values with the FishBase species data.</li>
-</ul></div>
+<ul><li>Added nutritional values for each catch by the function <code>get_nutrients_table</code>. The function links to the repository <a href="https://github.com/mamacneil/NutrientFishbase" class="external-link uri">https://github.com/mamacneil/NutrientFishbase</a> and join the estimated nutrients values with the FishBase species data.</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.17.0" id="peskastimordatapipeline-0170">peskas.timor.data.pipeline 0.17.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0170"></a></h2>
@@ -61,12 +120,10 @@
 <h2 class="page-header" data-toc-text="0.16.0" id="peskastimordatapipeline-0160">peskas.timor.data.pipeline 0.16.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0160"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-16-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-16-0"></a></h3>
-<ul><li>The Docker file now run rocker/r-ver 4.1.1 instead of rocker/geospatial:4.0.3</li>
-</ul></div>
+<ul><li>The Docker file now run rocker/r-ver 4.1.1 instead of rocker/geospatial:4.0.3</li></ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-16-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-16-0"></a></h3>
-<ul><li>Fixed the bug when calling <code><a href="../reference/ingest_rfish_table.html">ingest_rfish_table()</a></code> in the main pipeline.</li>
-</ul></div>
+<ul><li>Fixed the bug when calling <code><a href="../reference/ingest_rfish_table.html">ingest_rfish_table()</a></code> in the main pipeline.</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.15.0" id="peskastimordatapipeline-0150">peskas.timor.data.pipeline 0.15.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0150"></a></h2>
@@ -90,8 +147,7 @@
 <h2 class="page-header" data-toc-text="0.13.0" id="peskastimordatapipeline-0130">peskas.timor.data.pipeline 0.13.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0130"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-13-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-13-0"></a></h3>
-<ul><li>Added functions to process and validate pds trips. Namely, <code><a href="../reference/preprocess_pds_trips.html">preprocess_pds_trips()</a></code> and <code><a href="../reference/validate_pds_trips.html">validate_pds_trips()</a></code>. These functions make sure the data types are appropriate, check for trip duplicates and perform basic checks for trip duration and distance.</li>
-</ul></div>
+<ul><li>Added functions to process and validate pds trips. Namely, <code><a href="../reference/preprocess_pds_trips.html">preprocess_pds_trips()</a></code> and <code><a href="../reference/validate_pds_trips.html">validate_pds_trips()</a></code>. These functions make sure the data types are appropriate, check for trip duplicates and perform basic checks for trip duration and distance.</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.11.0" id="peskastimordatapipeline-0110">peskas.timor.data.pipeline 0.11.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0110"></a></h2>
@@ -105,34 +161,29 @@
 <div class="section level3">
 <h3 id="bug-fixes-0-11-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-11-0"></a></h3>
 <ul><li>
-<code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> returns an empty vector when the bucket is empty</li>
-</ul></div>
+<code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> returns an empty vector when the bucket is empty</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.10.1" id="peskastimordatapipeline-0101">peskas.timor.data.pipeline 0.10.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0101"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-10-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-10-1"></a></h3>
 <ul><li>Fixed the bug in survey retrieve process. Integrating a server response status check in <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>
-</li>
-</ul></div>
+</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.10.0" id="peskastimordatapipeline-0100">peskas.timor.data.pipeline 0.10.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0100"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-10-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-10-0"></a></h3>
-<ul><li>Added <code><a href="../reference/merge_landings.html">merge_landings()</a></code> to merge and upload pre-processed recent and legacy landings data.</li>
-</ul></div>
+<ul><li>Added <code><a href="../reference/merge_landings.html">merge_landings()</a></code> to merge and upload pre-processed recent and legacy landings data.</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.9.1" id="peskastimordatapipeline-091">peskas.timor.data.pipeline 0.9.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-091"></a></h2>
 <div class="section level3">
 <h3 id="improvements-0-9-1">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-9-1"></a></h3>
-<ul><li>Simplified jobs in the pipeline workflow</li>
-</ul></div>
+<ul><li>Simplified jobs in the pipeline workflow</li></ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-9-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-9-1"></a></h3>
-<ul><li>Fixed workflow so that runs that are supposed to run in production actually do so</li>
-</ul></div>
+<ul><li>Fixed workflow so that runs that are supposed to run in production actually do so</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.9.0" id="peskastimordatapipeline-090">peskas.timor.data.pipeline 0.9.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-090"></a></h2>
@@ -153,20 +204,17 @@
 </ul><div class="section level4">
 <h4 id="improvements-0-8-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-8-0"></a></h4>
 <ul><li>Deactivated check of uniqueness of IMEI per boat in <code>pt_</code>
-</li>
-</ul></div>
+</li></ul></div>
 <div class="section level4">
 <h4 id="breaking-changes-0-8-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-8-0"></a></h4>
-<ul><li>Landings pre-processing now renames a few columns in the data: specifically <em>submission_id</em> (used to be *_id<em>) and </em>landing_date* (used to be <em>date</em>)</li>
-</ul></div>
+<ul><li>Landings pre-processing now renames a few columns in the data: specifically <em>submission_id</em> (used to be *_id<em>) and </em>landing_date* (used to be <em>date</em>)</li></ul></div>
 </div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.7.0" id="peskastimordatapipeline-070">peskas.timor.data.pipeline 0.7.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-070"></a></h2>
 <div class="section level4">
 <h4 id="new-features-0-7-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h4>
-<ul><li>Added <code>ingest_legacy_landings</code> to retrieve data from legacy data (SFF landings)</li>
-</ul></div>
+<ul><li>Added <code>ingest_legacy_landings</code> to retrieve data from legacy data (SFF landings)</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.6.0" id="peskastimordatapipeline-060">peskas.timor.data.pipeline 0.6.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-060"></a></h2>
@@ -178,13 +226,11 @@
 <div class="section level4">
 <h4 id="improvements-0-6-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-6-0"></a></h4>
 <ul><li>
-<code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> can now also match files by exact name and not just by prefix</li>
-</ul></div>
+<code><a href="../reference/cloud_object_name.html">cloud_object_name()</a></code> can now also match files by exact name and not just by prefix</li></ul></div>
 <div class="section level4">
 <h4 id="breaking-changes-0-6-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h4>
 <ul><li>
-<code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> and <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> now use logic to use Airtable instead og Google Sheets</li>
-</ul></div>
+<code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> and <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> now use logic to use Airtable instead og Google Sheets</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.5.0" id="peskastimordatapipeline-050">peskas.timor.data.pipeline 0.5.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-050"></a></h2>
@@ -204,8 +250,7 @@
 <h2 class="page-header" data-toc-text="0.4.0" id="peskastimordatapipeline-040">peskas.timor.data.pipeline 0.4.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-040"></a></h2>
 <div class="section level4">
 <h4 id="breaking-changes-0-4-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-4-0"></a></h4>
-<ul><li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li>
-</ul></div>
+<ul><li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li></ul></div>
 <div class="section level4">
 <h4 id="improvements-0-4-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-4-0"></a></h4>
 <ul><li>Renamed the job names in the github workflow as the functions that the job calls.</li>
@@ -213,14 +258,13 @@
 </ul></div>
 <div class="section level4">
 <h4 id="bug-fixes-0-4-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-0"></a></h4>
-<ul><li>We now skip RCurl from windows tests</li>
-</ul></div>
+<ul><li>We now skip RCurl from windows tests</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.0" id="peskastimordatapipeline-030">peskas.timor.data.pipeline 0.3.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-030"></a></h2>
 <div class="section level4">
 <h4 id="new-features-0-3-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-3-0"></a></h4>
-<ul><li>The preprocessing of East Timor landings is implemented in <code><a href="../reference/preprocess_landings.html">preprocess_landings()</a></code>
+<ul><li>The preprocessing of East Timor landings is implemented in <code>preprocess_landings()</code>
 </li>
 <li>Added <code><a href="../reference/pt_nest_attachments.html">pt_nest_attachments()</a></code> to group all attachment columns into a nested column containing data frames.</li>
 <li>Added <code><a href="../reference/pt_nest_species.html">pt_nest_species()</a></code> to group all attachment columns into a nested column containing data frames.</li>
@@ -229,8 +273,7 @@
 </ul></div>
 <div class="section level4">
 <h4 id="improvements-0-3-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-3-0"></a></h4>
-<ul><li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li>
-</ul></div>
+<ul><li>Now using <code><a href="../reference/cloud_storage_authenticate.html">cloud_storage_authenticate()</a></code> to internally authenticate to cloud storage instead of authenticating separately in each cloud functionjj. This simplifies authentication and ensures authentication is not attempted when credentials have been already validated.</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0" id="peskastimordatapipeline-020">peskas.timor.data.pipeline 0.2.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-020"></a></h2>
@@ -242,8 +285,7 @@
 </ul></div>
 <div class="section level4">
 <h4 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h4>
-<ul><li>The prefix name of surveys is not hard-coded and can be specified in the config file (<code>file_prefix</code> field).</li>
-</ul></div>
+<ul><li>The prefix name of surveys is not hard-coded and can be specified in the config file (<code>file_prefix</code> field).</li></ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.1.0" id="peskastimordatapipeline-010">peskas.timor.data.pipeline 0.1.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-010"></a></h2>
@@ -280,7 +322,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
