@@ -119,7 +119,7 @@ model_landings <- function(trips) {
     ) %>%
     dplyr::ungroup()
 
-  if (unique(trips$reporting_region) == "Lautém") {
+  if (unique(trips$reporting_region) == "Lautem") {
     family <- "poisson"
   } else {
     family <- "Gamma"
@@ -206,7 +206,7 @@ model_catch <- function(trips) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-  # region <- "Lautém"
+  # region <- "Lautem"
   # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
@@ -564,4 +564,36 @@ get_frame <- function() {
       )
     ) %>%
     dplyr::select(.data$landing_period, .data$period, .data$month, .data$version)
+}
+
+#' Fill missing regions
+#'
+#' Replace empty region data based on boats geographic activity (trough tracker imeis)
+#'
+#' @param trips Dataframe  with Timor validated trips.
+#'
+#' @return A dataframe with filled regions (where possible).
+#' @export
+#'
+#' @examples
+fill_missing_regions <- function(trips = NULL) {
+  imei_regions <-
+    trips %>%
+    dplyr::filter(!is.na(.data$tracker_imei)) %>%
+    dplyr::select(.data$tracker_imei, .data$reporting_region) %>%
+    dplyr::group_by(.data$tracker_imei) %>%
+    dplyr::count(.data$reporting_region) %>%
+    dplyr::filter(!is.na(.data$reporting_region)) %>%
+    dplyr::group_by(.data$tracker_imei) %>%
+    dplyr::arrange(dplyr::desc(.data$n), .by_group = TRUE) %>%
+    dplyr::summarise(reporting_region = dplyr::first(.data$reporting_region)) %>%
+    dplyr::rename(reporting_region_fill = .data$reporting_region) %>%
+    dplyr::ungroup()
+
+  dplyr::full_join(trips, imei_regions, by = "tracker_imei") %>%
+    dplyr::mutate(reporting_region = dplyr::case_when(
+      is.na(.data$reporting_region) ~ .data$reporting_region_fill,
+      TRUE ~ reporting_region
+    )) %>%
+    dplyr::select(-.data$reporting_region_fill)
 }
