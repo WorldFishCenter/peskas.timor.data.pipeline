@@ -157,6 +157,24 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     )
+
+  summary_dat <- get_summary_data(data = merged_trips, pars)
+
+  summary_data_filename <-
+    pars$report$summary_data %>%
+    add_version(extension = "rds")
+
+  readr::write_rds(
+    x = summary_dat,
+    file = summary_data_filename, compress = "gz"
+  )
+
+  logger::log_info("Uploading {summary_data_filename} to cloud sorage")
+  upload_cloud_file(
+    file = summary_data_filename,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
+  )
 }
 
 #' @importFrom rlang .data
@@ -302,7 +320,6 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
   today <- Sys.Date()
 
   if (length(groupings) > 1) {
-
     standardised_predictions <- aggregated_predictions %>%
       dplyr::rename(date_bin_start = .data$landing_period) %>%
       tidyr::complete(date_bin_start = all_months) %>%
@@ -513,4 +530,66 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
       nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / pars$metadata$nutrients$RDI$name$vitaminA,
       TRUE ~ NA_real_
     ))
+}
+
+get_summary_data <- function(data = NULL, pars) {
+  data_area <-
+    data %>%
+    fill_missing_regions() %>%
+    dplyr::mutate(Area = dplyr::case_when(
+      .data$reporting_region %in% c("Bobonaro", "Liquica", "Dili", "Baucau", "Oecusse") |
+        .data$landing_station %in% c(
+          "Com", "Tutuala", "Ililai",
+          "Sentru/Liarafa/Sika/Rau Moko", "Comando"
+        ) ~ "North Coast",
+      .data$reporting_region == "Atauro" ~ "Atauro island",
+      is.na(.data$reporting_region) | is.na(.data$reporting_region) |
+        is.na(.data$reporting_region) & is.na(.data$reporting_region) ~ NA_character_,
+      TRUE ~ "South Coast"
+    ))
+
+  list(
+    n_surveys = data_area %>%
+      dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$Area)) %>%
+      dplyr::group_by(.data$Area) %>%
+      dplyr::count() %>%
+      dplyr::ungroup(),
+    n_tracks = data_area %>%
+      dplyr::filter(!is.na(.data$tracker_trip_id)) %>%
+      dplyr::summarise(tracks = dplyr::n()) %>%
+      t() %>%
+      dplyr::as_tibble() %>%
+      dplyr::rename(n_tracks = .data$V1) %>%
+      dplyr::mutate(var = "GPS tracks recorded"),
+    miles_tracked = data_area %>%
+      dplyr::filter(!is.na(.data$tracker_trip_id)) %>%
+      dplyr::summarise(tracker_trip_distance =
+                         as.integer(sum(.data$tracker_trip_distance, na.rm = T) / 1852)) %>%
+      t() %>%
+      dplyr::as_tibble() %>%
+      dplyr::rename(miles = .data$V1) %>%
+      dplyr::mutate(var = "Miles tracked"),
+    groups_comp = data_area %>%
+      dplyr::select(.data$landing_catch) %>%
+      tidyr::unnest(.data$landing_catch) %>%
+      tidyr::unnest(.data$length_frequency) %>%
+      dplyr::filter(.data$individuals > 0) %>%
+      dplyr::select(.data$catch_taxon, .data$weight) %>%
+      convert_taxa_names(pars) %>%
+      dplyr::filter(!is.na(.data$fish_group)) %>%
+      dplyr::mutate(tot_weight = sum(.data$weight, na.rm = T)) %>%
+      dplyr::group_by(.data$fish_group) %>%
+      dplyr::summarise(
+        weight_contr = sum(.data$weight, na.rm = T),
+        tot_weight = dplyr::first(.data$tot_weight),
+        weight_contr = .data$weight_contr / .data$tot_weight * 100
+      ) %>%
+      dplyr::filter(!.data$weight_contr == 0) %>%
+      dplyr::mutate(fish_group = ifelse(.data$weight_contr < 1, "Other", .data$fish_group)) %>%
+      dplyr::group_by(.data$fish_group) %>%
+      dplyr::summarise(weight_contr = sum(.data$weight_contr)) %>%
+      dplyr::mutate(weight_contr = round(.data$weight_contr, 2)) %>%
+      dplyr::arrange(dplyr::desc(.data$weight_contr)) %>%
+      dplyr::ungroup()
+  )
 }

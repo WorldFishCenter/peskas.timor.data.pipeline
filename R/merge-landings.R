@@ -41,8 +41,8 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   preprocessed_landings <-
     cloud_object_name(
       prefix = paste(pars$surveys$landings$file_prefix,
-        "preprocessed",
-        sep = "_"
+                     "preprocessed",
+                     sep = "_"
       ),
       provider = pars$storage$google$key,
       extension = "rds",
@@ -53,8 +53,8 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   preprocessed_legacy_landings <-
     cloud_object_name(
       prefix = paste(pars$surveys$landings_legacy$file_prefix,
-        "preprocessed",
-        sep = "_"
+                     "preprocessed",
+                     sep = "_"
       ),
       provider = pars$storage$google$key,
       extension = "rds",
@@ -64,9 +64,9 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retrieving preprocessed data")
   purrr::map(c(preprocessed_landings, preprocessed_legacy_landings),
-    download_cloud_file,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+             download_cloud_file,
+             provider = pars$storage$google$key,
+             options = pars$storage$google$options
   )
 
   # adding a column "survey_version"
@@ -77,7 +77,9 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   prep_legacy_landings <- prep_legacy_landings %>%
     dplyr::mutate(survey_version = rep("v1", nrow(prep_legacy_landings)))
 
-  merged_landings <- dplyr::bind_rows(prep_landings, prep_legacy_landings)
+  merged_landings <-
+    dplyr::bind_rows(prep_legacy_landings, prep_landings)
+
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%
     add_version(extension = "rds")
@@ -95,3 +97,4 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     options = pars$storage$google$options
   )
 }
+

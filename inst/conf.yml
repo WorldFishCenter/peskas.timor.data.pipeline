@@ -158,6 +158,7 @@ default:
 
   report:
     file_prefix: data_report
+    summary_data: summary_data
 
   storage:
     google:

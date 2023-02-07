@@ -311,6 +311,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
     tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
+    dplyr::mutate(length = ifelse(.data$individuals == 0, NA_real_, .data$length)) %>%
     dplyr::group_by(.data$landing_id, .data$landing_date) %>%
     dplyr::arrange(dplyr::desc(.data$weight), .by_group = TRUE) %>%
     dplyr::summarise(
@@ -321,7 +322,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       n_fishermen = dplyr::first(.data$n_fishermen),
       landing_value = dplyr::first(.data$landing_value),
       catch_taxon = dplyr::first(.data$catch_taxon),
-      weight = sum(.data$weight, na.rm = TRUE) / 1000
+      weight = sum(.data$weight, na.rm = TRUE) / 1000,
+      length = mean(.data$length, na.rm = TRUE)
     ) %>%
     dplyr::mutate(remove_label = dplyr::case_when(!.data$catch_taxon == "0" & .data$weight == 0
     ~ "remove", TRUE ~ "keep")) %>%
@@ -482,11 +484,12 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       region = dplyr::first(.data$region),
       Lat = stats::median(.data$Lat),
       Lng = stats::median(.data$Lng),
-      weight = sum(.data$weight, na.rm = T),
-      trips = dplyr::n(),
-      trips_log = log(.data$trips + 1),
+      #weight = sum(.data$weight, na.rm = T),
+      #trips = dplyr::n(),
+      #trips_log = log(.data$trips + 1),
       region_cpe = dplyr::first(.data$region_cpe),
       region_rpe = dplyr::first(.data$region_rpe),
+      length = mean(.data$length, na.rm = TRUE),
       CPE = round(mean(.data$CPE, na.rm = TRUE), 2),
       RPE = round(mean(.data$RPE, na.rm = TRUE), 2),
       CPE_log = round(mean(log(.data$CPE + 1), na.rm = TRUE), 2),
