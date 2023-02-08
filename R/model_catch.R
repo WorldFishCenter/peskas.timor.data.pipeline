@@ -108,6 +108,7 @@ model_landings <- function(trips) {
       .data$landing_period < dplyr::first(na.omit(.data$last_seen))
     ) %>%
     dplyr::select(-.data$first_trip, -.data$last_seen) %>%
+    dplyr::ungroup() %>%
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
@@ -180,8 +181,13 @@ model_catch <- function(trips) {
     ) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%
     dplyr::summarise(
-      landing_weight = sum(.data$weight)
+      landing_weight = sum(.data$weight),
+      landing_value = dplyr::first(.data$landing_value),
     ) %>%
+    dplyr::mutate(landing_weight = ifelse(is.na(.data$landing_value),
+                                          NA_real_, .data$landing_weight)) %>%
+    dplyr::select(-.data$landing_value) %>%
+    dplyr::ungroup() %>%
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),

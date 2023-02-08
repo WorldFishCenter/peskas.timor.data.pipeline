@@ -294,8 +294,10 @@ pt_validate_reg_boats <- function(reg_boats_table) {
       boats_2016 = .data$registered_boats_2016,
       boats_2022 = .data$registered_boats_2022
     ) %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(n_boats = sum(.data$boats_2016, .data$boats_2022, na.rm = T)) %>%
-    dplyr::select(-c(.data$boats_2016, .data$boats_2022)) %>%
-    dplyr::ungroup()
+    dplyr::mutate(n_boats = dplyr::case_when(
+      .data$reporting_region == "Dili" ~ .data$boats_2022,
+      is.na(.data$boats_2022) | .data$boats_2022 < .data$boats_2016 ~
+        .data$boats_2016, TRUE ~ .data$boats_2022
+    )) %>%
+    dplyr::select(.data$reporting_region, .data$n_boats)
 }

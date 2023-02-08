@@ -471,7 +471,7 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
         unique(.data$interagency_code) == "FLY" ~ 0.75,
         unique(.data$interagency_code) == "CGX" ~ 0.75,
         unique(.data$interagency_code) %in% c("EMP", "CLP") ~ 0.5,
-        TRUE ~ 0.5
+        TRUE ~ 0.75
       )
     ) %>%
     dplyr::filter(!is.na(.data$weight))

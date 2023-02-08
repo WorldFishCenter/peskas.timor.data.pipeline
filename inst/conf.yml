@@ -110,7 +110,7 @@ default:
       cook_dist: 5
       price_per_weight:
         min_limit: 0.5
-        max_limit: 70
+        max_limit: 25
       mesh: 200
       gleaners:
         k: 1.5
