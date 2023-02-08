@@ -128,7 +128,7 @@ validate_landing_regularity <- function(landings) {
     dplyr::group_by(.data$`_id`) %>%
     dplyr::summarise(
       species = dplyr::first(.data$species),
-      total_catch_value = sum(.data$total_catch_value, na.rm = T),
+      total_catch_value = dplyr::first(.data$total_catch_value),
       n_individuals = sum(.data$n_individuals, na.rm = T)
     ) %>%
     dplyr::ungroup() %>%
@@ -140,8 +140,8 @@ validate_landing_regularity <- function(landings) {
           !.data$species == "0" & .data$total_catch_value <= 0 |
           .data$total_catch_value <= 0 & .data$n_individuals > 0 |
           .data$total_catch_value > 0 & .data$n_individuals <= 0 |
-          is.na(.data$total_catch_value) & .data$n_individuals > 0 |
-          is.na(.data$n_individuals) & .data$total_catch_value > 0
+          is.na(.data$total_catch_value) & .data$n_individuals >= 0 |
+          is.na(.data$n_individuals) & .data$total_catch_value >= 0
         ~ 22, TRUE ~ NA_real_
       )
     ) %>%
@@ -460,12 +460,13 @@ validate_price_weight <- function(catch_alerts = NULL,
     #dplyr::group_by(.data$species) %>%
     dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
                                                    ~ log(.data$weight/1000 + 1)))) %>%
+    dplyr::ungroup() %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
     dplyr::mutate(
       weight_kg = .data$weight / 1000,
       pk = .data$total_catch_value / .data$weight_kg,
-      alert_number = dplyr::case_when(.data$cooksd > (cook_dist * mean(.data$cooksd)) |
+      alert_number = dplyr::case_when(#.data$cooksd > (cook_dist * mean(.data$cooksd)) |
                                         .data$pk < price_weight_min |
                                         .data$pk > price_weight_max
                                       ~ 17, TRUE ~ NA_real_)
