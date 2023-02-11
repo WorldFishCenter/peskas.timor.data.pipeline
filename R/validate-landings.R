@@ -348,9 +348,14 @@ merge_versions <- function(x) {
         .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
         .data$`trip_group/fuel_used_L`
       ),
-      habitat_multiple = dplyr::coalesce(
+      habitat_no_boat = dplyr::coalesce(
         .data$`trip_group/habitat_no_boat`,
         .data$`trip_group/Habitat_no_boat`
+      ),
+      habitat_no_boat = substr(.data$habitat_no_boat, 1, 1),
+      `trip_group/habitat_boat` = dplyr::coalesce(
+        .data$`trip_group/habitat_boat`,
+        .data$habitat_no_boat
       ),
       reason_no_fishing = dplyr::case_when(
         .data$`Tanba_sa_la_iha_ro_o_peskador_` == "seluk__hakerek"
@@ -362,6 +367,7 @@ merge_versions <- function(x) {
       )
     ) %>%
     dplyr::select(-c(
+      .data$habitat_no_boat,
       .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
       .data$`trip_group/fuel_used_L`,
       .data$`trip_group/habitat_no_boat`,
