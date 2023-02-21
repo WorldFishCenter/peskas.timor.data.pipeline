@@ -556,19 +556,20 @@ get_summary_data <- function(data = NULL, pars) {
       dplyr::ungroup(),
     n_tracks = data_area %>%
       dplyr::filter(!is.na(.data$tracker_trip_id)) %>%
-      dplyr::summarise(tracks = dplyr::n()) %>%
-      t() %>%
-      dplyr::as_tibble() %>%
-      dplyr::rename(n_tracks = .data$V1) %>%
-      dplyr::mutate(var = "GPS tracks recorded"),
-    miles_tracked = data_area %>%
-      dplyr::filter(!is.na(.data$tracker_trip_id)) %>%
-      dplyr::summarise(tracker_trip_distance =
-                         as.integer(sum(.data$tracker_trip_distance, na.rm = T) / 1852)) %>%
-      t() %>%
-      dplyr::as_tibble() %>%
-      dplyr::rename(miles = .data$V1) %>%
-      dplyr::mutate(var = "Miles tracked"),
+      dplyr::mutate(year = lubridate::year(.data$landing_date)) %>%
+      dplyr::group_by(.data$year) %>%
+      dplyr::summarise(n_tracks = dplyr::n()) %>%
+      dplyr::ungroup(),
+    # miles_tracked = data_area %>%
+    #  dplyr::filter(!is.na(.data$tracker_trip_id)) %>%
+    #  dplyr::summarise(
+    #    tracker_trip_distance =
+    #      as.integer(sum(.data$tracker_trip_distance, na.rm = T) / 1852)
+    #  ) %>%
+    #  t() %>%
+    #  dplyr::as_tibble() %>%
+    #  dplyr::rename(miles = .data$V1) %>%
+    #  dplyr::mutate(var = "Miles tracked"),
     groups_comp = data_area %>%
       dplyr::select(.data$landing_catch) %>%
       tidyr::unnest(.data$landing_catch) %>%
@@ -582,14 +583,17 @@ get_summary_data <- function(data = NULL, pars) {
       dplyr::summarise(
         weight_contr = sum(.data$weight, na.rm = T),
         tot_weight = dplyr::first(.data$tot_weight),
+        weight = sum(.data$weight, na.rm = T),
         weight_contr = .data$weight_contr / .data$tot_weight * 100
       ) %>%
       dplyr::filter(!.data$weight_contr == 0) %>%
       dplyr::mutate(fish_group = ifelse(.data$weight_contr < 1, "Other", .data$fish_group)) %>%
       dplyr::group_by(.data$fish_group) %>%
-      dplyr::summarise(weight_contr = sum(.data$weight_contr)) %>%
-      dplyr::mutate(weight_contr = round(.data$weight_contr, 2)) %>%
-      dplyr::arrange(dplyr::desc(.data$weight_contr)) %>%
-      dplyr::ungroup()
+      dplyr::summarise(
+        weight = sum(.data$weight, na.rm = T) / 1000
+      ) %>%
+      dplyr::arrange(dplyr::desc(.data$weight)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(weight = as.integer(.data$weight))
   )
 }
