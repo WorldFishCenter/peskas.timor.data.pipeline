@@ -322,6 +322,16 @@ get_preprocessed_metadata <- function(pars) {
   readr::read_rds(file = metadata_rds)
 }
 
+#' Download merged landings
+#'
+#' Download validated surveys landings and PDS trips.
+#'
+#' @param pars Configuration file.
+#' @param suffix A character indicating dataframe version. Use "_weight" to download
+#' version with calculated catch weight.
+#'
+#' @return A dataframe.
+#' @export
 get_merged_landings <- function(pars, suffix = "") {
   landings_rds <- cloud_object_name(
     prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
