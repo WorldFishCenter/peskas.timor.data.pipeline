@@ -90,7 +90,7 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
           .data$date < .data$submission_date - lubridate::duration(submission_delay, units = "days") ~ 10,
           TRUE ~ NA_real_
         ),
-        date = .data$date,
+        date = as.Date(.data$date, tz = "Asia/Dili"),
         submission_id = as.integer(.data$`_id`)
       ),
     validated_duration = data %>%
