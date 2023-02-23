@@ -93,6 +93,8 @@ default:
           vitaminA: 0.0007
           omega3: 1.1
 
+  peskas_mail:
+    key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
 
   validation:
     landings:
@@ -214,6 +216,8 @@ local:
   metadata:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
+  peskas_mail:
+    key: !expr readLines("auth/peskas-gmail-key")
   validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")

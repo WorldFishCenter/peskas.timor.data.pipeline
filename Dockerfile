@@ -53,7 +53,10 @@ RUN install2.r --error --skipinstalled \
     leaflet \
     htmltools \
     Amelia \
-    mice
+    mice \
+    blastula \
+    glue \
+    mime
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz

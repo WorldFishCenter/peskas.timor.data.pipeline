@@ -63,15 +63,16 @@ reference:
   contents:
   - read_config
 
-- title: Publishing
-- subtitle: Data sharing
-  desc: Functions that help and interact with with Dataverse portal.
+- title: Data sharing
+- subtitle: Publishing
+  desc: Functions deemed to share data and reports.
   contents:
   - matches("dataverse")
   - matches("dataset")
   - upload_files
   - generate_metadata
   - generate_description
+  - send_sites_report
 - subtitle: Utils
   contents:
   - read_config
