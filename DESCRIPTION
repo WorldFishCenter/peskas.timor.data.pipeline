@@ -69,7 +69,10 @@ Suggests:
     htmltools,
     imputeTS,
     Amelia,
-    mice
+    mice,
+    blastula,
+    glue,
+    mime
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

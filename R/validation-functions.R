@@ -75,11 +75,11 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
 validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
   validated_time <- list(
     validated_dates = data %>%
-      dplyr::select(.data$`_id`, .data$end, .data$`_submission_time`) %>%
+      dplyr::select(.data$`_id`, .data$date, .data$`_submission_time`) %>%
       dplyr::mutate(
         `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
         submission_date = lubridate::with_tz(.data$`_submission_time`, "Asia/Dili"),
-        date = as.POSIXct(.data$end, tz = "Asia/Dili"),
+        date = as.POSIXct(.data$date, tz = "Asia/Dili"),
         d = date - .data$submission_date
       ) %>%
       dplyr::transmute(
@@ -90,7 +90,7 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
           .data$date < .data$submission_date - lubridate::duration(submission_delay, units = "days") ~ 10,
           TRUE ~ NA_real_
         ),
-        date = .data$date,
+        date = as.Date(.data$date, tz = "Asia/Dili"),
         submission_id = as.integer(.data$`_id`)
       ),
     validated_duration = data %>%
