@@ -38,7 +38,11 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
       footer = blastula::md(glue::glue("Email sent on ", as.character(Sys.time())))
     )
 
-  file <- system.file("export/peskas_workflow.png", package = "peskas.timor.data.pipeline")
+  file <- list.files(
+    system.file("report/enumerators_summary",
+                package = "peskas.timor.data.pipeline"),
+    pattern = ".pdf"
+    )
   content_type <- mime::guess_type(file)
   filename <- basename(file)
 
