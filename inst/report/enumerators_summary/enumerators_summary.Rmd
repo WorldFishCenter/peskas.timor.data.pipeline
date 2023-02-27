@@ -57,8 +57,7 @@ library(RColorBrewer)
 library(magrittr)
 
 
-# setwd("../..")
-setwd("/Users/lore/My Drive/WorldFish/peskas.timor.data.pipeline")
+setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
