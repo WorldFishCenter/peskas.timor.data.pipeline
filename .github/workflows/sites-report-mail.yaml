@@ -5,6 +5,7 @@ on:
     - cron:  '0 */2 * * *'
 
 env:
+  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   PESKAS_GMAIL_KEY: ${{ secrets.PESKAS_GMAIL_KEY }}
 
 jobs:
