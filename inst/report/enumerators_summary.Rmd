@@ -22,7 +22,7 @@ urlcolor: myblue
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = FALSE)
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
