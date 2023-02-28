@@ -62,6 +62,8 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   )
   email$attachments <- c(email$attachments, list(attachment_list))
 
+  library(keyring)
+
   email %>%
     blastula::smtp_send(
       from = "peskas.portal@gmail.com",
