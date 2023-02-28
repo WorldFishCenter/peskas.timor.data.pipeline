@@ -62,7 +62,7 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   )
   email$attachments <- c(email$attachments, list(attachment_list))
 
-  library(keyring)
+  require(keyring)
 
   email %>%
     blastula::smtp_send(
