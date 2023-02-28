@@ -65,7 +65,7 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.portal@gmail.com",
-      to = c("l.longobardi@cgiar.org"),
+      to = c("l.longobardi@cgiar.org", "lorenzo.longobardi@gmail.com"),
       subject = paste("Monthly Enumerator Activity Report", paste(month, year)),
       credentials = blastula::creds_key(id = pars$peskas_mail$key)
     )

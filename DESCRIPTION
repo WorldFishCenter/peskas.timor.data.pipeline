@@ -34,7 +34,8 @@ Imports:
     purrr,
     readr,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
+    keyring
 Suggests: 
     covr,
     pkgdown,
