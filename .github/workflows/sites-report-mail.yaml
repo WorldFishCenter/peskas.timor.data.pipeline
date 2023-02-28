@@ -39,6 +39,6 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Generate enumerators report
-        run: Rscript -e 'source(system.file("report/enumerators_summary/generate_enumerators_report.R", package = "peskas.timor.data.pipeline"))'
+        run: Rscript -e 'source(system.file("report/generate_enumerators_report.R", package = "peskas.timor.data.pipeline"))'
       - name: Call send_sites_report()
         run: Rscript -e 'peskas.timor.data.pipeline::send_sites_report()'

@@ -1,6 +1,7 @@
 ---
 title: "Enumerators activity summary"
 date: "`r as.Date(Sys.time())`"
+mainfont: Montserrat
 geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
 output:
   bookdown::pdf_book:
@@ -8,13 +9,6 @@ output:
     toc: yes
     toc_depth: 2
     number_sections: true
-    mainfont: Montserrat
-    fig_caption: yes
-  bookdown::html_document2:
-    number_sections: false
-    fig_caption: yes
-    toc: true
-    toc_depth: 1
 header-includes: 
   - \usepackage{float} 
   - \floatplacement{figure}{H}
@@ -25,9 +19,6 @@ header-includes:
   - \let\counterwithin\relax
   - \usepackage{chngcntr}
 urlcolor: myblue
-editor_options: 
-  markdown: 
-    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -43,11 +34,7 @@ last_month_lab <- lubridate::month(last_month, label = T)
 this_year <- lubridate::year(Sys.time())
 ```
 
-**The following report summarizes the peskAAS survey activity in each
-landing site during the last month `r paste(last_month_lab, last_year)`
-and the last year `r last_year`. The purpose of this report is to
-provide an overview of the number of surveys submitted, the number of
-working days, and the estimated working hours per day.**
+**The following report summarizes the peskAAS survey activity in each landing site during the last month `r paste(last_month_lab, last_year)` and the last year `r last_year`. The purpose of this report is to provide an overview of the number of surveys submitted, the number of working days, and the estimated working hours per day.**
 
 ------------------------------------------------------------------------
 
@@ -55,7 +42,6 @@ working days, and the estimated working hours per day.**
 library(ggplot2)
 library(RColorBrewer)
 library(magrittr)
-
 
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
@@ -191,10 +177,7 @@ stations
 
 ## Overall `r this_year` activity
 
-The graph below show the monthly activity in the different sites in
-`r this_year` where each cells represent a calendar day. Cell colors
-indicate the number of submissions. The vertical axis is ranked by the
-most active landing sites.
+The graph below show the monthly activity in the different sites in `r this_year` where each cells represent a calendar day. Cell colors indicate the number of submissions. The vertical axis is ranked by the most active landing sites.
 
 ```{r, warning=FALSE, message=FALSE,echo=FALSE, fig.height=6.5, fig.width=11, eval=TRUE}
 
@@ -236,11 +219,7 @@ df %>%
 
 ## Monthly activity
 
-The graph below show the number of days of activity in each month in
-each site. A day of activity means that in that specific day at least 1
-submission was recorded. The black vertical line in each panel indicates
-the average of the days of activity, the number in the bars indicates
-the number of submissions for that specific month.
+The graph below show the number of days of activity in each month in each site. A day of activity means that in that specific day at least 1 submission was recorded. The black vertical line in each panel indicates the average of the days of activity, the number in the bars indicates the number of submissions for that specific month.
 
 ```{r, warning=FALSE, message=FALSE,echo=FALSE, fig.height=8, fig.width=10, eval=TRUE}
 
@@ -298,11 +277,7 @@ target_month_lab <- lubridate::month(target_month, label = T, abbr = F)
 ref_month_lab <- lubridate::month(ref_month, label = T, abbr = F)
 ```
 
-The table below shows the overall activity in each landing site referred
-to the latest month r `target_month_lab` compared to the previous one
-`r ref_month_lab`. Colours and numbers in brackets in each cell refer to
-the percentage variation of each activity indicator from the previous
-month. Grey cells indicate no possible comparison due to lack of data.
+The table below shows the overall activity in each landing site referred to the latest month r `target_month_lab` compared to the previous one `r ref_month_lab`. Colours and numbers in brackets in each cell refer to the percentage variation of each activity indicator from the previous month. Grey cells indicate no possible comparison due to lack of data.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=6.5, fig.width=8}
 df_tab <- 

@@ -15,6 +15,9 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
+  month <- lubridate::month(Sys.Date(), label = T)
+  year <- lubridate::year(Sys.Date())
+
   email <-
     blastula::compose_email(
       body = blastula::md(
@@ -39,10 +42,10 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
     )
 
   file <- list.files(
-    system.file("report/enumerators_summary",
-                package = "peskas.timor.data.pipeline"),
-    pattern = ".pdf"
-    )
+    system.file("report", package = "peskas.timor.data.pipeline"),
+    pattern = c("summary_report.pdf"), full.names = T
+  )
+
   content_type <- mime::guess_type(file)
   filename <- basename(file)
 
@@ -62,8 +65,8 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.portal@gmail.com",
-      to = "lorenzo.longobardi@gmail.com",
-      subject = "Monthly Enumerator Activity Report",
+      to = c("l.longobardi@cgiar.org"),
+      subject = paste("Monthly Enumerator Activity Report", paste(month, year)),
       credentials = blastula::creds_key(id = pars$peskas_mail$key)
     )
 }
