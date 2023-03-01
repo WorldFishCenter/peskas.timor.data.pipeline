@@ -217,7 +217,7 @@ local:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
   peskas_mail:
-    key: !expr readLines("auth/peskas-gmail-key")
+    key: !expr readLines("auth/blastula_cred_file")
   validation:
     airtable:
       api_key: !expr readLines("auth/airtable-key")
