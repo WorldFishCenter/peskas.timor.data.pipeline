@@ -18,6 +18,7 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   month <- lubridate::month(Sys.Date(), label = T)
   year <- lubridate::year(Sys.Date())
 
+  logger::log_info("Generate mail")
   email <-
     blastula::compose_email(
       body = blastula::md(
@@ -41,6 +42,8 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
       footer = blastula::md(glue::glue("Email sent on ", as.character(Sys.time())))
     )
 
+  logger::log_info("Attach report to mail")
+
   file <- list.files(
     system.file("report", package = "peskas.timor.data.pipeline"),
     pattern = c("summary_report.pdf"), full.names = T
@@ -62,11 +65,20 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   )
   email$attachments <- c(email$attachments, list(attachment_list))
 
+  logger::log_info("Generate credentials file")
+
+  file_cred <- file("creds.txt")
+  writeLines(pars$peskas_mail$key, file_cred)
+  close(file_cred)
+
+  logger::log_info("Send mail")
+
   email %>%
     blastula::smtp_send(
       from = "peskas.platform@gmail.com",
       to = c("l.longobardi@cgiar.org", "lorenzo.longobardi@gmail.com"),
       subject = paste("Monthly Enumerator Activity Report", paste(month, year)),
-      credentials = blastula::creds_file(pars$peskas_mail$key)
+      credentials = blastula::creds_file("creds.txt")
     )
+  file.remove("creds.txt")
 }
