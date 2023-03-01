@@ -1,6 +1,7 @@
 library(magrittr)
 
-month <- lubridate::month(Sys.Date(), label = T)
+month <- seq(lubridate::floor_date(Sys.Date(), "month"), length = 2, by = "-1 months")[2]
+month <- lubridate::month(month, label = T)
 year <- lubridate::year(Sys.Date())
 
 filename <- paste(month, year, "enumerators_summary_report", sep = "_")

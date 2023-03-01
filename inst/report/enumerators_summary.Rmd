@@ -34,7 +34,10 @@ last_month_lab <- lubridate::month(last_month, label = T)
 this_year <- lubridate::year(Sys.time())
 ```
 
-**The following report summarizes the peskAAS survey activity in each landing site during the last month `r paste(last_month_lab, last_year)` and the last year `r last_year`. The purpose of this report is to provide an overview of the number of surveys submitted, the number of working days, and the estimated working hours per day.**
+<br>
+<br>
+
+**The following report summarizes the peskAAS survey activity in each landing site during `r last_year` and last month `r paste(last_month_lab, last_year)`. The purpose of this report is to provide an overview of the number of surveys submitted, the number of working days, and the estimated working hours per day.**
 
 ------------------------------------------------------------------------
 
@@ -143,6 +146,8 @@ df <-
   dplyr::mutate(id = seq(1, nrow(.))) %>%
   tidyr::pivot_wider(names_from = landing_station, values_from = landing_id) %>%
   dplyr::right_join(tf) %>%
+  dplyr::filter(!landing_date == lubridate::floor_date(Sys.Date())) %>% 
+  dplyr::mutate(id = seq(1, nrow(.))) %>%
   tidyr::pivot_longer(
     cols = c(8:ncol(.)),
     names_to = "landing_station", values_to = "landing_id"
@@ -270,14 +275,18 @@ df %>%
 \pagebreak
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-target_month <- lubridate::floor_date(Sys.Date() - 30, "month")
-ref_month <- lubridate::floor_date(target_month - 30, "month")
+
+target_month <- lubridate::floor_date(Sys.Date(), "month")
+target_month <- seq(target_month, length = 2, by = "-1 months")[2]
+ref_month <- seq(target_month, length = 2, by = "-1 months")[2]
 
 target_month_lab <- lubridate::month(target_month, label = T, abbr = F)
 ref_month_lab <- lubridate::month(ref_month, label = T, abbr = F)
 ```
 
-The table below shows the overall activity in each landing site referred to the latest month r `target_month_lab` compared to the previous one `r ref_month_lab`. Colours and numbers in brackets in each cell refer to the percentage variation of each activity indicator from the previous month. Grey cells indicate no possible comparison due to lack of data.
+The table below shows the overall activity in each landing site referred to the latest reported month `r target_month_lab` compared to the previous one `r ref_month_lab`. Colours and numbers in brackets in each cell refer to the percentage variation of each indicator from the previous month. Grey cells indicate no possible comparison due to lack of data.
+The indicator "Working hours" is estimated assuming a duration of 6 minutes for each submission. 
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=6.5, fig.width=8}
 df_tab <- 
@@ -301,12 +310,12 @@ df_tab <-
   #dplyr::mutate(id = seq(1, dplyr::n())) %>% 
   tidyr::pivot_wider(names_from = month, values_from = 3:5) %>% 
   dplyr::ungroup() %>% 
-  dplyr::rename(nsub_now = 2,
-                nsub_before = 3,
-                days_now = 4,
-                days_before = 5,
-                wh_now = 6,
-                wh_before = 7) %>% 
+  dplyr::rename(nsub_before = 2,
+                nsub_now = 3,
+                days_before = 4,
+                days_now = 5,
+                wh_before = 6,
+                wh_now = 7) %>% 
   dplyr::mutate(dplyr::across(is.integer, ~ as.numeric(.))) %>% 
   dplyr::mutate(diff_nsub = ((nsub_now - nsub_before)/nsub_before) * 100,
                 diff_days = ((days_now - days_before)/days_before) * 100,
@@ -314,7 +323,7 @@ df_tab <-
                 dplyr::across(is.numeric, ~ round(., 2))) %>% 
   dplyr::select(-dplyr::contains("before")) %>% 
   tidyr::pivot_longer(-c(landing_station, dplyr::starts_with("diff")))
-  
+
 df_tab_cols <- 
   df_tab %>% 
   dplyr::select(-c(name, value)) %>% 
@@ -348,7 +357,7 @@ dplyr::full_join(df_tab, df_tab_cols) %>%
   ) +
   geom_text(
     mapping = aes(name, landing_station,
-      label = paste0(value, " (", perc_val_d, "%", ")")
+                  label = paste0(value, " (", perc_val_d, "%", ")")
     ),
     color = "black"
   ) +
