@@ -2,7 +2,7 @@ name: Send landing sites activity report
 
 on:
   schedule:
-    - cron:  '0 */12 * * *'
+    - cron:  '0 0 15 * *'
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
