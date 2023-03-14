@@ -308,7 +308,8 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
     dplyr::mutate(
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      price_kg = .data$revenue / .data$catch
+      price_kg = .data$revenue / .data$catch,
+      price_kg = ifelse(.data$price_kg > 20, NA_real_, .data$price_kg)
     ) %>%
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
