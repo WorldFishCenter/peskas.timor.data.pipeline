@@ -132,45 +132,11 @@ model_landings <- function(trips) {
   )
 }
 
-#' Model landing value
-#'
-#' @param trips data frame
-#'
-#' @return a glmmTMB model
-#' @importFrom glmmTMB glmmTMB
-model_value <- function(trips) {
-  value_df <- trips %>%
-    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-      unit = "month"
-    )) %>%
-    # dplyr::filter(!is.na(.data$landing_period), !is.na(.data$landing_value)) %>%
-    dplyr::mutate(
-      year = as.character(lubridate::year(.data$landing_period)),
-      month = as.character(lubridate::month(.data$landing_period)),
-      period = paste(.data$year, .data$month, sep = "-"),
-      version = dplyr::case_when(
-        .data$landing_period <= "2019-05-01" ~ "v1",
-        .data$landing_period > "2019-05-01" ~ "v2"
-      )
-    )
-
-  # Using a zero inflated zero poisson model here. I also checked a gaussian,
-  # poisson and a zero inflated poission with just an intercept and this seemed
-  # to perform best. Not much difference though. The model predictions fit the
-  # real data very poorly but that's expected given the limited number of
-  # predictors here
-  glmmTMB(landing_value ~ (1 | month) + (1 | period) + (1 | version),
-    ziformula = ~ (1 | month) + (1 | period) + (1 | version),
-    family = "poisson",
-    data = value_df
-  )
-}
-
 model_catch <- function(trips) {
   catch_df <-
     trips %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-      unit = "month"
+                                                         unit = "month"
     )) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
@@ -200,20 +166,54 @@ model_catch <- function(trips) {
     dplyr::ungroup()
 
   glmmTMB(landing_weight ~ (1 | month) + (1 | period) + (1 | version),
-    ziformula = ~ (1 | month) + (1 | period) + (1 | version),
-    family = "poisson",
-    data = catch_df,
-    control = glmmTMB::glmmTMBControl(
-      conv_check = "skip",
-      optimizer = stats::optim,
-      optArgs = list(method = "BFGS")
-    )
+          ziformula = ~ (1 | month) + (1 | period) + (1 | version),
+          family = "poisson",
+          data = catch_df,
+          control = glmmTMB::glmmTMBControl(
+            conv_check = "skip",
+            optimizer = stats::optim,
+            optArgs = list(method = "BFGS")
+          )
   )
 }
 
-run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, model_family, national_level = FALSE) {
-  # region <- "Lautem"
-  # vessels_metadata <- vessels_stats
+#' Model landing value
+#'
+#' @param trips data frame
+#'
+#' @return a glmmTMB model
+#' @importFrom glmmTMB glmmTMB
+model_value <- function(trips) {
+  value_df <- trips %>%
+    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
+      unit = "month"
+    )) %>%
+    dplyr::filter(!is.na(.data$landing_period), !is.na(.data$landing_value)) %>%
+    dplyr::mutate(
+      year = as.character(lubridate::year(.data$landing_period)),
+      month = as.character(lubridate::month(.data$landing_period)),
+      period = paste(.data$year, .data$month, sep = "-"),
+      version = dplyr::case_when(
+        .data$landing_period <= "2019-05-01" ~ "v1",
+        .data$landing_period > "2019-05-01" ~ "v2"
+      )
+    )
+
+  # Using a zero inflated zero poisson model here. I also checked a gaussian,
+  # poisson and a zero inflated poission with just an intercept and this seemed
+  # to perform best. Not much difference though. The model predictions fit the
+  # real data very poorly but that's expected given the limited number of
+  # predictors here
+  glmmTMB(landing_value ~ (1 | month) + (1 | period) + (1 | version),
+    ziformula = ~ (1 | month) + (1 | period) + (1 | version),
+    family = "poisson",
+    data = value_df
+  )
+}
+
+run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
+  #region <- "Ainaro"
+  #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- sum(vessels_metadata$n_boats)
@@ -230,12 +230,28 @@ run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, mod
       magrittr::extract2("n_boats")
   }
 
+  pk_ids <-
+    trips_region %>%
+    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
+      unit = "month"
+    )) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::filter(!.data$catch_taxon %in% c("MZZ", "IAX", "SWX")) %>%
+    magrittr::extract2("landing_id") %>%
+    unique()
+
+  trips_region_pk <-
+    trips_region %>%
+    dplyr::filter(.data$landing_id %in% pk_ids)
+
   message("Modelling ", region)
 
   landings_model <- model_landings(trips_region)
   value_model <- model_value(trips_region)
+  value_model_pk <- model_value(trips_region_pk)
   catch_model <- model_catch(trips_region)
-  results <- estimate_statistics(value_model, landings_model, catch_model, n_boats = region_boats)
+  results <- estimate_statistics(value_model, value_model_pk, landings_model, catch_model, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
 
@@ -249,9 +265,10 @@ run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, mod
     )
 }
 
-estimate_statistics <- function(value_model, landings_model, catch_model, n_boats) {
+estimate_statistics <- function(value_model, value_model_pk, landings_model, catch_model, n_boats) {
   models <- list(
     landing_revenue = value_model,
+    landing_revenue_pk = value_model_pk,
     n_landings_per_boat = landings_model,
     landing_weight = catch_model
   )
@@ -294,7 +311,8 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
     dplyr::bind_cols(imputed_id) %>%
     dplyr::mutate(
       landing_weight = ifelse(.data$landing_weight < 0.25, NA_real_, .data$landing_weight),
-      landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue)
+      landing_revenue = ifelse(.data$landing_revenue < 1, NA_real_, .data$landing_revenue),
+      landing_revenue_pk = ifelse(.data$landing_revenue_pk < 1, NA_real_, .data$landing_revenue_pk)
     ) %>%
     mice::mice(m = 5, maxit = 500, method = "pmm", seed = 666, printFlag = F) %>%
     mice::complete(action = "all") %>%
@@ -307,13 +325,14 @@ estimate_statistics <- function(value_model, landings_model, catch_model, n_boat
     dplyr::arrange(.data$landing_period) %>%
     dplyr::mutate(
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
+      revenue_pk = .data$landing_revenue_pk * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      price_kg = .data$revenue / .data$catch,
-      price_kg = ifelse(.data$price_kg > 20, NA_real_, .data$price_kg)
+      price_kg = .data$revenue_pk / .data$catch
     ) %>%
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
-    dplyr::mutate(n_boats = rep(n_boats))
+    dplyr::mutate(n_boats = rep(n_boats)) %>%
+    dplyr::select(-c(.data$landing_revenue_pk, .data$revenue_pk))
 
   estimations_total
 }
@@ -523,12 +542,12 @@ get_national_estimates <- function(municipal_estimations = NULL) {
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$landing_period) %>%
     dplyr::summarise(
-      landing_revenue = mean(.data$landing_revenue),
-      n_landings_per_boat = mean(.data$n_landings_per_boat),
-      landing_weight = mean(.data$landing_weight),
-      revenue = sum(.data$revenue),
-      catch = sum(.data$catch),
-      price_kg = mean(.data$price_kg)
+      landing_revenue = mean(.data$landing_revenue, na.rm = T),
+      n_landings_per_boat = mean(.data$n_landings_per_boat, na.rm = T),
+      landing_weight = mean(.data$landing_weight, na.rm = T),
+      revenue = sum(.data$revenue, na.rm = T),
+      catch = sum(.data$catch, na.rm = T),
+      price_kg = mean(.data$price_kg, na.rm = T)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$landing_period)
