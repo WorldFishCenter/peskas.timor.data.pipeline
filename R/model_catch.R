@@ -120,14 +120,14 @@ model_landings <- function(trips) {
     ) %>%
     dplyr::ungroup()
 
-  if (unique(trips$reporting_region) == "Lautem") {
-    family <- "poisson"
-  } else {
-    family <- "Gamma"
-  }
+  #if (unique(trips$reporting_region) == "Lautem") {
+  #  family <- "poisson"
+  #} else {
+  #  family <- "Gamma"
+  #}
 
   glmmTMB(n_landings ~ (1 | month) + (1 | period) + (1 | version),
-    family = family,
+    family = "Gamma",
     data = landings_df
   )
 }
@@ -332,7 +332,15 @@ estimate_statistics <- function(value_model, value_model_pk, landings_model, cat
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::mutate(n_boats = rep(n_boats)) %>%
-    dplyr::select(-c(.data$landing_revenue_pk, .data$revenue_pk))
+    dplyr::select(-c(.data$landing_revenue_pk, .data$revenue_pk)) %>%
+    mice::mice(m = 5, maxit = 500, method = "pmm", seed = 666, printFlag = F) %>%
+    mice::complete(action = "all") %>%
+    purrr::map(dplyr::bind_rows) %>%
+    dplyr::bind_rows() %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$is_imputed) %>%
+    dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+    dplyr::ungroup()
 
   estimations_total
 }

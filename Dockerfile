@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4
+FROM rocker/geospatial:4.2
 
 # Install imports
 RUN install2.r --error --skipinstalled \
