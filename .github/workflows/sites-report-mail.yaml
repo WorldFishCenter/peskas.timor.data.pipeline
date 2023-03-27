@@ -1,8 +1,8 @@
-name: Send landing sites activity report
+name: Generate activity report
 
 on:
   schedule:
-    - cron:  '0 0 15 * *'
+    - cron:  '0 0 * * *'
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
@@ -26,8 +26,8 @@ jobs:
           image_name: r-runner-peskas-timor
           dockerfile: Dockerfile.prod
 
-  send-mail:
-    name: Send activity report
+  generate-report:
+    name: Generate activity report
     needs: [build-container]
     runs-on: ubuntu-20.04
     container:
@@ -39,7 +39,5 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Generate enumerators report
+      - name: Generate and upload enumerators report
         run: Rscript -e 'source(system.file("report/generate_enumerators_report.R", package = "peskas.timor.data.pipeline"))'
-      - name: Call send_sites_report()
-        run: Rscript -e 'peskas.timor.data.pipeline::send_sites_report()'
