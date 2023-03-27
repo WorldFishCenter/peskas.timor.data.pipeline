@@ -1,6 +1,6 @@
 library(magrittr)
 
-filename <- "data_report.pdf"
+filename <- "data_report.html"
 
 rmarkdown::render(
   input = system.file("report/data_report.Rmd", package = "peskas.timor.data.pipeline"),

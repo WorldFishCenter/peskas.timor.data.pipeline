@@ -1,14 +1,12 @@
 ---
 title: PESKAS data report
-date: "Last compiled on `r Sys.time()`"
+date: "Last compiled on `r Sys.Date()`"
 mainfont: Montserrat
 geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
 output:
-  bookdown::pdf_book:
-    latex_engine: lualatex
-    toc: yes
-    toc_depth: 2
-    number_sections: true
+  bookdown::html_document2:
+   toc: true
+   toc_depth: 2
 header-includes: 
   - \usepackage{float} 
   - \floatplacement{figure}{H}
