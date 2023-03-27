@@ -260,3 +260,5 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Test public data
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
+      - name: Generate and upload enumerators report
+        run: Rscript -e 'source(system.file("report/generate_enumerators_report.R", package = "peskas.timor.data.pipeline"))'
