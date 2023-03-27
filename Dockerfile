@@ -56,7 +56,9 @@ RUN install2.r --error --skipinstalled \
     mice \
     blastula \
     glue \
-    mime
+    mime \
+    janitor \
+    reactable
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
