@@ -146,6 +146,13 @@ label_date <- function(x) {
   format(x, "%b")
 }
 
+make_color_pal <- function(colors, bias = 1) {
+  get_color <- colorRamp(colors, bias = bias)
+  function(x) rgb(get_color(x), maxColorValue = 255)
+}
+
+good_color <- make_color_pal(c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab"), bias = 2)
+
 df <-
   dplyr::left_join(landings, landings_raw_prep, by = c("landing_id", "landing_station")) %>%
   dplyr::select(-reporting_region) %>%
@@ -218,7 +225,7 @@ tab <-
 rows <- nrow(tab)
 
 reactable::reactable(tab,
-  defaultSorted = "Region", striped = TRUE, highlight = TRUE, searchable = TRUE,
+  defaultSorted = "Region", striped = TRUE, 
   groupBy = "Region",
   defaultPageSize = rows,
   defaultColDef = reactable::colDef(
@@ -228,7 +235,14 @@ reactable::reactable(tab,
   ),
   columns = list(
     Region = reactable::colDef(minWidth = 120),
-    Station = reactable::colDef(minWidth = 125) # overrides the default
+    Station = reactable::colDef(minWidth = 125),
+    Total = reactable::colDef(
+      style = function(value) {
+        normalized <- (value - min(tab$Total)) / (max(tab$Total) - min(tab$Total))
+        color <- good_color(normalized)
+        list(background = color)
+      }
+    )
   )
 )
 ```
@@ -277,7 +291,7 @@ tab <-
 rows <- nrow(tab)
 
 reactable::reactable(tab,
-  defaultSorted = "Region", striped = TRUE, highlight = TRUE, searchable = TRUE,
+  defaultSorted = "Region", striped = TRUE, 
   groupBy = "Region",
   defaultPageSize = rows,
   defaultColDef = reactable::colDef(
@@ -287,9 +301,17 @@ reactable::reactable(tab,
   ),
   columns = list(
     Region = reactable::colDef(minWidth = 120),
-    Station = reactable::colDef(minWidth = 125) # overrides the default
+    Station = reactable::colDef(minWidth = 125),
+    Total = reactable::colDef(
+      style = function(value) {
+        normalized <- (value - min(tab$Total)) / (max(tab$Total) - min(tab$Total))
+        color <- good_color(normalized)
+        list(background = color)
+      }
+    )
   )
 )
+
 ```
 
 # `r this_year` detailed summary
