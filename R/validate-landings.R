@@ -110,6 +110,12 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     method = default_method,
     k_gleaners = pars$validation$landings$gleaners$k
   )
+  fuel_alerts <- validate_fuel(
+    landings,
+    method = default_method,
+    k_fuel = pars$validation$landings$fuel$k
+  )
+
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
 
@@ -133,7 +139,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       n_fishers_alerts,
       habitat_alerts,
       mesh_alerts,
-      gleaners_alerts
+      gleaners_alerts,
+      fuel_alerts
     ) %>%
     purrr::map(~ dplyr::select(.x, -alert_number)) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
@@ -170,7 +177,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       .data$gear_type,
       .data$mesh_size,
       .data$vessel_type,
-      .data$n_gleaners
+      .data$n_gleaners,
+      .data$fuel
     )
 
   validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
