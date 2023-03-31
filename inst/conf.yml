@@ -116,6 +116,8 @@ default:
       mesh: 200
       gleaners:
         k: 1.5
+      fuel:
+        k: 3
     pds_trips:
       max_trip_hours: 18
       min_trip_hours: 0.5
