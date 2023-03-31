@@ -1,4 +1,4 @@
-name: Send landing sites activity report
+name: Generate and upload data report
 
 on:
   schedule:
