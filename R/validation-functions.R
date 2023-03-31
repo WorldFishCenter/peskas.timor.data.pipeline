@@ -1,4 +1,3 @@
-
 # Get a vector with imeis deployed in the field
 get_deployed_imeis <- function(metadata) {
   metadata$devices %>%
@@ -140,7 +139,7 @@ validate_landing_regularity <- function(landings) {
           !.data$species == "0" & .data$total_catch_value <= 0 |
           .data$total_catch_value <= 0 & .data$n_individuals > 0 |
           .data$total_catch_value > 0 & .data$n_individuals <= 0 |
-          is.na(.data$total_catch_value) & .data$n_individuals >= 0 |
+          # is.na(.data$total_catch_value) & .data$n_individuals >= 0 |
           is.na(.data$n_individuals) & .data$total_catch_value >= 0
         ~ 22, TRUE ~ NA_real_
       )
@@ -212,10 +211,10 @@ validate_catch_price <- function(data, method = NULL, k = NULL) {
     dplyr::select(.data$`_id`, .data$total_catch_value) %>%
     dplyr::transmute(
       alert_number = ifelse(.data$total_catch_value > 1500, 6, NA_integer_),
-      #alert_number = alert_outlier(
+      # alert_number = alert_outlier(
       #  x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
       #  logt = TRUE, k = k, method = method
-      #),
+      # ),
       total_catch_value = dplyr::case_when(
         is.na(.data$alert_number) ~ .data$total_catch_value,
         TRUE ~ NA_real_
@@ -435,7 +434,6 @@ validate_price_weight <- function(catch_alerts = NULL,
                                   cook_dist = NULL,
                                   price_weight_min = NULL,
                                   price_weight_max = NULL) {
-
   # Extract single catches IDs
   single_catches <-
     catch_alerts %>%
@@ -446,30 +444,31 @@ validate_price_weight <- function(catch_alerts = NULL,
   # Extract IDs with abnormal price weight relation based on Cook's distance
   price_per_weight_alerts <-
     dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
-    #dplyr::filter(.data$submission_id %in% single_catches) %>%
+    # dplyr::filter(.data$submission_id %in% single_catches) %>%
     tidyr::unnest(.data$species_group) %>%
     tidyr::unnest(.data$length_individuals) %>%
     dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
     dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
-    #dplyr::group_by(.data$submission_id, .data$species) %>%
+    # dplyr::group_by(.data$submission_id, .data$species) %>%
     dplyr::group_by(.data$submission_id) %>%
     dplyr::summarise(
       total_catch_value = dplyr::first(.data$total_catch_value),
       weight = sum(.data$weight, na.rm = T),
     ) %>%
-    #dplyr::group_by(.data$species) %>%
+    # dplyr::group_by(.data$species) %>%
     dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
-                                                   ~ log(.data$weight/1000 + 1)))) %>%
+    ~ log(.data$weight / 1000 + 1)))) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
     dplyr::select(-.data$model) %>%
     dplyr::mutate(
       weight_kg = .data$weight / 1000,
       pk = .data$total_catch_value / .data$weight_kg,
-      alert_number = dplyr::case_when(#.data$cooksd > (cook_dist * mean(.data$cooksd)) |
-                                        .data$pk < price_weight_min |
-                                        .data$pk > price_weight_max
-                                      ~ 17, TRUE ~ NA_real_)
+      alert_number = dplyr::case_when( # .data$cooksd > (cook_dist * mean(.data$cooksd)) |
+        .data$pk < price_weight_min |
+          .data$pk > price_weight_max
+        ~ 17, TRUE ~ NA_real_
+      )
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
@@ -692,7 +691,7 @@ validate_gleaners <- function(landings, method, k_gleaners) {
       n_gleaners = abs(.data$n_gleaners),
       alert_number = alert_outlier(
         x = .data$n_gleaners,
-        alert_if_larger = 21, logt = TRUE, k = 1.5
+        alert_if_larger = 21, logt = TRUE, k = k_gleaners
       ),
       n_gleaners = dplyr::case_when(
         is.na(alert_number) ~ .data$n_gleaners,
@@ -700,4 +699,29 @@ validate_gleaners <- function(landings, method, k_gleaners) {
       ),
       submission_id = as.integer(.data$submission_id)
     )
+}
+
+validate_fuel <- function(landings, method, k_fuel) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      has_boat = .data$`trip_group/has_boat`,
+      fuel = .data$fuel_L
+    ) %>%
+    dplyr::mutate(
+      submission_id = as.integer(.data$submission_id),
+      fuel = as.double(.data$fuel),
+      alert_number.1 = ifelse(.data$fuel < 0, 23, NA_real_),
+      alert_number.2 = alert_outlier(
+        x = .data$fuel,
+        alert_if_larger = 23, logt = TRUE, k = k_fuel
+      ),
+      alert_number.3 = dplyr::case_when(.data$fuel > 0 & isFALSE(.data$has_boat) ~ 23, TRUE ~ NA_real_),
+      alert_number = dplyr::coalesce(.data$alert_number.1, .data$alert_number.2, .data$alert_number.3),
+      fuel = dplyr::case_when(
+        is.na(alert_number) ~ .data$fuel,
+        TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::select(.data$submission_id, .data$fuel, .data$alert_number)
 }
