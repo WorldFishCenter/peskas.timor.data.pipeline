@@ -7,9 +7,9 @@
 #'
 #' The parameters needed in the config file are those required for
 #' `preprocess_landings_step_1()` or `preprocess_landings_step_2()`,
-#' `preprocess_metadata_tables()` combined, as well as parameters needed to
-#' outliers identification that are  `hrs`, `method` and `k`.
-#'
+#' `preprocess_metadata_tables()` ` combined,
+#' as well as parameters needed to outliers identification
+#'  that are  `hrs`, `method` and `k`.
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
