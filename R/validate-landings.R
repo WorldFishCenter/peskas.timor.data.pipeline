@@ -250,7 +250,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Authenticating for google drive")
   googlesheets4::gs4_auth(
-    email = "peskas.platform@gmail.com",
     path = pars$storage$google$options$service_account_key,
     use_oob = TRUE
   )
