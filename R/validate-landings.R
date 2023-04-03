@@ -7,12 +7,9 @@
 #'
 #' The parameters needed in the config file are those required for
 #' `preprocess_landings_step_1()` or `preprocess_landings_step_2()`,
-#' `preprocess_metadata_tables()`, and `ingest_validation_tables()` combined,
+#' `preprocess_metadata_tables()` ` combined,
 #' as well as parameters needed to outliers identification
 #'  that are  `hrs`, `method` and `k`.
-#'
-#' To avoid synchronisation problems always is recommended that this called
-#' together with `ingest_validation_tables()`
 #'
 #' @param log_threshold
 #' @inheritParams ingest_landings
@@ -28,7 +25,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
-  validation <- get_validation_tables(pars)
   metadata <- get_preprocessed_metadata(pars)
   landings <- get_merged_landings(pars, "_weight") %>% merge_versions()
 
@@ -237,59 +233,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       submission_date = lubridate::as_date(.data$submission_date)
     ) %>%
     dplyr::select(.data$submission_id, .data$submission_date)
-  remote_alerts <- validation$alerts %>%
-    dplyr::select(.data$id, .data$alert_number) %>%
-    dplyr::rename(alert = .data$id)
-  remote_flags <- validation$flags %>%
-    dplyr::select(.data$id, .data$submission_id, .data$alert) %>%
-    dplyr::left_join(remote_alerts, by = c("alert" = "alert")) %>%
-    dplyr::rename(remote_flag_id = .data$id, remote_alert_id = .data$alert)
 
-  submission_alerts <- alerts %>%
-    dplyr::left_join(remote_flags, by = c("submission_id", "alert_number"))
-
-  # Determine which flags need to be uploaded cause they haven't been fixed
-  new_flags_to_upload <- submission_alerts %>%
-    dplyr::filter(
-      is.na(.data$remote_flag_id),
-      !is.na(.data$alert_number)
-    ) %>%
-    dplyr::left_join(remote_alerts, by = "alert_number") %>%
-    dplyr::left_join(landings_info, by = "submission_id") %>%
-    dplyr::select(.data$submission_id, .data$alert, .data$submission_date) %>%
-    dplyr::mutate(flag_date = lubridate::today("GMT"))
-  # If there are new flags, upload them
-  if (nrow(new_flags_to_upload) > 0) {
-    logger::log_info("Uploading new flags to Airtable")
-    air_tibble_to_records(new_flags_to_upload, link_fields = "alert") %>%
-      air_upload_records(
-        table = pars$validation$airtable$flags_table,
-        base_id = pars$validation$airtable$base_id,
-        api_key = pars$validation$airtable$api_key
-      )
-  }
-
-  # Determine which flags have been fixed
-  flags_fixed <- submission_alerts %>%
-    dplyr::filter(
-      !is.na(.data$remote_flag_id),
-      is.na(.data$alert_number)
-    ) %>%
-    dplyr::select(.data$remote_flag_id) %>%
-    dplyr::mutate(fixing_date = lubridate::today("GMT"))
-
-  if (nrow(flags_fixed) > 0) {
-    logger::log_info("Updating fixed flags in Airtable")
-    air_tibble_to_records(flags_fixed, id_fields = "remote_flag_id") %>%
-      air_upload_records(
-        table = pars$validation$airtable$flags_table,
-        base_id = pars$validation$airtable$base_id,
-        api_key = pars$validation$airtable$api_key,
-        request_type = "update"
-      )
-  }
-
-  # google clooud alerts system
+  ## Google sheets validation pipeline
 
   alerts_df <-
     dplyr::bind_cols(landings_info, alerts_joined) %>%
@@ -302,8 +247,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       .data$submission_id, .data$submission_date,
       .data$flag_date, .data$alert, .data$validated, .data$comments
     )
-
-  ## Google sheets validation pipeline
 
   logger::log_info("Authenticating for google drive")
   googlesheets4::gs4_auth(
