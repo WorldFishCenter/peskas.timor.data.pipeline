@@ -58,7 +58,9 @@ RUN install2.r --error --skipinstalled \
     glue \
     mime \
     janitor \
-    reactable
+    reactable \
+    googlesheets4 \
+    kableExtra
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz

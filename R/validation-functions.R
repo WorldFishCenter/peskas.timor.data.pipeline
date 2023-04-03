@@ -597,7 +597,8 @@ validate_sites <- function(landings, metadata_stations, metadata_reporting_units
     # If the station is not known to us
     dplyr::mutate(alert_number = dplyr::if_else(is.na(.data$station_name) | is.na(.data$reporting_region), 16, NA_real_)) %>%
     # Fixing types
-    dplyr::mutate(submission_id = as.integer(.data$submission_id))
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::select(.data$submission_id, .data$alert_number)
 }
 
 

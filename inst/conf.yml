@@ -127,6 +127,9 @@ default:
       timetrace: 1400
       consecutive_time: 3
       consecutive_distance: 2
+    google_sheets:
+      file_prefix: validation_alerts
+      sheet_id: !expr Sys.getenv("VALID_SHEET_ID")
     airtable:
       name: validation-tables
       base_id: appWcjh7unNJudLYk
@@ -221,6 +224,8 @@ local:
   peskas_mail:
     key: !expr readLines("auth/blastula_cred_file")
   validation:
+    google_sheets:
+      sheet_id: !expr readLines("auth/valid-sheet-id")
     airtable:
       api_key: !expr readLines("auth/airtable-key")
   pds:

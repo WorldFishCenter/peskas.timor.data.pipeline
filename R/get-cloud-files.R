@@ -266,3 +266,24 @@ get_tracks_ids <- function(pars) {
     ) %>%
     readr::read_rds()
 }
+
+#' Get peskas validation sheet
+#'
+#' Get the peskas validation backup sheet from google cloud
+#'
+#' @param pars the configuration file.
+#'
+#' @export
+#'
+get_validation_sheet <- function(pars) {
+  cloud_object_name(
+    prefix = pars$validation$google_sheets$file_prefix,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  ) %>%
+    download_cloud_file(
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
+    ) %>%
+    readr::read_rds()
+}

@@ -199,7 +199,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   )
   # HANDLE FLAGS ------------------------------------------------------------
 
-  alerts <-
+  alerts_list <-
     list(
       imei_alerts,
       surveys_time_alerts$validated_dates,
@@ -212,9 +212,19 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       habitat_alerts,
       mesh_alerts,
       gleaners_alerts
-    ) %>%
+    )
+
+  alerts <-
+    alerts_list %>%
     purrr::map(~ dplyr::select(.x, alert_number, submission_id)) %>%
     purrr::reduce(dplyr::bind_rows)
+
+  alerts_joined <-
+    alerts_list %>%
+    purrr::map(~ dplyr::select(.x, alert_number, submission_id)) %>%
+    purrr::reduce(dplyr::bind_cols) %>%
+    dplyr::select(tidyselect::contains("alert")) %>%
+    tidyr::unite(col = "alert", sep = "-", na.rm = TRUE)
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
@@ -277,6 +287,60 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
         api_key = pars$validation$airtable$api_key,
         request_type = "update"
       )
+  }
+
+  # google clooud alerts system
+
+  alerts_df <-
+    dplyr::bind_cols(landings_info, alerts_joined) %>%
+    dplyr::mutate(
+      flag_date = lubridate::today("GMT"),
+      validated = rep(FALSE, nrow(.)),
+      comments = NA_character_
+    ) %>%
+    dplyr::select(
+      .data$submission_id, .data$submission_date,
+      .data$flag_date, .data$alert, .data$validated, .data$comments
+    )
+
+  ## Google sheets validation pipeline
+
+  logger::log_info("Authenticating for google drive")
+  googlesheets4::gs4_auth(
+    email = "peskas.platform@gmail.com",
+    path = pars$storage$google$options$service_account_key,
+    use_oob = TRUE
+  )
+
+  logger::log_info("Retriving validation sheet and arrange by submission date")
+  peskas_alerts <-
+    googlesheets4::read_sheet(pars$validation$google_sheets$sheet_id) %>%
+    dplyr::arrange(.data$submission_date)
+
+  logger::log_info("Upload backup validation sheet to GC")
+  alerts_filename <-
+    pars$validation$google_sheets$file_prefix %>%
+    add_version(extension = "rds")
+  readr::write_rds(
+    x = peskas_alerts,
+    file = alerts_filename,
+    compress = "gz"
+  )
+  upload_cloud_file(
+    file = alerts_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
+
+  logger::log_info("Append new flags to validation sheet if there are any")
+  new_flags_ids <- setdiff(alerts_df$submission_id, peskas_alerts$submission_id)
+  new_flags_obs <- alerts_df %>% dplyr::filter(.data$submission_id %in% new_flags_ids)
+
+  if (nrow(new_flags_obs) > 0) {
+    peskas_alerts_sync <- dplyr::bind_rows(peskas_alerts, new_flags_obs)
+    googlesheets4::sheet_append(new_flags_obs, ss = pars$validation$google_sheets$sheet_id)
+  } else {
+    logger::log_info("No new flags to append")
   }
 }
 

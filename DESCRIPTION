@@ -34,7 +34,9 @@ Imports:
     purrr,
     readr,
     tidyr,
-    rlang (>= 0.1.2)
+    rlang (>= 0.1.2),
+    googlesheets4,
+    kableExtra
 Suggests: 
     covr,
     pkgdown,
