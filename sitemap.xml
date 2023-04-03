@@ -133,6 +133,9 @@
     <loc>/reference/get_validated_landings.html</loc>
   </url>
   <url>
+    <loc>/reference/get_validation_sheet.html</loc>
+  </url>
+  <url>
     <loc>/reference/index.html</loc>
   </url>
   <url>
@@ -278,6 +281,9 @@
   </url>
   <url>
     <loc>/reference/send_sites_report.html</loc>
+  </url>
+  <url>
+    <loc>/reference/send_validation_mail.html</loc>
   </url>
   <url>
     <loc>/reference/tidyeval.html</loc>
