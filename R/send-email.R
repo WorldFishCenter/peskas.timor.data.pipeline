@@ -144,7 +144,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.platform@gmail.com",
-      to = c("l.longobardi@cgiar.org", "lorenzo.longobardi@gmail.com"),
+      to = c("l.longobardi@cgiar.org", "v.sozinho@cgiar.org"),
       subject = paste("Peskas automations:", n_submissions_alert, "new submissions have problems"),
       credentials = blastula::creds_file("creds.txt")
     )
