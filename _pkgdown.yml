@@ -43,6 +43,7 @@ reference:
   contents:
   - matches("validate")
   - alert_outlier
+  - send_validation_mail
 
 - title: Helper functions
 - subtitle: Data preprocessing
