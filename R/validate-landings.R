@@ -256,7 +256,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retriving validation sheet and arrange by submission date")
   peskas_alerts <-
-    googlesheets4::read_sheet(ss = googledrive::as_id(pars$validation$google_sheets$sheet_id)) %>%
+    googlesheets4::range_read(ss = pars$validation$google_sheets$sheet_id) %>%
     dplyr::arrange(.data$submission_date)
 
   logger::log_info("Upload backup validation sheet to GC")
