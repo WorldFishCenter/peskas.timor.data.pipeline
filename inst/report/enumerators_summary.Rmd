@@ -362,7 +362,7 @@ df %>%
   scale_fill_gradient(low = "#8dc0dd", high = "#214b63", limits = c(1, NA), na.value = "white") +
   # scale_x_date(date_breaks = "1 month", minor_breaks = NULL, labels = label_date) +
   coord_cartesian(expand = F) +
-  scale_x_continuous(breaks = scales::pretty_breaks()) %>% 
+  #scale_x_continuous(breaks = scales::pretty_breaks()) %>% 
   labs(x = "Month day", y = "", fill = "N. submissions") +
   theme(
     plot.title = element_text(hjust = 0.5),
