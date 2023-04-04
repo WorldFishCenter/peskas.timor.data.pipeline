@@ -35,9 +35,7 @@ Imports:
     readr,
     tidyr,
     rlang (>= 0.1.2),
-    googlesheets4,
-    kableExtra,
-    scales
+    googlesheets4
 Suggests: 
     covr,
     pkgdown,
@@ -77,7 +75,8 @@ Suggests:
     glue,
     mime,
     janitor,
-    reactable
+    reactable,
+    kableExtra
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

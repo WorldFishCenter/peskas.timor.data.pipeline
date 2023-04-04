@@ -19,7 +19,8 @@ RUN install2.r --error --skipinstalled \
     stringr \
     tibble \
     tidyr \
-    rlang
+    rlang \
+    googlesheets4
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -59,9 +60,7 @@ RUN install2.r --error --skipinstalled \
     mime \
     janitor \
     reactable \
-    googlesheets4 \
-    kableExtra \
-    scales
+    kableExtra
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
