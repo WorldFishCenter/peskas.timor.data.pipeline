@@ -60,7 +60,8 @@ RUN install2.r --error --skipinstalled \
     janitor \
     reactable \
     googlesheets4 \
-    kableExtra
+    kableExtra \
+    scales
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
