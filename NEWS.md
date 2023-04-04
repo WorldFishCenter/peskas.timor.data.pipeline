@@ -1,3 +1,11 @@
+# peskas.timor.data.pipeline 2.0.0
+
+## Breaking changes
+
+- Validation step in now implemented using google sheets using the `googlesheets4`
+package.
+
+
 # peskas.timor.data.pipeline 1.4.0
 
 ## Improvements
