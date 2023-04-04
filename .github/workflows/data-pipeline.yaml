@@ -133,8 +133,6 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Ingest validation tables
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_validation_tables()'
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
       - name: Test validated landings
