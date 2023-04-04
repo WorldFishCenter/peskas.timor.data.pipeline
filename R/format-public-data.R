@@ -73,6 +73,34 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     dplyr::rename(date_bin_start = .data$landing_period) %>%
     dplyr::select(-c(.data$period, .data$month))
 
+  municipal_aggregated_recorded <-
+    merged_trips %>%
+    dplyr::mutate(date_bin_start = lubridate::floor_date(.data$landing_date,
+      "month",
+      week_start = 7
+    )) %>%
+    dplyr::group_by(.data$reporting_region) %>%
+    get_weight() %>%
+    dplyr::group_by(.data$reporting_region, .data$date_bin_start) %>%
+    dplyr::summarise(
+      n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
+      recorded_revenue = sum(.data$landing_value, na.rm = T),
+      recorded_catch = sum(.data$recorded_weight, na.rm = T),
+      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T)
+    ) %>%
+    dplyr::mutate(
+      recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
+      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch)
+    ) %>%
+    dplyr::select(region = .data$reporting_region,
+                  .data$date_bin_start,
+                  .data$recorded_revenue,
+                  .data$recorded_catch) %>%
+    dplyr::ungroup()
+
+  municipal_aggregated <-
+    dplyr::left_join(municipal_aggregated, municipal_aggregated_recorded,
+                     by = c("region", "date_bin_start"))
 
   taxa_estimations <-
     periods %>%
