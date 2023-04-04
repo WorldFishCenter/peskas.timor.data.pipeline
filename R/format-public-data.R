@@ -366,8 +366,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
         period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
         revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
-        catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch),
-        price_kg = dplyr::if_else(.data$current_period, .data$price_kg * .data$elapsed / .data$period_length, .data$price_kg)
+        catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)
       ) %>%
       dplyr::filter(.data$elapsed > 0) %>%
       dplyr::select(-.data$current_period, -.data$elapsed, -.data$period_length) %>%
@@ -590,7 +589,7 @@ get_summary_data <- function(data = NULL, pars) {
       dplyr::mutate(fish_group = ifelse(.data$weight_contr < 1, "Other", .data$fish_group)) %>%
       dplyr::group_by(.data$fish_group) %>%
       dplyr::summarise(
-        weight = sum(.data$weight, na.rm = T) / 1000
+        weight = sum(.data$weight, na.rm = T) / 1000000
       ) %>%
       dplyr::arrange(dplyr::desc(.data$weight)) %>%
       dplyr::ungroup() %>%
