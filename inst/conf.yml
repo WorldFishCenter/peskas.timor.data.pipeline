@@ -130,14 +130,10 @@ default:
     google_sheets:
       file_prefix: validation_alerts
       sheet_id: !expr Sys.getenv("VALID_SHEET_ID")
-    airtable:
-      name: validation-tables
-      base_id: appWcjh7unNJudLYk
-      api_key: !expr Sys.getenv("AIRTABLE_KEY")
-      tables:
-        - flags_dev
+      table:
+        - flags-dev
         - alerts
-      flags_table: flags_dev
+      flags_table: flags-dev
     version:
       preprocess: latest
 
@@ -205,8 +201,7 @@ production:
       options:
         bucket: public-timor
   validation:
-    airtable:
-      tables:
+      table:
         - flags
         - alerts
       flags_table: flags
@@ -226,8 +221,10 @@ local:
   validation:
     google_sheets:
       sheet_id: !expr readLines("auth/valid-sheet-id")
-    airtable:
-      api_key: !expr readLines("auth/airtable-key")
+      table:
+        - flags-dev
+        - alerts
+      flags_table: flags-dev
   pds:
     trips:
       token: !expr readLines("auth/pds-token")

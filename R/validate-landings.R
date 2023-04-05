@@ -256,7 +256,10 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retriving validation sheet and arrange by submission date")
   peskas_alerts <-
-    googlesheets4::range_read(ss = pars$validation$google_sheets$sheet_id) %>%
+    googlesheets4::range_read(
+      ss = pars$validation$google_sheets$sheet_id,
+      sheet = pars$validation$google_sheets$flags_table
+    ) %>%
     dplyr::arrange(.data$submission_date)
 
   logger::log_info("Upload backup validation sheet to GC")
@@ -280,7 +283,11 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   if (nrow(new_flags_obs) > 0) {
     peskas_alerts_sync <- dplyr::bind_rows(peskas_alerts, new_flags_obs)
-    googlesheets4::sheet_append(new_flags_obs, ss = pars$validation$google_sheets$sheet_id)
+    googlesheets4::sheet_append(
+      ss = pars$validation$google_sheets$sheet_id,
+      data = new_flags_obs,
+      sheet = pars$validation$google_sheets$flags_table
+    )
   } else {
     logger::log_info("No new flags to append")
   }
