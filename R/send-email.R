@@ -100,6 +100,8 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
+  logger::log_info("Filtering validation flags from {Sys.Date() - 7}")
+  
   validation_df <- get_validation_sheet(pars)
 
   last_week <-
