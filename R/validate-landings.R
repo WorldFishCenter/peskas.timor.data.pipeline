@@ -277,11 +277,13 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     options = pars$storage$google$options
   )
 
-  logger::log_info("Append new flags to validation sheet if there are any")
   new_flags_ids <- setdiff(alerts_df$submission_id, peskas_alerts$submission_id)
   new_flags_obs <- alerts_df %>% dplyr::filter(.data$submission_id %in% new_flags_ids)
 
+  logger::log_info("New {nrow(new_flags_obs)} submissions flags to upload")
+
   if (nrow(new_flags_obs) > 0) {
+    logger::log_info("Appending new flags")
     peskas_alerts_sync <- dplyr::bind_rows(peskas_alerts, new_flags_obs)
     googlesheets4::sheet_append(
       ss = pars$validation$google_sheets$sheet_id,
