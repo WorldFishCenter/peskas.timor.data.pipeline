@@ -201,6 +201,7 @@ production:
       options:
         bucket: public-timor
   validation:
+    google_sheets:
       table:
         - flags
         - alerts

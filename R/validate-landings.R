@@ -239,12 +239,13 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   alerts_df <-
     dplyr::bind_cols(landings_info, alerts_joined) %>%
     dplyr::mutate(
+      n = seq(from = 1, to = nrow(.)),
       flag_date = lubridate::today("GMT"),
       validated = rep(FALSE, nrow(.)),
       comments = NA_character_
     ) %>%
     dplyr::select(
-      .data$submission_id, .data$submission_date,
+      .data$n, .data$submission_id, .data$submission_date,
       .data$flag_date, .data$alert, .data$validated, .data$comments
     )
 
@@ -255,12 +256,21 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Retriving validation sheet and arrange by submission date")
+
   peskas_alerts <-
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
-      sheet = pars$validation$google_sheets$flags_table
+      sheet = pars$validation$google_sheets$flags_table,
+      col_types = "iiTDclc"
     ) %>%
-    dplyr::arrange(.data$submission_date)
+    dplyr::arrange(.data$n)
+
+  # test if data are stored correctly
+  n_diff <- unique(diff(peskas_alerts$n))
+
+  if (isFALSE(n_diff == 1)) {
+    stop("Table structure is not correct")
+  }
 
   logger::log_info("Upload backup validation sheet to GC")
   alerts_filename <-
