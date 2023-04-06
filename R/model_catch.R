@@ -555,7 +555,7 @@ get_national_estimates <- function(municipal_estimations = NULL) {
       landing_weight = mean(.data$landing_weight, na.rm = T),
       revenue = sum(.data$revenue, na.rm = T),
       catch = sum(.data$catch, na.rm = T),
-      price_kg = mean(.data$price_kg, na.rm = T)
+      price_kg = stats::median(.data$price_kg, na.rm = T)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$landing_period)
