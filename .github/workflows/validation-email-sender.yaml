@@ -2,7 +2,7 @@ name: Send validation summary email
 
 on:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 */4 * * *'
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
