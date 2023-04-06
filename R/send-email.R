@@ -101,7 +101,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   logger::log_info("Filtering validation flags from {Sys.Date() - 7}")
-  
+
   validation_df <- get_validation_sheet(pars)
 
   last_week <-
@@ -147,7 +147,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.platform@gmail.com",
-      to = c("l.longobardi@cgiar.org", "lorenzo.longboardi@gmail.com"), # "v.sozinho@cgiar.org"),
+      to = c("l.longobardi@cgiar.org", "lorenzo.longobardi@gmail.com"), # v.sozinho@cgiar.org
       subject = paste("Peskas automations:", n_submissions_alert, "new submissions have problems"),
       credentials = blastula::creds_file("creds.txt")
     )
