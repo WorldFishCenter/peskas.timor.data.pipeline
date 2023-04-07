@@ -234,19 +234,22 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     ) %>%
     dplyr::select(.data$submission_id, .data$submission_date)
 
-  ## Google sheets validation pipeline
-
+  ## Google sheets validation pipeline ##
   alerts_df <-
     dplyr::bind_cols(landings_info, alerts_joined) %>%
     dplyr::mutate(
       n = seq(from = 1, to = nrow(.)),
+      submission_id = as.integer(.data$submission_id),
+      alert = ifelse(.data$alert == "", "0", .data$alert),
       flag_date = lubridate::today("GMT"),
       validated = rep(FALSE, nrow(.)),
-      comments = NA_character_
+      comments = NA_character_,
+      validated_when_ymd = NA_real_
     ) %>%
     dplyr::select(
       .data$n, .data$submission_id, .data$submission_date,
-      .data$flag_date, .data$alert, .data$validated, .data$comments
+      .data$flag_date, .data$alert, .data$validated,
+      .data$validated_when_ymd, .data$comments
     )
 
   logger::log_info("Authenticating for google drive")
@@ -261,7 +264,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
       sheet = pars$validation$google_sheets$flags_table,
-      col_types = "iiTDclc"
+      col_types = "iiDDclDc"
     ) %>%
     dplyr::arrange(.data$n)
 
@@ -289,12 +292,42 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   new_flags_ids <- setdiff(alerts_df$submission_id, peskas_alerts$submission_id)
   new_flags_obs <- alerts_df %>% dplyr::filter(.data$submission_id %in% new_flags_ids)
+  old_flags_df <- alerts_df %>% dplyr::filter(!.data$submission_id %in% new_flags_ids)
+
+  if (nrow(old_flags_df) < nrow(peskas_alerts)) {
+    stop("The table is shorter than remote table")
+  }
+
+  logger::log_info("Updating flags table")
+
+  sync_table <-
+    dplyr::bind_cols(old_flags_df, peskas_alerts, .name_repair = "unique") %>%
+    dplyr::mutate(
+      alert = .data$alert...5,
+      flag_date = data.table::fifelse(.data$alert...5 == .data$alert...13,
+                                      .data$flag_date...12, lubridate::today("GMT")),
+      validated = .data$validated...14,
+      validated_when_ymd = data.table::fifelse(is.na(.data$validated...14),
+                                               .data$flag_date...12, lubridate::today("GMT")),
+      comments = .data$comments...16
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(n = seq(1, nrow(.))) %>%
+    dplyr::select(
+      .data$n,
+      submission_id = .data$submission_id...2,
+      submission_date = .data$submission_date...3,
+      .data$flag_date,
+      .data$alert,
+      .data$validated,
+      .data$validated_when_ymd,
+      .data$comments
+    )
 
   logger::log_info("New {nrow(new_flags_obs)} submissions flags to upload")
 
   if (nrow(new_flags_obs) > 0) {
     logger::log_info("Appending new flags")
-    peskas_alerts_sync <- dplyr::bind_rows(peskas_alerts, new_flags_obs)
     googlesheets4::sheet_append(
       ss = pars$validation$google_sheets$sheet_id,
       data = new_flags_obs,
