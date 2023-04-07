@@ -311,7 +311,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       validated = .data$validated...14,
       validated_when_ymd = data.table::fifelse(
         isFALSE(.data$validated...14),
-        NA_real_, lubridate::today("GMT")
+        NA, lubridate::today("GMT")
       ),
       comments = .data$comments...16
     ) %>%
