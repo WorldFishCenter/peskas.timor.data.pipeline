@@ -304,11 +304,15 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     dplyr::bind_cols(old_flags_df, peskas_alerts, .name_repair = "unique") %>%
     dplyr::mutate(
       alert = .data$alert...5,
-      flag_date = data.table::fifelse(.data$alert...5 == .data$alert...13,
-                                      .data$flag_date...12, lubridate::today("GMT")),
+      flag_date = data.table::fifelse(
+        .data$alert...5 == .data$alert...13,
+        .data$flag_date...12, lubridate::today("GMT")
+      ),
       validated = .data$validated...14,
-      validated_when_ymd = data.table::fifelse(is.na(.data$validated...14),
-                                               .data$flag_date...12, lubridate::today("GMT")),
+      validated_when_ymd = data.table::fifelse(
+        isFALSE(.data$validated...14),
+        NA_real_, lubridate::today("GMT")
+      ),
       comments = .data$comments...16
     ) %>%
     dplyr::ungroup() %>%
