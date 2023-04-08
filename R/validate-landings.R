@@ -302,7 +302,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   sync_table <-
     dplyr::bind_cols(old_flags_df, peskas_alerts, .name_repair = "unique") %>%
-    dplyr::rowwise() %>%
     dplyr::mutate(
       alert = .data$alert...5,
       flag_date = data.table::fifelse(
@@ -310,13 +309,9 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
         .data$flag_date...12, lubridate::today("GMT")
       ),
       validated = .data$validated...14,
-      validated_when_ymd = data.table::fifelse(
-        isFALSE(.data$validated...14),
-        lubridate::NA_Date_, lubridate::today("GMT")
-      ),
+      validated_when_ymd = .data$validated...15,
       comments = .data$comments...16
     ) %>%
-    dplyr::ungroup() %>%
     dplyr::mutate(n = seq(1, nrow(.))) %>%
     dplyr::select(
       .data$n,
