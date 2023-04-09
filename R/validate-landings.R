@@ -309,7 +309,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
         .data$flag_date...12, lubridate::today("GMT")
       ),
       validated = .data$validated...14,
-      validated_when_ymd = .data$validated...15,
+      validated_when_ymd = .data$validated_when_ymd...15,
       comments = .data$comments...16
     ) %>%
     dplyr::mutate(n = seq(1, nrow(.))) %>%
