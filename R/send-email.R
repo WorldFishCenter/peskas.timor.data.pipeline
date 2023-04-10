@@ -108,7 +108,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
     validation_df %>%
     dplyr::mutate(submission_date = as.Date(.data$submission_date)) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
-    dplyr::filter(!is.na(.data$alert))
+    dplyr::filter(!.data$alert == "0")
 
   n_submissions_alert <- nrow(last_week)
 
@@ -147,7 +147,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.platform@gmail.com",
-      to = c("l.longobardi@cgiar.org", "lorenzo.longobardi@gmail.com"), # v.sozinho@cgiar.org
+      to = c("l.longobardi@cgiar.org", "v.sozinho@cgiar.org"),
       subject = paste("Peskas automations:", n_submissions_alert, "new submissions have problems"),
       credentials = blastula::creds_file("creds.txt")
     )
