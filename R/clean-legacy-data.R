@@ -34,7 +34,6 @@
 #' clean_catches(legacy_raw)
 #' }
 clean_catches <- function(x) {
-
   # split catches data based on version prefixes
   prefix_list <-
     purrr::map(
@@ -165,7 +164,7 @@ clean_catches <- function(x) {
       value %in% c(218) ~ "50",
       value %in% c("budu_tasi") ~ "58",
       value %in% c(
-        139, 209, 300, "babuti", "ikan_kulu", "kabosu", "kalepa_makerek",
+        139, 209, 300, 999, "babuti", "ikan_kulu", "kabosu", "kalepa_makerek",
         "lea", "lepulai", "pakulai", "teura_marubi"
       ) ~ "300",
       TRUE ~ value
@@ -284,7 +283,6 @@ coalist <- function(data, to_coal, return_dat = FALSE) {
 #' clean_legacy_landings(legacy_raw)
 #' }
 clean_legacy_landings <- function(x) {
-
   # select common vars to SFF and peskas landings
   common_cols_table <- x %>% dplyr::select(
     c(
