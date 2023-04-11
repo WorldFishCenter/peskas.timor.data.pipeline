@@ -120,14 +120,14 @@ model_landings <- function(trips) {
     ) %>%
     dplyr::ungroup()
 
-  #if (unique(trips$reporting_region) == "Lautem") {
-  #  family <- "poisson"
-  #} else {
-  #  family <- "Gamma"
-  #}
+  if (unique(trips$reporting_region) == "Lautem") {
+    family <- "poisson"
+  } else {
+    family <- "Gamma"
+  }
 
   glmmTMB(n_landings ~ (1 | month) + (1 | period) + (1 | version),
-    family = "Gamma",
+    family = family,
     data = landings_df
   )
 }
