@@ -138,9 +138,9 @@ validate_landing_regularity <- function(landings) {
           !.data$species == "0" & .data$n_individuals <= 0 |
           !.data$species == "0" & .data$total_catch_value <= 0 |
           .data$total_catch_value <= 0 & .data$n_individuals > 0 |
-          .data$total_catch_value > 0 & .data$n_individuals <= 0 |
+          .data$total_catch_value > 0 & .data$n_individuals <= 0
           # is.na(.data$total_catch_value) & .data$n_individuals >= 0 |
-          is.na(.data$n_individuals) & .data$total_catch_value >= 0
+          # is.na(.data$n_individuals) & .data$total_catch_value >= 0
         ~ 22, TRUE ~ NA_real_
       )
     ) %>%

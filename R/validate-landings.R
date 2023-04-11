@@ -218,9 +218,15 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   alerts_joined <-
     alerts_list %>%
     purrr::map(~ dplyr::select(.x, alert_number, submission_id)) %>%
-    purrr::reduce(dplyr::bind_cols) %>%
-    dplyr::select(tidyselect::contains("alert")) %>%
-    tidyr::unite(col = "alert", sep = "-", na.rm = TRUE)
+    purrr::reduce(dplyr::bind_rows) %>%
+    dplyr::group_by(.data$submission_id) %>%
+    dplyr::summarise(alert_number = Reduce(f = paste, x = alert_number)) %>%
+    dplyr::ungroup() %>%
+    tidyr::separate(col = "alert_number", into = as.character((seq(1, 11, 1)))) %>%
+    dplyr::mutate(dplyr::across(.cols = c(.data$`1`:.data$`11`), ~ dplyr::case_when(.x == "NA" ~ NA_character_, TRUE ~ .x))) %>%
+    dplyr::mutate(tidyr::unite(data = .[2:12], col = "alert_number", sep = "-", na.rm = TRUE)) %>%
+    dplyr::select(.data$submission_id,
+                  alert = .data$alert_number)
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
   landings_info <- landings %>%
@@ -236,7 +242,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   ## Google sheets validation pipeline ##
   alerts_df <-
-    dplyr::bind_cols(landings_info, alerts_joined) %>%
+    dplyr::left_join(landings_info, alerts_joined, by = "submission_id") %>%
+    #dplyr::arrange(.data$submission_date) %>%
     dplyr::mutate(
       n = seq(from = 1, to = nrow(.)),
       submission_id = as.integer(.data$submission_id),
