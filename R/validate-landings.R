@@ -309,7 +309,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   if (nrow(new_flags_obs) > 0) {
     logger::log_info("Appending new {nrow(new_flags_obs)} flags")
 
-    sync_table <- dplyr::bind_cols(sync_table, new_flags_obs)
+    sync_table <- dplyr::bind_rows(sync_table, new_flags_obs)
 
     googlesheets4::sheet_write(
       data = sync_table,
