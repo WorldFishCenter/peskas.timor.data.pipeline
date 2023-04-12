@@ -60,8 +60,7 @@ RUN install2.r --error --skipinstalled \
     mime \
     janitor \
     reactable \
-    kableExtra \
-    data.table
+    kableExtra
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
