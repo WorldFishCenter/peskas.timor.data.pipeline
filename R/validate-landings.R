@@ -195,7 +195,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   )
   # HANDLE FLAGS ------------------------------------------------------------
 
-  alerts_list <-
+  alerts <-
     list(
       imei_alerts,
       surveys_time_alerts$validated_dates,
@@ -208,28 +208,16 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       habitat_alerts,
       mesh_alerts,
       gleaners_alerts
-    )
-
-  alerts <-
-    alerts_list %>%
+    ) %>%
+    purrr::map(~ dplyr::arrange(., .data$submission_id)) %>%
     purrr::map(~ dplyr::select(.x, alert_number, submission_id)) %>%
-    purrr::reduce(dplyr::bind_rows)
-
-  alerts_joined <-
-    alerts_list %>%
-    purrr::map(~ dplyr::select(.x, alert_number, submission_id)) %>%
-    purrr::reduce(dplyr::bind_rows) %>%
-    dplyr::group_by(.data$submission_id) %>%
-    dplyr::summarise(alert_number = Reduce(f = paste, x = alert_number)) %>%
-    dplyr::ungroup() %>%
-    tidyr::separate(col = "alert_number", into = as.character((seq(1, 11, 1)))) %>%
-    dplyr::mutate(dplyr::across(.cols = c(.data$`1`:.data$`11`), ~ dplyr::case_when(.x == "NA" ~ NA_character_, TRUE ~ .x))) %>%
-    dplyr::mutate(tidyr::unite(data = .[2:12], col = "alert_number", sep = "-", na.rm = TRUE)) %>%
-    dplyr::select(.data$submission_id,
-                  alert = .data$alert_number)
+    dplyr::bind_cols() %>%
+    dplyr::select(tidyselect::contains("alert")) %>%
+    tidyr::unite(col = "alert", sep = "-", na.rm = TRUE)
 
   # Wrangle a bot landings, alerts and flags data frames to fit the workflow
-  landings_info <- landings %>%
+  landings_info <-
+    landings %>%
     dplyr::rename(
       submission_id = .data$`_id`,
       submission_date = .data$`_submission_time`
@@ -238,23 +226,24 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       submission_id = as.integer(.data$submission_id),
       submission_date = lubridate::as_date(.data$submission_date)
     ) %>%
-    dplyr::select(.data$submission_id, .data$submission_date)
+    dplyr::select(.data$submission_id, .data$submission_date) %>%
+    dplyr::arrange(.data$submission_id)
 
   ## Google sheets validation pipeline ##
   alerts_df <-
-    dplyr::left_join(landings_info, alerts_joined, by = "submission_id") %>%
-    #dplyr::arrange(.data$submission_date) %>%
+    dplyr::bind_cols(landings_info, alerts) %>%
+    dplyr::arrange(.data$submission_date, .data$submission_id) %>%
     dplyr::mutate(
-      n = seq(from = 1, to = nrow(.)),
       submission_id = as.integer(.data$submission_id),
       alert = ifelse(.data$alert == "", "0", .data$alert),
       flag_date = lubridate::today("GMT"),
       validated = rep(FALSE, nrow(.)),
       comments = NA_character_,
-      validated_when_ymd = NA_real_
+      validated_when_ymd = NA_real_,
+      validated_when_ymd = as.Date(.data$validated_when_ymd)
     ) %>%
     dplyr::select(
-      .data$n, .data$submission_id, .data$submission_date,
+      .data$submission_id, .data$submission_date,
       .data$flag_date, .data$alert, .data$validated,
       .data$validated_when_ymd, .data$comments
     )
@@ -271,16 +260,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
       sheet = pars$validation$google_sheets$flags_table,
-      col_types = "iiDDclDc"
-    ) %>%
-    dplyr::arrange(.data$n)
-
-  # test if data are stored correctly
-  n_diff <- unique(diff(peskas_alerts$n))
-
-  if (isFALSE(n_diff == 1)) {
-    stop("Table structure is not correct")
-  }
+      col_types = "iDDclDc"
+    )
 
   logger::log_info("Upload backup validation sheet to GC")
   alerts_filename <-
@@ -308,43 +289,37 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Updating flags table")
 
   sync_table <-
-    dplyr::bind_cols(old_flags_df, peskas_alerts, .name_repair = "unique") %>%
-    dplyr::mutate(
-      alert = .data$alert...5,
-      flag_date = data.table::fifelse(
-        .data$alert...5 == .data$alert...13,
-        .data$flag_date...12, lubridate::today("GMT")
+    dplyr::left_join(old_flags_df, peskas_alerts, by = "submission_id") %>%
+    dplyr::arrange(.data$submission_date.x, .data$submission_id) %>%
+    dplyr::transmute(
+      submission_id = .data$submission_id,
+      submission_date = .data$submission_date.x,
+      flag_date = dplyr::case_when(
+        .data$alert.x == .data$alert.y ~
+          .data$flag_date.y, TRUE ~ .data$flag_date.x
       ),
-      validated = .data$validated...14,
-      validated_when_ymd = .data$validated_when_ymd...15,
-      comments = .data$comments...16
+      alert = .data$alert.x,
+      validated = .data$validated.y,
+      validated_when_ymd = .data$validated_when_ymd.y,
+      comments = .data$comments.y
     ) %>%
-    dplyr::mutate(n = seq(1, nrow(.))) %>%
-    dplyr::select(
-      .data$n,
-      submission_id = .data$submission_id...2,
-      submission_date = .data$submission_date...3,
-      .data$flag_date,
-      .data$alert,
-      .data$validated,
-      .data$validated_when_ymd,
-      .data$comments
-    )
+    dplyr::ungroup()
 
   logger::log_info("New {nrow(new_flags_obs)} submissions flags to upload")
-
   if (nrow(new_flags_obs) > 0) {
-    logger::log_info("Appending new flags")
-    googlesheets4::sheet_append(
+    logger::log_info("Appending new {nrow(new_flags_obs)} flags")
+
+    sync_table <- dplyr::bind_cols(sync_table, new_flags_obs)
+
+    googlesheets4::sheet_write(
+      data = sync_table,
       ss = pars$validation$google_sheets$sheet_id,
-      data = new_flags_obs,
       sheet = pars$validation$google_sheets$flags_table
     )
   } else {
     logger::log_info("No new flags to append")
   }
 }
-
 get_validation_tables <- function(pars) {
   validation_rds <- cloud_object_name(
     prefix = paste(pars$validation$airtable$name, sep = "_"),
