@@ -33,8 +33,7 @@ RUN install2.r --error --skipinstalled \
     tibble \
     tidyr \
     rlang \
-    googlesheets4 \
-    data.table
+    googlesheets4
 
 # Install suggests
 RUN install2.r --error --skipinstalled \

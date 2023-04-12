@@ -35,8 +35,7 @@ Imports:
     readr,
     tidyr,
     rlang (>= 0.1.2),
-    googlesheets4,
-    data.table
+    googlesheets4
 Suggests: 
     covr,
     pkgdown,
