@@ -158,11 +158,11 @@ validate_pds_data <- function(data,
     validated_pds_duration = data %>%
       dplyr::transmute(
         alert_number =
-          # test if trip duration is longer or shorter than n hours
+        # test if trip duration is longer or shorter than n hours
           dplyr::case_when(.data$`Duration (Seconds)` > max_hrs * 60^2 |
-                             .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
+            .data$`Duration (Seconds)` < min_hrs * 60^2 ~ 8, TRUE ~ NA_real_),
         `Duration (Seconds)` = dplyr::case_when(is.na(.data$alert_number) ~
-                                                  .data$`Duration (Seconds)`, TRUE ~ NA_real_),
+          .data$`Duration (Seconds)`, TRUE ~ NA_real_),
         Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
         Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
         .data$Trip
@@ -188,9 +188,9 @@ validate_pds_data <- function(data,
     validated_pds_quality = data %>%
       dplyr::transmute(
         alert_number =
-          # test quality of trips
+        # test quality of trips
           dplyr::case_when(.data$outliers_proportion > outl |
-                             .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
+            .data$timetrace_dispersion > timet ~ 13, TRUE ~ NA_real_),
         `Distance (Meters)` = dplyr::case_when(is.na(.data$alert_number) ~ .data$`Distance (Meters)`, TRUE ~ NA_real_),
         Started = ifelse(is.na(.data$alert_number), .data$Started, NA_real_),
         Ended = ifelse(is.na(.data$alert_number), .data$Ended, NA_real_),
@@ -302,7 +302,7 @@ merge_consecutive_trips <- function(x,
           x = cbind(.data$start_lng, .data$start_lat),
           y = cbind(.data$end_lng, .data$end_lat),
           fun = geosphere::distGeo
-        )[ ,1]
+        )[, 1]
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(-c(.data$start_lat:.data$end_lng))

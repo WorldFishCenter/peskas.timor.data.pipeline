@@ -87,7 +87,6 @@ upload_cloud_file <- function(file, provider, options, name = file) {
 
   out <- list()
   if ("gcs" %in% provider) {
-
     # Iterate over multiple files (and names)
     google_output <- purrr::map2(
       file, name,

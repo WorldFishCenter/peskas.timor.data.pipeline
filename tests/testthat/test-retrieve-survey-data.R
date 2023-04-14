@@ -1,6 +1,4 @@
-
 test_that("host URLs are resolved correctly", {
-
   # Curl doesn't seem to work well in Windows so we will skip it for now
   testthat::skip_on_os("windows")
 

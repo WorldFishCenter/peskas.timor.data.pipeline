@@ -27,7 +27,6 @@
 #'   add_version("my_file", "csv")
 #' }
 add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__") {
-
   # Git sha are 40 characters long
   stopifnot(sha_nchar <= 40)
 

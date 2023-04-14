@@ -107,15 +107,16 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
     use_oob = TRUE
   )
 
-  peskas_alerts_week <-
+  peskas_alerts <-
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
       sheet = pars$validation$google_sheets$flags_table,
       col_types = "iDDclDc"
     ) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
-    dplyr::filter(!.data$alert == "0") %>%
     dplyr::select(.data$submission_id, .data$submission_date, .data$alert)
+
+  peskas_alerts_week <- peskas_alerts %>% dplyr::filter(!.data$alert == "0")
 
   alert_description <-
     googlesheets4::range_read(
@@ -127,15 +128,18 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
 
   alerts_week <-
     dplyr::left_join(peskas_alerts_week, alert_description, by = "alert") %>%
-    dplyr::rename("submission id" = .data$submission_id,
-                  "submission date" = .data$submission_date,
-                  description = .data$alert_description,
-                  "alert code" = .data$alert) %>%
+    dplyr::rename(
+      "submission id" = .data$submission_id,
+      "submission date" = .data$submission_date,
+      description = .data$alert_description,
+      "alert code" = .data$alert
+    ) %>%
     dplyr::rowwise() %>%
     dplyr::mutate(description = ifelse(nchar(.data$`alert code`) > 3, "Multiple alerts", .data$description)) %>%
     dplyr::ungroup()
 
   n_submissions_alert <- nrow(alerts_week)
+  n_submission_tot <- nrow(peskas_alerts)
 
   logger::log_info("Generate mail")
   email <-
@@ -145,9 +149,10 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
           glue::glue(
             "Hi there,
 
-          In the last week there have been {n_submissions_alert} new landing surveys
-          that may have some problems with the data entered. Please, open the link below
-          and check the submission on KoBoToolBox to make corrections.
+          In the last week there have been {n_submissions_alert} new landing
+          surveys that may have some problems with the data entered on a total
+          of {n_submission_tot} submissions. Please, open the link below and
+          check the submissions on KoBoToolBox to make corrections.
           If you don't think the flag is an error please let us know.
 
           https://docs.google.com/spreadsheets/d/1MjpEE-5oOqQgpf8M8h_IysQlLdZroouOkGjy6UP95UM/edit?usp=sharing

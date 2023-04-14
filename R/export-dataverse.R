@@ -32,9 +32,9 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retrieving public data to release...")
   purrr::map(files_names,
-             download_cloud_file,
-             provider = pars$public_storage$google$key,
-             options = pars$public_storage$google$options
+    download_cloud_file,
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
   )
 
   data_description <- generate_description()
@@ -52,7 +52,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   file.rename(from = files_names, to = new_names)
 
   release_files_names <- c(new_names, system.file("export/README.html",
-                                                  package = "peskas.timor.data.pipeline"
+    package = "peskas.timor.data.pipeline"
   ))
   release_files_names <- release_files_names[c(4, 3, 1, 2)]
 
@@ -380,7 +380,7 @@ get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
 }
 
 
-#restrict_files <- function(key = key, server = server, dat_id = NULL) {
+# restrict_files <- function(key = key, server = server, dat_id = NULL) {
 #  url <- paste0("https://", server, "/api/files/", dat_id, "/restrict")
 #  res <- httr::PUT(
 #    url = url,
@@ -388,9 +388,9 @@ get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
 #    body = "true"
 #  )
 #  res
-#}
+# }
 
-#allow_requests <- function(key = key, server = server, id) {
+# allow_requests <- function(key = key, server = server, id) {
 #  url <- paste0("https://", server, "/api/access/", id, "/allowAccessRequest")
 #  res <- httr::PUT(
 #    url = url,
@@ -398,4 +398,4 @@ get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
 #    body = "true"
 #  )
 #  res
-#}
+# }

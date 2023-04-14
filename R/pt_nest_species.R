@@ -35,7 +35,6 @@
 #' )
 #' pt_nest_species(dummy_landings)
 pt_nest_species <- function(x) {
-
   # Nest species
   nested_species <- x %>%
     # Using the .data pronoun to avoid RMD check notes

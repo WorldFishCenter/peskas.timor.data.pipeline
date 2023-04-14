@@ -92,15 +92,18 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
       recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch)
     ) %>%
-    dplyr::select(region = .data$reporting_region,
-                  .data$date_bin_start,
-                  .data$recorded_revenue,
-                  .data$recorded_catch) %>%
+    dplyr::select(
+      region = .data$reporting_region,
+      .data$date_bin_start,
+      .data$recorded_revenue,
+      .data$recorded_catch
+    ) %>%
     dplyr::ungroup()
 
   municipal_aggregated <-
     dplyr::left_join(municipal_aggregated, municipal_aggregated_recorded,
-                     by = c("region", "date_bin_start"))
+      by = c("region", "date_bin_start")
+    )
 
   taxa_estimations <-
     periods %>%

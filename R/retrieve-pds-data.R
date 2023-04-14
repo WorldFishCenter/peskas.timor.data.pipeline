@@ -1,4 +1,3 @@
-
 #' Download pelagic data system trips in as csv or json
 #'
 #' @param path String with path to file where API request should be saved

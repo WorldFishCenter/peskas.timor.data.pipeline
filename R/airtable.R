@@ -150,7 +150,6 @@ extract_value <- function(x, y, max_field_length) {
 #'
 air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = NULL,
                                   max_records = 10) {
-
   # Convert data frame to list. It it's not a link field, unbox it
   as_list_air <- function(..., link_fields = NULL) {
     dots <- rlang::list2(...)

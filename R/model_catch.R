@@ -136,7 +136,7 @@ model_catch <- function(trips) {
   catch_df <-
     trips %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-                                                         unit = "month"
+      unit = "month"
     )) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
@@ -151,7 +151,8 @@ model_catch <- function(trips) {
       landing_value = dplyr::first(.data$landing_value),
     ) %>%
     dplyr::mutate(landing_weight = ifelse(is.na(.data$landing_value),
-                                          NA_real_, .data$landing_weight)) %>%
+      NA_real_, .data$landing_weight
+    )) %>%
     dplyr::select(-.data$landing_value) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
@@ -166,14 +167,14 @@ model_catch <- function(trips) {
     dplyr::ungroup()
 
   glmmTMB(landing_weight ~ (1 | month) + (1 | period) + (1 | version),
-          ziformula = ~ (1 | month) + (1 | period) + (1 | version),
-          family = "poisson",
-          data = catch_df,
-          control = glmmTMB::glmmTMBControl(
-            conv_check = "skip",
-            optimizer = stats::optim,
-            optArgs = list(method = "BFGS")
-          )
+    ziformula = ~ (1 | month) + (1 | period) + (1 | version),
+    family = "poisson",
+    data = catch_df,
+    control = glmmTMB::glmmTMBControl(
+      conv_check = "skip",
+      optimizer = stats::optim,
+      optArgs = list(method = "BFGS")
+    )
   )
 }
 
@@ -212,8 +213,8 @@ model_value <- function(trips) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
-  #region <- "Ainaro"
-  #vessels_metadata <- vessels_stats
+  # region <- "Ainaro"
+  # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- sum(vessels_metadata$n_boats)
