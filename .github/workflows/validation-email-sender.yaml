@@ -7,6 +7,7 @@ on:
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   PESKAS_GMAIL_KEY: ${{ secrets.PESKAS_GMAIL_KEY }}
+  VALID_SHEET_ID: ${{ secrets.VALID_SHEET_ID }}
 
 jobs:
 

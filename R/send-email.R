@@ -102,15 +102,40 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Filtering validation flags from {Sys.Date() - 7}")
 
-  validation_df <- get_validation_sheet(pars)
+  googlesheets4::gs4_auth(
+    path = pars$storage$google$options$service_account_key,
+    use_oob = TRUE
+  )
 
-  last_week <-
-    validation_df %>%
-    dplyr::mutate(submission_date = as.Date(.data$submission_date)) %>%
+  peskas_alerts_week <-
+    googlesheets4::range_read(
+      ss = pars$validation$google_sheets$sheet_id,
+      sheet = pars$validation$google_sheets$flags_table,
+      col_types = "iDDclDc"
+    ) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
-    dplyr::filter(!.data$alert == "0")
+    dplyr::filter(!.data$alert == "0") %>%
+    dplyr::select(.data$submission_id, .data$submission_date, .data$alert)
 
-  n_submissions_alert <- nrow(last_week)
+  alert_description <-
+    googlesheets4::range_read(
+      ss = pars$validation$google_sheets$sheet_id,
+      sheet = "alerts",
+      col_types = "ccc"
+    ) %>%
+    dplyr::select(-.data$alert_category)
+
+  alerts_week <-
+    dplyr::left_join(peskas_alerts_week, alert_description, by = "alert") %>%
+    dplyr::rename("submission id" = .data$submission_id,
+                  "submission date" = .data$submission_date,
+                  description = .data$alert_description,
+                  "alert code" = .data$alert) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(description = ifelse(nchar(.data$`alert code`) > 3, "Multiple alerts", .data$description)) %>%
+    dplyr::ungroup()
+
+  n_submissions_alert <- nrow(alerts_week)
 
   logger::log_info("Generate mail")
   email <-
@@ -128,9 +153,9 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
           https://docs.google.com/spreadsheets/d/1MjpEE-5oOqQgpf8M8h_IysQlLdZroouOkGjy6UP95UM/edit?usp=sharing
           "
           ),
-          last_week %>%
-            kableExtra::kbl() %>%
-            kableExtra::kable_styling()
+          alerts_week %>%
+            kableExtra::kbl(align = "c") %>%
+            kableExtra::kable_styling(bootstrap_options = "striped")
         )
       ),
       footer = blastula::md(glue::glue("Email sent on ", as.character(Sys.time())))
