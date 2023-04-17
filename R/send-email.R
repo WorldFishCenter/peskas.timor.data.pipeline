@@ -135,7 +135,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
       "alert code" = .data$alert
     ) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(description = ifelse(nchar(.data$`alert code`) > 3, "Multiple alerts", .data$description)) %>%
+    dplyr::mutate(description = ifelse(nchar(.data$`alert code`) >= 3, "Multiple alerts", .data$description)) %>%
     dplyr::ungroup()
 
   n_submissions_alert <- nrow(alerts_week)
