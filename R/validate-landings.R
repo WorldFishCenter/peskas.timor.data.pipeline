@@ -290,7 +290,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   sync_table <-
     dplyr::left_join(old_flags_df, peskas_alerts, by = "submission_id") %>%
-    dplyr::arrange(.data$submission_date.x, .data$submission_id) %>%
+    dplyr::arrange(dplyr::desc(.data$submission_date.x),
+                   dplyr::desc(.data$submission_id)) %>%
     dplyr::transmute(
       submission_id = .data$submission_id,
       submission_date = .data$submission_date.x,
