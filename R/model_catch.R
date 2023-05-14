@@ -178,6 +178,72 @@ model_catch <- function(trips) {
   )
 }
 
+model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
+  if (isTRUE(modelled_taxa == "selected")) {
+    taxa_list <- pars$models$modelled_taxa
+  } else {
+    taxa_list <- pars$models$all_taxa
+  }
+
+  catch_df <- trips %>%
+    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
+      unit = "month"
+    )) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    # dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon))) %>%
+    dplyr::mutate(
+      landing_id = as.character(.data$landing_id),
+      weight = .data$weight / 1000,
+    ) %>%
+    dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(taxa_list, "0"), .data$catch_taxon, "MZZ")) %>%
+    dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
+    dplyr::summarise(
+      landing_weight = sum(.data$weight),
+      .groups = "drop"
+    ) %>%
+    tidyr::complete(
+      .data$grouped_taxa,
+      tidyr::nesting(!!!dplyr::select(., tidyselect::all_of(c("landing_id", "landing_period")))),
+      fill = list(landing_weight = 0)
+    ) %>%
+    dplyr::mutate(
+      year = as.character(lubridate::year(.data$landing_period)),
+      month = as.character(lubridate::month(.data$landing_period)),
+      period = paste(.data$year, .data$month, sep = "-"),
+      version = dplyr::case_when(
+        .data$landing_period <= "2019-05-01" ~ "v1",
+        .data$landing_period > "2019-05-01" ~ "v2"
+      )
+    ) %>%
+    dplyr::filter(.data$grouped_taxa != "0") %>%
+    dplyr::ungroup()
+
+  modelled_taxa <- intersect(unique(catch_df$grouped_taxa), taxa_list)
+  # modelled_taxa <- c(modelled_taxa, "MZZ")
+  models <- vector(mode = "list", length(modelled_taxa))
+  names(models) <- modelled_taxa
+
+  for (taxon in modelled_taxa) {
+    message("  Evaluating model for ", taxon)
+    models[[taxon]] <- glmmTMB(
+      landing_weight ~ (1 | month) + (1 | version) + (1 | period),
+      ziformula = ~ (1 | month) + (1 | version) + (1 | period),
+      family = "poisson",
+      data = dplyr::filter(catch_df, .data$grouped_taxa == taxon),
+      control = glmmTMB::glmmTMBControl(
+        conv_check = "skip",
+        optimizer = stats::optim,
+        optArgs = list(method = "BFGS")
+      )
+    )
+  }
+
+  models
+}
+
+
 #' Model landing value
 #'
 #' @param trips data frame
@@ -213,7 +279,7 @@ model_value <- function(trips) {
 }
 
 run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
-  # region <- "Ainaro"
+  # region <- "Dili"
   # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
@@ -255,9 +321,11 @@ run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, nat
   results <- estimate_statistics(value_model, value_model_pk, landings_model, catch_model, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
+  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = "selected", pars = pars)
+  taxa_estimates <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
+  message("Estimate taxa catch by relative composition")
+  results_per_taxa <- model_taxa_porportion(results, taxa_estimates)
 
-  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
-  results_per_taxa <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
 
   all_results <-
     list(
@@ -475,71 +543,6 @@ predict_variable <- function(model, var) {
     )
 }
 
-model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
-  if (isTRUE(modelled_taxa == "selected")) {
-    taxa_list <- pars$models$modelled_taxa
-  } else {
-    taxa_list <- pars$models$all_taxa
-  }
-
-  catch_df <- trips %>%
-    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-      unit = "month"
-    )) %>%
-    tidyr::unnest(.data$landing_catch) %>%
-    tidyr::unnest(.data$length_frequency) %>%
-    dplyr::group_by(.data$landing_id) %>%
-    # dplyr::filter(all(!is.na(.data$landing_period)), all(!is.na(.data$weight)), all(!is.na(.data$catch_taxon))) %>%
-    dplyr::mutate(
-      landing_id = as.character(.data$landing_id),
-      weight = .data$weight / 1000,
-    ) %>%
-    dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(taxa_list, "0"), .data$catch_taxon, "MZZ")) %>%
-    dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
-    dplyr::summarise(
-      landing_weight = sum(.data$weight),
-      .groups = "drop"
-    ) %>%
-    tidyr::complete(
-      .data$grouped_taxa,
-      tidyr::nesting(!!!dplyr::select(., tidyselect::all_of(c("landing_id", "landing_period")))),
-      fill = list(landing_weight = 0)
-    ) %>%
-    dplyr::mutate(
-      year = as.character(lubridate::year(.data$landing_period)),
-      month = as.character(lubridate::month(.data$landing_period)),
-      period = paste(.data$year, .data$month, sep = "-"),
-      version = dplyr::case_when(
-        .data$landing_period <= "2019-05-01" ~ "v1",
-        .data$landing_period > "2019-05-01" ~ "v2"
-      )
-    ) %>%
-    dplyr::filter(.data$grouped_taxa != "0") %>%
-    dplyr::ungroup()
-
-  modelled_taxa <- intersect(unique(catch_df$grouped_taxa), taxa_list)
-  # modelled_taxa <- c(modelled_taxa, "MZZ")
-  models <- vector(mode = "list", length(modelled_taxa))
-  names(models) <- modelled_taxa
-
-  for (taxon in modelled_taxa) {
-    message("  Evaluating model for ", taxon)
-    models[[taxon]] <- glmmTMB(
-      landing_weight ~ (1 | month) + (1 | version) + (1 | period),
-      ziformula = ~ (1 | month) + (1 | version) + (1 | period),
-      family = "poisson",
-      data = dplyr::filter(catch_df, .data$grouped_taxa == taxon),
-      control = glmmTMB::glmmTMBControl(
-        conv_check = "skip",
-        optimizer = stats::optim,
-        optArgs = list(method = "BFGS")
-      )
-    )
-  }
-
-  models
-}
-
 get_national_estimates <- function(municipal_estimations = NULL) {
   aggregated <-
     municipal_estimations %>%
@@ -631,4 +634,36 @@ fill_missing_regions <- function(trips = NULL) {
       TRUE ~ reporting_region
     )) %>%
     dplyr::select(-.data$reporting_region_fill)
+}
+
+model_taxa_porportion <- function(aggregated_results, taxa_results) {
+  t_results <-
+    aggregated_results %>%
+    dplyr::select(-c(
+      .data$month, .data$is_imputed, .data$n_boats,
+      .data$landing_revenue, .data$n_landings_per_boat,
+      .data$revenue, .data$landing_weight, .data$price_kg
+    )) %>%
+    dplyr::rename(tot_catch = .data$catch)
+
+  results_taxa <-
+    taxa_results %>%
+    dplyr::select(-c(.data$is_imputed, .data$n_boats)) %>%
+    dplyr::rename(catch_taxa = .data$catch) %>%
+    dplyr::group_by(.data$landing_period) %>%
+    dplyr::mutate(
+      tot_catch_taxa = sum(.data$catch_taxa),
+      taxa_prop = (.data$catch_taxa / .data$tot_catch_taxa) * 100
+    ) %>%
+    dplyr::select(-c(.data$tot_catch_taxa, .data$catch_taxa)) %>%
+    dplyr::ungroup()
+
+  estimations_per_taxa <-
+    dplyr::left_join(results_taxa, t_results, by = c("landing_period", "period")) %>%
+    dplyr::mutate(
+      catch = (.data$taxa_prop / 100) * .data$tot_catch
+    ) %>%
+    dplyr::select(-c(.data$taxa_prop, .data$tot_catch))
+
+  estimations_per_taxa
 }
