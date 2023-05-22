@@ -39,7 +39,10 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Install Python
-        run: apt-get update && apt-get install -y python3
-      - name: Generate and upload data report
+      - name: Install Python and required modules
+        run: |
+          apt-get update
+          apt-get install -y python3
+          pip3 install pandas keplergl
+      - name: Generate and upload kepler map
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_kepler_tracks()'

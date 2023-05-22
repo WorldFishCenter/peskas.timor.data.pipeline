@@ -1,8 +1,5 @@
-import uvicorn
 import pandas as pd
 from keplergl import KeplerGl 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 
 def kepler_map(data_path):
     df = pd.read_csv(data_path)

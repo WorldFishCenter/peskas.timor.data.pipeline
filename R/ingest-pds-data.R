@@ -604,8 +604,8 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
   upload_cloud_file(
     file = "kepler_pds_map.html",
     name = html_file_name,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = pars$public_storage$google$key,
+    options = pars$public_storage$google$options
   )
 }
 
