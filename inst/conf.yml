@@ -52,6 +52,9 @@ default:
         map_grid:
           file_prefix: indicators_gridded
           extension: rds
+        kepler:
+          prefix: kepler-pds-map
+          extension: html
   metadata:
     airtable:
       name: metadata-tables

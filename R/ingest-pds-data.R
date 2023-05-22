@@ -558,3 +558,75 @@ convert_taxa_names <- function(data, pars) {
     dplyr::select(-.data$catch_taxon) %>%
     dplyr::rename(catch_taxon = .data$`Common name`)
 }
+
+#' Ingest a Kepler.gl map
+#'
+#' This function use the python library Kepler.gl \url{https://docs.kepler.gl/docs/keplergl-jupyter} to generate and upload a
+#' map of PDS tracks around Timor. It uses [reticulate::import_from_path] to load
+#' and run the python script `kepler_mapper.py`.
+#'
+#' @param log_threshold The (standard Apache logj4) log level used as a
+#' threshold for the logging infrastructure. See [logger::log_levels] for more
+#' details.
+#'
+#' @return Nothing. This function upload to GCS.
+#' @export
+#'
+ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
+  logger::log_threshold(log_threshold)
+
+  logger::log_info("Getting PDS tracks...")
+
+  pars <- read_config()
+  tracks <- get_full_tracks(pars)
+
+  counts <-
+    tracks %>%
+    dplyr::filter(!.data$Lat < -15) %>%
+    dplyr::mutate(
+      Lat = round(.data$Lat, 2),
+      Lng = round(.data$Lng, 2)
+    ) %>%
+    dplyr::group_by(.data$Lat, .data$Lng) %>%
+    dplyr::count() %>%
+    dplyr::rename("PDS tracks" = .data$n)
+
+  readr::write_csv(counts, "kepler_tracks.csv")
+
+  logger::log_info("Generating Kepler map")
+  kepler_mapper("kepler_tracks.csv")
+
+  html_file_name <-
+    paste(pars$pds$tracks$map$kepler$prefix) %>%
+    add_version(extension = pars$pds$tracks$map$kepler$extension)
+
+  logger::log_info("Uploading {html_file} to cloud sorage")
+  upload_cloud_file(
+    file = "kepler_pds_map.html",
+    name = html_file_name,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
+}
+
+#' Generate a Kepler.gl map
+#'
+#' This function is a R wrapper of `kepler_mapper.py`, a python script function
+#' aimed to elaborate produce a self-contained map (in html) using the
+#' Kepler.gl python library \url{https://docs.kepler.gl/docs/keplergl-jupyter}.
+#'
+#' @param data_path Data to add to map.
+#'
+#' @return A self-contained map in html.
+#' @export
+#'
+kepler_mapper <- function(data_path = NULL) {
+  python_path <- system.file(package = "peskas.timor.data.pipeline")
+  kepler_mapper_py <- reticulate::import_from_path(
+    module = "kepler_mapper",
+    path = python_path
+  )
+  py_function <- kepler_mapper_py$kepler_map
+  py_function(data_path)
+}
+

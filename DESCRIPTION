@@ -35,7 +35,8 @@ Imports:
     readr,
     tidyr,
     rlang (>= 0.1.2),
-    googlesheets4
+    googlesheets4,
+    reticulate
 Suggests: 
     covr,
     pkgdown,
