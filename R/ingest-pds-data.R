@@ -596,7 +596,7 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generating Kepler map")
   kepler_mapper("kepler_tracks.csv")
 
-  logger::log_info("Uploading {kepler-pds-map.html} to cloud sorage")
+  logger::log_info("Uploading kepler_pds_map.html to cloud sorage")
   upload_cloud_file(
     file = "kepler_pds_map.html",
     provider = pars$public_storage$google$key,
