@@ -44,6 +44,7 @@ reference:
   desc: Functions that help retrieving Pelagic Data System data
 - contents:
   - matches("pds")
+  - kepler_mapper
 - subtitle: Data modeling
   desc: Functions dedicated to data modeling.
   contents:
