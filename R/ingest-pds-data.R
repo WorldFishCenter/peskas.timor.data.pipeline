@@ -600,7 +600,7 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
     paste(pars$pds$tracks$map$kepler$prefix) %>%
     add_version(extension = pars$pds$tracks$map$kepler$extension)
 
-  logger::log_info("Uploading {html_file} to cloud sorage")
+  logger::log_info("Uploading {html_file_name} to cloud sorage")
   upload_cloud_file(
     file = "kepler_pds_map.html",
     name = html_file_name,
