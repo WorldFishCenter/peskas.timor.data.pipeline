@@ -1,6 +1,7 @@
 name: Generate and upload kepler gl map
 
 on:
+  push:
   schedule:
     - cron:  '0 0 * * *'
 
