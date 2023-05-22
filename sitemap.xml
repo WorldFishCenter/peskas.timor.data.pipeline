@@ -142,6 +142,9 @@
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_complete_tracks.html</loc>
   </url>
   <url>
+    <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_kepler_tracks.html</loc>
+  </url>
+  <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_landings.html</loc>
   </url>
   <url>
@@ -176,6 +179,9 @@
   </url>
   <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/join_weights.html</loc>
+  </url>
+  <url>
+    <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/kepler_mapper.html</loc>
   </url>
   <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/merge_consecutive_trips.html</loc>
