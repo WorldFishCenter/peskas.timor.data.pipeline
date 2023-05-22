@@ -42,7 +42,7 @@ jobs:
       - name: Install Python and required modules
         run: |
           apt-get update
-          apt-get install -y python3
-          pip3 install pandas keplergl
+          apt-get install -y python3 python3-pip
+          python3 -m pip install pandas keplergl
       - name: Generate and upload kepler map
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_kepler_tracks()'
