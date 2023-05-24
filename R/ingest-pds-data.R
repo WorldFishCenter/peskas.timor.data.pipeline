@@ -589,7 +589,7 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
     ) %>%
     dplyr::group_by(.data$Lat, .data$Lng) %>%
     dplyr::count() %>%
-    dplyr::rename("PDS tracks" = .data$n)
+    dplyr::rename("GPS tracks" = .data$n)
 
   readr::write_csv(counts, "kepler_tracks.csv")
 

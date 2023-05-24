@@ -3,7 +3,7 @@ name: Generate and upload kepler gl map
 on:
   push:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 1 * *'
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
