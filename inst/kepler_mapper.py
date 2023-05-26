@@ -10,7 +10,7 @@ def kepler_map(data_path):
                 "filters": [],
                 "layers": [
                     {
-                        "id": "8akleke",
+                        "id": "fmrn4wj",
                         "type": "hexagon",
                         "config": {
                             "dataId": "dat_tracks",
@@ -23,32 +23,31 @@ def kepler_map(data_path):
                             },
                             "isVisible": True,
                             "visConfig": {
-                                "opacity": 0.88,
+                                "opacity": 1,
                                 "worldUnitSize": 0.9,
                                 "resolution": 8,
                                 "colorRange": {
-                                    "name": "Ice And Fire",
-                                    "type": "diverging",
+                                    "name": "Pink Wine 6",
+                                    "type": "sequential",
                                     "category": "Uber",
                                     "colors": [
-                                        "#0198BD",
-                                        "#49E3CE",
-                                        "#E8FEB5",
-                                        "#FEEDB1",
-                                        "#FEAD54",
-                                        "#D50255"
+                                        "#2C1E3D",
+                                        "#573660",
+                                        "#83537C",
+                                        "#A6758E",
+                                        "#C99DA4",
+                                        "#EDD1CA"
                                     ]
                                 },
                                 "coverage": 1,
-                                "sizeRange": [0, 473.68],
-                                "percentile": [0, 100],
-                                "elevationPercentile": [0, 100],
-                                "elevationScale": 85.1,
-                                "enableElevationZoomFactor": False,
+                                "sizeRange": [0, 500],
+                                "percentile": [0, "100"],
+                                "elevationPercentile": [0, "500"],
+                                "elevationScale": 54.5,
+                                "enableElevationZoomFactor": True,
                                 "colorAggregation": "average",
                                 "sizeAggregation": "sum",
-                                "enable3d": True,
-                                "legend": True
+                                "enable3d": True
                             },
                             "hidden": False,
                             "textLabel": [
@@ -64,12 +63,12 @@ def kepler_map(data_path):
                         },
                         "visualChannels": {
                             "colorField": {
-                                "name": "PDS tracks",
+                                "name": "GPS tracks",
                                 "type": "integer"
                             },
                             "colorScale": "quantile",
                             "sizeField": {
-                                "name": "PDS tracks",
+                                "name": "GPS tracks",
                                 "type": "integer"
                             },
                             "sizeScale": "sqrt"
@@ -79,19 +78,10 @@ def kepler_map(data_path):
                 "interactionConfig": {
                     "tooltip": {
                         "fieldsToShow": {
-                            "xfyy9dm6": [
-                                {
-                                    "name": "Lat",
-                                    "format": None
-                                },
-                                {
-                                    "name": "Lng",
-                                    "format": None
-                                },
-                                {
-                                    "name": "PDS tracks",
-                                    "format": None
-                                }
+                            "pm64h5f61": [
+                                {"name": "Lng", "format": None},
+                                {"name": "Lat", "format": None},
+                                {"name": "GPS tracks", "format": None}
                             ]
                         },
                         "compareMode": False,
@@ -117,39 +107,38 @@ def kepler_map(data_path):
                 }
             },
             "mapState": {
-                "bearing": 24,
+                "bearing": 10.625,
                 "dragRotate": True,
-                "latitude": -8.919901184800565,
-                "longitude": 125.51785785961475,
-                "pitch": 50,
-                "zoom": 7.948582452228619,
+                "latitude": -8.800818125103254,
+                "longitude": 125.49043470312294,
+                "pitch": 39.80299785867238,
+                "zoom": 7.891150147692834,
                 "isSplit": False
             },
             "mapStyle": {
                 "styleType": "dark",
                 "topLayerGroups": {
-                    "water": False,
-                    "land": True,
-                    "building": False,
-                    "border": True,
+                    "label": True,
                     "road": False,
-                    "label": True
+                    "border": True,
+                    "building": False,
+                    "water": False,
+                    "land": False
                 },
                 "visibleLayerGroups": {
                     "label": True,
                     "road": True,
                     "border": True,
-                    "building": True,
+                    "building": False,
                     "water": True,
-                    "land": True,
+                    "land": False,
                     "3d building": False
                 },
                 "threeDBuildingColor": [9.665468314072013, 17.18305478057247, 31.1442867897876],
                 "mapStyles": {}
             }
         }
-    }
-    
+    }    
     kpmap = KeplerGl(height=400)
     kpmap.add_data(data=df, name='dat_tracks')
     kpmap.config = config
