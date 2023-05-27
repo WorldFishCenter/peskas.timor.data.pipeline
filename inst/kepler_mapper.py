@@ -14,7 +14,7 @@ def kepler_map(data_path):
                         "type": "hexagon",
                         "config": {
                             "dataId": "dat_tracks",
-                            "label": "point",
+                            "label": "PDS data",
                             "color": [255, 203, 153],
                             "highlightColor": [252, 242, 26, 255],
                             "columns": {
