@@ -1,0 +1,375 @@
+---
+title: "Unanswered questions in Peskas"
+output:
+  bookdown::html_document2:
+    number_sections: false
+    fig_caption: yes
+    toc: 1
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The following report summarizes the completeness of the forms submitted in Peskas. The data is filtered for boat landings.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(magrittr)
+library(ggplot2)
+
+merge_versions <- function(x) {
+  x %>%
+    dplyr::mutate(
+      fuel_L = dplyr::coalesce(
+        .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
+        .data$`trip_group/fuel_used_L`
+      ),
+      habitat_no_boat = dplyr::coalesce(
+        .data$`trip_group/habitat_no_boat`,
+        .data$`trip_group/Habitat_no_boat`
+      ),
+      habitat_no_boat = substr(.data$habitat_no_boat, 1, 1),
+      `trip_group/habitat_boat` = dplyr::coalesce(
+        .data$`trip_group/habitat_boat`,
+        .data$habitat_no_boat
+      ),
+      reason_no_fishing = dplyr::case_when(
+        .data$`Tanba_sa_la_iha_ro_o_peskador_` == "seluk__hakerek"
+        ~ .data$`Seluk_hakerek_manualmente`, TRUE ~ .data$`Tanba_sa_la_iha_ro_o_peskador_`
+      ),
+      reason_no_activity = dplyr::coalesce(
+        .data$reason_for_zero_boats,
+        .data$reason_no_fishing
+      )
+    ) %>%
+    dplyr::select(-c(
+      .data$habitat_no_boat,
+      .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
+      .data$`trip_group/fuel_used_L`,
+      .data$`trip_group/habitat_no_boat`,
+      .data$`trip_group/Habitat_no_boat`,
+      .data$`Tanba_sa_la_iha_ro_o_peskador_`,
+      .data$`Seluk_hakerek_manualmente`,
+      .data$reason_for_zero_boats,
+      .data$reason_no_fishing,
+      # drop this column as it is all NA
+      .data$`_bamboo_dataset_id`
+    ))
+}
+
+
+setwd("../..")
+pars <- peskas.timor.data.pipeline::read_config()
+metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
+
+landings <- peskas.timor.data.pipeline::get_merged_landings(pars, "_weight") %>%
+  merge_versions() %>%
+  dplyr::rename(date = date, submitted_by = `_submitted_by`) %>%
+  dplyr::select(-c(`_attachments`, species_group, dplyr::starts_with("_"))) %>%
+  dplyr::rename_all(~ stringr::str_remove(., "trip_group/")) %>%
+  dplyr::filter(!is.na(landing_site_name)) %>%
+  dplyr::filter(date >= "2018-01-01")
+
+
+# Filter by landings with boats and form filled
+landings <- 
+  landings %>% dplyr::filter(
+  has_boat == TRUE,
+  Ita_koleta_dadus_husi_atividad == 1 |
+    is.na(Ita_koleta_dadus_husi_atividad) & !is.na(total_catch_value)
+)
+
+stations <-
+  metadata$stations %>%
+  dplyr::select(
+    landing_site_name = .data$station_code,
+    station = .data$station_name
+  ) %>%
+  dplyr::mutate(landing_site_name = as.character(landing_site_name))
+
+landings <-
+  dplyr::left_join(landings, stations, by = "landing_site_name") %>%
+  dplyr::select(-landing_site_name) %>%
+  dplyr::rename(landing_site_name = station) %>%
+  dplyr::mutate(
+    landing_site_name = trimws(.data$landing_site_name, which = "both"),
+    landing_site_name = dplyr::case_when(
+      landing_site_name == "Oenunu/Citrana/Bona/Baoknana" ~ "Oenunu/Citrana",
+      landing_site_name == "Beto Tasi/Bebonuk/Fatuhada/Kampung Alor" ~ "Beto Tasi/Bebonuk",
+      landing_site_name == "Sentru/Liarafa/Sika/Rau Moko" ~ "Sentru/Liarafa",
+      landing_site_name == "Oebone/Sakato/Bausiu/Mahata/Oebau/Oenunu/Kmusa/Bokos/Posto Sika" ~ "Oebone/Sakato",
+      landing_site_name == "Dolok Oan/Hera/Metinaro/Manleu" ~ "Dolok Oan/Hera",
+      landing_site_name == "Fatu'u/Doru/Iliana/Arlo" ~ "Fatu'u/Doru",
+      landing_site_name == "Seiçal/Buruma/Fatuk Bo'ot/Uai'ca" ~ "Seiçal/Buruma",
+      landing_site_name == "Beacou/Sulilaran/Palaka" ~ "Beacou/Sulilaran",
+      landing_site_name == "Bonuk/Fatumeta/Nunumera" ~ "Bonuk/Fatumeta",
+      landing_site_name == "Bidau Santana/Metiaut" ~ "Bidau Santana",
+      T ~ landing_site_name
+    )
+  )
+
+miss_plots <- function(landings = NULL, site = NULL) {
+  landings_site <-
+    landings %>%
+    dplyr::filter(landing_site_name %in% site)
+
+  missing.values <-
+    landings_site %>%
+    tidyr::gather(key = "key", value = "val") %>%
+    dplyr::mutate(isna = is.na(val)) %>%
+    dplyr::group_by(key) %>%
+    dplyr::mutate(total = dplyr::n()) %>%
+    dplyr::group_by(key, total, isna) %>%
+    dplyr::summarise(num.isna = dplyr::n()) %>%
+    dplyr::mutate(pct = num.isna / total * 100) %>%
+    dplyr::ungroup()
+
+  levels1 <-
+    missing.values %>%
+    dplyr::group_by(key) %>%
+    dplyr::tally() %>%
+    dplyr::arrange(n) %>%
+    dplyr::filter(n == 1) %>%
+    magrittr::extract2("key")
+
+  levels2 <-
+    (missing.values %>% dplyr::filter(isna == T) %>%
+      dplyr::arrange(desc(pct)))$key
+
+
+  levels3 <- c(levels2, levels1)
+
+
+  percentage.plot <-
+    missing.values %>%
+    ggplot() +
+    theme_minimal() +
+    geom_bar(
+      aes(
+        x = reorder(key, dplyr::desc(pct)),
+        y = pct, fill = isna
+      ),
+      stat = "identity", alpha = 0.8
+    ) +
+    scale_x_discrete(limits = levels3) +
+    scale_y_continuous(n.breaks = 6) +
+    scale_fill_manual(
+      name = "",
+      values = c("#FDE725FF", "#440154FF"), labels = c("Present", "Missing")
+    ) +
+    coord_flip() +
+    labs(
+      title = "Percentage of missing values",
+      x = "",
+      y = "Missing values (%)"
+    ) +
+    theme(
+      legend.position = "top",
+      plot.margin = unit(c(1, 1, 1, 1), "pt")
+    ) +
+    guides(fill = "none")
+
+
+  row.plot <-
+    landings_site %>%
+    dplyr::mutate(id = as.Date(date)) %>%
+    tidyr::gather(-id, key = "key", value = "val") %>%
+    dplyr::mutate(isna = is.na(val)) %>%
+    ggplot(aes(key, id, fill = isna)) +
+    theme_minimal() +
+    geom_raster(alpha = 0.8) +
+    scale_fill_manual(
+      name = "",
+      values = c("#FDE725FF", "#440154FF"),
+      labels = c("Present", "Missing")
+    ) +
+    scale_x_discrete(limits = levels3) +
+    scale_y_date(
+      expand = c(0, 0)
+    ) +
+    labs(
+      x = "",
+      y = "Date",
+      title = "Missing values temporal pattern"
+    ) +
+    coord_flip() +
+    theme(
+      legend.position = "right",
+      axis.text.y = element_blank(),
+      plot.margin = unit(c(1, 1, 1, -7), "pt")
+    )
+
+  cowplot::plot_grid(percentage.plot, row.plot, ncol = 2,
+                     rel_widths = c(2, 1.25))
+}
+
+# plots <-
+#  purrr::set_names(unique(landings$landing_site_name)) %>%
+#  purrr::map(miss_plots,
+#             landings = landings)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,fig.height=6.5,fig.width=14,fig.cap= "Percentage and temporal evolution of unanswered questions in Peskas survey. The questions are ranked by the overall missing percentage."}
+missing.values <-
+  landings %>%
+  tidyr::gather(key = "key", value = "val") %>%
+  dplyr::mutate(isna = is.na(val)) %>%
+  dplyr::group_by(key) %>%
+  dplyr::mutate(total = dplyr::n()) %>%
+  dplyr::group_by(key, total, isna) %>%
+  dplyr::summarise(num.isna = dplyr::n()) %>%
+  dplyr::mutate(pct = num.isna / total * 100) %>%
+  dplyr::ungroup()
+
+levels1 <-
+  missing.values %>%
+  dplyr::group_by(key) %>%
+  dplyr::tally() %>%
+  dplyr::arrange(n) %>%
+  dplyr::filter(n == 1) %>%
+  magrittr::extract2("key")
+
+levels2 <-
+  (missing.values %>% dplyr::filter(isna == T) %>%
+    dplyr::arrange(desc(pct)))$key
+
+
+levels3 <- c(levels2, levels1)
+
+
+percentage.plot <-
+  missing.values %>%
+  ggplot() +
+  theme_minimal(13) +
+  geom_bar(
+    aes(
+      x = reorder(key, dplyr::desc(pct)),
+      y = pct, fill = isna
+    ),
+    stat = "identity", alpha = 0.8
+  ) +
+  scale_x_discrete(limits = levels3) +
+  scale_y_continuous(
+    n.breaks = 6,
+    expand = c(0, 0)
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("#D2E21BFF", "#472F7DFF"), labels = c("Present", "Missing")
+  ) +
+  coord_flip() +
+  labs(
+    title = "Percentage of missing values",
+    x = "",
+    y = "Missing values (%)"
+  ) +
+  theme(
+    legend.position = "top",
+    plot.margin = unit(c(1, 1, 1, 1), "pt")
+  ) +
+  guides(fill = "none")
+
+
+row.plot <-
+  landings %>%
+  dplyr::mutate(id = as.Date(date)) %>%
+  tidyr::gather(-id, key = "key", value = "val") %>%
+  dplyr::mutate(isna = is.na(val)) %>%
+  ggplot(aes(key, id, fill = isna)) +
+  theme_minimal(13) +
+  geom_raster(alpha = 0.8) +
+  scale_fill_manual(
+    name = "",
+    values = c("#D2E21BFF", "#472F7DFF"),
+    labels = c("Present", "Missing")
+  ) +
+  scale_x_discrete(limits = levels3) +
+  scale_y_date(
+    expand = c(0, 0)
+  ) +
+  labs(
+    x = "",
+    y = "Date",
+    title = "Missing values temporal pattern"
+  ) +
+  coord_flip() +
+  theme(
+    legend.position = "right",
+    axis.text.y = element_blank(),
+    plot.margin = unit(c(1, 1, 1, -7), "pt")
+  )
+cowplot::plot_grid(percentage.plot, row.plot, ncol = 2,
+                   rel_widths = c(2, 1))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=9.5,fig.width=9,fig.cap= "Percentage of unanswered questions for each landing site. Both axes are ranked by missing percentage. The bars on the top refer to the number of submitted surveys."}
+main_plot_dat <-
+  landings %>%
+  dplyr::filter(!is.na(landing_site_name)) %>%
+  tidyr::gather(-landing_site_name, key = "key", value = "val") %>%
+  dplyr::mutate(isna = is.na(val)) %>%
+  dplyr::group_by(landing_site_name, key) %>%
+  dplyr::mutate(total_obs = dplyr::n()) %>%
+  dplyr::group_by(landing_site_name, key, total_obs, isna) %>%
+  dplyr::summarise(num.isna = dplyr::n()) %>%
+  dplyr::mutate(pct = num.isna / total_obs * 100) %>%
+  dplyr::ungroup() %>%
+  tidyr::complete(landing_site_name, key, isna) %>%
+  dplyr::filter(isna == T) %>%
+  dplyr::select(-c(isna, num.isna)) %>%
+  dplyr::mutate(pct = ifelse(is.na(pct), 0, pct))
+
+main_plot <-
+  main_plot_dat %>%
+  ggplot() +
+  theme_bw(13) +
+  geom_tile(aes(
+    y = reorder(key, pct),
+    x = reorder(landing_site_name, pct),
+    fill = pct,
+    color = pct
+  )) +
+  scale_fill_viridis_c(direction = -1, alpha = 0.75) +
+  scale_color_viridis_c(direction = -1) +
+  scale_x_discrete(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +
+  guides(color = "none") +
+  labs(
+    x = "",
+    y = "",
+    fill = "Missing values (%)"
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  guides(color = "none")
+
+
+obs_plot <-
+  main_plot_dat %>%
+  ggplot(aes(
+    reorder(landing_site_name, pct),
+    total_obs
+  )) +
+  theme_minimal(13) +
+  geom_col(position = "identity", alpha = 0.75) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_blank(),
+    plot.margin = unit(c(-5, 1, -14, 1), "pt")
+  ) +
+  labs(
+    x = "",
+    y = "",
+    title = ""
+  )
+
+
+cowplot::plot_grid(obs_plot, main_plot,
+  ncol = 1,
+  rel_heights = c(1, 4),
+  align = "hv"
+)
+```
