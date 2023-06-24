@@ -1,17 +1,23 @@
 default:
-
   surveys:
-    landings:
+    landings_3:
+      api: kobohr
+      survey_id: 1383430
+      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_2')
+      file_prefix: timor-landings-v3
+      version:
+        preprocess: latest
+    landings_2:
       api: kobohr
       survey_id: 344563
-      token: !expr Sys.getenv('KOBO_TOKEN')
+      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_1')
       file_prefix: timor-landings-v2
       version:
         preprocess: latest
-    landings_legacy:
+    landings_1:
       api: kobohr
       survey_id: 135272
-      token: !expr Sys.getenv('KOBO_TOKEN')
+      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_1')
       file_prefix: timor-landings-v1
       version:
         preprocess: latest
@@ -21,7 +27,6 @@ default:
     validated_landings:
       file_prefix: timor-landings-merged_validated
       version: latest
-
   pds:
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
@@ -92,10 +97,8 @@ default:
           protein: 46
           vitaminA: 0.0007
           omega3: 1.1
-
   peskas_mail:
     key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
-
   validation:
     landings:
       default:
@@ -136,18 +139,14 @@ default:
       flags_table: flags-dev
     version:
       preprocess: latest
-
   merged_trips:
     file_prefix: all_trips
-
   models:
     file_prefix: model_predictions
     all_taxa: [APO, BAR, BEN, BGX, BWH, CBA, CGX, CJX, CLP, COZ, CRA, CUX, DOS, DOX, DRZ, DSF, ECN, EMP, FLY, GOX, GPX, GRX, GZP, IAX,IHX, KYX, LGE, LWX, MHL, MIL, MOB, MOJ, MOO, MUI, MUL, OCZ, PEZ, PUX, PWT, RAX, SDX, SFA, SKH, SLV, SNA, SPI, SRX, SUR, SWX, THF, THO, TRI, TUN, WRA, YDX, MZZ]
     modelled_taxa: [CLP, FLY, TUN, SDX, GZP, SNA, CGX, CJX, BEN, MOO, RAX, LWX, MZZ]
-
   export:
     file_prefix: timor
-
   export_dataverse:
     server: 'dataverse.harvard.edu'
     dataverse_id: 'peskas'
@@ -158,11 +157,9 @@ default:
        language: 'English'
        description: 'Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). Read README file for detailed info.'
        creator: 'Tilley Alex, Joctan Dos Reis Lopes, Fernando Cagua, Lorenzo Longobardi'
-
   report:
     file_prefix: data_report
     summary_data: summary_data
-
   storage:
     google:
       key: gcs
@@ -170,7 +167,6 @@ default:
         project: peskas
         bucket: timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
-
   pds_storage:
     google:
       key: gcs
@@ -178,7 +174,6 @@ default:
         project: peskas
         bucket: pds-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
-
   public_storage:
     google:
       key: gcs
@@ -210,10 +205,12 @@ production:
 local:
   inherits: development
   surveys:
-    landings:
-      token: !expr readLines("auth/kobo-token")
-    landings_legacy:
-      token: !expr readLines("auth/kobo-token")
+    landings_3:
+      token: !expr readLines("auth/kobo-token-2")
+    landings_2:
+      token: !expr readLines("auth/kobo-token-1")
+    landings_1:
+      token: !expr readLines("auth/kobo-token-1")
   metadata:
     airtable:
       api_key: !expr readLines("auth/airtable-key")

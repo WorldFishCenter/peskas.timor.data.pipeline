@@ -44,10 +44,10 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings$file_prefix,
+    prefix = pars$surveys$landings_2$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
-    version = pars$surveys$landings$version$preprocess,
+    version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
 
@@ -73,7 +73,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Nesting landings species fields")
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
-  preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "step_1", "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landngs_nested_species,
@@ -136,18 +136,18 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings$file_prefix,
+    prefix = pars$surveys$landings_2$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
-    version = pars$surveys$landings$version$preprocess,
+    version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
 
   preprocessed_step_1 <- cloud_object_name(
-    prefix = paste(pars$surveys$landings$file_prefix, "step_1", "preprocessed", sep = "_"),
+    prefix = paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
-    version = pars$surveys$landings$version$preprocess,
+    version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
 
@@ -186,7 +186,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
       landings_nested_species
     )
 
-  preprocessed_filename <- paste(pars$surveys$landings$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = preprocessed,

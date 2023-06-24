@@ -8,7 +8,7 @@
 #'
 #' ```
 #' surveys:
-#'   landings_legacy:
+#'   landings_1:
 #'    api:
 #'    survey_id:
 #'    token:
@@ -39,10 +39,10 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings_legacy$file_prefix,
+    prefix = pars$surveys$landings_1$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
-    version = pars$surveys$landings_legacy$version$preprocess,
+    version = pars$surveys$landings_1$version$preprocess,
     options = pars$storage$google$options
   )
 
@@ -66,7 +66,7 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Nesting landings species fields")
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
-  preprocessed_filename <- paste(pars$surveys$landings_legacy$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(pars$surveys$landings_1$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landngs_nested_species,

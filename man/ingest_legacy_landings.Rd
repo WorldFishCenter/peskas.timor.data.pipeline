@@ -28,7 +28,7 @@ digits of the git commit sha. This is acomplished using \code{\link[=add_version
 The parameters needed in \code{conf.yml} are:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
-  landings_legacy:
+  landings_1:
     api:
     survey_id:
     token:

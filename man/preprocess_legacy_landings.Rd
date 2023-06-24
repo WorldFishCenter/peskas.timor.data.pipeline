@@ -23,7 +23,7 @@ This function downloads the landings data from a given version (specified in
 the config file \code{conf.yml}. The parameters needed are:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
-  landings_legacy:
+  landings_1:
    api:
    survey_id:
    token:

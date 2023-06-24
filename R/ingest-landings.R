@@ -13,7 +13,7 @@
 #'
 #' ```
 #' surveys:
-#'   landings:
+#'   landings_2:
 #'     api:
 #'     survey_id:
 #'     token:
@@ -44,10 +44,10 @@ ingest_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  file_list <- retrieve_survey(pars$surveys$landings$file_prefix,
-    api = pars$surveys$landings$api,
-    id = pars$surveys$landings$survey_id,
-    token = pars$surveys$landings$token
+  file_list <- retrieve_survey(pars$surveys$landings_2$file_prefix,
+    api = pars$surveys$landings_2$api,
+    id = pars$surveys$landings_2$survey_id,
+    token = pars$surveys$landings_2$token
   )
 
   logger::log_info("Uploading files to cloud...")
@@ -71,7 +71,7 @@ ingest_landings <- function(log_threshold = logger::DEBUG) {
 #'
 #' ```
 #' surveys:
-#'   landings_legacy:
+#'   landings_1:
 #'     api:
 #'     survey_id:
 #'     token:
@@ -102,10 +102,10 @@ ingest_legacy_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  file_list <- retrieve_survey(pars$surveys$landings_legacy$file_prefix,
-    api = pars$surveys$landings_legacy$api,
-    id = pars$surveys$landings_legacy$survey_id,
-    token = pars$surveys$landings_legacy$token
+  file_list <- retrieve_survey(pars$surveys$landings_1$file_prefix,
+    api = pars$surveys$landings_1$api,
+    id = pars$surveys$landings_1$survey_id,
+    token = pars$surveys$landings_1$token
   )
 
   logger::log_info("Uploading files to cloud...")
