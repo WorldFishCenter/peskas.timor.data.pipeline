@@ -48,8 +48,9 @@ jobs:
       - name: Call preprocess_legacy_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
 
-  ingest-preprocess-metadata-tables:
-    name: Ingest metadata tables
+
+  ingest-preprocess-updated-landings:
+    name: Ingest legacy landings
     needs: build-container
     runs-on: ubuntu-20.04
     container:
@@ -61,13 +62,10 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-      - name: Call preprocess_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-      - name: Call ingest_rfish_table()
-        continue-on-error: true
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
+      - name: Call ingest_legacy_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_updated_landings()'
+      - name: Call preprocess_legacy_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
 
   ingest-preprocess-landings-1:
     name: "Ingest-process landings 1/2"
@@ -103,6 +101,26 @@ jobs:
       - name: Call preprocess_landings_step_2()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_2()'
 
+  ingest-preprocess-metadata-tables:
+    name: Ingest metadata tables
+    needs: build-container
+    runs-on: ubuntu-20.04
+    container:
+      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call ingest_metadata_tables()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
+      - name: Call preprocess_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
+      - name: Call ingest_rfish_table()
+        continue-on-error: true
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
 
   merge-landings:
     name: Merge landings

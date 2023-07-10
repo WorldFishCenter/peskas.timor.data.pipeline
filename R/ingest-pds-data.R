@@ -592,21 +592,25 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
     dplyr::rename("GPS tracks" = .data$n)
 
   timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
-                              package = "peskas.timor.data.pipeline"
+    package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read() %>%
     dplyr::mutate(area = sf::st_area(.data$geometry))
 
   coordinates_sf <-
-    sf::st_as_sf(counts[1:2], coords = c("Lng", "Lat"),
-                 crs = sf::st_crs(timor_nation))
+    sf::st_as_sf(counts[1:2],
+      coords = c("Lng", "Lat"),
+      crs = sf::st_crs(timor_nation)
+    )
 
   logger::log_info("Dropping on land PDS tracks")
   points <-
     coordinates_sf %>%
     dplyr::mutate(on_land = lengths(sf::st_within(coordinates_sf, timor_nation))) %>%
-    dplyr::mutate(Lng = sf::st_coordinates(.data$geometry)[ ,1],
-                  Lat = sf::st_coordinates(.data$geometry)[ ,2]) %>%
+    dplyr::mutate(
+      Lng = sf::st_coordinates(.data$geometry)[, 1],
+      Lat = sf::st_coordinates(.data$geometry)[, 2]
+    ) %>%
     sf::st_drop_geometry() %>%
     dplyr::filter(-.data$on_land == 0) %>%
     dplyr::select(-.data$on_land) %>%
@@ -645,4 +649,3 @@ kepler_mapper <- function(data_path = NULL) {
   py_function <- kepler_mapper_py$kepler_map
   py_function(data_path)
 }
-

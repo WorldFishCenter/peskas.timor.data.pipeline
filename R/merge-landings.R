@@ -123,7 +123,7 @@ merge_versions <- function(x) {
         .data$reason_no_fishing
       )
     ) %>%
-    dplyr::rename(`trip_group/habitat` = `trip_group/habitat_boat`) %>%
+    dplyr::rename(`trip_group/habitat` = .data$`trip_group/habitat_boat`) %>%
     dplyr::select(-c(
       .data$habitat_no_boat,
       .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,

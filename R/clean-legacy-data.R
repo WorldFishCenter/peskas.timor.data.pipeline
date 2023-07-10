@@ -381,3 +381,59 @@ clean_legacy_landings <- function(x) {
       TRUE ~ `trip_group/boat_type`
     ))
 }
+
+
+
+#' Clean Updated (Peskas 2) landings data
+#'
+#' New Peskas 2 survey landings include some new questions and some new edits.
+#' This function facilitates the integration of the new survey data with the
+#' legacy ones.
+#'
+#' @param x Data frame containing raw data from updated landings (Peskas 2).
+#'
+#' @return Data frame containing updated landings data in the same syntax as
+#' old landings.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' authentication_details <- readLines("location_of_json_file.json")
+#' # obtain the latest version of all files corresponding to timor-landings-v1
+#' peskas2_data <-
+#'   cloud_object_name(
+#'     prefix = "timor-landings-v3",
+#'     version = "latest",
+#'     provider = "gcs",
+#'     options = list(
+#'       service_account_key = authentication_details,
+#'       bucket = "my-bucket"
+#'     )
+#'   )
+#'
+#' peskas2_raw <-
+#'   readr::read_csv(file = peskas2_data, col_types = readr::cols(.default = readr::col_character()))
+#'
+#' clean_updated_landings(legacy_raw)
+#' }
+clean_updated_landings <- function(x) {
+  x %>%
+    dplyr::mutate(
+      landing_site_name = dplyr::coalesce
+      (!!!dplyr::select(., dplyr::contains
+        ("station"))),
+      `_id` = as.character(.data$`_id`)
+    ) %>%
+    dplyr::select(-c(
+      dplyr::contains("group_info_general/group_station"),
+      "group_info_general/municipality",
+      "form_completed"
+    )) %>%
+    dplyr::rename(
+      date = "group_info_general/date",
+      Ita_koleta_dadus_husi_atividad = "group_info_general/Ita_koleta_dadus_husi_atividad",
+      Tanba_sa_la_iha_ro_o_peskador_ = "group_info_general/Tanba_sa_la_iha_ro_o_peskador_",
+      total_catch_value = "group_conservation_trading/total_catch_value",
+      `trip_group/habitat_boat` = "trip_group/habitat"
+    )
+}
