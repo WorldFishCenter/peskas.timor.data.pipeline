@@ -135,10 +135,12 @@ get_catch_types <- function(pars) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' get_fish_length(
 #'   taxa = "Sardine", rank = "comm_name",
 #'   country_code = 626
 #' )
+#' }
 get_fish_length <- function(taxa,
                             rank = NULL,
                             country_code = NULL) {

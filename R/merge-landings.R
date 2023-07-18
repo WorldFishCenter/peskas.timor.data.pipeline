@@ -38,6 +38,19 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
+  preprocessed_updated_landings <-
+    cloud_object_name(
+      prefix = paste(pars$surveys$landings_3$file_prefix,
+        "preprocessed",
+        sep = "_"
+      ),
+      provider = pars$storage$google$key,
+      extension = "rds",
+      version = pars$surveys$landings_3$version$preprocess,
+      options = pars$storage$google$options
+    )
+
+
   preprocessed_landings <-
     cloud_object_name(
       prefix = paste(pars$surveys$landings_2$file_prefix,
@@ -63,22 +76,33 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     )
 
   logger::log_info("Retrieving preprocessed data")
-  purrr::map(c(preprocessed_landings, preprocessed_legacy_landings),
+  purrr::map(
+    c(
+      preprocessed_updated_landings,
+      preprocessed_landings,
+      preprocessed_legacy_landings
+    ),
     download_cloud_file,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
 
   # adding a column "survey_version"
-  prep_landings <- readRDS(preprocessed_landings)
-  prep_landings <- prep_landings %>%
-    dplyr::mutate(survey_version = rep("v2", nrow(prep_landings)))
-  prep_legacy_landings <- readRDS(preprocessed_legacy_landings)
-  prep_legacy_landings <- prep_legacy_landings %>%
-    dplyr::mutate(survey_version = rep("v1", nrow(prep_legacy_landings)))
+  prep_updated_landings <-
+    readr::read_rds(preprocessed_updated_landings) %>%
+    dplyr::mutate(survey_version = rep("v3", nrow(.)))
+
+  prep_landings <-
+    readr::read_rds(preprocessed_landings) %>%
+    dplyr::mutate(survey_version = rep("v2", nrow(.)))
+
+  prep_legacy_landings <-
+    readr::read_rds(preprocessed_legacy_landings) %>%
+    dplyr::mutate(survey_version = rep("v1", nrow(.)))
 
   merged_landings <-
     dplyr::bind_rows(prep_legacy_landings, prep_landings) %>%
+    dplyr::bind_rows(prep_updated_landings) %>%
     merge_versions()
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%

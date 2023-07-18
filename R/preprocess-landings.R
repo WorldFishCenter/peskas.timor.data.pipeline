@@ -52,17 +52,34 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
+
   landings_raw <- readr::read_csv(
     file = landings_csv,
     col_types = readr::cols(.default = readr::col_character())
-  )
-
+  ) %>%
+    clean_updated_landings() %>%
+    dplyr::select(-c(dplyr::contains("stock_photo")))
 
   logger::log_info("Nesting landings attachment fields")
   landings_nested_attachments <- pt_nest_attachments(landings_raw)
 
   logger::log_info("Nesting landings species fields")
-  landngs_nested_species <- pt_nest_species(landings_nested_attachments)
+  landngs_nested_species <-
+    landings_nested_attachments %>%
+    # fill with taxon code 0 when there is no catch
+    dplyr::mutate(dplyr::across(dplyr::contains("species_group/species"), ~
+      dplyr::case_when(
+        .data$catch_outcome == "0" ~ "0",
+        TRUE ~ .x
+      ))) %>%
+    pt_nest_species() %>%
+    dplyr::mutate(species_group = purrr::map2(
+      .data$species_group, .data$`group_conservation_trading/food_or_sale`,
+      ~ dplyr::mutate(.x, food_or_sale = .y)
+    )) %>%
+    dplyr::select(-c(.data$`group_conservation_trading/food_or_sale`))
+
+
 
   preprocessed_filename <- paste(pars$surveys$landings_3$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
