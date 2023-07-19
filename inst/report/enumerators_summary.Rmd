@@ -65,7 +65,7 @@ landings_raw <-
     landing_station = landing_site_name,
     data_activity = Ita_koleta_dadus_husi_atividad,
     n_boats = no_boats,
-    reason_zero_boats = Tanba_sa_la_iha_ro_o_peskador_,
+    reason_zero_boats = reason_no_activity,
     date,
     today,
     start,
