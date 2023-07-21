@@ -45,7 +45,7 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-      - name: Call preprocess_landings()
+      - name: Call preprocess_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
       - name: Call ingest_rfish_table()
         continue-on-error: true
