@@ -1,3 +1,12 @@
+# peskas.timor.data.pipeline 3.0.0
+
+## New features
+
+- Integrated the ingestion of the new survey form "Peskas 2". The new form was
+deployed with the aim to be more manageable for enumerators. It also includes some
+more questions regarding the fish handling and trading.
+
+
 # peskas.timor.data.pipeline 2.0.0
 
 ## Breaking changes
