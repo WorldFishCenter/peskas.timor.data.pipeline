@@ -135,10 +135,12 @@ get_catch_types <- function(pars) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' get_fish_length(
 #'   taxa = "Sardine", rank = "comm_name",
 #'   country_code = 626
 #' )
+#' }
 get_fish_length <- function(taxa,
                             rank = NULL,
                             country_code = NULL) {
@@ -146,11 +148,21 @@ get_fish_length <- function(taxa,
     sp_list <- rfishbase::common_to_sci(taxa) %>%
       magrittr::extract2("Species") %>%
       unique()
-  } else {
-    sp_list <- list(taxa) %>%
-      rlang::set_names(rank) %>%
-      do.call(rfishbase::species_list, .) %>%
-      unique()
+  } else if (rank == "Class") {
+    rfishbase::species_list(sp_list)
+    sp_list <- rfishbase::species_list(Class = taxa) %>% unique()
+  } else if (rank == "Order") {
+    rfishbase::species_list(sp_list)
+    sp_list <- rfishbase::species_list(Order = taxa) %>% unique()
+  } else if (rank == "Family") {
+    rfishbase::species_list(sp_list)
+    sp_list <- rfishbase::species_list(Family = taxa) %>% unique()
+  } else if (rank == "Genus") {
+    rfishbase::species_list(sp_list)
+    sp_list <- rfishbase::species_list(Genus = taxa) %>% unique()
+  } else if (rank == "Species") {
+    rfishbase::species_list(sp_list)
+    sp_list <- rfishbase::species_list(Species = taxa) %>% unique()
   }
 
   country_table <- sp_list %>%

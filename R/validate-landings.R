@@ -26,7 +26,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
   metadata <- get_preprocessed_metadata(pars)
-  landings <- get_merged_landings(pars, "_weight") %>% merge_versions()
+  landings <- get_merged_landings(pars, "_weight")
 
   # read arguments for outliers identification
   default_max_limit <- pars$validation$landings$default$max
@@ -399,45 +399,4 @@ get_merged_landings <- function(pars, suffix = "") {
     options = pars$storage$google$options
   )
   readr::read_rds(file = landings_rds)
-}
-
-
-merge_versions <- function(x) {
-  x %>%
-    dplyr::mutate(
-      fuel_L = dplyr::coalesce(
-        .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
-        .data$`trip_group/fuel_used_L`
-      ),
-      habitat_no_boat = dplyr::coalesce(
-        .data$`trip_group/habitat_no_boat`,
-        .data$`trip_group/Habitat_no_boat`
-      ),
-      habitat_no_boat = substr(.data$habitat_no_boat, 1, 1),
-      `trip_group/habitat_boat` = dplyr::coalesce(
-        .data$`trip_group/habitat_boat`,
-        .data$habitat_no_boat
-      ),
-      reason_no_fishing = dplyr::case_when(
-        .data$`Tanba_sa_la_iha_ro_o_peskador_` == "seluk__hakerek"
-        ~ .data$`Seluk_hakerek_manualmente`, TRUE ~ .data$`Tanba_sa_la_iha_ro_o_peskador_`
-      ),
-      reason_no_activity = dplyr::coalesce(
-        .data$reason_for_zero_boats,
-        .data$reason_no_fishing
-      )
-    ) %>%
-    dplyr::select(-c(
-      .data$habitat_no_boat,
-      .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
-      .data$`trip_group/fuel_used_L`,
-      .data$`trip_group/habitat_no_boat`,
-      .data$`trip_group/Habitat_no_boat`,
-      .data$`Tanba_sa_la_iha_ro_o_peskador_`,
-      .data$`Seluk_hakerek_manualmente`,
-      .data$reason_for_zero_boats,
-      .data$reason_no_fishing,
-      # drop this column as it is all NA
-      .data$`_bamboo_dataset_id`
-    ))
 }

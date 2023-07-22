@@ -61,7 +61,6 @@ RUN install2.r --error --skipinstalled \
     taxize \
     tinytest \
     remotes \
-    rfishbase \
     tidytext \
     zip \
     leaflet \
@@ -81,6 +80,7 @@ RUN install2.r --error --skipinstalled \
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
+RUN installGithub.r ropensci/rfishbase
 
 # Install local package
 COPY . /home

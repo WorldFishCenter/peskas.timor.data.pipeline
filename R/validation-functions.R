@@ -623,7 +623,7 @@ validate_habitat <- function(landings, metadata_habitat) {
   landings %>%
     dplyr::rename(
       submission_id = .data$`_id`,
-      habitat_code = .data$`trip_group/habitat_boat`
+      habitat_code = .data$`trip_group/habitat`
     ) %>%
     dplyr::mutate(
       habitat_code = as.numeric(.data$habitat_code),

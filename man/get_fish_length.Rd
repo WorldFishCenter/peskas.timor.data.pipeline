@@ -25,8 +25,10 @@ returns a data frame containing weigth-length parameters from
 FishBase database.
 }
 \examples{
+\dontrun{
 get_fish_length(
   taxa = "Sardine", rank = "comm_name",
   country_code = 626
 )
+}
 }

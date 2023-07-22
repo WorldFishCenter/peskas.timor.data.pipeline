@@ -41,6 +41,7 @@ pt_nest_attachments <- function(x) {
   nested_attachments <- x %>%
     # Using the .data pronoun to avoid RMD check notes
     dplyr::select(.data$`_id`, dplyr::starts_with("_attachments")) %>%
+    dplyr::mutate_all(as.character) %>%
     # Column names follow the form "_attachments.0.download_large_url"
     tidyr::pivot_longer(
       cols = -.data$`_id`,
