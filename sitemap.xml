@@ -55,6 +55,9 @@
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/clean_legacy_landings.html</loc>
   </url>
   <url>
+    <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/clean_updated_landings.html</loc>
+  </url>
+  <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/cloud_object_name.html</loc>
   </url>
   <url>
@@ -169,6 +172,9 @@
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_rfish_table.html</loc>
   </url>
   <url>
+    <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_updated_landings.html</loc>
+  </url>
+  <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/ingest_validation_tables.html</loc>
   </url>
   <url>
@@ -221,6 +227,9 @@
   </url>
   <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/preprocess_pds_trips.html</loc>
+  </url>
+  <url>
+    <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/preprocess_updated_landings.html</loc>
   </url>
   <url>
     <loc>https://worldfishcenter.github.io/aquadata.data.mapping/reference/pt_nest_attachments.html</loc>
