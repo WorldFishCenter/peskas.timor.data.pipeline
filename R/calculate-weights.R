@@ -149,19 +149,14 @@ get_fish_length <- function(taxa,
       magrittr::extract2("Species") %>%
       unique()
   } else if (rank == "Class") {
-    rfishbase::species_list(sp_list)
     sp_list <- rfishbase::species_list(Class = taxa) %>% unique()
   } else if (rank == "Order") {
-    rfishbase::species_list(sp_list)
     sp_list <- rfishbase::species_list(Order = taxa) %>% unique()
   } else if (rank == "Family") {
-    rfishbase::species_list(sp_list)
     sp_list <- rfishbase::species_list(Family = taxa) %>% unique()
   } else if (rank == "Genus") {
-    rfishbase::species_list(sp_list)
     sp_list <- rfishbase::species_list(Genus = taxa) %>% unique()
   } else if (rank == "Species") {
-    rfishbase::species_list(sp_list)
     sp_list <- rfishbase::species_list(Species = taxa) %>% unique()
   }
 
