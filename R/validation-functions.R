@@ -314,28 +314,19 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
     catches_dat_unnested %>%
     dplyr::group_by(.data$`trip_group/gear_type`, .data$species) %>%
     dplyr::mutate(
-      n_individuals = dplyr::case_when(
-        .data$n_individuals == 0 ~ NA_real_,
-        TRUE ~ n_individuals
-      ),
       alert_n_individuals = alert_outlier(
         x = .data$n_individuals,
         alert_if_larger = 11, logt = TRUE, k = k_ind
       ),
       n_individuals = dplyr::case_when(
-        is.na(.data$n_individuals) & !is.na(.data$species) ~ 0,
         is.na(.data$alert_n_individuals) ~ .data$n_individuals,
-        TRUE ~ NA_real_
-      ),
-      mean_length_valid = dplyr::case_when(
-        .data$n_individuals > 0 ~ .data$mean_length,
         TRUE ~ NA_real_
       )
     ) %>%
     dplyr::group_by(.data$species) %>%
     dplyr::mutate(
       alert_length = alert_outlier(
-        x = .data$mean_length_valid,
+        x = .data$mean_length,
         alert_if_larger = 7, logt = TRUE, k = k_length
       ),
       mean_length = dplyr::case_when(
@@ -345,7 +336,6 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
       alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
       submission_id = .data$`_id`
     ) %>%
-    dplyr::select(-.data$mean_length_valid) %>%
     dplyr::ungroup() %>%
     # Adjusting weight and nutrients accordingly
     dplyr::mutate(

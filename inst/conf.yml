@@ -111,11 +111,13 @@ default:
         submission_delay: 28
       catch:
         n_individuals:
+          k: 2
+        length:
           k: 7
       cook_dist: 5
       price_per_weight:
-        min_limit: 0.5
-        max_limit: 25
+        min_limit: 0.25
+        max_limit: 30
       mesh: 200
       gleaners:
         k: 1.5
