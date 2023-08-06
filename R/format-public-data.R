@@ -190,6 +190,9 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     )
 
   summary_dat <- get_summary_data(data = merged_trips, pars)
+  normalized_params <- get_normalized_params(merged_trips)
+  summary_dat$catch_norm <- jsonify_data(normalized_params, .data$weight_stand_kg)
+  summary_dat$revenue_norm <- jsonify_data(normalized_params, .data$revenue_stand)
 
   summary_data_filename <-
     pars$report$summary_data %>%
@@ -626,4 +629,88 @@ get_summary_data <- function(data = NULL, pars) {
       dplyr::ungroup() %>%
       dplyr::mutate(weight = as.integer(.data$weight))
   )
+}
+
+get_normalized_params <- function(x) {
+  x %>%
+    dplyr::filter(!is.na(.data$landing_id)) %>%
+    dplyr::mutate(n_fishers = .data$fisher_number_child + .data$fisher_number_woman + .data$fisher_number_man) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::select(
+      .data$landing_id, .data$trip_duration, .data$n_fishers,
+      .data$landing_value, .data$gear_type, .data$habitat,
+      .data$weight, .data$Selenium_mu:.data$Vitamin_A_mu
+    ) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::summarise(
+      dplyr::across(c(.data$trip_duration:.data$habitat), ~ dplyr::first(.x)),
+      dplyr::across(c(.data$weight:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(!is.na(.data$habitat)) %>%
+    dplyr::select(
+      .data$trip_duration, .data$n_fishers, .data$habitat,
+      .data$gear_type, .data$landing_value, .data$weight
+    ) %>%
+    dplyr::mutate(dplyr::across(
+      c(.data$gear_type, .data$habitat),
+      ~ as.factor(.x)
+    )) %>%
+    na.omit() %>%
+    dplyr::mutate(
+      weight_stand = (.data$weight / .data$n_fishers) / .data$trip_duration,
+      weight_stand_kg = .data$weight_stand / 1000,
+      revenue_stand = (.data$landing_value / .data$n_fishers) / .data$trip_duration
+    ) %>%
+    dplyr::select(
+      .data$habitat, .data$gear_type,
+      .data$revenue_stand, .data$weight_stand_kg
+    ) %>%
+    dplyr::filter_all(dplyr::all_vars(!is.infinite(.)))
+}
+
+
+jsonify_data <- function(data, parameter) {
+  var <- enquo(arg = parameter)
+
+  to_take <-
+    data %>%
+    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear_type, sep = "_")) %>%
+    dplyr::group_by(.data$habitat_gear) %>%
+    dplyr::count() %>%
+    dplyr::filter(.data$n > 50) %>%
+    magrittr::extract2("habitat_gear")
+
+
+  df_ord <-
+    data %>%
+    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear_type, sep = "_")) %>%
+    dplyr::filter(.data$habitat_gear %in% to_take) %>%
+    dplyr::select(-.data$habitat_gear) %>%
+    dplyr::group_by(.data$habitat, .data$gear_type) %>%
+    dplyr::summarise(
+      col_selected = round(mean(!!var, na.rm = T), 3),
+      n = dplyr::n()
+    ) %>%
+    dplyr::arrange(-.data$col_selected) %>%
+    dplyr::group_by(.data$habitat) %>%
+    dplyr::mutate(col_selected_mean = sum(.data$col_selected)) %>%
+    dplyr::arrange(-.data$col_selected_mean) %>%
+    dplyr::ungroup()
+
+
+  df_split <- df_ord %>% split(.$habitat)
+  df_split_ord <- df_split[unique(df_ord$habitat)]
+
+  dat <- lapply(names(df_split_ord), function(habitat) {
+    org_data <- df_split_ord[[habitat]]
+    list(
+      name = habitat,
+      data = lapply(1:nrow(org_data), function(i) {
+        list(x = org_data$gear_type[i], y = org_data$col_selected[i])
+      })
+    )
+  })
+  dat
 }
