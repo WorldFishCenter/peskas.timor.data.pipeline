@@ -191,8 +191,10 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 
   summary_dat <- get_summary_data(data = merged_trips, pars)
   normalized_params <- get_normalized_params(merged_trips)
-  summary_dat$catch_norm <- jsonify_data(normalized_params, .data$weight_stand_kg)
-  summary_dat$revenue_norm <- jsonify_data(normalized_params, .data$revenue_stand)
+  normalized_nutrients <- get_normalized_nutrients(merged_trips, pars)
+  summary_dat$catch_norm <- jsonify_indicators(normalized_params, .data$weight_stand_kg)
+  summary_dat$revenue_norm <- jsonify_indicators(normalized_params, .data$revenue_stand)
+  summary_dat$nutrients_norm <- jsonify_nutrients(normalized_nutrients)
 
   summary_data_filename <-
     pars$report$summary_data %>%
@@ -667,11 +669,57 @@ get_normalized_params <- function(x) {
       .data$habitat, .data$gear_type,
       .data$revenue_stand, .data$weight_stand_kg
     ) %>%
-    dplyr::filter_all(dplyr::all_vars(!is.infinite(.)))
+    dplyr::filter_all(dplyr::all_vars(!is.infinite(.))) %>%
+    dplyr::mutate(gear_type = stringr::str_to_title(.data$gear_type))
+}
+
+get_normalized_nutrients <- function(x, pars) {
+  nut_rdi <-
+    as.data.frame(pars$metadata$nutrients$RDI$name) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "nutrient", values_to = "RDI_coeff")
+
+  x %>%
+    dplyr::filter(!is.na(.data$landing_id)) %>%
+    dplyr::mutate(n_fishers = .data$fisher_number_child + .data$fisher_number_woman + .data$fisher_number_man) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::select(
+      .data$landing_id, .data$trip_duration, .data$n_fishers,
+      .data$landing_value, .data$gear_type, .data$habitat,
+      .data$weight, .data$Selenium_mu:.data$Vitamin_A_mu
+    ) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::summarise(
+      dplyr::across(c(.data$trip_duration:.data$habitat), ~ dplyr::first(.x)),
+      dplyr::across(c(.data$weight:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(!is.na(.data$habitat)) %>%
+    dplyr::select(
+      .data$habitat, .data$weight,
+      .data$Selenium_mu:.data$Vitamin_A_mu
+    ) %>%
+    na.omit() %>%
+    dplyr::mutate(dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ (.x / .data$weight) * 1000)) %>%
+    dplyr::filter_all(dplyr::all_vars(!is.infinite(.))) %>%
+    dplyr::select(c(.data$habitat, .data$Selenium_mu:.data$Vitamin_A_mu)) %>%
+    tidyr::pivot_longer(-.data$habitat, names_to = "nutrient", values_to = "grams_rate") %>%
+    dplyr::mutate(
+      nutrient = stringr::str_replace(.data$nutrient, "_mu", ""),
+      nutrient = stringr::str_replace(.data$nutrient, "_", ""),
+      nutrient = tolower(.data$nutrient),
+      nutrient = ifelse(.data$nutrient == "vitamina", "vitaminA", .data$nutrient)
+    ) %>%
+    dplyr::left_join(nut_rdi, by = "nutrient") %>%
+    dplyr::filter(!.data$nutrient == "selenium") %>%
+    dplyr::mutate(level_kg = .data$grams_rate / .data$RDI_coeff) %>%
+    dplyr::mutate(nutrient = stringr::str_to_title(.data$nutrient),
+                  nutrient = ifelse(.data$nutrient == "Omega3", "Omega 3", .data$nutrient),
+                  nutrient = ifelse(.data$nutrient == "Vitamina", "Vitamin A", .data$nutrient))
 }
 
 
-jsonify_data <- function(data, parameter) {
+jsonify_indicators <- function(data, parameter) {
   var <- enquo(arg = parameter)
 
   to_take <-
@@ -712,5 +760,35 @@ jsonify_data <- function(data, parameter) {
       })
     )
   })
+  dat
+}
+
+jsonify_nutrients <- function(data) {
+  df_ord <-
+    data %>%
+    dplyr::group_by(.data$nutrient, .data$habitat) %>%
+    dplyr::summarise(
+      col_selected = round(mean(.data$level_kg, na.rm = T), 3),
+      n = dplyr::n()
+    ) %>%
+    dplyr::arrange(-.data$col_selected) %>%
+    dplyr::group_by(.data$nutrient) %>%
+    dplyr::mutate(col_selected_mean = sum(.data$col_selected)) %>%
+    dplyr::arrange(-.data$col_selected_mean) %>%
+    dplyr::ungroup()
+
+  df_split <- df_ord %>% split(.$nutrient)
+  df_split_ord <- df_split[unique(df_ord$nutrient)]
+
+  dat <- lapply(names(df_split_ord), function(nutrient) {
+    org_data <- df_split_ord[[nutrient]]
+    list(
+      name = nutrient,
+      data = lapply(1:nrow(org_data), function(i) {
+        list(x = org_data$habitat[i], y = org_data$col_selected[i])
+      })
+    )
+  })
+
   dat
 }
