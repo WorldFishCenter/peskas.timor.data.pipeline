@@ -714,7 +714,7 @@ get_normalized_nutrients <- function(x, pars) {
     dplyr::filter(!.data$nutrient == "selenium") %>%
     dplyr::mutate(level_kg = .data$grams_rate / .data$RDI_coeff) %>%
     dplyr::mutate(nutrient = stringr::str_to_title(.data$nutrient),
-                  nutrient = ifelse(.data$nutrient == "Omega3", "Omega 3", .data$nutrient),
+                  nutrient = ifelse(.data$nutrient == "Omega3", "Omega-3", .data$nutrient),
                   nutrient = ifelse(.data$nutrient == "Vitamina", "Vitamin A", .data$nutrient))
 }
 
