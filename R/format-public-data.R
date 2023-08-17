@@ -765,7 +765,7 @@ jsonify_indicators <- function(data, parameter) {
 
 jsonify_nutrients <- function(data) {
   df_ord <-
-    normalized_nutrients %>%
+    data %>%
     dplyr::group_by(.data$nutrient, .data$habitat) %>%
     dplyr::summarise(
       col_selected = round(mean(.data$level_kg, na.rm = T), 3),
