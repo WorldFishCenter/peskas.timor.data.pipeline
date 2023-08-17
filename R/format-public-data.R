@@ -765,7 +765,7 @@ jsonify_indicators <- function(data, parameter) {
 
 jsonify_nutrients <- function(data) {
   df_ord <-
-    data %>%
+    normalized_nutrients %>%
     dplyr::group_by(.data$nutrient, .data$habitat) %>%
     dplyr::summarise(
       col_selected = round(mean(.data$level_kg, na.rm = T), 3),
@@ -778,7 +778,7 @@ jsonify_nutrients <- function(data) {
     dplyr::ungroup()
 
   df_split <- df_ord %>% split(.$nutrient)
-  df_split_ord <- df_split[unique(df_ord$nutrient)]
+  df_split_ord <- df_split[c("Protein", "Omega-3", "Zinc", "Calcium", "Vitamin A", "Iron")]
 
   dat <- lapply(names(df_split_ord), function(nutrient) {
     org_data <- df_split_ord[[nutrient]]

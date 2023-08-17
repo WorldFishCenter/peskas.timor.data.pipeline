@@ -91,11 +91,11 @@ default:
         convert: TRUE
         name:
           calcium: 1
-          iron: 0.018
-          selenium: 0.000055
-          zinc: 0.008
+          iron: 0.0294
+          selenium: 0.000026
+          zinc: 0.0049
           protein: 46
-          vitaminA: 0.0007
+          vitaminA: 0.0005
           omega3: 1.1
   peskas_mail:
     key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
