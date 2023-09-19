@@ -303,13 +303,16 @@ generate_description <- function(...) {
         "The vessel type, can be motorised or unmotorised",
         "Gear type of the boat",
         "Size of the mesh (mm)",
+        "Fuel used (L)",
+        "Catch storage on the boat",
         "Number of children involved in the fishing trip",
         "Number of adult males involved in the fishing trip",
         "Number of adult females involved in the fishing trip",
         "Number of gleaners",
         "Duration of the fishing trip in hours",
         "Start of the fishing trip",
-        "End of the fishing trip"
+        "End of the fishing trip",
+        "Fisherman happiness (1 to 5)"
       )
     )
 

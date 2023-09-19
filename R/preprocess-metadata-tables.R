@@ -71,7 +71,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
     habitat = pt_validate_habitat(metadata_tables$habitat),
     vessels_stats = pt_validate_vessels_stats(metadata_tables$fishing_vessel_statistics),
-    registered_boats = pt_validate_reg_boats(metadata_tables$registered_boats)
+    registered_boats = pt_validate_reg_boats(metadata_tables$registered_boats),
+    conservation = pt_validate_conservation(metadata_tables$conservation)
   )
 
   preprocessed_filename <- paste(pars$metadata$airtable$name,
@@ -300,4 +301,10 @@ pt_validate_reg_boats <- function(reg_boats_table) {
         .data$boats_2016, TRUE ~ .data$boats_2022
     )) %>%
     dplyr::select(.data$reporting_region, .data$n_boats)
+}
+
+pt_validate_conservation <- function(conservation_table) {
+  conservation_table %>%
+    dplyr::select(.data$conservation_code, .data$conservation_place) %>%
+    dplyr::mutate(conservation_code = as.character(.data$conservation_code))
 }

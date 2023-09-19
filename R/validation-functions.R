@@ -725,3 +725,26 @@ validate_fuel <- function(landings, method, k_fuel) {
     ) %>%
     dplyr::select(.data$submission_id, .data$fuel, .data$alert_number)
 }
+
+validate_conservation <- function(landings, metadata_conservation) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      conservation_code = .data$`group_conservation_trading/conservation`
+    ) %>%
+    dplyr::full_join(metadata_conservation, by = "conservation_code") %>%
+    dplyr::select(-.data$conservation_code) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id),
+                  alert_number = NA_real_)
+}
+
+validate_happiness <- function(landings) {
+  landings %>%
+    dplyr::select(
+      submission_id = .data$`_id`,
+      happiness = .data$happiness_rating
+    ) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id),
+                  happiness = as.integer(.data$happiness),
+                  alert_number = NA_real_)
+}

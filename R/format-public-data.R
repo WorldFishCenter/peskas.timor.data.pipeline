@@ -86,17 +86,20 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
       recorded_revenue = sum(.data$landing_value, na.rm = T),
       recorded_catch = sum(.data$recorded_weight, na.rm = T),
-      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T)
+      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T),
+      fuel = mean(fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
-      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch)
+      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
+      fuel = ifelse(.data$fuel == 0, NA_real_, .data$fuel)
     ) %>%
     dplyr::select(
       region = .data$reporting_region,
       .data$date_bin_start,
       .data$recorded_revenue,
-      .data$recorded_catch
+      .data$recorded_catch,
+      .data$fuel
     ) %>%
     dplyr::ungroup()
 
@@ -268,11 +271,14 @@ get_trips_table <- function(merged_trips_with_addons) {
       .data$vessel_type,
       .data$gear_type,
       .data$mesh_size,
+      .data$fuel,
+      .data$conservation_place,
       tidyselect::starts_with("fisher_"),
       .data$n_gleaners,
       landing_survey_trip_duration = .data$trip_duration,
       .data$tracker_trip_start,
       .data$tracker_trip_end,
+      .data$happiness
     )
 }
 
@@ -299,11 +305,13 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
       n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
       recorded_revenue = sum(.data$landing_value, na.rm = T),
       recorded_catch = sum(.data$recorded_weight, na.rm = T),
-      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T)
+      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T),
+      mean_fuel = mean(.data$fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
-      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch)
+      recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
+      fuel = ifelse(.data$fuel == 0, NA_real_, .data$fuel)
     )
 
   track_end_bin <- merged_trips_with_addons %>%
@@ -583,6 +591,29 @@ get_summary_data <- function(data = NULL, pars) {
       TRUE ~ "South Coast"
     ))
 
+  happiness <-
+    data %>%
+    dplyr::select(.data$landing_date, .data$reporting_region, .data$happiness) %>%
+    dplyr::mutate(landing_date = lubridate::floor_date(.data$landing_date, unit = "month")) %>%
+    dplyr::group_by(.data$reporting_region, .data$landing_date) %>%
+    dplyr::summarise(happiness = mean(.data$happiness, na.rm = T))
+
+  conservation <-
+    merged_trips %>%
+    dplyr::filter(!is.na(.data$conservation_place)) %>%
+    dplyr::select(.data$reporting_region, .data$conservation_place) %>%
+    dplyr::group_by(.data$reporting_region) %>%
+    dplyr::mutate(n_obs = dplyr::n()) %>%
+    dplyr::group_by(.data$reporting_region, .data$conservation_place) %>%
+    dplyr::summarise(n_obs = dplyr::first(.data$n_obs),
+                     count = dplyr::n(),
+                     perc = .data$count / .data$n_obs * 100) %>%
+    dplyr::ungroup() %>%
+    tidyr::complete(.data$reporting_region, .data$conservation_place) %>%
+    tidyr::replace_na(list(count = 0,
+                           perc = 0)) %>%
+    dplyr::select(-.data$n_obs)
+
   list(
     n_surveys = data_area %>%
       dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$Area)) %>%
@@ -629,7 +660,9 @@ get_summary_data <- function(data = NULL, pars) {
       ) %>%
       dplyr::arrange(dplyr::desc(.data$weight)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(weight = as.integer(.data$weight))
+      dplyr::mutate(weight = as.integer(.data$weight)),
+    happiness_rating = happiness,
+    conservation = conservation
   )
 }
 

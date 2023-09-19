@@ -77,6 +77,7 @@ default:
         - habitat
         - fishing_vessel_statistics
         - registered_boats
+        - conservation
     version:
       preprocess: latest
     rfishtable:
