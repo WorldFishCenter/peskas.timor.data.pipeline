@@ -260,7 +260,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
       sheet = pars$validation$google_sheets$flags_table,
-      col_types = "iDDclDc"
+      col_types = "iDDclDcc"
     )
 
   logger::log_info("Upload backup validation sheet to GC")
