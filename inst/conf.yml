@@ -77,6 +77,7 @@ default:
         - habitat
         - fishing_vessel_statistics
         - registered_boats
+        - conservation
     version:
       preprocess: latest
     rfishtable:
@@ -96,7 +97,7 @@ default:
           zinc: 0.0049
           protein: 46
           vitaminA: 0.0005
-          omega3: 1.1
+          omega3: 2.939
   peskas_mail:
     key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
   validation:
