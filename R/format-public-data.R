@@ -87,7 +87,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       recorded_revenue = sum(.data$landing_value, na.rm = T),
       recorded_catch = sum(.data$recorded_weight, na.rm = T),
       prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T),
-      fuel = mean(fuel, na.rm = T)
+      fuel = mean(.data$fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
@@ -311,7 +311,7 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
     dplyr::mutate(
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
       recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
-      fuel = ifelse(.data$fuel == 0, NA_real_, .data$fuel)
+      fuel = ifelse(.data$mean_fuel == 0, NA_real_, .data$mean_fuel)
     )
 
   track_end_bin <- merged_trips_with_addons %>%
@@ -599,7 +599,7 @@ get_summary_data <- function(data = NULL, pars) {
     dplyr::summarise(happiness = mean(.data$happiness, na.rm = T))
 
   conservation <-
-    merged_trips %>%
+    data %>%
     dplyr::filter(!is.na(.data$conservation_place)) %>%
     dplyr::select(.data$reporting_region, .data$conservation_place) %>%
     dplyr::group_by(.data$reporting_region) %>%
