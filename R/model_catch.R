@@ -321,7 +321,7 @@ run_models <- function(pars, trips, region, vessels_metadata, modelled_taxa, nat
   results <- estimate_statistics(value_model, value_model_pk, landings_model, catch_model, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
-  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa = "selected", pars = pars)
+  catch_taxa_models <- model_catch_per_taxa(trips_region, modelled_taxa, pars = pars)
   taxa_estimates <- estimates_per_taxa(catch_taxa_models, results, n_boats = region_boats)
   message("Estimate taxa catch by relative composition")
   results_per_taxa <- model_taxa_porportion(results, taxa_estimates)
