@@ -135,7 +135,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       taxa = "MZZ"
     ) %>%
     purrr::map(aggregate_nutrients, pars) %>%
-    purrr::map2(.x = ., .y = c(1, 7, 30.5, 365), get_period_rdi)
+    purrr::map2(.x = ., .y = c(1, 7, 30.5, 365), get_period_rdi, pars)
 
 
   aggregated <-
@@ -834,7 +834,7 @@ jsonify_nutrients <- function(data) {
   dat
 }
 
-get_period_rdi <- function(x, unit_days) {
+get_period_rdi <- function(x, unit_days = NULL, pars) {
   x %>%
     dplyr::mutate(nut_rdi = dplyr::case_when(
       nutrient == "selenium" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$selenium,
