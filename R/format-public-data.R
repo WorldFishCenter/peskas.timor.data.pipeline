@@ -134,7 +134,9 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       nutrients_proportions,
       taxa = "MZZ"
     ) %>%
-    purrr::map(aggregate_nutrients, pars)
+    purrr::map(aggregate_nutrients, pars) %>%
+    purrr::map2(.x = ., .y = c(1, 7, 30.5, 365), get_period_rdi)
+
 
   aggregated <-
     purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
@@ -501,12 +503,12 @@ aggregate_nutrients <- function(x, pars) {
     ) %>%
     dplyr::mutate(nut_rdi = dplyr::case_when(
       nutrient == "selenium" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$selenium,
-      nutrient == "zinc" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$zinc,
-      nutrient == "protein" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$protein,
-      nutrient == "omega3" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$omega3,
-      nutrient == "calcium" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$calcium,
-      nutrient == "iron" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$iron,
-      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / 30.5 /  pars$metadata$nutrients$RDI$name$vitaminA,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$vitaminA,
       TRUE ~ NA_real_
     )) %>%
     dplyr::ungroup()
@@ -605,13 +607,17 @@ get_summary_data <- function(data = NULL, pars) {
     dplyr::group_by(.data$reporting_region) %>%
     dplyr::mutate(n_obs = dplyr::n()) %>%
     dplyr::group_by(.data$reporting_region, .data$conservation_place) %>%
-    dplyr::summarise(n_obs = dplyr::first(.data$n_obs),
-                     count = dplyr::n(),
-                     perc = .data$count / .data$n_obs * 100) %>%
+    dplyr::summarise(
+      n_obs = dplyr::first(.data$n_obs),
+      count = dplyr::n(),
+      perc = .data$count / .data$n_obs * 100
+    ) %>%
     dplyr::ungroup() %>%
     tidyr::complete(.data$reporting_region, .data$conservation_place) %>%
-    tidyr::replace_na(list(count = 0,
-                           perc = 0)) %>%
+    tidyr::replace_na(list(
+      count = 0,
+      perc = 0
+    )) %>%
     dplyr::select(-.data$n_obs)
 
   list(
@@ -746,9 +752,11 @@ get_normalized_nutrients <- function(x, pars) {
     dplyr::left_join(nut_rdi, by = "nutrient") %>%
     dplyr::filter(!.data$nutrient == "selenium") %>%
     dplyr::mutate(level_kg = .data$grams_rate / .data$RDI_coeff) %>%
-    dplyr::mutate(nutrient = stringr::str_to_title(.data$nutrient),
-                  nutrient = ifelse(.data$nutrient == "Omega3", "Omega-3", .data$nutrient),
-                  nutrient = ifelse(.data$nutrient == "Vitamina", "Vitamin A", .data$nutrient))
+    dplyr::mutate(
+      nutrient = stringr::str_to_title(.data$nutrient),
+      nutrient = ifelse(.data$nutrient == "Omega3", "Omega-3", .data$nutrient),
+      nutrient = ifelse(.data$nutrient == "Vitamina", "Vitamin A", .data$nutrient)
+    )
 }
 
 
@@ -824,4 +832,18 @@ jsonify_nutrients <- function(data) {
   })
 
   dat
+}
+
+get_period_rdi <- function(x, unit_days) {
+  x %>%
+    dplyr::mutate(nut_rdi = dplyr::case_when(
+      nutrient == "selenium" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$selenium,
+      nutrient == "zinc" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$zinc,
+      nutrient == "protein" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$protein,
+      nutrient == "omega3" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$omega3,
+      nutrient == "calcium" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$calcium,
+      nutrient == "iron" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$iron,
+      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / unit_days / pars$metadata$nutrients$RDI$name$vitaminA,
+      TRUE ~ NA_real_
+    ))
 }
