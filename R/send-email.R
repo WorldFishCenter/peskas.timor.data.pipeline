@@ -111,7 +111,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
     googlesheets4::range_read(
       ss = pars$validation$google_sheets$sheet_id,
       sheet = pars$validation$google_sheets$flags_table,
-      col_types = "iDDclDcc"
+      col_types = "iDDclDc"
     ) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
     dplyr::select(.data$submission_id, .data$submission_date, .data$alert)
