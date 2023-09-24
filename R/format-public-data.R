@@ -194,7 +194,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       options = pars$public_storage$google$options
     )
 
-  summary_dat <- get_summary_data(data = merged_trips, pars)
+  summary_dat <- get_summary_data(data = merged_trips, catch_table = catch_table, pars)
   normalized_params <- get_normalized_params(merged_trips)
   normalized_nutrients <- get_normalized_nutrients(merged_trips, pars)
   summary_dat$catch_norm <- jsonify_indicators(normalized_params, .data$weight_stand_kg)
@@ -501,16 +501,6 @@ aggregate_nutrients <- function(x, pars) {
       names_to = "nutrient",
       values_to = "nut_supply"
     ) %>%
-    dplyr::mutate(nut_rdi = dplyr::case_when(
-      nutrient == "selenium" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$selenium,
-      nutrient == "zinc" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$zinc,
-      nutrient == "protein" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$protein,
-      nutrient == "omega3" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$omega3,
-      nutrient == "calcium" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$calcium,
-      nutrient == "iron" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$iron,
-      nutrient == "vitaminA" ~ (.data$nut_supply * 1000) / 30.5 / pars$metadata$nutrients$RDI$name$vitaminA,
-      TRUE ~ NA_real_
-    )) %>%
     dplyr::ungroup()
 }
 
@@ -577,7 +567,7 @@ get_municipal_nutrients <- function(nutrients_table = NULL,
     ))
 }
 
-get_summary_data <- function(data = NULL, pars) {
+get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
   data_area <-
     data %>%
     fill_missing_regions() %>%
@@ -592,6 +582,27 @@ get_summary_data <- function(data = NULL, pars) {
         is.na(.data$reporting_region) & is.na(.data$reporting_region) ~ NA_character_,
       TRUE ~ "South Coast"
     ))
+
+  nutrients_catch_average <-
+    catch_table %>%
+    dplyr::select(-c(.data$length:.data$weight)) %>%
+    dplyr::group_by(.data$trip_id) %>%
+    dplyr::summarise(dplyr::across(is.numeric, ~ sum(.x, na.rm = T))) %>%
+    dplyr::filter(!.data$Zinc_mu == 0) %>%
+    dplyr::summarise(dplyr::across(is.numeric, ~ mean(.x, na.rm = T))) %>%
+    dplyr::mutate(
+      Selenium = .data$Selenium_mu / pars$metadata$nutrients$RDI$name$selenium,
+      Zinc = .data$Zinc_mu / pars$metadata$nutrients$RDI$name$zinc,
+      Protein = .data$Protein_mu / pars$metadata$nutrients$RDI$name$protein,
+      "Omega-3" = .data$Omega_3_mu / pars$metadata$nutrients$RDI$name$omega3,
+      Calcium = .data$Calcium_mu / pars$metadata$nutrients$RDI$name$calcium,
+      Iron = .data$Iron_mu / pars$metadata$nutrients$RDI$name$iron,
+      "Vitamin A" = .data$Vitamin_A_mu / pars$metadata$nutrients$RDI$name$vitaminA
+    ) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "nutrient_names", values_to = "nut_rdi") %>%
+    dplyr::filter(!stringr::str_detect(.data$nutrient_names, "_mu$")) %>%
+    dplyr::arrange(-.data$nut_rdi)
+
 
   happiness <-
     data %>%
@@ -667,6 +678,7 @@ get_summary_data <- function(data = NULL, pars) {
       dplyr::arrange(dplyr::desc(.data$weight)) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(weight = as.integer(.data$weight)),
+    nutrients_per_catch = nutrients_catch_average,
     happiness_rating = happiness,
     conservation = conservation
   )
