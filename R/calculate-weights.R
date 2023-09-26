@@ -305,7 +305,7 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
     dplyr::mutate(length_type = dplyr::case_when(
       !is.na(length_type) ~ length_type,
       .data$survey_version == "v1" ~ "FL",
-      .data$survey_version == "v2" ~ "TL"
+      .data$survey_version %in%  c("v2", "v3") ~ "TL"
     )) %>%
     dplyr::mutate(length_type = dplyr::case_when(
       .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",

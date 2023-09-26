@@ -435,6 +435,7 @@ clean_updated_landings <- function(x) {
       Tanba_sa_la_iha_ro_o_peskador_ = "group_info_general/Tanba_sa_la_iha_ro_o_peskador_",
       total_catch_value = "group_conservation_trading/total_catch_value",
       `trip_group/habitat_boat` = "trip_group/habitat",
+      `group_conservation_trading/trader_other` = "group_conservation_trading/trader",
       `group_conservation_trading/trader` = "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA"
     )
 }
