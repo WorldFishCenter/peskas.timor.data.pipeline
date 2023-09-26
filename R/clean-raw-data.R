@@ -79,9 +79,11 @@ clean_catches <- function(x) {
     ~ dplyr::select(prefix_list$Spp., tidyselect::contains(.x))
   )$foodsale
   names(fd1) <- gsub(names(fd1), pattern = "foodsale", replacement = "food_or_sale")
-  fd2 <- prefix_list$Spp. %>% dplyr::select(-tidyselect::ends_with("foodsale"))
+  fd2 <- prefix_list$Spp. %>% dplyr::select(tidyselect::ends_with("food_or_sale"))
+  fd_clean <- dplyr::coalesce(fd1, fd2)
+  sp_df <- prefix_list$Spp. %>% dplyr::select(-tidyselect::ends_with(c("food_or_sale", "foodsale")))
 
-  prefix_list$Spp. <- dplyr::coalesce(fd1, fd2)
+  prefix_list$Spp. <- dplyr::bind_cols(sp_df, fd_clean)
 
   # coalesce new catches columns and drop unused vars
   sp_table_cleaned <- dplyr::coalesce(!!!prefix_list) %>%
