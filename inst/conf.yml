@@ -112,9 +112,7 @@ default:
         submission_delay: 28
       catch:
         n_individuals:
-          k: 2
-        length:
-          k: 7
+          k: 2.5
       cook_dist: 5
       price_per_weight:
         min_limit: 0.25
