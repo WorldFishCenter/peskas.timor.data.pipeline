@@ -31,7 +31,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retrieving merged trips...")
   merged_trips <- get_merged_trips(pars) %>%
-    dplyr::filter(.data$landing_date >= "2018-01-01")
+    dplyr::filter(.data$landing_date >= "2018-01-01") %>%
+    dplyr::filter(!.data$landing_id == "483074557")
   # dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   logger::log_info("Retrieving modelled data...")
