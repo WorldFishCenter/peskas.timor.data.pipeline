@@ -289,8 +289,6 @@ alert_outlier <- function(x,
 #'
 #' @param data A preprocessed data frame
 #' @param k_ind Extension of bounds for the number of individuals
-#' @param k_length Extension of bounds for the catch length
-#' @inheritParams univOutl::LocScaleB
 #'
 #' @return A data frame containing the validated catches parameters.
 #' @export
@@ -299,10 +297,10 @@ alert_outlier <- function(x,
 #' \dontrun{
 #' pars <- read_config()
 #' landings <- get_merged_landings(pars)
-#' validate_catch_params(landings, method = "MAD", k = 13)
+#' validate_catch_params(landings, k = 3)
 #' }
 #'
-validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = NULL) {
+validate_catch_params <- function(data = NULL, k_ind = NULL) {
   catches_dat_unnested <-
     data %>%
     dplyr::filter(is.na(alert_number)) %>%
@@ -323,17 +321,8 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
         TRUE ~ NA_real_
       )
     ) %>%
-    dplyr::group_by(.data$species) %>%
     dplyr::mutate(
-      alert_length = alert_outlier(
-        x = .data$mean_length,
-        alert_if_larger = 7, logt = TRUE, k = k_length
-      ),
-      mean_length = dplyr::case_when(
-        is.na(.data$alert_length) ~ .data$mean_length,
-        TRUE ~ NA_real_
-      ),
-      alert_number = dplyr::coalesce(.data$alert_n_individuals, .data$alert_length),
+      alert_number = .data$alert_n_individuals,
       submission_id = .data$`_id`
     ) %>%
     dplyr::ungroup() %>%
@@ -348,7 +337,7 @@ validate_catch_params <- function(data, method = NULL, k_ind = NULL, k_length = 
         )
       )
     ) %>%
-    dplyr::select(-.data$alert_n_individuals, -.data$alert_length, -.data$`_id`)
+    dplyr::select(-.data$alert_n_individuals, -.data$`_id`)
 
   # extract alert number
   alert_number <-
@@ -724,8 +713,10 @@ validate_conservation <- function(landings, metadata_conservation) {
     ) %>%
     dplyr::full_join(metadata_conservation, by = "conservation_code") %>%
     dplyr::select(-.data$conservation_code) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id),
-                  alert_number = NA_real_)
+    dplyr::mutate(
+      submission_id = as.integer(.data$submission_id),
+      alert_number = NA_real_
+    )
 }
 
 validate_happiness <- function(landings) {
@@ -734,7 +725,56 @@ validate_happiness <- function(landings) {
       submission_id = .data$`_id`,
       happiness = .data$happiness_rating
     ) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id),
-                  happiness = as.integer(.data$happiness),
-                  alert_number = NA_real_)
+    dplyr::mutate(
+      submission_id = as.integer(.data$submission_id),
+      happiness = as.integer(.data$happiness),
+      alert_number = NA_real_
+    )
+}
+
+
+get_bounds_table <- function(data = NULL, metadata_table = NULL, k_ind = NULL) {
+  get_bounds <- function(x) {
+    bounds <-
+      univOutl::LocScaleB(x$n_individuals, logt = TRUE, k = k_ind) %>%
+      magrittr::extract2("bounds")
+    bounds
+  }
+
+  data %>%
+    dplyr::filter(is.na(.data$alert_number)) %>%
+    dplyr::select(.data$`_id`, .data$`trip_group/gear_type`, .data$species_group) %>%
+    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
+    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+    dplyr::filter(!.data$species == "0" & .data$n_individuals > 0) %>%
+    split(interaction(.$species, .$`trip_group/gear_type`)) %>%
+    purrr::discard(~ nrow(.) == 0) %>%
+    purrr::map(get_bounds) %>%
+    dplyr::bind_rows(.id = "taxa") %>%
+    dplyr::mutate(upper.up = exp(.data$upper.up)) %>%
+    tidyr::separate(col = "taxa", into = c("taxa", "gear_type")) %>%
+    dplyr::select(.data$taxa, .data$gear_type, max_individuals = .data$upper.up) %>%
+    dplyr::mutate(max_individuals = round(.data$max_individuals, 1)) %>%
+    dplyr::arrange(.data$taxa) %>%
+    dplyr::left_join(
+      metadata_table$gear_types %>%
+        dplyr::select(
+          gear_type = .data$gear_code,
+          gear = .data$gear_id
+        ),
+      by = "gear_type"
+    ) %>%
+    dplyr::select(-.data$gear_type) %>%
+    tidyr::pivot_wider(names_from = .data$gear, values_from = .data$max_individuals) %>%
+    dplyr::left_join(
+      metadata_table$catch_types %>%
+        dplyr::select(
+          taxa = .data$interagency_code,
+          taxa_group = .data$catch_name_en
+        ),
+      by = "taxa"
+    ) %>%
+    dplyr::select("taxa group" = .data$taxa_group, dplyr::everything(), -.data$taxa) %>%
+    dplyr::filter(!.data$`taxa group` %in% c("Herring", "Unknown", "Surgeonfish", "Bannerfish")) %>%
+    dplyr::arrange(.data$`taxa group`)
 }
