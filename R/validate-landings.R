@@ -65,10 +65,12 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Validating catches parameters...")
   surveys_catch_alerts <- validate_catch_params(
     regular_landings_data,
-    method = pars$validation$landings$catch$method %||% default_k,
-    k_ind = pars$validation$landings$catch$n_individuals$k,
-    k_length = pars$validation$landings$catch$length$k
+    k_ind = pars$validation$landings$catch$n_individuals$k
   )
+  logger::log_info("Generating catches parameters bounds table...")
+  bounds_table <- get_bounds_table(data = regular_landings_data,
+                                   metadata_table = metadata,
+                                   k_ind = pars$validation$landings$catch$n_individuals$k)
   price_weight_alerts <- validate_price_weight(
     catch_alerts = surveys_catch_alerts,
     price_alerts = surveys_price_alerts,
