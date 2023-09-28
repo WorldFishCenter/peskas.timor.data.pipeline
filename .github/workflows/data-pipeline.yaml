@@ -232,7 +232,7 @@ jobs:
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
 
   model-indicators:
-    name: Model indicators
+    name: Estimate fishery indicators
     needs: [merge-trips]
     runs-on: ubuntu-20.04
     container:
@@ -244,8 +244,8 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call model_indicators()
-        run: Rscript -e 'peskas.timor.data.pipeline::model_indicators()'
+      - name: Call estimate_fishery_indicators()
+        run: Rscript -e 'peskas.timor.data.pipeline::estimate_fishery_indicators()'
 
   export-trips:
     name: Export trips
