@@ -55,7 +55,7 @@ pt_nest_species <- function(x) {
     # We want one row per length class
     tidyr::pivot_longer(cols = dplyr::starts_with("no_fish_by_length_group"))
 
-  if (any(grepl("fish_length_over60", names(nested_species)))) {
+  if (any(grepl("fish_length_over60", nested_species$name))) {
     # If individuals were larger than 60cm the length is recorded in the
     # "no_fish_by_length_group/fish_length_over60" column. Then instead of
     # length categories we estimate the mean point for each category which allow

@@ -79,9 +79,11 @@ clean_catches <- function(x) {
     ~ dplyr::select(prefix_list$Spp., tidyselect::contains(.x))
   )$foodsale
   names(fd1) <- gsub(names(fd1), pattern = "foodsale", replacement = "food_or_sale")
-  fd2 <- prefix_list$Spp. %>% dplyr::select(-tidyselect::ends_with("foodsale"))
+  fd2 <- prefix_list$Spp. %>% dplyr::select(tidyselect::ends_with("food_or_sale"))
+  fd_clean <- dplyr::coalesce(fd1, fd2)
+  sp_df <- prefix_list$Spp. %>% dplyr::select(-tidyselect::ends_with(c("food_or_sale", "foodsale")))
 
-  prefix_list$Spp. <- dplyr::coalesce(fd1, fd2)
+  prefix_list$Spp. <- dplyr::bind_cols(sp_df, fd_clean)
 
   # coalesce new catches columns and drop unused vars
   sp_table_cleaned <- dplyr::coalesce(!!!prefix_list) %>%
@@ -114,7 +116,8 @@ clean_catches <- function(x) {
     dplyr::mutate(row = dplyr::row_number()) %>%
     tidyr::pivot_longer(cols = -row) %>%
     dplyr::mutate(value = dplyr::case_when(
-      value %in% c(93) ~ "1", value %in% c(86, 87, 211) ~ "2",
+      value %in% c(93) ~ "1",
+      value %in% c(86, 87, 211) ~ "2",
       value %in% c(2, 8, 46, 47, 48, 49, 50, 85, 103) ~ "3",
       value %in% c(5, 6, 7, 9, 91, 92, 94) ~ "4",
       value %in% c(41, 42, 43, 44, 45) ~ "5",
@@ -283,6 +286,22 @@ coalist <- function(data, to_coal, return_dat = FALSE) {
 #' clean_legacy_landings(legacy_raw)
 #' }
 clean_legacy_landings <- function(x) {
+  # drop old versions
+
+  df_kg <-
+    x %>%
+    dplyr::select(tidyselect::contains("Kg")) %>%
+    dplyr::coalesce(!!!.) %>%
+    dplyr::tibble() %>%
+    dplyr::rename(kg_version = ".")
+
+  drop_kg_ids <-
+    dplyr::bind_cols(`_id` = x$`_id`, df_kg) %>%
+    dplyr::filter(!is.na(.data$kg_version)) %>%
+    magrittr::extract2("_id")
+
+  x <- x %>% dplyr::filter(!.data$`_id` %in% c(drop_kg_ids))
+
   # select common vars to SFF and peskas landings
   common_cols_table <- x %>% dplyr::select(
     c(

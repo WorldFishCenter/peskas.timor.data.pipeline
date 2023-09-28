@@ -28,9 +28,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 
   trips <-
     get_merged_trips(pars) %>%
-    fill_missing_regions() %>%
-    #drop this id as is suspect
-    dplyr::filter(!.data$landing_id == "483074557")
+    fill_missing_regions()
 
   vessels_stats <- get_preprocessed_metadata(pars)$registered_boats
 
