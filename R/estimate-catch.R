@@ -74,7 +74,7 @@ estimate_catch <- function(trips) {
     ) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%
     dplyr::summarise(
-      landing_weight = sum(.data$weight)
+      landing_weight = sum(.data$weight, na.rm = T)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
@@ -109,7 +109,7 @@ estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
     dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(taxa_list, "0"), .data$catch_taxon, "MZZ")) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
     dplyr::summarise(
-      landing_weight = sum(.data$weight),
+      landing_weight = sum(.data$weight, na.rm = T),
       .groups = "drop"
     ) %>%
     tidyr::complete(
