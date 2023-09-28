@@ -57,7 +57,7 @@ a nested column <code>species_group</code> containing validated catches paramete
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_catch_params</span><span class="op">(</span><span class="va">data</span>, method <span class="op">=</span> <span class="cn">NULL</span>, k_ind <span class="op">=</span> <span class="cn">NULL</span>, k_length <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_catch_params</span><span class="op">(</span>data <span class="op">=</span> <span class="cn">NULL</span>, k_ind <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,26 +66,8 @@ a nested column <code>species_group</code> containing validated catches paramete
 <dd><p>A preprocessed data frame</p></dd>
 
 
-<dt>method</dt>
-<dd><p>character identifying how to estimate the scale of the distribution. Available choices are:</p>		
-<p><code>method='IQR'</code> for using the Inter-Quartile Range, i.e. Q3-Q1;</p> 
-<p><code>method='IDR'</code> for using the Inter-Decile Range; i.e. P90-P10</p>		 		   	   
-<p><code>method='MAD'</code> for using the Median Absolute Deviation;</p>
-<p><code>method='Gini'</code> robust scale estimate based on Gini's Mean Difference (see  <code><a href="https://rdrr.io/pkg/Hmisc/man/GiniMd.html" class="external-link">GiniMd</a></code>);</p>		
-<p><code>method='ScaleTau2'</code> robust tau-estimate of univariate scale, as proposed by Maronna and Zamar (2002) (see also<code><a href="https://rdrr.io/pkg/robustbase/man/scaleTau2.html" class="external-link">scaleTau2</a></code>);</p>		
-<p><code>method='Qn'</code> for using the Qn estimator proposed by Rousseeuw and Croux (1993) (see also <code><a href="https://rdrr.io/pkg/robustbase/man/Qn.html" class="external-link">Qn</a></code>);</p>		
-<p><code>method='Sn'</code> for using the Sn estimator proposed by Rousseeuw and Croux (1993) (see also <code><a href="https://rdrr.io/pkg/robustbase/man/Sn.html" class="external-link">Sn</a></code>).</p>		
-<p>When <code>method='dQ'</code> the estimated scale for the left tail is (Q2-Q1)/0.6745, while for the right tail it is considered (Q3-Q2)/0.6745 (Q2 is the median); this double estimate should be able to account for slight skewness.</p>		
-<p>When <code>method='dD'</code> the estimated scale for the left tail is (P50-P10)/1.2816, while for the right tail it is considered (P90-P50)/1.2816 (P50 is the median); this double estimate should be able to account for skewness.</p>		
-<p>Finally, when <code>method='AdjOut'</code>, bounds are based on the adjusted outlyingness method as proposed by Hubert and Van der Veeken (2008).</p></dd>
-
-
 <dt>k_ind</dt>
 <dd><p>Extension of bounds for the number of individuals</p></dd>
-
-
-<dt>k_length</dt>
-<dd><p>Extension of bounds for the catch length</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -100,7 +82,7 @@ a nested column <code>species_group</code> containing validated catches paramete
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_merged_landings.html">get_merged_landings</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">validate_catch_params</span><span class="op">(</span><span class="va">landings</span>, method <span class="op">=</span> <span class="st">"MAD"</span>, k <span class="op">=</span> <span class="fl">13</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">validate_catch_params</span><span class="op">(</span><span class="va">landings</span>, k <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
