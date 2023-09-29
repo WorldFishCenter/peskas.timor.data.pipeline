@@ -266,7 +266,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
     dplyr::mutate(
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
       catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      price_kg = .data$revenue / .data$catch
+      price_kg = .data$landing_revenue / .data$landing_weight
     ) %>%
     dplyr::select(-c(.data$version)) %>%
     dplyr::arrange(.data$landing_period) %>%
