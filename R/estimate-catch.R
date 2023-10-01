@@ -36,15 +36,15 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
     unique(na.omit(trips$reporting_region)) %>%
     purrr::set_names() %>%
     purrr::map(run_estimations,
-               pars = pars,
-               trips = trips,
-               modelled_taxa = "selected",
-               vessels_metadata = vessels_stats
+      pars = pars,
+      trips = trips,
+      modelled_taxa = "selected",
+      vessels_metadata = vessels_stats
     )
 
   national_estimations <- get_national_estimates(municipal_estimations = municipal_estimations)
 
-    results <-
+  results <-
     list(
       national = national_estimations,
       municipal = municipal_estimations
@@ -83,8 +83,7 @@ estimate_catch <- function(trips) {
       period = paste(.data$year, .data$month, sep = "-")
     ) %>%
     dplyr::group_by(.data$landing_period) %>%
-    dplyr::summarise(landing_weight = mean(.data$landing_weight, na.rm = T)) %>%
-    dplyr::right_join(get_frame())
+    dplyr::summarise(landing_weight = mean(.data$landing_weight, na.rm = T))
 }
 
 estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
@@ -234,7 +233,10 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
     dplyr::right_join(get_frame(),
       by = c("period", "month", "landing_period", "version")
     ) %>%
-    dplyr::mutate(landing_weight = ifelse(.data$landing_weight < 0.5, NA_real_, .data$landing_weight)) %>%
+    dplyr::mutate(
+      landing_weight = ifelse(.data$landing_weight < 0.5, NA_real_, .data$landing_weight),
+      landing_revenue = ifelse(.data$landing_revenue < 0.5, NA_real_, .data$landing_revenue)
+    ) %>%
     dplyr::arrange(.data$landing_period)
 
   set.seed(666)
@@ -257,6 +259,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
     purrr::keep(., stringr::str_detect(
       names(.), stringr::fixed("imp")
     )) %>%
+    purrr::compact() %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period) %>%
     dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
@@ -264,11 +267,24 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
     dplyr::arrange(.data$landing_period) %>%
     dplyr::bind_cols(imputed_id) %>%
     dplyr::mutate(
+      price_kg = .data$landing_revenue / .data$landing_weight,
+      price_kg = ifelse(.data$price_kg > 15, NA_real_, .data$price_kg),
+      landing_weight = ifelse(.data$price_kg > 15, NA_real_, .data$landing_weight),
+      landing_revenue = ifelse(.data$price_kg > 15, NA_real_, .data$landing_revenue)
+    ) %>%
+    mice::mice(m = 5, maxit = 500, method = "pmm", seed = 666, printFlag = F) %>%
+    mice::complete(action = "all") %>%
+    purrr::map(dplyr::bind_rows) %>%
+    dplyr::bind_rows() %>%
+    dplyr::as_tibble() %>%
+    dplyr::mutate(
       revenue = .data$landing_revenue * .data$n_landings_per_boat * n_boats,
-      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats,
-      price_kg = .data$landing_revenue / .data$landing_weight
+      catch = .data$landing_weight * .data$n_landings_per_boat * n_boats
     ) %>%
     dplyr::select(-c(.data$version)) %>%
+    dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$is_imputed) %>%
+    dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+    dplyr::ungroup() %>%
     dplyr::arrange(.data$landing_period) %>%
     dplyr::mutate(n_boats = rep(n_boats))
 
@@ -276,7 +292,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
 }
 
 run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
-  # region <- "Manatuto"
+  # region <- "Dili"
   # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
