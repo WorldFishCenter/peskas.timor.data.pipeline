@@ -369,13 +369,8 @@ validate_catch_params <- function(data = NULL, k_ind = NULL) {
     tidyr::nest() %>%
     dplyr::rename("species_group" = "data") %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(
-      alert_number = alert_number$alert_number,
-      submission_id = as.integer(.data$submission_id)
-    ) %>%
-    dplyr::left_join(alert_number, by = "submission_id") %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
-    dplyr::select(-c(.data$alert_number.x, .data$alert_number.y))
+    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::left_join(alert_number, by = "submission_id")
 
 
   data %>%
