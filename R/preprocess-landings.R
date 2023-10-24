@@ -380,9 +380,5 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
-    file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
+  purrr::map(pars$storage, ~ upload_cloud_file(preprocessed_filename, .$key, .$options))
 }
