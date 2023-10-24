@@ -62,28 +62,27 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
 estimate_catch <- function(trips) {
   catch_df <-
     trips %>%
-    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-      unit = "month"
-    )) %>%
+    dplyr::mutate(
+      landing_period = lubridate::floor_date(.data$landing_date, unit = "month"),
+      landing_id = as.character(.data$landing_id)
+    ) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
+    dplyr::filter(!is.na(.data$weight)) %>%
     dplyr::group_by(.data$landing_id) %>%
-    dplyr::mutate(
-      landing_id = as.character(.data$landing_id),
-      weight = .data$weight / 1000
-    ) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%
     dplyr::summarise(
-      landing_weight = sum(.data$weight, na.rm = T)
+      landing_weight = sum(.data$weight)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
-      period = paste(.data$year, .data$month, sep = "-")
+      period = paste(.data$year, .data$month, sep = "-"),
+      landing_weight = .data$landing_weight / 1000
     ) %>%
     dplyr::group_by(.data$landing_period) %>%
-    dplyr::summarise(landing_weight = mean(.data$landing_weight, na.rm = T))
+    dplyr::summarise(landing_weight = mean(.data$landing_weight))
 }
 
 estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
@@ -95,22 +94,20 @@ estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
 
   catch_df <-
     trips %>%
-    dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
-      unit = "month"
-    )) %>%
+    dplyr::mutate(
+      landing_period = lubridate::floor_date(.data$landing_date, unit = "month"),
+      landing_id = as.character(.data$landing_id)
+    ) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
+    dplyr::filter(!is.na(.data$weight)) %>%
     dplyr::group_by(.data$landing_id) %>%
-    dplyr::mutate(
-      landing_id = as.character(.data$landing_id),
-      weight = .data$weight / 1000
-    ) %>%
     dplyr::mutate(grouped_taxa = dplyr::if_else(.data$catch_taxon %in% c(taxa_list, "0"), .data$catch_taxon, "MZZ")) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period, .data$grouped_taxa) %>%
     dplyr::summarise(
-      landing_weight = sum(.data$weight, na.rm = T),
-      .groups = "drop"
+      landing_weight = sum(.data$weight),
     ) %>%
+    dplyr::ungroup() %>%
     tidyr::complete(
       .data$grouped_taxa,
       tidyr::nesting(!!!dplyr::select(., tidyselect::all_of(c("landing_id", "landing_period")))),
@@ -119,7 +116,8 @@ estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
     dplyr::mutate(
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
-      period = paste(.data$year, .data$month, sep = "-")
+      period = paste(.data$year, .data$month, sep = "-"),
+      landing_weight = .data$landing_weight / 1000
     ) %>%
     dplyr::filter(.data$grouped_taxa != "0") %>%
     dplyr::group_by(.data$landing_period, .data$grouped_taxa) %>%
