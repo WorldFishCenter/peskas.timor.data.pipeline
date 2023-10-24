@@ -317,7 +317,7 @@ run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa
   results <- estimate_indicators(value_estimate, landings_model, catch_estimate, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
-  catch_taxa_estimates <- estimate_catch_taxa(trips_region, modelled_taxa = "selected", pars = pars)
+  catch_taxa_estimates <- estimate_catch_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
   taxa_estimates <- estimates_taxa(catch_taxa_estimates, results, n_boats = region_boats)
   message("Estimate taxa catch by relative composition")
   results_per_taxa <- model_taxa_porportion(results, taxa_estimates) %>% dplyr::mutate(catch = ifelse(is.na(.data$catch), 0, .data$catch))
