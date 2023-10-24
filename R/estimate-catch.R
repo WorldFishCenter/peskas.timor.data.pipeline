@@ -161,7 +161,7 @@ estimates_taxa <- function(catch_estimates, general_results, n_boats) {
       split(.$grouped_taxa) %>%
       purrr::map(as.data.frame) %>%
       purrr::map(Amelia::amelia,
-        m = 10,
+        m = 40,
         ts = "landing_period",
         idvars = c("period", "version", "grouped_taxa"),
         sqrts = c("landing_weight", "month"),
@@ -173,6 +173,7 @@ estimates_taxa <- function(catch_estimates, general_results, n_boats) {
       purrr::map(purrr::flatten) %>%
       purrr::map(dplyr::bind_rows) %>%
       dplyr::bind_rows() %>%
+      dplyr::select(!dplyr::starts_with("imp")) %>%
       dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period, .data$grouped_taxa) %>%
       dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
       dplyr::ungroup()
@@ -240,7 +241,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
   set.seed(666)
   imputed_df <-
     Amelia::amelia(estimations,
-      m = 20,
+      m = 40,
       ts = "landing_period",
       idvars = c("period", "version"),
       sqrts = c(
@@ -270,7 +271,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
       landing_weight = ifelse(.data$price_kg > 15, NA_real_, .data$landing_weight),
       landing_revenue = ifelse(.data$price_kg > 15, NA_real_, .data$landing_revenue)
     ) %>%
-    mice::mice(m = 5, maxit = 500, method = "pmm", seed = 666, printFlag = F) %>%
+    mice::mice(m = 5, maxit = 50, method = "pmm", seed = 666, printFlag = F) %>%
     mice::complete(action = "all") %>%
     purrr::map(dplyr::bind_rows) %>%
     dplyr::bind_rows() %>%
@@ -290,8 +291,8 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
 }
 
 run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
-  # region <- "Dili"
-  # vessels_metadata <- vessels_stats
+  #region <- "Lautem"
+  #vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- sum(vessels_metadata$n_boats)
