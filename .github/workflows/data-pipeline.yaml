@@ -3,7 +3,7 @@ name: Peskas Timor Data Pipeline
 on:
   push:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 */2 * *'
 
 env:
   PESKAS_KOBO_TOKEN_2: ${{ secrets.PESKAS_KOBO_TOKEN_2 }}
