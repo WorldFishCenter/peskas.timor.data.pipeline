@@ -8,6 +8,8 @@ get_merged_trips(pars, ...)
 }
 \arguments{
 \item{pars}{The configuration file}
+
+\item{...}{Any additional parameters}
 }
 \value{
 A dataframe of validated survey landings and PDS trips.

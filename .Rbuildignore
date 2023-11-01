@@ -14,3 +14,4 @@
 ^.dockerignore$
 ^rstudio-prefs.json$
 ^auth$
+^.DS_Store$

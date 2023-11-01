@@ -46,7 +46,7 @@ get_validated_pds_trips <- function(pars) {
 #' Download validated Peskas surveys and PDS data merged by temporal matching
 #'
 #' @param pars The configuration file
-#'
+#' @param ... Any additional parameters
 #' @return A dataframe of validated survey landings and PDS trips.
 #' @export
 #'
