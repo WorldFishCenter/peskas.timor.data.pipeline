@@ -41,7 +41,15 @@ get_validated_pds_trips <- function(pars) {
     readr::read_rds()
 }
 
-
+#' Download Peskas surveys and PDS data
+#'
+#' Download validated Peskas surveys and PDS data merged by temporal matching
+#'
+#' @param pars The configuration file
+#'
+#' @return A dataframe of validated survey landings and PDS trips.
+#' @export
+#'
 get_merged_trips <- function(pars, ...) {
   cloud_object_name(
     prefix = paste0(pars$merged_trips$file_prefix),
