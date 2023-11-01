@@ -338,17 +338,18 @@ generate_description <- function(...) {
         "Period aggregated data refer to",
         "Number of landings",
         "Proportion of landings involving woman",
+        "Mean fuel used in Liters",
         "Number of PDS tracks recorded",
         "Number of trips matched with PDS tracks",
         "Proportion between total trips and matched PDS tracks",
         "Estimated revenue for each trip in USD",
-        "Estimated weight for each trip in Kg",
+        "Estimated weight for each trip in kg",
         "Estimated number of landings per boat",
         "Estimated total revenue in USD",
-        "Estimated total catch in Kg",
+        "Estimated total catch in kg",
+        "Estimated Price per kg",
         "Recorded total revenue in USD",
-        "Recorded total catch in Kg",
-        "Price per Kg"
+        "Recorded total catch in Kg"
       )
     )
 
@@ -359,8 +360,6 @@ generate_description <- function(...) {
     time_range = time_range
   )
 }
-
-
 get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
   dataverse_content <-
     dataverse::dataverse_contents(

@@ -314,7 +314,7 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
     dplyr::mutate(
       recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
       recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
-      fuel = ifelse(.data$mean_fuel == 0, NA_real_, .data$mean_fuel)
+      mean_fuel = ifelse(.data$mean_fuel == 0, NA_real_, .data$mean_fuel)
     )
 
   track_end_bin <- merged_trips_with_addons %>%
