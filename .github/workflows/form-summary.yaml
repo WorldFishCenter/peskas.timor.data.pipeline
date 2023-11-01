@@ -1,4 +1,4 @@
-name: Generate and upload data report
+name: Generate and upload form summary report
 
 on:
   schedule:

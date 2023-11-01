@@ -17,53 +17,11 @@ The following report summarizes the completeness of the forms submitted in Peska
 library(magrittr)
 library(ggplot2)
 
-merge_versions <- function(x) {
-  x %>%
-    dplyr::mutate(
-      fuel_L = dplyr::coalesce(
-        .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
-        .data$`trip_group/fuel_used_L`
-      ),
-      habitat_no_boat = dplyr::coalesce(
-        .data$`trip_group/habitat_no_boat`,
-        .data$`trip_group/Habitat_no_boat`
-      ),
-      habitat_no_boat = substr(.data$habitat_no_boat, 1, 1),
-      `trip_group/habitat_boat` = dplyr::coalesce(
-        .data$`trip_group/habitat_boat`,
-        .data$habitat_no_boat
-      ),
-      reason_no_fishing = dplyr::case_when(
-        .data$`Tanba_sa_la_iha_ro_o_peskador_` == "seluk__hakerek"
-        ~ .data$`Seluk_hakerek_manualmente`, TRUE ~ .data$`Tanba_sa_la_iha_ro_o_peskador_`
-      ),
-      reason_no_activity = dplyr::coalesce(
-        .data$reason_for_zero_boats,
-        .data$reason_no_fishing
-      )
-    ) %>%
-    dplyr::select(-c(
-      .data$habitat_no_boat,
-      .data$`trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska`,
-      .data$`trip_group/fuel_used_L`,
-      .data$`trip_group/habitat_no_boat`,
-      .data$`trip_group/Habitat_no_boat`,
-      .data$`Tanba_sa_la_iha_ro_o_peskador_`,
-      .data$`Seluk_hakerek_manualmente`,
-      .data$reason_for_zero_boats,
-      .data$reason_no_fishing,
-      # drop this column as it is all NA
-      .data$`_bamboo_dataset_id`
-    ))
-}
-
-
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
 
 landings <- peskas.timor.data.pipeline::get_merged_landings(pars, "_weight") %>%
-  merge_versions() %>%
   dplyr::rename(date = date, submitted_by = `_submitted_by`) %>%
   dplyr::select(-c(`_attachments`, species_group, dplyr::starts_with("_"))) %>%
   dplyr::rename_all(~ stringr::str_remove(., "trip_group/")) %>%
