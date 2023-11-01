@@ -291,8 +291,8 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
 }
 
 run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
-  #region <- "Lautem"
-  #vessels_metadata <- vessels_stats
+  # region <- "Lautem"
+  # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
     trips_region <- trips
     region_boats <- sum(vessels_metadata$n_boats)

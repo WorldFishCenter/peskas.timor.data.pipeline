@@ -107,7 +107,7 @@ landings_raw_prep <-
   )
 
 landings <-
-  peskas.timor.data.pipeline::get_validated_landings() %>%
+  peskas.timor.data.pipeline::get_merged_trips(pars)  %>%
   dplyr::mutate(
     landing_date = as.Date(landing_date),
     Year = lubridate::year(landing_date)
@@ -155,6 +155,7 @@ good_color <- make_color_pal(c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b
 
 df <-
   dplyr::left_join(landings, landings_raw_prep, by = c("landing_id", "landing_station")) %>%
+  dplyr::filter(!is.na(landing_station)) %>% 
   dplyr::select(-reporting_region) %>%
   dplyr::mutate(id = seq(1, nrow(.))) %>%
   tidyr::pivot_wider(names_from = landing_station, values_from = landing_id) %>%
@@ -463,12 +464,12 @@ df_tab <-
   tidyr::pivot_wider(names_from = month, values_from = 3:5) %>%
   dplyr::ungroup() %>%
   dplyr::rename(
-    nsub_before = 2,
-    nsub_now = 3,
-    days_before = 4,
-    days_now = 5,
-    wh_before = 6,
-    wh_now = 7
+    nsub_before = 3,
+    nsub_now = 2,
+    days_before = 5,
+    days_now = 4,
+    wh_before = 7,
+    wh_now = 6
   ) %>%
   dplyr::mutate(dplyr::across(is.integer, ~ as.numeric(.))) %>%
   dplyr::mutate(
@@ -489,7 +490,9 @@ df_tab_cols <-
     wh_now = diff_wh
   ) %>%
   tidyr::pivot_longer(dplyr::contains("now"), values_to = "perc_val") %>%
-  dplyr::distinct()
+  dplyr::distinct() %>% 
+  dplyr::mutate(perc_val = ifelse(is.infinite(perc_val), NA_real_, perc_val))
+
 
 dplyr::full_join(df_tab, df_tab_cols) %>%
   dplyr::select(-dplyr::contains("diff")) %>%
