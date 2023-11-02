@@ -69,7 +69,6 @@ estimate_catch <- function(trips) {
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::filter(!is.na(.data$weight)) %>%
-    dplyr::group_by(.data$landing_id) %>%
     dplyr::group_by(.data$landing_id, .data$landing_period) %>%
     dplyr::summarise(
       landing_weight = sum(.data$weight)
