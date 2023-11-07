@@ -133,7 +133,9 @@ landings <-
 
 regions_sites <- landings %>%
   dplyr::select(reporting_region, landing_station) %>%
-  dplyr::distinct()
+  dplyr::distinct() %>% 
+  dplyr::mutate(reporting_region = ifelse(reporting_region == "Oecusse", "RAEOA", reporting_region))
+
 
 
 tf <- data.frame(date = seq.Date(
@@ -222,7 +224,6 @@ tab <-
     Region = reporting_region
   ) %>%
   dplyr::select(Region, Station, dplyr::everything())
-
 rows <- nrow(tab)
 
 reactable::reactable(tab,
