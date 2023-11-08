@@ -832,7 +832,7 @@ jsonify_nutrients <- function(data) {
     dplyr::ungroup()
 
   df_split <- df_ord %>% split(.$nutrient)
-  df_split_ord <- df_split[c("Protein", "Omega-3", "Zinc", "Calcium", "Vitamin A", "Iron")]
+  df_split_ord <- df_split[c("Protein", "Zinc", "Omega-3", "Calcium", "Vitamin A", "Iron")]
 
   dat <- lapply(names(df_split_ord), function(nutrient) {
     org_data <- df_split_ord[[nutrient]]
