@@ -108,7 +108,7 @@ default:
         max: 20
         min: 0
       survey_time:
-        max_duration: 20
+        max_duration: 96
         submission_delay: 28
       catch:
         n_individuals:
@@ -123,9 +123,9 @@ default:
       fuel:
         k: 3
     pds_trips:
-      max_trip_hours: 18
+      max_trip_hours: 96
       min_trip_hours: 0.5
-      trip_km: 60
+      trip_km: 200
       start_end_km: 3
       outliers : 10
       timetrace: 1400
