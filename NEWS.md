@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 3.1.0
+
+## Improvements
+
+- Estimations are now weighted based on the number of records in each monthly bin. This improve the accuracy of estimations and reduce outliers effect.
+
 # peskas.timor.data.pipeline 3.0.0
 
 ## New features
