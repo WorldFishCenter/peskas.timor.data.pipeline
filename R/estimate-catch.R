@@ -79,9 +79,30 @@ estimate_catch <- function(trips) {
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-"),
       landing_weight = .data$landing_weight / 1000
-    ) %>%
+    )
+
+  overall_mean <- mean(catch_df$landing_weight, na.rm = TRUE)
+
+  small_groups <-
+    catch_df %>%
     dplyr::group_by(.data$landing_period) %>%
-    dplyr::summarise(landing_weight = mean(.data$landing_weight))
+    dplyr::mutate(n = dplyr::n()) %>%
+    dplyr::filter(.data$n < 3) %>%
+    dplyr::ungroup()
+
+  # Create new rows for these groups
+  new_rows <- small_groups %>%
+    dplyr::slice(rep(1:dplyr::n(), each = 5)) %>%
+    dplyr::mutate(landing_weight = overall_mean)
+
+  catch_df <-
+    dplyr::bind_rows(catch_df, new_rows) %>%
+    dplyr::select(-.data$n) %>%
+    dplyr::group_by(.data$landing_period) %>%
+    dplyr::summarise(landing_weight = mean(.data$landing_weight)) %>%
+    dplyr::ungroup()
+
+  catch_df
 }
 
 estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
@@ -198,6 +219,7 @@ estimates_taxa <- function(catch_estimates, general_results, n_boats) {
 estimate_value <- function(trips) {
   value_df <-
     trips %>%
+    dplyr::select(.data$landing_date, .data$landing_value) %>%
     dplyr::mutate(landing_period = lubridate::floor_date(.data$landing_date,
       unit = "month"
     )) %>%
@@ -206,11 +228,30 @@ estimate_value <- function(trips) {
       year = as.character(lubridate::year(.data$landing_period)),
       month = as.character(lubridate::month(.data$landing_period)),
       period = paste(.data$year, .data$month, sep = "-")
-    ) %>%
+    )
+
+  overall_mean <- mean(value_df$landing_value, na.rm = TRUE)
+
+  small_groups <-
+    value_df %>%
+    dplyr::group_by(.data$landing_period) %>%
+    dplyr::mutate(n = dplyr::n()) %>%
+    dplyr::filter(.data$n < 3) %>%
+    dplyr::ungroup()
+
+  # Create new rows for these groups
+  new_rows <- small_groups %>%
+    dplyr::slice(rep(1:dplyr::n(), each = 5)) %>%
+    dplyr::mutate(landing_value = overall_mean)
+
+  value_df <-
+    dplyr::bind_rows(value_df, new_rows) %>%
+    dplyr::select(-.data$n) %>%
     dplyr::group_by(.data$landing_period) %>%
     dplyr::summarise(landing_value = mean(.data$landing_value, na.rm = T)) %>%
     dplyr::right_join(get_frame()) %>%
-    dplyr::rename(landing_revenue = .data$landing_value)
+    dplyr::rename(landing_revenue = .data$landing_value) %>%
+    dplyr::ungroup()
 
   value_df
 }
