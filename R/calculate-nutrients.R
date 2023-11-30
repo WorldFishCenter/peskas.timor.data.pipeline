@@ -23,16 +23,32 @@
 #'
 get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
   rfish_tab <- get_rfish_table(pars)
+  # get invertebrates nutrients
+  fao_groups <- get_fao_composition()
 
   nutrients_tab <-
-    readr::read_csv(pars$metadata$nutrients$resource,
-      show_col_types = FALSE
+    rfishbase::estimate(rfish_tab$Species) %>% # get updated nutrients values
+    dplyr::select(!dplyr::contains("_")) %>%
+    dplyr::select(.data$SpecCode, .data$Calcium:.data$Zinc) %>%
+    dplyr::right_join(rfish_tab) %>%
+    dplyr::select(.data$interagency_code, .data$SpecCode, .data$Calcium:.data$Zinc) %>%
+    na.omit() %>%
+    dplyr::group_by(.data$interagency_code, .data$SpecCode) %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ dplyr::first(.x))) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(
+      .data$interagency_code,
+      Selenium_mu = .data$Selenium,
+      Zinc_mu = .data$Zinc,
+      Protein_mu = .data$Protein,
+      Omega_3_mu = .data$Omega3,
+      Calcium_mu = .data$Calcium,
+      Iron_mu = .data$Iron,
+      Vitamin_A_mu = .data$VitaminA
     ) %>%
-    dplyr::rename(SpecCode = .data$spec_code) %>%
-    dplyr::mutate(SpecCode = as.integer(.data$SpecCode)) %>%
-    dplyr::select(.data$species, .data$SpecCode, tidyselect::contains("_mu")) %>%
-    dplyr::right_join(rfish_tab, by = "SpecCode") %>%
-    dplyr::select(.data$interagency_code, tidyselect::contains("_mu"))
+    dplyr::filter(!.data$interagency_code %in% unique(fao_groups$interagency_code)) %>%
+    dplyr::bind_rows(fao_groups)
+
 
   if (isTRUE(convert)) {
     nutrients_tab <-
@@ -58,4 +74,65 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
   }
 
   nutrients_tab
+}
+
+#' Get FAO Food Composition Data
+#'
+#' This function retrieves and processes food composition data from the FAO database.
+#' It specifically focuses on marine food items such as octopus, squids, cockles, shrimps,
+#' crabs, and lobsters. The data is filtered, categorized for various nutrients
+#' including protein, calcium, iron, zinc, selenium, vitamin A, and omega-3 fatty acids.
+#'
+#' @details
+#' The function first reads a CSV file from a given URL using the `read_csv` function from
+#' the `readr` package. It then defines specific codes for various marine food groups:
+#' octopus, squids, cockles, shrimps, crabs, and lobsters. The FAO composition data is then
+#' filtered for these food items in their raw state. A new `interagency_code` is created
+#' for categorization purposes. The nutrients considered are protein, calcium,
+#' iron, zinc, selenium, vitamin A, and omega-3 fatty acids.
+#'
+#' @return
+#' A tibble with values for various nutrients for each category of marine
+#' food items. The columns include `Protein_mu`, `Calcium_mu`, `Iron_mu`, `Zinc_mu`,
+#' `Selenium_mu`, `Vitamin_A_mu`, and `Omega_3_mu`.
+#'
+#' @examples
+#' get_fao_composition()
+#'
+#' @export
+get_fao_composition <- function() {
+  fao_comp <- readr::read_csv("https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv")
+
+  octopus <- c("OCT", "OCT")
+  squids <- c("SQZ", "SQR", "OMZ", "CTL", "CTC")
+  cockles <- c("CLV", "SVE")
+  shrimps <- c("CSH", "PAL", "PAN", "PRA", "PEZ", "ENS", "MPM", "MPN", "PRB", "WKP", "PBA", "GIT", "TIP", "PNV", "SHS")
+  crabs <- c("CAD", "DUN", "CRE", "PCR", "SWM", "CRB", "SCD", "MUD")
+  lobsters <- c("NEX", "LBA", "LBE", "NEP", "VLO", "LOR")
+
+  fao_comp %>%
+    dplyr::rename(interagency_code = .data$integragency_code) %>%
+    dplyr::filter(.data$food_state == "r") %>%
+    dplyr::filter(.data$interagency_code %in% c(octopus, squids, cockles, shrimps, crabs, lobsters)) %>%
+    dplyr::mutate(interagency_code = dplyr::case_when(
+      .data$interagency_code %in% octopus ~ "OCZ",
+      .data$interagency_code %in% squids ~ "IAX",
+      .data$interagency_code %in% cockles ~ "COZ",
+      .data$interagency_code %in% shrimps ~ "PEZ",
+      .data$interagency_code %in% crabs ~ "CRA",
+      .data$interagency_code %in% lobsters ~ "SLV",
+      TRUE ~ .data$interagency_code
+    )) %>%
+    # dplyr::group_by(.data$interagency_code) %>%
+    # dplyr::summarise(dplyr::across(.data$`protein(g)`:.data$`omega3(g)`, ~ median(.x, na.rm = TRUE))) %>%
+    dplyr::rename(
+      Protein_mu = .data$`protein(g)`,
+      Calcium_mu = .data$`calcium(mg)`,
+      Iron_mu = .data$`iron(mg)`,
+      Zinc_mu = .data$`zinc(mg)`,
+      Selenium_mu = .data$`selenium(mcg)`,
+      Vitamin_A_mu = .data$`vitaminA(mcg)`,
+      Omega_3_mu = .data$`omega3(g)`
+    ) %>%
+    dplyr::select(.data$interagency_code, .data$Protein_mu:.data$Omega_3_mu)
 }
