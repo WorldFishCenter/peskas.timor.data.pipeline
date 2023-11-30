@@ -38,13 +38,13 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
     dplyr::ungroup() %>%
     dplyr::select(
       .data$interagency_code,
-      .data$Selenium_mu,
-      .data$Zinc_mu,
-      .data$Protein_mu,
-      .data$Omega_3_mu,
-      .data$Calcium_mu,
-      .data$Iron_mu,
-      .data$Vitamin_A_mu
+      Selenium_mu = .data$Zinc,
+      Zinc_mu = .data$Selenium,
+      Protein_mu = .data$Protein,
+      Omega_3_mu = .data$Omega3,
+      Calcium_mu = .data$Calcium,
+      Iron_mu = .data$Iron,
+      Vitamin_A_mu = .data$VitaminA
     ) %>%
     dplyr::filter(!.data$interagency_code %in% unique(fao_groups$interagency_code)) %>%
     dplyr::bind_rows(fao_groups)
