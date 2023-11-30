@@ -36,15 +36,15 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
     dplyr::group_by(.data$interagency_code, .data$SpecCode) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), ~ dplyr::first(.x))) %>%
     dplyr::ungroup() %>%
-    dplyr::select(.data$interagency_code, .data$Calcium:.data$Zinc) %>%
-    dplyr::rename(
-      Calcium_mu = .data$Calcium,
-      Iron_mu = .data$Iron,
-      Omega_3_mu = .data$Omega3,
-      Protein_mu = .data$Protein,
-      Selenium_mu = .data$Selenium,
-      Vitamin_A_mu = .data$VitaminA,
-      Zinc_mu = .data$Zinc
+    dplyr::select(
+      .data$interagency_code,
+      .data$Selenium_mu,
+      .data$Zinc_mu,
+      .data$Protein_mu,
+      .data$Omega_3_mu,
+      .data$Calcium_mu,
+      .data$Iron_mu,
+      .data$Vitamin_A_mu
     ) %>%
     dplyr::filter(!.data$interagency_code %in% unique(fao_groups$interagency_code)) %>%
     dplyr::bind_rows(fao_groups)
