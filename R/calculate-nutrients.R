@@ -32,7 +32,7 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
     dplyr::select(.data$SpecCode, .data$Calcium:.data$Zinc) %>%
     dplyr::right_join(rfish_tab) %>%
     dplyr::select(.data$interagency_code, .data$SpecCode, .data$Calcium:.data$Zinc) %>%
-    na.omit() %>%
+    # na.omit() %>%
     dplyr::group_by(.data$interagency_code, .data$SpecCode) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), ~ dplyr::first(.x))) %>%
     dplyr::ungroup() %>%
@@ -73,9 +73,12 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       dplyr::summarise_all(stats::median, na.rm = TRUE)
   }
 
-  nutrients_tab
+  nutrients_tab %>%
+    dplyr::mutate_at(
+      dplyr::vars(.data$Selenium_mu:.data$Vitamin_A_mu),
+      ~ tidyr::replace_na(., stats::median(., na.rm = TRUE))
+    )
 }
-
 #' Get FAO Food Composition Data
 #'
 #' This function retrieves and processes food composition data from the FAO database.
