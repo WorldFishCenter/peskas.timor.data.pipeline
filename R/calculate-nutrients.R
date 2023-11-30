@@ -38,8 +38,8 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
     dplyr::ungroup() %>%
     dplyr::select(
       .data$interagency_code,
-      Selenium_mu = .data$Zinc,
-      Zinc_mu = .data$Selenium,
+      Selenium_mu = .data$Selenium,
+      Zinc_mu = .data$Zinc,
       Protein_mu = .data$Protein,
       Omega_3_mu = .data$Omega3,
       Calcium_mu = .data$Calcium,
