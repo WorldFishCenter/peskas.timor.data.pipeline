@@ -3,12 +3,18 @@ url: https://worldfishcenter.github.io/peskas.timor.data.pipeline/
 template:
   bootstrap: 5
   bslib:
-    base_font: {google: "Montserrat"}
-    primary: "#4080cc"
-    secondary: "#cc8c40"
+    primary: '#47475C'
+    heading_font:
+      google:
+        family: Alegreya Sans SC
+        wght: 400
+    base_font:
+      google:
+        family: IBM Plex Sans
+    code_font:
+      google: Fira Mono
 
 reference:
-
 - title: Workflow
   desc: >
     These are arguably the most important functions in the package. Each of
