@@ -112,7 +112,7 @@ get_fao_composition <- function() {
     Zinc_mu = c(1.99156883, 0.737949386),
     Vitamin_A_mu = c(28.1822056, 39.83041747),
     Selenium_mu = c(NA_real_, NA_real_),
-    Omega_3_mu = c(28.1822056, 4.198122665),
+    Omega_3_mu = c(4.898699598, 4.198122665),
     Protein_mu = c(NA_real_, NA_real_)
   ) %>%
     dplyr::group_by(.data$interagency_code) %>%
