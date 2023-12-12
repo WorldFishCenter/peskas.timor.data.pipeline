@@ -105,6 +105,18 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
 #' @export
 get_fao_composition <- function() {
   fao_comp <- readr::read_csv("https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv")
+  IHH_values <- dplyr::tibble(
+    interagency_code = "FLY",
+    Calcium_mu = c(278.1649811, 374.6782995),
+    Iron_mu = c(1.556909703, 1.240165491),
+    Zinc_mu = c(1.99156883, 0.737949386),
+    Vitamin_A_mu = c(28.1822056, 39.83041747),
+    Selenium_mu = c(NA_real_, NA_real_),
+    Omega_3_mu = c(28.1822056, 4.198122665),
+    Protein_mu = c(NA_real_, NA_real_)
+  ) %>%
+    dplyr::group_by(.data$interagency_code) %>%
+    dplyr::summarise(dplyr::across(dplyr::where(is.numeric), ~ median(.x, na.rm = TRUE)))
 
   octopus <- c("OCT", "OCT")
   squids <- c("SQZ", "SQR", "OMZ", "CTL", "CTC")
@@ -137,5 +149,6 @@ get_fao_composition <- function() {
       Vitamin_A_mu = .data$`vitaminA(mcg)`,
       Omega_3_mu = .data$`omega3(g)`
     ) %>%
-    dplyr::select(.data$interagency_code, .data$Protein_mu:.data$Omega_3_mu)
+    dplyr::select(.data$interagency_code, .data$Protein_mu:.data$Omega_3_mu) %>%
+    dplyr::bind_rows(IHH_values)
 }
