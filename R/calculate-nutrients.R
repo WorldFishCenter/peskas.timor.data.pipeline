@@ -47,8 +47,20 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       Vitamin_A_mu = .data$VitaminA
     ) %>%
     dplyr::filter(!.data$interagency_code %in% unique(fao_groups$interagency_code)) %>%
-    dplyr::bind_rows(fao_groups)
+    dplyr::bind_rows(fao_groups) %>%
+    dplyr::filter(!.data$interagency_code == "FLY")
 
+  # use pelagic fish groups to infer FLY nutrients values
+  pelagics <-
+    nutrients_tab %>%
+    dplyr::filter(.data$interagency_code %in% c("CLP", "RAX", "SDX")) %>%
+    dplyr::summarise(dplyr::across(dplyr::where(is.numeric), ~ median(.x, na.rm = T))) %>%
+    dplyr::mutate(interagency_code = "FLY")
+
+  nutrients_tab <-
+    nutrients_tab %>%
+    dplyr::bind_rows(pelagics) %>%
+    dplyr::filter(.data$interagency_code == "FLY")
 
   if (isTRUE(convert)) {
     nutrients_tab <-
@@ -105,18 +117,6 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
 #' @export
 get_fao_composition <- function() {
   fao_comp <- readr::read_csv("https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv")
-  IHH_values <- dplyr::tibble(
-    interagency_code = "FLY",
-    Calcium_mu = c(278.1649811, 374.6782995),
-    Iron_mu = c(1.556909703, 1.240165491),
-    Zinc_mu = c(1.99156883, 0.737949386),
-    Vitamin_A_mu = c(28.1822056, 39.83041747),
-    Selenium_mu = c(NA_real_, NA_real_),
-    Omega_3_mu = c(4.898699598, 4.198122665),
-    Protein_mu = c(NA_real_, NA_real_)
-  ) %>%
-    dplyr::group_by(.data$interagency_code) %>%
-    dplyr::summarise(dplyr::across(dplyr::where(is.numeric), ~ median(.x, na.rm = TRUE)))
 
   octopus <- c("OCT", "OCT")
   squids <- c("SQZ", "SQR", "OMZ", "CTL", "CTC")
@@ -149,6 +149,5 @@ get_fao_composition <- function() {
       Vitamin_A_mu = .data$`vitaminA(mcg)`,
       Omega_3_mu = .data$`omega3(g)`
     ) %>%
-    dplyr::select(.data$interagency_code, .data$Protein_mu:.data$Omega_3_mu) %>%
-    dplyr::bind_rows(IHH_values)
+    dplyr::select(.data$interagency_code, .data$Protein_mu:.data$Omega_3_mu)
 }
