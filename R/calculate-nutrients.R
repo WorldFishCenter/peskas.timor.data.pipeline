@@ -59,8 +59,7 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
 
   nutrients_tab <-
     nutrients_tab %>%
-    dplyr::bind_rows(pelagics) %>%
-    dplyr::filter(.data$interagency_code == "FLY")
+    dplyr::bind_rows(pelagics)
 
   if (isTRUE(convert)) {
     nutrients_tab <-
