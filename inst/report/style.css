@@ -1,0 +1,14 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    /*background-color: #121212; /* Dark background */
+    /*color: #ffffff; /* Light text */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #5a5b65; /* Light text for headers */
+}
+
+/*a {
+/*    color: #bb86fc; /* Light purple for links */
+/*}
+/*
