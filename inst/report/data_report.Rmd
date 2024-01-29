@@ -1212,8 +1212,8 @@ habitat_nutrients <-
     )
   )
 
-  ggplot2::ggplot(10) +
-  ggplot2::theme_bw() +
+  ggplot2::ggplot() +
+  ggplot2::theme_bw(10) +
   ggchicklet::geom_chicklet(habitat_nutrients,
                             mapping = ggplot2::aes(
                               y = inds_kg,
