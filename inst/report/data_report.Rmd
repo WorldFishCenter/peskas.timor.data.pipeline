@@ -1,5 +1,5 @@
 ---
-title: PESKAS data report
+title: PESKAS™ data report
 date: "Last compiled on `r Sys.Date()`"
 mainfont: Montserrat
 geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
@@ -1250,7 +1250,7 @@ habitat_nutrients <-
   )
 ```
 
-# About Peskas
+# About Peskas™
 
 Peskas is the official fisheries national monitoring system of Timor-Leste and represents one of the most sophisticated data collection systems for small-scale fisheries in the world.
 
