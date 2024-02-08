@@ -36,7 +36,8 @@ Imports:
     tidyr,
     rlang (>= 0.1.2),
     googlesheets4,
-    reticulate
+    reticulate,
+    apexcharter
 Suggests: 
     covr,
     pkgdown,

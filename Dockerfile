@@ -60,7 +60,8 @@ RUN install2.r --error --skipinstalled \
     janitor \
     reactable \
     kableExtra \
-    reticulate
+    reticulate \
+    apexcharter
 
 # Install GitHub packages
 RUN installGithub.r wilkelab/ungeviz
