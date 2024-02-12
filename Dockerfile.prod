@@ -79,9 +79,10 @@ RUN install2.r --error --skipinstalled \
 
 
 # Install GitHub packages
-RUN installGithub.r wilkelab/ungeviz
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 RUN installGithub.r ropensci/rfishbase
+RUN installGithub.r hrbrmstr/ggchicklet
+
 
 # Install local package
 COPY . /home

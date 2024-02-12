@@ -33,6 +33,7 @@ library(magrittr)
 library(tidytext)
 library(apexcharter)
 
+
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
