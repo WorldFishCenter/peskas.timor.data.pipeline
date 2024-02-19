@@ -62,7 +62,8 @@ RUN install2.r --error --skipinstalled \
     reactablefmtr 1
     kableExtra \
     reticulate \
-    apexcharter
+    apexcharter \
+    ggforce
 
 # Install GitHub packages
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
