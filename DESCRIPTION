@@ -61,7 +61,7 @@ Suggests:
     readxl,
     stringr,
     tibble,
-    furrr, 
+    furrr,
     future,
     rfishbase,
     taxize,
@@ -78,8 +78,11 @@ Suggests:
     janitor,
     reactable,
     kableExtra,
+    ggchicklet,
+    treemapify,
+    ggforce,
     apexcharter,
-    ggchicklet
+    tidytext
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

@@ -63,7 +63,8 @@ RUN install2.r --error --skipinstalled \
     kableExtra \
     reticulate \
     apexcharter \
-    ggforce
+    ggforce \
+    treemapify
 
 # Install GitHub packages
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
