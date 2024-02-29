@@ -1239,8 +1239,8 @@ habitat_nutrients <-
                      color = "white",
                      size = 3
   ) +
-  ggplot2::scale_fill_manual(values = timor.nutrients::palettes$nutrients_palette) +
-  ggplot2::scale_color_manual(values = timor.nutrients::palettes$nutrients_palette) +
+  ggplot2::scale_fill_manual(values = nut_palette) +
+  ggplot2::scale_color_manual(values = nut_palette) +
   ggplot2::scale_y_continuous(labels = scales::label_percent(scale = 1)) +
   ggplot2::coord_flip(expand = FALSE) +
   ggplot2::theme(legend.position = "bottom",
