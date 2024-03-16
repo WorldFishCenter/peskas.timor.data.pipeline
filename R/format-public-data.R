@@ -470,7 +470,7 @@ get_nutrients_proportions <- function(nutrients_estimates) {
     dplyr::rowwise() %>%
     dplyr::mutate(dplyr::across(c(.data$selenium:.data$vitaminA), ~ (.x / .data$catch) * 100)) %>%
     dplyr::ungroup() %>%
-    dplyr::summarise(dplyr::across(c(.data$selenium:.data$vitaminA), ~ median(.x, na.rm = TRUE)))
+    dplyr::summarise(dplyr::across(c(.data$selenium:.data$vitaminA), ~ stats::median(.x, na.rm = TRUE)))
 }
 
 fill_missing_group <- function(nutrients_estimates, nutrients_proportions, taxa = "MZZ") {
@@ -632,6 +632,40 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     )) %>%
     dplyr::select(-.data$n_obs)
 
+  cpue <-
+    data %>%
+    dplyr::filter(!is.na(.data$landing_id)) %>%
+    dplyr::select(
+      .data$landing_id, .data$reporting_region, .data$gear_type,
+      .data$trip_duration, .data$landing_catch, dplyr::starts_with("fisher_")
+    ) %>%
+    dplyr::mutate(
+      n_fishers = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman
+    ) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::filter(!is.na(.data$weight)) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::summarise(
+      region = dplyr::first(.data$reporting_region),
+      gear_type = dplyr::first(.data$gear_type),
+      trip_duration = dplyr::first(.data$trip_duration),
+      n_fishers = dplyr::first(.data$n_fishers),
+      landing_weight = sum(.data$weight)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      landing_weight = .data$landing_weight / 1000,
+      cpue = (.data$landing_weight / .data$trip_duration) / .data$n_fishers,
+      cpue = ifelse(is.infinite(.data$cpue), NA_real_, .data$cpue)
+    ) %>%
+    dplyr::select(-c(.data$trip_duration, .data$n_fishers, .data$landing_weight)) %>%
+    dplyr::group_by(.data$region) %>%
+    dplyr::summarise(cpue = stats::median(.data$cpue, na.rm = TRUE)) %>%
+    dplyr::ungroup() %>%
+    na.omit()
+
+
   list(
     n_surveys = data_area %>%
       dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$Area)) %>%
@@ -681,7 +715,8 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
       dplyr::mutate(weight = as.integer(.data$weight)),
     nutrients_per_catch = nutrients_catch_average,
     happiness_rating = happiness,
-    conservation = conservation
+    conservation = conservation,
+    cpue_df = cpue
   )
 }
 

@@ -23,7 +23,7 @@
 #'
 #' @param log_threshold
 #' @inheritParams preprocess_legacy_landings
-#' @return No outputs. This function is used for it's side effects
+#' @return No outputs. This function is used for it's side effects.
 #' @keywords workflow
 #' @export
 calculate_weights <- function(log_threshold = logger::DEBUG) {

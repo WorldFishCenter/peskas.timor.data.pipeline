@@ -12,7 +12,7 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \value{
-No outputs. This function is used for it's side effects
+No outputs. This function is used for it's side effects.
 }
 \description{
 Downloads merged landings and calculates the weight of the catch.
