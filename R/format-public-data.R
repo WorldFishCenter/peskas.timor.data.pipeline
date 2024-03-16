@@ -660,7 +660,7 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
       cpue = ifelse(is.infinite(.data$cpue), NA_real_, .data$cpue)
     ) %>%
     dplyr::select(-c(.data$trip_duration, .data$n_fishers, .data$landing_weight)) %>%
-    dplyr::group_by(.data$region) %>%
+    dplyr::group_by(.data$region, .data$gear_type) %>%
     dplyr::summarise(cpue = stats::median(.data$cpue, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     na.omit()
