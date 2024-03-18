@@ -64,7 +64,8 @@ RUN install2.r --error --skipinstalled \
     reticulate \
     apexcharter \
     ggforce \
-    treemapify
+    treemapify \
+    sf
 
 # Install GitHub packages
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB

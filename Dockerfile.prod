@@ -77,7 +77,8 @@ RUN install2.r --error --skipinstalled \
     reticulate \
     apexcharter \
     ggforce \
-    treemapify
+    treemapify \
+    sf
 
 
 

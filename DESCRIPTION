@@ -54,7 +54,6 @@ Suggests:
     cowplot,
     broom,
     zoo,
-    sf,
     ggplot2,
     ggpubr,
     lubridate,
@@ -82,7 +81,8 @@ Suggests:
     treemapify,
     ggforce,
     apexcharter,
-    tidytext
+    tidytext,
+    sf
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

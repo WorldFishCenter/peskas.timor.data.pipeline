@@ -665,6 +665,7 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     dplyr::ungroup() %>%
     na.omit()
 
+  timor_shape <- get_timor_boundaries()
 
   list(
     n_surveys = data_area %>%
@@ -716,7 +717,8 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     nutrients_per_catch = nutrients_catch_average,
     happiness_rating = happiness,
     conservation = conservation,
-    cpue_df = cpue
+    cpue_df = cpue,
+    timor_shape = timor_shape
   )
 }
 
