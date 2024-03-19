@@ -80,14 +80,20 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       "month",
       week_start = 7
     )) %>%
-    dplyr::group_by(.data$reporting_region) %>%
-    get_weight() %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::summarise(
+      reporting_region = dplyr::first(.data$reporting_region),
+      date_bin_start = dplyr::first(.data$date_bin_start),
+      landing_value = dplyr::first(.data$landing_value),
+      weight = sum(.data$weight, na.rm = T),
+      fuel = dplyr::first(.data$fuel)
+    ) %>%
     dplyr::group_by(.data$reporting_region, .data$date_bin_start) %>%
     dplyr::summarise(
-      n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
       recorded_revenue = sum(.data$landing_value, na.rm = T),
-      recorded_catch = sum(.data$recorded_weight, na.rm = T),
-      prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T),
+      recorded_catch = sum(.data$weight, na.rm = T) / 1000,
       fuel = mean(.data$fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
@@ -302,7 +308,17 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
       bin_unit,
       week_start = 7
     )) %>%
-    get_weight(.) %>%
+    tidyr::unnest(.data$landing_catch) %>%
+    tidyr::unnest(.data$length_frequency) %>%
+    dplyr::group_by(.data$landing_id) %>%
+    dplyr::summarise(
+      reporting_region = dplyr::first(.data$reporting_region),
+      date_bin_start = dplyr::first(.data$date_bin_start),
+      fisher_number_woman = dplyr::first(.data$fisher_number_woman),
+      landing_value = dplyr::first(.data$landing_value),
+      recorded_weight = sum(.data$weight, na.rm = T) / 1000,
+      fuel = dplyr::first(.data$fuel)
+    ) %>%
     dplyr::group_by(.data$date_bin_start) %>%
     dplyr::summarise(
       n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
