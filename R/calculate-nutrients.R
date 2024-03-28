@@ -63,9 +63,20 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       interagency_code = "FLY"
     )
 
+  #nutrients_tab <-
+  #  nutrients_tab %>%
+  #  dplyr::bind_rows(fly_group)
+
+    # use pelagic fish groups to infer FLY nutrients values
+  pelagics <-
+    nutrients_tab %>%
+    dplyr::filter(.data$interagency_code %in% c("CLP", "RAX", "SDX")) %>%
+    dplyr::summarise(dplyr::across(dplyr::where(is.numeric), ~ median(.x, na.rm = T))) %>%
+    dplyr::mutate(interagency_code = "FLY")
+
   nutrients_tab <-
     nutrients_tab %>%
-    dplyr::bind_rows(fly_group)
+    dplyr::bind_rows(pelagics)
 
   if (isTRUE(convert)) {
     nutrients_tab <-
