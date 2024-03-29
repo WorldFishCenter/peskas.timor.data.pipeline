@@ -56,27 +56,16 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       Selenium_mu = 40.6528,
       Zinc_mu = 1.44887,
       Protein_mu = 17.09566,
-      Omega3_mu = 0.2460711,
+      Omega_3_mu = 0.2460711,
       Calcium_mu = 423.1434,
       Iron_mu = 2.109762,
-      VitaminA_mu = 25.77763,
+      Vitamin_A_mu = 25.77763,
       interagency_code = "FLY"
     )
 
-  #nutrients_tab <-
-  #  nutrients_tab %>%
-  #  dplyr::bind_rows(fly_group)
-
-    # use pelagic fish groups to infer FLY nutrients values
-  pelagics <-
-    nutrients_tab %>%
-    dplyr::filter(.data$interagency_code %in% c("CLP", "RAX", "SDX")) %>%
-    dplyr::summarise(dplyr::across(dplyr::where(is.numeric), ~ median(.x, na.rm = T))) %>%
-    dplyr::mutate(interagency_code = "FLY")
-
   nutrients_tab <-
     nutrients_tab %>%
-    dplyr::bind_rows(pelagics)
+    dplyr::bind_rows(fly_group)
 
   if (isTRUE(convert)) {
     nutrients_tab <-
