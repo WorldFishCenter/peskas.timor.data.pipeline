@@ -5,14 +5,18 @@ Version: 3.1.0
 Authors@R: 
     c(person(given = "Fernando",
              family = "Cagua",
-             role = c("aut", "cre"),
+             role = c("aut"),
              email = "f.cagua@cgiar.org",
              comment = c(ORCID = "0000-0001-5867-3687")),
       person(given = "Lorenzo",
              family = "Longobardi",
-             role = c("aut"),
+             role = c("aut", "cre"),
              email = "l.longobardi@cgiar.org",
              comment = c(ORCID = "0000-0003-3126-7341")),
+      person(given = "Hamza",
+             family = "Altarturi",
+             role = c("aut"),
+             email = "h.altarturi@cgiar.org"),
       person(given = "WorldFish",
              role = "cph"))
 Description: This package implements the data and modelling
