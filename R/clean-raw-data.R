@@ -443,18 +443,21 @@ clean_updated_landings <- function(x) {
         ("station"))),
       `_id` = as.character(.data$`_id`)
     ) %>%
+    dplyr::mutate("group_conservation_trading/trader" = dplyr::coalesce(
+      `group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA`,
+      `group_conservation_trading/trader`
+    )) %>%
     dplyr::select(-c(
       dplyr::contains("group_info_general/group_station"),
       "group_info_general/municipality",
-      "form_completed"
+      "form_completed",
+      "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA"
     )) %>%
     dplyr::rename(
       date = "group_info_general/date",
       Ita_koleta_dadus_husi_atividad = "group_info_general/Ita_koleta_dadus_husi_atividad",
       Tanba_sa_la_iha_ro_o_peskador_ = "group_info_general/Tanba_sa_la_iha_ro_o_peskador_",
       total_catch_value = "group_conservation_trading/total_catch_value",
-      `trip_group/habitat_boat` = "trip_group/habitat",
-      `group_conservation_trading/trader_other` = "group_conservation_trading/trader",
-      `group_conservation_trading/trader` = "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA"
+      `trip_group/habitat_boat` = "trip_group/habitat"
     )
 }
