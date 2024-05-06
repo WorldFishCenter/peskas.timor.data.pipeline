@@ -65,10 +65,10 @@ RUN install2.r --error --skipinstalled \
     apexcharter \
     ggforce \
     treemapify \
-    sf
+    sf \
+    glmmTMB
 
 # Install GitHub packages
-RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 RUN installGithub.r ropensci/rfishbase
 RUN installGithub.r hrbrmstr/ggchicklet
 
