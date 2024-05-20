@@ -45,7 +45,7 @@ estimates <- peskas.timor.data.pipeline::get_models(pars)
 
 vessels_stats <-
   metadata$vessels_stats %>%
-  dplyr::group_by(.data$reporting_region) %>%
+  dplyr::group_by(.data$municipality) %>%
   dplyr::summarise(n_boats = sum(.data$n_boats)) %>%
   dplyr::ungroup()
 
@@ -103,16 +103,16 @@ This report is automatically generated in the last step of [Peskas' data pipelin
 
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 kobo_trips %>%
-  dplyr::select(landing_id, landing_date, reporting_region) %>%
-  tidyr::complete(reporting_region, landing_date) %>%
+  dplyr::select(landing_id, landing_date, municipality) %>%
+  tidyr::complete(municipality, landing_date) %>%
   dplyr::mutate(
     record = ifelse(is.na(landing_id), 0, 1),
     landing_date = lubridate::floor_date(landing_date, unit = "month")
   ) %>%
-  dplyr::group_by(reporting_region, landing_date) %>%
+  dplyr::group_by(municipality, landing_date) %>%
   dplyr::summarise(obs = sum(record)) %>%
-  dplyr::filter(!is.na(reporting_region)) %>%
-  ggplot(aes(landing_date, reorder(reporting_region, obs),
+  dplyr::filter(!is.na(municipality)) %>%
+  ggplot(aes(landing_date, reorder(municipality, obs),
     fill = sqrt(obs + 1),
     color = sqrt(obs + 1)
   )) +
@@ -173,22 +173,22 @@ my_palette <- c(
 
 p1 <-
   kobo_trips %>%
-  dplyr::filter(!is.na(gear_type) & !is.na(reporting_region)) %>%
-  dplyr::select(landing_id, reporting_region, gear_type) %>%
-  dplyr::group_by(reporting_region) %>%
+  dplyr::filter(!is.na(gear) & !is.na(municipality)) %>%
+  dplyr::select(landing_id, municipality, gear) %>%
+  dplyr::group_by(municipality) %>%
   dplyr::mutate(tot_obs = dplyr::n()) %>%
-  dplyr::group_by(reporting_region, gear_type) %>%
+  dplyr::group_by(municipality, gear) %>%
   dplyr::summarise(
     tot_obs = dplyr::first(tot_obs),
     n = dplyr::n()
   ) %>%
   dplyr::ungroup() %>%
-  tidyr::complete(reporting_region, gear_type) %>%
+  tidyr::complete(municipality, gear) %>%
   tidyr::replace_na(replace = list(n = 0)) %>%
   dplyr::arrange(-tot_obs) %>%
   apexcharter::apex(
     type = "bar",
-    mapping = apexcharter::aes(x = reporting_region, y = n, fill = gear_type),
+    mapping = apexcharter::aes(x = municipality, y = n, fill = gear),
     height = 500
   ) %>%
   apexcharter::ax_chart(
@@ -207,22 +207,22 @@ p1 <-
 
 p2 <-
   kobo_trips %>%
-  dplyr::filter(!is.na(vessel_type) & !is.na(reporting_region)) %>%
-  dplyr::select(landing_id, reporting_region, vessel_type) %>%
-  dplyr::group_by(reporting_region) %>%
+  dplyr::filter(!is.na(propulsion_gear) & !is.na(municipality)) %>%
+  dplyr::select(landing_id, municipality, propulsion_gear) %>%
+  dplyr::group_by(municipality) %>%
   dplyr::mutate(tot_obs = dplyr::n()) %>%
-  dplyr::group_by(reporting_region, vessel_type) %>%
+  dplyr::group_by(municipality, propulsion_gear) %>%
   dplyr::summarise(
     tot_obs = dplyr::first(tot_obs),
     n = dplyr::n()
   ) %>%
   dplyr::ungroup() %>%
-  tidyr::complete(reporting_region, vessel_type) %>%
+  tidyr::complete(municipality, propulsion_gear) %>%
   tidyr::replace_na(replace = list(n = 0)) %>%
   dplyr::arrange(-tot_obs) %>%
   apexcharter::apex(
     type = "bar",
-    mapping = apexcharter::aes(x = reporting_region, y = n, fill = vessel_type),
+    mapping = apexcharter::aes(x = municipality, y = n, fill = propulsion_gear),
     height = 500
   ) %>%
   apexcharter::ax_chart(
@@ -264,7 +264,7 @@ kobo_trips %>%
   dplyr::select(
     .data$landing_id,
     .data$landing_date,
-    .data$trip_duration,
+    .data$trip_length,
     dplyr::starts_with("fisher_number"), .data$landing_catch
   ) %>%
   dplyr::mutate(
@@ -275,17 +275,17 @@ kobo_trips %>%
   dplyr::select(-dplyr::starts_with("fisher_number")) %>%
   tidyr::unnest(.data$landing_catch) %>%
   tidyr::unnest(.data$length_frequency) %>%
-  dplyr::filter(!is.na(.data$weight)) %>%
+  dplyr::filter(!is.na(.data$catch)) %>%
   dplyr::group_by(.data$landing_id) %>%
   dplyr::summarise(
     landing_date = dplyr::first(.data$landing_date),
     landing_period = dplyr::first(.data$landing_period),
-    trip_duration = dplyr::first(.data$trip_duration),
+    trip_length = dplyr::first(.data$trip_length),
     n_fishers = dplyr::first(.data$n_fishers),
-    weight = sum(.data$weight, na.rm = T)
+    catch = sum(.data$catch, na.rm = T)
   ) %>%
   dplyr::mutate(
-    cpue = weight / (n_fishers / trip_duration),
+    cpue = catch / (n_fishers / trip_length),
     cpue = ifelse(is.infinite(cpue), NA, cpue),
     cpue = cpue / 1000
   ) %>% 
@@ -392,10 +392,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "reporting_region") %>%
-  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
+  dplyr::bind_rows(.id = "municipality") %>%
+  dplyr::left_join(vessels_stats, by = "municipality") %>%
   ggplot(aes(landing_period, catch / 1000)) +
-  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
+  facet_wrap(~municipality, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -451,10 +451,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "reporting_region") %>%
-  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
+  dplyr::bind_rows(.id = "municipality") %>%
+  dplyr::left_join(vessels_stats, by = "municipality") %>%
   ggplot(aes(landing_period, revenue)) +
-  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
+  facet_wrap(~municipality, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -510,10 +510,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "reporting_region") %>%
-  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
+  dplyr::bind_rows(.id = "municipality") %>%
+  dplyr::left_join(vessels_stats, by = "municipality") %>%
   ggplot(aes(landing_period, price_kg)) +
-  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
+  facet_wrap(~municipality, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -553,11 +553,11 @@ preplot <-
   ) %>%
   tidyr::unnest(.data$landing_catch) %>%
   tidyr::unnest(.data$length_frequency) %>%
-  dplyr::filter(!is.na(.data$weight)) %>%
+  dplyr::filter(!is.na(.data$catch)) %>%
   dplyr::group_by(.data$landing_id, .data$catch_taxon) %>%
   dplyr::summarise(
     catch_purpose = dplyr::first(.data$catch_purpose),
-    weight = sum(.data$weight, na.rm = T),
+    catch = sum(.data$catch, na.rm = T),
   ) %>%
   dplyr::filter(!catch_taxon %in% ("0")) %>%
   dplyr::group_by(.data$catch_taxon, catch_purpose) %>%
@@ -601,31 +601,31 @@ preplot <-
   kobo_trips %>%
   dplyr::select(
     .data$landing_id,
-    .data$reporting_region,
+    .data$municipality,
     .data$landing_catch
   ) %>%
   tidyr::unnest(.data$landing_catch) %>%
   tidyr::unnest(.data$length_frequency) %>%
-  dplyr::filter(!is.na(.data$weight)) %>%
-  dplyr::group_by(.data$landing_id, .data$reporting_region, .data$catch_taxon) %>%
+  dplyr::filter(!is.na(.data$catch)) %>%
+  dplyr::group_by(.data$landing_id, .data$municipality, .data$catch_taxon) %>%
   dplyr::summarise(
     catch_purpose = dplyr::first(.data$catch_purpose),
-    weight = sum(.data$weight, na.rm = T),
+    catch = sum(.data$catch, na.rm = T),
   ) %>%
   dplyr::filter(!catch_taxon %in% ("0")) %>%
-  dplyr::group_by(.data$reporting_region, catch_purpose) %>%
+  dplyr::group_by(.data$municipality, catch_purpose) %>%
   dplyr::summarise(
     obs = dplyr::n()
   ) %>%
-  dplyr::group_by(.data$reporting_region) %>%
+  dplyr::group_by(.data$municipality) %>%
   dplyr::mutate(tot_obs = sum(obs, na.rm = T)) %>%
   dplyr::mutate(prop_obs = obs / tot_obs) %>% 
   dplyr::ungroup()
 
 preplot %>% 
-  dplyr::filter(!is.na(reporting_region)) %>%
+  dplyr::filter(!is.na(municipality)) %>%
   #dplyr::left_join(species, by = "catch_taxon") %>% 
-  ggplot(aes(x = reorder(reporting_region, tot_obs), y = prop_obs, fill = catch_purpose)) +
+  ggplot(aes(x = reorder(municipality, tot_obs), y = prop_obs, fill = catch_purpose)) +
   ggchicklet::geom_chicklet() +
   theme_minimal(9) +
   theme(
@@ -888,22 +888,22 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "reporting_region") %>%
-  dplyr::left_join(vessels_stats, by = "reporting_region") %>% 
-  dplyr::group_by(reporting_region, grouped_taxa) %>%
+  dplyr::bind_rows(.id = "municipality") %>%
+  dplyr::left_join(vessels_stats, by = "municipality") %>% 
+  dplyr::group_by(municipality, grouped_taxa) %>%
   dplyr::summarise(catch = sum(catch, na.rm = T)) %>%
   dplyr::ungroup() %>% 
   dplyr::left_join(species, by = "grouped_taxa") %>% 
   dplyr::select(-grouped_taxa) %>%
-  tidyr::complete(reporting_region, catch_name_en, fill = list(catch = 0)) %>%
-  # Calculate the total catch per reporting_region
-  dplyr::group_by(reporting_region) %>%
+  tidyr::complete(municipality, catch_name_en, fill = list(catch = 0)) %>%
+  # Calculate the total catch per municipality
+  dplyr::group_by(municipality) %>%
   dplyr::mutate(total_catch = sum(catch)) %>%
-  # Calculate the percentage of catch for each grouped_taxa within each reporting_region
+  # Calculate the percentage of catch for each grouped_taxa within each municipality
   dplyr::mutate(percent_catch = (catch / total_catch) * 100) %>%
   dplyr::ungroup() %>%
   # Plot with ggplot2 using percent_catch
-  ggplot(aes(x = reorder(reporting_region, total_catch), y = percent_catch, fill = catch_name_en)) +
+  ggplot(aes(x = reorder(municipality, total_catch), y = percent_catch, fill = catch_name_en)) +
   #geom_col() +
   ggchicklet::geom_chicklet() +
   theme_minimal() +
@@ -930,37 +930,37 @@ dat <-
   dplyr::select(
     .data$landing_id,
     .data$habitat,
-    .data$gear_type,
+    .data$gear,
     dplyr::starts_with("fisher_number"),
     .data$landing_catch
   ) %>%
   tidyr::unnest(.data$landing_catch) %>%
   tidyr::unnest(.data$length_frequency) %>%
-  dplyr::filter(!is.na(.data$weight)) %>%
+  dplyr::filter(!is.na(.data$catch)) %>%
   dplyr::group_by(.data$landing_id, .data$catch_taxon) %>%
   dplyr::summarise(
     habitat = dplyr::first(habitat),
-    gear_type = dplyr::first(gear_type),
+    gear = dplyr::first(gear),
     fisher_number_child = dplyr::first(fisher_number_child),
     fisher_number_man = dplyr::first(fisher_number_man),
     fisher_number_woman = dplyr::first(fisher_number_woman),
     catch_purpose = dplyr::first(catch_purpose),
-    weight = sum(.data$weight, na.rm = T)
+    catch = sum(.data$catch, na.rm = T)
   ) %>% 
   dplyr::filter(!is.na(fisher_number_child),!is.na(fisher_number_woman),!is.na(fisher_number_man))
 
 parallel_plot <- 
   dat %>% 
-  dplyr::filter(!is.na(habitat), !is.na(gear_type)) %>% 
+  dplyr::filter(!is.na(habitat), !is.na(gear)) %>% 
   dplyr::group_by(landing_id) %>% 
   dplyr::summarise(habitat = dplyr::first(habitat),
-                   gear_type = dplyr::first(gear_type),
+                   gear = dplyr::first(gear),
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman)) %>% 
-  dplyr::select(habitat, gear_type, fisher_number_woman, fisher_number_child, fisher_number_man) %>% 
-  tidyr::pivot_longer(-c(habitat, gear_type)) %>% 
-  dplyr::group_by(habitat, gear_type, name) %>% 
+  dplyr::select(habitat, gear, fisher_number_woman, fisher_number_child, fisher_number_man) %>% 
+  tidyr::pivot_longer(-c(habitat, gear)) %>% 
+  dplyr::group_by(habitat, gear, name) %>% 
   dplyr::summarise(value = sum(value)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(dplyr::across(habitat:name, ~ as.factor(.x))) %>% 
@@ -970,7 +970,7 @@ parallel_plot <-
                 name = as.factor(name)) %>% 
   dplyr::rename("Gender" = name,
                 "Habitat" = habitat,
-                "Gear type" = gear_type) %>% 
+                "Gear type" = gear) %>% 
   ggforce::gather_set_data(c(3,1,2))
 
 parallel_plot$x <- factor(parallel_plot$x, levels = c("3", "1", "2"),
@@ -1008,7 +1008,7 @@ p1 <-
   dat %>% 
   dplyr::group_by(landing_id) %>% 
   dplyr::summarise(habitat = dplyr::first(habitat),
-                   gear_type = dplyr::first(gear_type),
+                   gear = dplyr::first(gear),
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
@@ -1039,27 +1039,27 @@ p2 <-
   dat %>% 
   dplyr::group_by(landing_id) %>% 
   dplyr::summarise(habitat = dplyr::first(habitat),
-                   gear_type = dplyr::first(gear_type),
+                   gear = dplyr::first(gear),
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
                    catch_purpose = dplyr::first(catch_purpose)) %>% 
   dplyr::mutate(category = dplyr::case_when(fisher_number_man == 0  ~ "Women and childs",
                                             TRUE ~ "Only men")) %>% 
-  dplyr::group_by(gear_type, category) %>% 
+  dplyr::group_by(gear, category) %>% 
   dplyr::count() %>% 
   dplyr::arrange(dplyr::desc(n)) %>% 
   dplyr::group_by(category) %>% 
   na.omit() %>% 
   dplyr::mutate(n_tot = sum(n, na.rm = T),
                 n = round(n/n_tot*100,2)) %>% 
-  ggplot(aes(area = n, fill = gear_type,
-             label = paste(gear_type, paste0(n, " %"), sep = "\n"))) +
+  ggplot(aes(area = n, fill = gear,
+             label = paste(gear, paste0(n, " %"), sep = "\n"))) +
   theme_minimal()+
   facet_grid(.~category) +
   scale_fill_brewer(palette = "Dark2")+
   scale_color_brewer(palette = "Dark2")+
-  treemapify::geom_treemap(aes(color = gear_type), alpha = 0.65, size = 2) +
+  treemapify::geom_treemap(aes(color = gear), alpha = 0.65, size = 2) +
   treemapify::geom_treemap_text(colour = "black",
                                 place = "centre",
                                 size = 13)+
@@ -1070,7 +1070,7 @@ p3 <-
   dat %>% 
   dplyr::group_by(landing_id) %>% 
   dplyr::summarise(habitat = dplyr::first(habitat),
-                   gear_type = dplyr::first(gear_type),
+                   gear = dplyr::first(gear),
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
@@ -1192,13 +1192,13 @@ habitat_nutrients <-
   ) %>%
   tidyr::unnest(.data$landing_catch) %>%
   tidyr::unnest(.data$length_frequency) %>%
-  dplyr::filter(!is.na(.data$weight)) %>%
-  dplyr::select(habitat, weight:Vitamin_A_mu) %>%
+  dplyr::filter(!is.na(.data$catch)) %>%
+  dplyr::select(habitat, catch:Vitamin_A_mu) %>%
   rename_nutrients_mu() %>%
-  tidyr::pivot_longer(-c(habitat, weight), names_to = "nutrient") %>%
+  tidyr::pivot_longer(-c(habitat, catch), names_to = "nutrient") %>%
   dplyr::left_join(RDI_tab) %>%
   dplyr::mutate(
-    value = value / weight,
+    value = value / catch,
     inds_kg = (value * 1000) / conv_factor
   ) %>%
   dplyr::group_by(habitat, nutrient) %>%
