@@ -70,7 +70,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     ))) %>%
     purrr::flatten() %>%
     purrr::set_names(names(models$municipal)) %>%
-    dplyr::bind_rows(.id = "region") %>%
+    dplyr::bind_rows(.id = "municipality") %>%
     dplyr::rename(date_bin_start = .data$landing_period) %>%
     dplyr::select(-c(.data$period, .data$month))
 
@@ -84,27 +84,27 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::summarise(
-      reporting_region = dplyr::first(.data$reporting_region),
+      municipality = dplyr::first(.data$municipality),
       date_bin_start = dplyr::first(.data$date_bin_start),
-      landing_value = dplyr::first(.data$landing_value),
-      weight = sum(.data$weight, na.rm = T),
+      catch_price = dplyr::first(.data$catch_price),
+      catch = sum(.data$catch, na.rm = T),
       fuel = dplyr::first(.data$fuel)
     ) %>%
-    dplyr::group_by(.data$reporting_region, .data$date_bin_start) %>%
+    dplyr::group_by(.data$municipality, .data$date_bin_start) %>%
     dplyr::summarise(
-      recorded_revenue = sum(.data$landing_value, na.rm = T),
-      recorded_catch = sum(.data$weight, na.rm = T) / 1000,
+      recorded_catch_price = sum(.data$catch_price, na.rm = T),
+      recorded_catch = sum(.data$catch, na.rm = T) / 1000,
       fuel = mean(.data$fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
-      recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
+      recorded_catch_price = ifelse(.data$recorded_catch_price == 0, NA_real_, .data$recorded_catch_price),
       recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
       fuel = ifelse(.data$fuel == 0, NA_real_, .data$fuel)
     ) %>%
     dplyr::select(
-      region = .data$reporting_region,
+      .data$municipality,
       .data$date_bin_start,
-      .data$recorded_revenue,
+      .data$recorded_catch_price,
       .data$recorded_catch,
       .data$fuel
     ) %>%
@@ -112,7 +112,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
 
   municipal_aggregated <-
     dplyr::left_join(municipal_aggregated, municipal_aggregated_recorded,
-      by = c("region", "date_bin_start")
+      by = c("municipality", "date_bin_start")
     )
 
   taxa_estimations <-
@@ -153,7 +153,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       .data$n_landings,
       .data$prop_landings_woman:.data$catch,
       .data$price_kg,
-      .data$recorded_revenue,
+      .data$recorded_catch_price,
       .data$recorded_catch
     )
 
@@ -204,8 +204,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   summary_dat <- get_summary_data(data = merged_trips, catch_table = catch_table, pars)
   normalized_params <- get_normalized_params(merged_trips)
   normalized_nutrients <- get_normalized_nutrients(merged_trips, pars)
-  summary_dat$catch_norm <- jsonify_indicators(normalized_params, .data$weight_stand_kg)
-  summary_dat$revenue_norm <- jsonify_indicators(normalized_params, .data$revenue_stand)
+  summary_dat$catch_norm <- jsonify_indicators(normalized_params, .data$catch_stand_kg)
+  summary_dat$catch_price_norm <- jsonify_indicators(normalized_params, .data$catch_price_stand)
   summary_dat$nutrients_norm <- jsonify_nutrients(normalized_nutrients)
 
   summary_data_filename <-
@@ -272,19 +272,19 @@ get_trips_table <- function(merged_trips_with_addons) {
       .data$landing_date,
       landing_n_taxa = .data$n_taxa,
       landing_taxa = .data$taxa,
-      .data$landing_station,
-      .data$reporting_region,
+      .data$landing_site,
+      .data$municipality,
       .data$habitat,
-      .data$landing_value,
+      .data$catch_price,
       .data$landing_catch,
-      .data$vessel_type,
-      .data$gear_type,
+      .data$propulsion_gear,
+      .data$gear,
       .data$mesh_size,
       .data$fuel,
-      .data$conservation_place,
+      .data$catch_preservation,
       tidyselect::starts_with("fisher_"),
       .data$n_gleaners,
-      landing_survey_trip_duration = .data$trip_duration,
+      landing_survey_trip_length = .data$trip_length,
       .data$tracker_trip_start,
       .data$tracker_trip_end,
       .data$happiness
@@ -312,23 +312,23 @@ summarise_trips <- function(bin_unit = "month", merged_trips_with_addons) {
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::summarise(
-      reporting_region = dplyr::first(.data$reporting_region),
+      municipality = dplyr::first(.data$municipality),
       date_bin_start = dplyr::first(.data$date_bin_start),
       fisher_number_woman = dplyr::first(.data$fisher_number_woman),
-      landing_value = dplyr::first(.data$landing_value),
-      recorded_weight = sum(.data$weight, na.rm = T) / 1000,
+      catch_price = dplyr::first(.data$catch_price),
+      recorded_weight = sum(.data$catch, na.rm = T) / 1000,
       fuel = dplyr::first(.data$fuel)
     ) %>%
     dplyr::group_by(.data$date_bin_start) %>%
     dplyr::summarise(
       n_landings = dplyr::n_distinct(.data$landing_id, na.rm = T),
-      recorded_revenue = sum(.data$landing_value, na.rm = T),
+      recorded_catch_price = sum(.data$catch_price, na.rm = T),
       recorded_catch = sum(.data$recorded_weight, na.rm = T),
       prop_landings_woman = sum(.data$fisher_number_woman > 0, na.rm = T) / sum(!is.na(.data$fisher_number_woman), na.rm = T),
       fuel = mean(.data$fuel, na.rm = T)
     ) %>%
     dplyr::mutate(
-      recorded_revenue = ifelse(.data$recorded_revenue == 0, NA_real_, .data$recorded_revenue),
+      recorded_catch_price = ifelse(.data$recorded_catch_price == 0, NA_real_, .data$recorded_catch_price),
       recorded_catch = ifelse(.data$recorded_catch == 0, NA_real_, .data$recorded_catch),
       fuel = ifelse(.data$fuel == 0, NA_real_, .data$fuel)
     )
@@ -394,7 +394,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
         elapsed = as.numeric(today - .data$date_bin_start + 1),
         period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
-        revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+        catch_price = dplyr::if_else(.data$current_period, .data$catch_price * .data$elapsed / .data$period_length, as.numeric(.data$catch_price)),
         catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch),
       ) %>%
       dplyr::filter(.data$elapsed > 0) %>%
@@ -409,10 +409,10 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
     binned_frame <-
       standardised_predictions %>%
       dplyr::summarise(
-        landing_revenue = mean(.data$landing_revenue, na.rm = T),
-        landing_weight = mean(.data$landing_weight, na.rm = T),
+        landing_catch_price = mean(.data$landing_catch_price, na.rm = T),
+        landing_catch = mean(.data$landing_catch, na.rm = T),
         n_landings_per_boat = sum(.data$n_landings_per_boat, na.rm = T),
-        revenue = sum(.data$revenue, na.rm = T),
+        catch_price = sum(.data$catch_price, na.rm = T),
         catch = sum(.data$catch, na.rm = T)
       ) %>%
       dplyr::ungroup()
@@ -428,7 +428,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
         elapsed = as.numeric(today - .data$date_bin_start + 1),
         period_length = as.numeric(dplyr::lead(.data$date_bin_start) - .data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(.data$current_period, .data$n_landings_per_boat * .data$elapsed / .data$period_length, .data$n_landings_per_boat),
-        revenue = dplyr::if_else(.data$current_period, .data$revenue * .data$elapsed / .data$period_length, as.numeric(.data$revenue)),
+        catch_price = dplyr::if_else(.data$current_period, .data$catch_price * .data$elapsed / .data$period_length, as.numeric(.data$catch_price)),
         catch = dplyr::if_else(.data$current_period, .data$catch * .data$elapsed / .data$period_length, .data$catch)
       ) %>%
       dplyr::filter(.data$elapsed > 0) %>%
@@ -443,10 +443,10 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
     binned_frame <-
       standardised_predictions %>%
       dplyr::summarise(
-        landing_revenue = mean(.data$landing_revenue, na.rm = T),
-        landing_weight = mean(.data$landing_weight, na.rm = T),
+        landing_catch_price = mean(.data$landing_catch_price, na.rm = T),
+        landing_catch = mean(.data$landing_catch, na.rm = T),
         n_landings_per_boat = sum(.data$n_landings_per_boat, na.rm = T),
-        revenue = sum(.data$revenue, na.rm = T),
+        catch_price = sum(.data$catch_price, na.rm = T),
         catch = sum(.data$catch, na.rm = T),
         price_kg = mean(.data$price_kg, na.rm = T)
       ) %>%
@@ -538,12 +538,12 @@ get_weight <- function(x) {
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::mutate(
-      recorded_weight = sum(.data$weight),
-      recorded_weight = .data$recorded_weight / 1000
+      recorded_catch = sum(.data$catch),
+      recorded_catch = .data$recorded_catch / 1000
     ) %>% # convert to Kg
     dplyr::ungroup() %>%
     tidyr::nest(length_frequency = c(.data$length:.data$Vitamin_A_mu)) %>%
-    tidyr::nest(landing_catch = c(.data$catch_taxon, .data$catch_purpose, .data$length_type, .data$length_frequency))
+    tidyr::nest(landing_catch = c(.data$catch_taxon, .data$catch_use, .data$length_type, .data$length_frequency))
 }
 
 
@@ -589,20 +589,20 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     data %>%
     fill_missing_regions() %>%
     dplyr::mutate(Area = dplyr::case_when(
-      .data$reporting_region %in% c("Bobonaro", "Liquica", "Dili", "Baucau", "Oecusse") |
-        .data$landing_station %in% c(
+      .data$municipality %in% c("Bobonaro", "Liquica", "Dili", "Baucau", "Oecusse") |
+        .data$landing_site %in% c(
           "Com", "Tutuala", "Ililai",
           "Sentru/Liarafa/Sika/Rau Moko", "Comando"
         ) ~ "North Coast",
-      .data$reporting_region == "Atauro" ~ "Atauro island",
-      is.na(.data$reporting_region) | is.na(.data$reporting_region) |
-        is.na(.data$reporting_region) & is.na(.data$reporting_region) ~ NA_character_,
+      .data$municipality == "Atauro" ~ "Atauro island",
+      is.na(.data$municipality) | is.na(.data$municipality) |
+        is.na(.data$municipality) & is.na(.data$municipality) ~ NA_character_,
       TRUE ~ "South Coast"
     ))
 
   nutrients_catch_average <-
     catch_table %>%
-    dplyr::select(-c(.data$length:.data$weight)) %>%
+    dplyr::select(-c(.data$length:.data$catch)) %>%
     dplyr::group_by(.data$trip_id) %>%
     dplyr::summarise(dplyr::across(is.numeric, ~ sum(.x, na.rm = T))) %>%
     dplyr::filter(!.data$Zinc_mu == 0) %>%
@@ -623,25 +623,25 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
 
   happiness <-
     data %>%
-    dplyr::select(.data$landing_date, .data$reporting_region, .data$happiness) %>%
+    dplyr::select(.data$landing_date, .data$municipality, .data$happiness) %>%
     dplyr::mutate(landing_date = lubridate::floor_date(.data$landing_date, unit = "month")) %>%
-    dplyr::group_by(.data$reporting_region, .data$landing_date) %>%
+    dplyr::group_by(.data$municipality, .data$landing_date) %>%
     dplyr::summarise(happiness = mean(.data$happiness, na.rm = T))
 
   conservation <-
     data %>%
-    dplyr::filter(!is.na(.data$conservation_place)) %>%
-    dplyr::select(.data$reporting_region, .data$conservation_place) %>%
-    dplyr::group_by(.data$reporting_region) %>%
+    dplyr::filter(!is.na(.data$catch_preservation)) %>%
+    dplyr::select(.data$municipality, .data$catch_preservation) %>%
+    dplyr::group_by(.data$municipality) %>%
     dplyr::mutate(n_obs = dplyr::n()) %>%
-    dplyr::group_by(.data$reporting_region, .data$conservation_place) %>%
+    dplyr::group_by(.data$municipality, .data$catch_preservation) %>%
     dplyr::summarise(
       n_obs = dplyr::first(.data$n_obs),
       count = dplyr::n(),
       perc = .data$count / .data$n_obs * 100
     ) %>%
     dplyr::ungroup() %>%
-    tidyr::complete(.data$reporting_region, .data$conservation_place) %>%
+    tidyr::complete(.data$municipality, .data$catch_preservation) %>%
     tidyr::replace_na(list(
       count = 0,
       perc = 0
@@ -652,31 +652,31 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     data %>%
     dplyr::filter(!is.na(.data$landing_id)) %>%
     dplyr::select(
-      .data$landing_id, .data$reporting_region, .data$gear_type,
-      .data$trip_duration, .data$landing_catch, dplyr::starts_with("fisher_")
+      .data$landing_id, .data$municipality, .data$gear,
+      .data$trip_length, .data$landing_catch, dplyr::starts_with("fisher_")
     ) %>%
     dplyr::mutate(
       n_fishers = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman
     ) %>%
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
-    dplyr::filter(!is.na(.data$weight)) %>%
+    dplyr::filter(!is.na(.data$catch)) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::summarise(
-      region = dplyr::first(.data$reporting_region),
-      gear_type = dplyr::first(.data$gear_type),
-      trip_duration = dplyr::first(.data$trip_duration),
+      municipality = dplyr::first(.data$municipality),
+      gear = dplyr::first(.data$gear),
+      trip_length = dplyr::first(.data$trip_length),
       n_fishers = dplyr::first(.data$n_fishers),
-      landing_weight = sum(.data$weight)
+      landing_catch = sum(.data$catch)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
-      landing_weight = .data$landing_weight / 1000,
-      cpue = (.data$landing_weight / .data$trip_duration) / .data$n_fishers,
+      landing_catch = .data$landing_catch / 1000,
+      cpue = (.data$landing_catch / .data$trip_length) / .data$n_fishers,
       cpue = ifelse(is.infinite(.data$cpue), NA_real_, .data$cpue)
     ) %>%
-    dplyr::select(-c(.data$trip_duration, .data$n_fishers, .data$landing_weight)) %>%
-    dplyr::group_by(.data$region, .data$gear_type) %>%
+    dplyr::select(-c(.data$trip_length, .data$n_fishers, .data$landing_catch)) %>%
+    dplyr::group_by(.data$municipality, .data$gear) %>%
     dplyr::summarise(cpue = stats::median(.data$cpue, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     na.omit()
@@ -709,27 +709,27 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
       dplyr::select(.data$landing_catch) %>%
       tidyr::unnest(.data$landing_catch) %>%
       tidyr::unnest(.data$length_frequency) %>%
-      dplyr::filter(.data$individuals > 0) %>%
-      dplyr::select(.data$catch_taxon, .data$weight) %>%
+      dplyr::filter(.data$number_of_fish > 0) %>%
+      dplyr::select(.data$catch_taxon, .data$catch) %>%
       convert_taxa_names(pars) %>%
       dplyr::filter(!is.na(.data$fish_group)) %>%
-      dplyr::mutate(tot_weight = sum(.data$weight, na.rm = T)) %>%
+      dplyr::mutate(tot_catch = sum(.data$catch, na.rm = T)) %>%
       dplyr::group_by(.data$fish_group) %>%
       dplyr::summarise(
-        weight_contr = sum(.data$weight, na.rm = T),
-        tot_weight = dplyr::first(.data$tot_weight),
-        weight = sum(.data$weight, na.rm = T),
-        weight_contr = .data$weight_contr / .data$tot_weight * 100
+        catch_contr = sum(.data$catch, na.rm = T),
+        tot_catch = dplyr::first(.data$tot_catch),
+        catch = sum(.data$catch, na.rm = T),
+        catch_contr = .data$catch_contr / .data$tot_catch * 100
       ) %>%
-      dplyr::filter(!.data$weight_contr == 0) %>%
-      dplyr::mutate(fish_group = ifelse(.data$weight_contr < 1, "Other", .data$fish_group)) %>%
+      dplyr::filter(!.data$catch_contr == 0) %>%
+      dplyr::mutate(fish_group = ifelse(.data$catch_contr < 1, "Other", .data$fish_group)) %>%
       dplyr::group_by(.data$fish_group) %>%
       dplyr::summarise(
-        weight = sum(.data$weight, na.rm = T) / 1000000
+        catch = sum(.data$catch, na.rm = T) / 1000000
       ) %>%
-      dplyr::arrange(dplyr::desc(.data$weight)) %>%
+      dplyr::arrange(dplyr::desc(.data$catch)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(weight = as.integer(.data$weight)),
+      dplyr::mutate(catch = as.integer(.data$catch)),
     nutrients_per_catch = nutrients_catch_average,
     happiness_rating = happiness,
     conservation = conservation,
@@ -745,37 +745,37 @@ get_normalized_params <- function(x) {
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::select(
-      .data$landing_id, .data$trip_duration, .data$n_fishers,
-      .data$landing_value, .data$gear_type, .data$habitat,
-      .data$weight, .data$Selenium_mu:.data$Vitamin_A_mu
+      .data$landing_id, .data$trip_length, .data$n_fishers,
+      .data$catch_price, .data$gear, .data$habitat,
+      .data$catch, .data$Selenium_mu:.data$Vitamin_A_mu
     ) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::summarise(
-      dplyr::across(c(.data$trip_duration:.data$habitat), ~ dplyr::first(.x)),
-      dplyr::across(c(.data$weight:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
+      dplyr::across(c(.data$trip_length:.data$habitat), ~ dplyr::first(.x)),
+      dplyr::across(c(.data$catch:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$habitat)) %>%
     dplyr::select(
-      .data$trip_duration, .data$n_fishers, .data$habitat,
-      .data$gear_type, .data$landing_value, .data$weight
+      .data$trip_length, .data$n_fishers, .data$habitat,
+      .data$gear, .data$catch_price, .data$catch
     ) %>%
     dplyr::mutate(dplyr::across(
-      c(.data$gear_type, .data$habitat),
+      c(.data$gear, .data$habitat),
       ~ as.factor(.x)
     )) %>%
     na.omit() %>%
     dplyr::mutate(
-      weight_stand = (.data$weight / .data$n_fishers) / .data$trip_duration,
-      weight_stand_kg = .data$weight_stand / 1000,
-      revenue_stand = (.data$landing_value / .data$n_fishers) / .data$trip_duration
+      catch_stand = (.data$catch / .data$n_fishers) / .data$trip_length,
+      catch_stand_kg = .data$catch_stand / 1000,
+      catch_price_stand = (.data$catch_price / .data$n_fishers) / .data$trip_length
     ) %>%
     dplyr::select(
-      .data$habitat, .data$gear_type,
-      .data$revenue_stand, .data$weight_stand_kg
+      .data$habitat, .data$gear,
+      .data$catch_price_stand, .data$catch_stand_kg
     ) %>%
     dplyr::filter_all(dplyr::all_vars(!is.infinite(.))) %>%
-    dplyr::mutate(gear_type = stringr::str_to_title(.data$gear_type))
+    dplyr::mutate(gear = stringr::str_to_title(.data$gear))
 }
 
 get_normalized_nutrients <- function(x, pars) {
@@ -789,23 +789,23 @@ get_normalized_nutrients <- function(x, pars) {
     tidyr::unnest(.data$landing_catch) %>%
     tidyr::unnest(.data$length_frequency) %>%
     dplyr::select(
-      .data$landing_id, .data$trip_duration, .data$n_fishers,
-      .data$landing_value, .data$gear_type, .data$habitat,
-      .data$weight, .data$Selenium_mu:.data$Vitamin_A_mu
+      .data$landing_id, .data$trip_length, .data$n_fishers,
+      .data$catch_price, .data$gear, .data$habitat,
+      .data$catch, .data$Selenium_mu:.data$Vitamin_A_mu
     ) %>%
     dplyr::group_by(.data$landing_id) %>%
     dplyr::summarise(
-      dplyr::across(c(.data$trip_duration:.data$habitat), ~ dplyr::first(.x)),
-      dplyr::across(c(.data$weight:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
+      dplyr::across(c(.data$trip_length:.data$habitat), ~ dplyr::first(.x)),
+      dplyr::across(c(.data$catch:.data$Vitamin_A_mu), ~ sum(.x, na.rm = T))
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(.data$habitat)) %>%
     dplyr::select(
-      .data$habitat, .data$weight,
+      .data$habitat, .data$catch,
       .data$Selenium_mu:.data$Vitamin_A_mu
     ) %>%
     na.omit() %>%
-    dplyr::mutate(dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ (.x / .data$weight) * 1000)) %>%
+    dplyr::mutate(dplyr::across(c(.data$Selenium_mu:.data$Vitamin_A_mu), ~ (.x / .data$catch) * 1000)) %>%
     dplyr::filter_all(dplyr::all_vars(!is.infinite(.))) %>%
     dplyr::select(c(.data$habitat, .data$Selenium_mu:.data$Vitamin_A_mu)) %>%
     tidyr::pivot_longer(-.data$habitat, names_to = "nutrient", values_to = "grams_rate") %>%
@@ -831,7 +831,7 @@ jsonify_indicators <- function(data, parameter) {
 
   to_take <-
     data %>%
-    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear_type, sep = "_")) %>%
+    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear, sep = "_")) %>%
     dplyr::group_by(.data$habitat_gear) %>%
     dplyr::count() %>%
     dplyr::filter(.data$n > 50) %>%
@@ -840,10 +840,10 @@ jsonify_indicators <- function(data, parameter) {
 
   df_ord <-
     data %>%
-    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear_type, sep = "_")) %>%
+    dplyr::mutate(habitat_gear = paste(.data$habitat, .data$gear, sep = "_")) %>%
     dplyr::filter(.data$habitat_gear %in% to_take) %>%
     dplyr::select(-.data$habitat_gear) %>%
-    dplyr::group_by(.data$habitat, .data$gear_type) %>%
+    dplyr::group_by(.data$habitat, .data$gear) %>%
     dplyr::summarise(
       col_selected = round(mean(!!var, na.rm = T), 3),
       n = dplyr::n()
@@ -863,7 +863,7 @@ jsonify_indicators <- function(data, parameter) {
     list(
       name = habitat,
       data = lapply(1:nrow(org_data), function(i) {
-        list(x = org_data$gear_type[i], y = org_data$col_selected[i])
+        list(x = org_data$gear[i], y = org_data$col_selected[i])
       })
     )
   })
