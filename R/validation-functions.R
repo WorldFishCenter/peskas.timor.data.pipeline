@@ -96,7 +96,7 @@ validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
       dplyr::select(.data$`_id`, .data$`trip_group/duration`) %>%
       dplyr::mutate(`trip_group/duration` = abs(as.numeric(.data$`trip_group/duration`))) %>%
       dplyr::transmute(
-        trip_duration = dplyr::case_when(
+        trip_length = dplyr::case_when(
           .data$`trip_group/duration` > hrs |
             .data$`trip_group/duration` < 1 ~ NA_real_,
           TRUE ~ .data$`trip_group/duration`

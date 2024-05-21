@@ -53,7 +53,7 @@
                   "typeClass": "primitive",
                   "value": "Production"
                 }
-            },
+              },
               {
                 "keywordValue": {
                   "typeName": "keywordValue",
@@ -103,31 +103,36 @@
           },
           {
             "value": [
-                { "datasetContactEmail" : {
-                    "typeClass": "primitive",
-                    "multiple": false,
-                    "typeName": "datasetContactEmail",
-                    "value" : "lorenzo.longobardi@gmail.com"
+              {
+                "datasetContactEmail": {
+                  "typeClass": "primitive",
+                  "multiple": false,
+                  "typeName": "datasetContactEmail",
+                  "value": "lorenzo.longobardi@gmail.com"
                 },
-                "datasetContactName" : {
-                    "typeClass": "primitive",
-                    "multiple": false,
-                    "typeName": "datasetContactName",
-                    "value": "Lorenzo Longobardi"
+                "datasetContactName": {
+                  "typeClass": "primitive",
+                  "multiple": false,
+                  "typeName": "datasetContactName",
+                  "value": "Lorenzo Longobardi"
                 }
-            }],
+              }
+            ],
             "typeClass": "compound",
             "multiple": true,
             "typeName": "datasetContact"
           },
           {
-            "value": [ {
-               "dsDescriptionValue":{
-                "value":   "Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). Read README file for detailed info about specific data content and period covered.",
-                "multiple":false,
-               "typeClass": "primitive",
-               "typeName": "dsDescriptionValue"
-            }}],
+            "value": [
+              {
+                "dsDescriptionValue": {
+                  "value": "Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). Read README file for detailed info about specific data content and period covered.",
+                  "multiple": false,
+                  "typeClass": "primitive",
+                  "typeName": "dsDescriptionValue"
+                }
+              }
+            ],
             "typeClass": "compound",
             "multiple": true,
             "typeName": "dsDescription"
@@ -139,6 +144,17 @@
             "typeClass": "controlledVocabulary",
             "multiple": true,
             "typeName": "subject"
+          },
+          {
+            "value": {
+              "typeClass": "primitive",
+              "multiple": false,
+              "typeName": "license",
+              "value": "CC BY-NC-SA 4.0"
+            },
+            "typeClass": "compound",
+            "multiple": false,
+            "typeName": "license"
           }
         ],
         "displayName": "Citation Metadata"

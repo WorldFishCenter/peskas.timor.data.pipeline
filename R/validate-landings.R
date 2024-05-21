@@ -161,14 +161,14 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
         .at = "length_individuals",
         purrr::map, dplyr::select,
         length = .data$mean_length,
-        individuals = .data$n_individuals,
-        weight = .data$weight,
+        number_of_fish = .data$n_individuals,
+        catch = .data$weight,
         .data$Selenium_mu:.data$Vitamin_A_mu
       ),
       species_group = purrr::map(
         .x = .data$species_group, .f = dplyr::select,
         catch_taxon = .data$species,
-        catch_purpose = .data$food_or_sale,
+        catch_use = .data$food_or_sale,
         length_type = .data$length_type,
         length_frequency = .data$length_individuals
       )
@@ -177,19 +177,19 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       landing_id = .data$submission_id,
       landing_date = .data$date,
       tracker_imei = .data$imei,
-      trip_duration = .data$trip_duration,
+      trip_length = .data$trip_length,
       landing_catch = .data$species_group,
-      landing_value = .data$total_catch_value,
-      landing_station = .data$station_name,
-      reporting_region = .data$reporting_region,
+      catch_price = .data$total_catch_value,
+      landing_site = .data$station_name,
+      municipality = .data$reporting_region,
       habitat = .data$habitat_type,
       tidyselect::starts_with("fisher_number"),
-      .data$gear_type,
+      gear = .data$gear_type,
       .data$mesh_size,
-      .data$vessel_type,
+      propulsion_gear = .data$vessel_type,
       .data$n_gleaners,
       .data$fuel,
-      .data$conservation_place,
+      catch_preservation = .data$conservation_place,
       .data$happiness
     )
 

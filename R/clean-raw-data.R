@@ -444,8 +444,8 @@ clean_updated_landings <- function(x) {
       `_id` = as.character(.data$`_id`)
     ) %>%
     dplyr::mutate("group_conservation_trading/trader" = dplyr::coalesce(
-      `group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA`,
-      `group_conservation_trading/trader`
+      "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA",
+      "group_conservation_trading/trader"
     )) %>%
     dplyr::select(-c(
       dplyr::contains("group_info_general/group_station"),

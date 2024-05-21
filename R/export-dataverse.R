@@ -277,7 +277,7 @@ publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
 #' @export
 #'
 generate_description <- function(...) {
-  trips_dat <- readr::read_tsv(grep("timor_trips", list.files(), value = TRUE))
+  trips_dat <- readr::read_tsv(grep("timor_trips", list.files(), value = TRUE)) %>% dplyr::select(-.data$landing_catch)
   catch_dat <- readr::read_tsv(grep("catch", list.files(), value = TRUE))
   aggr_dat <- readr::read_tsv(grep("aggregated", list.files(), value = TRUE))
 
@@ -295,24 +295,46 @@ generate_description <- function(...) {
         "Date of the fishing trip",
         "Number of taxa associated to the catch",
         "ISSCAAP codes identifying the taxa group",
-        "Name of the landing station",
+        "Name of the landing site",
         "Timor municipality",
         "Ecological habitat where the capture was made",
-        "Estimated value in USD of the catch",
-        "Uninformative column - for backwards compatibility only",
-        "The vessel type, can be motorised or unmotorised",
-        "Gear type of the boat",
-        "Size of the mesh (mm)",
+        "Price in USD of the catch",
+        "Gear used to propel a watercraft, can be motorised or unmotorised",
+        "Tool or method used to catch fish",
+        "The size of holes in fishing net (mm)",
         "Fuel used (L)",
-        "Catch storage on the boat",
+        "Refers to the methods of preserving the catch inshore and offshore",
         "Number of children involved in the fishing trip",
         "Number of adult males involved in the fishing trip",
         "Number of adult females involved in the fishing trip",
         "Number of gleaners",
-        "Duration of the fishing trip in hours",
+        "Duration of fishing, measured in time (hours)",
         "Start of the fishing trip",
         "End of the fishing trip",
         "Fisherman happiness (1 to 5)"
+      ),
+      "Aquatic Food Ontology ref." = c(
+        "-",
+        "-",
+        "-",
+        "-",
+        "aqfo 00000030",
+        "aqfo 00000034",
+        "aqfo 00000023",
+        "aqfo 00002202",
+        "aqfo 00002351",
+        "aqfo 00002220",
+        "aqfo 00002340",
+        "aqfo 00002352",
+        "aqfo 00002207",
+        "-",
+        "-",
+        "-",
+        "-",
+        "aqfo 00002011",
+        "-",
+        "-",
+        "-"
       )
     )
 
@@ -322,12 +344,23 @@ generate_description <- function(...) {
       Description = c(
         "Unique identifier of a fishing trip",
         "ISSCAAP codes identifying the taxa group (https://www.fao.org/fishery/en/collection/asfis/en)",
-        "Destiny of the catch, whether for sale, self-sustaining or both",
+        "Refers to the action the fisher will take with the catch (e.g. for sale, self-sustaining or both)",
         "Type of length used for catch measurement. TL: total length, FL: fork length, ShL: shell length, CW: carapace width",
-        "Average length of the individuals in the catch (cm)",
-        "Number of individuals in the catch",
-        "Weight of the catch in grams",
-        rep("Weight in grams", 7)
+        "Average length of the fishes in the catch (cm)",
+        "Refers to the number of individual fish in a catch",
+        "Fish caught by fishing operations (gr)",
+        rep("Content in grams", 7)
+      ),
+      "Aquatic Food Ontology ref." = c(
+        "-",
+        "-",
+        "aqfo 00000040",
+        "-",
+        "-",
+        "-",
+        "aqfo 00002074",
+        "aqfo 00002088",
+        rep("-", 6)
       )
     )
 
@@ -336,20 +369,37 @@ generate_description <- function(...) {
       Variable = names(aggr_dat),
       Description = c(
         "Period aggregated data refer to",
-        "Number of landings",
+        "Total number of landings in the period of reference",
         "Proportion of landings involving woman",
-        "Mean fuel used in Liters",
+        "Mean fuel used (L)",
         "Number of PDS tracks recorded",
         "Number of trips matched with PDS tracks",
         "Proportion between total trips and matched PDS tracks",
-        "Estimated revenue for each trip in USD",
-        "Estimated weight for each trip in kg",
-        "Estimated number of landings per boat",
-        "Estimated total revenue in USD",
-        "Estimated total catch in kg",
-        "Estimated Price per kg",
-        "Recorded total revenue in USD",
-        "Recorded total catch in Kg"
+        "Mean catch price from all fishing trips in the reference period (USD)",
+        "Mean catch weight from all fishing trips in the reference period (kg)",
+        "Mean number of landings per boat in the period of reference",
+        "Total national revenue estimated in the reference period (USD)",
+        "Total national catch estimated in the reference period (kg)",
+        "Mean catch price per kg in the reference period (USD)",
+        "Total revenue aggregated from landing sites (USD)",
+        "Total catch aggregated from landing sites (kg)"
+      ),
+      "Aquatic Food Ontology ref." = c(
+        "-",
+        "-",
+        "-",
+        "aqfo 00002352",
+        "-",
+        "-",
+        "-",
+        "aqfo 00002202",
+        "aqfo 00002088",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-"
       )
     )
 
