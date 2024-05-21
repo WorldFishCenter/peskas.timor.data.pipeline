@@ -311,18 +311,18 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
     tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
-    dplyr::mutate(length = ifelse(.data$individuals == 0, NA_real_, .data$length)) %>%
+    dplyr::mutate(length = ifelse(.data$number_of_fish == 0, NA_real_, .data$length)) %>%
     dplyr::group_by(.data$landing_id, .data$landing_date) %>%
-    dplyr::arrange(dplyr::desc(.data$weight), .by_group = TRUE) %>%
+    dplyr::arrange(dplyr::desc(.data$catch), .by_group = TRUE) %>%
     dplyr::summarise(
-      gear_type = dplyr::first(.data$gear_type),
-      region = dplyr::first(.data$reporting_region),
+      gear_type = dplyr::first(.data$gear),
+      region = dplyr::first(.data$municipality),
       trip = dplyr::first(.data$tracker_trip_id),
-      duration = dplyr::first(.data$trip_duration),
+      duration = dplyr::first(.data$trip_length),
       n_fishermen = dplyr::first(.data$n_fishermen),
-      landing_value = dplyr::first(.data$landing_value),
+      landing_value = dplyr::first(.data$catch_price),
       catch_taxon = dplyr::first(.data$catch_taxon),
-      weight = sum(.data$weight, na.rm = TRUE) / 1000,
+      weight = sum(.data$catch, na.rm = TRUE) / 1000,
       length = mean(.data$length, na.rm = TRUE)
     ) %>%
     dplyr::mutate(remove_label = dplyr::case_when(!.data$catch_taxon == "0" & .data$weight == 0
