@@ -1,3 +1,8 @@
+# peskas.timor.data.pipeline 3.2.0
+
+## Improvements
+- Align variables to the [Aquatic Food Ontology (AQFO)](https://agroportal.lirmm.fr/ontologies/AQFO)
+
 # peskas.timor.data.pipeline 3.1.0
 
 ## Improvements

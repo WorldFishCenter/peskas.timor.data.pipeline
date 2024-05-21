@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 3.1.0
+Version: 3.2.0
 Authors@R: 
     c(person(given = "Lorenzo",
              family = "Longobardi",
