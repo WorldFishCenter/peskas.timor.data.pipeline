@@ -45,7 +45,7 @@ estimates <- peskas.timor.data.pipeline::get_models(pars)
 
 vessels_stats <-
   metadata$vessels_stats %>%
-  dplyr::group_by(.data$municipality) %>%
+  dplyr::group_by(.data$reporting_region) %>%
   dplyr::summarise(n_boats = sum(.data$n_boats)) %>%
   dplyr::ungroup()
 
@@ -292,7 +292,7 @@ kobo_trips %>%
   dplyr::select(landing_period, cpue) %>%
   dplyr::group_by(landing_period) %>%
   dplyr::summarise(
-    mean = mean(cpue, na.rm = TRUE),
+    mean = median(cpue, na.rm = TRUE),
     sd = sd(cpue, na.rm = TRUE),
     n = dplyr::n()
   ) %>%
@@ -319,7 +319,7 @@ kobo_trips %>%
   labs(
     x = "Date", y = "Catch per unit effort (kg / fisher-hour)",
     #title = "Interannual distribution of fishing effort",
-    subtitle = "Fishing effort expressed as catch (kg) per fisher per hour"
+    subtitle = "Monthly median fishing effort expressed as catch (kg) per fisher per hour"
   )
 ```
 
@@ -392,10 +392,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "municipality") %>%
-  dplyr::left_join(vessels_stats, by = "municipality") %>%
+  dplyr::bind_rows(.id = "reporting_region") %>%
+  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
   ggplot(aes(landing_period, catch / 1000)) +
-  facet_wrap(~municipality, ncol = 3, scales = "free") +
+  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -418,7 +418,7 @@ estimates$municipal %>%
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 estimates$national$aggregated %>%
-  ggplot(aes(landing_period, revenue)) +
+  ggplot(aes(landing_period, catch_price)) +
   geom_line(color = "#447597") +
   geom_point(color = "#447597") +
   geom_area(fill = "#447597", alpha = 0.25) +
@@ -451,10 +451,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "municipality") %>%
-  dplyr::left_join(vessels_stats, by = "municipality") %>%
-  ggplot(aes(landing_period, revenue)) +
-  facet_wrap(~municipality, ncol = 3, scales = "free") +
+  dplyr::bind_rows(.id = "reporting_region") %>%
+  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
+  ggplot(aes(landing_period, catch_price)) +
+  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -510,10 +510,10 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "municipality") %>%
-  dplyr::left_join(vessels_stats, by = "municipality") %>%
+  dplyr::bind_rows(.id = "reporting_region") %>%
+  dplyr::left_join(vessels_stats, by = "reporting_region") %>%
   ggplot(aes(landing_period, price_kg)) +
-  facet_wrap(~municipality, ncol = 3, scales = "free") +
+  facet_wrap(~reporting_region, ncol = 3, scales = "free") +
   geom_line(color = "#447597") +
   geom_point(aes(color = is_imputed)) +
   geom_area(fill = "#447597", alpha = 0.15) +
@@ -556,11 +556,11 @@ preplot <-
   dplyr::filter(!is.na(.data$catch)) %>%
   dplyr::group_by(.data$landing_id, .data$catch_taxon) %>%
   dplyr::summarise(
-    catch_purpose = dplyr::first(.data$catch_purpose),
+    catch_use = dplyr::first(.data$catch_use),
     catch = sum(.data$catch, na.rm = T),
   ) %>%
   dplyr::filter(!catch_taxon %in% ("0")) %>%
-  dplyr::group_by(.data$catch_taxon, catch_purpose) %>%
+  dplyr::group_by(.data$catch_taxon, catch_use) %>%
   dplyr::summarise(
     obs = dplyr::n()
   ) %>%
@@ -571,7 +571,7 @@ preplot <-
 
 preplot %>% 
   dplyr::left_join(species, by = "catch_taxon") %>% 
-  ggplot(aes(x = reorder(catch_name_en, tot_obs), y = prop_obs, fill = catch_purpose)) +
+  ggplot(aes(x = reorder(catch_name_en, tot_obs), y = prop_obs, fill = catch_use)) +
   ggchicklet::geom_chicklet() +
   theme_minimal(10) +
   theme(
@@ -589,7 +589,7 @@ preplot %>%
 
 # Catch usage by municipality
 
-```{r echo=FALSE, fig.height=4, fig.width=5, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
+```{r echo=FALSE, fig.height=5, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 species <- 
   metadata$catch_types %>% 
@@ -609,11 +609,11 @@ preplot <-
   dplyr::filter(!is.na(.data$catch)) %>%
   dplyr::group_by(.data$landing_id, .data$municipality, .data$catch_taxon) %>%
   dplyr::summarise(
-    catch_purpose = dplyr::first(.data$catch_purpose),
+    catch_use = dplyr::first(.data$catch_use),
     catch = sum(.data$catch, na.rm = T),
   ) %>%
   dplyr::filter(!catch_taxon %in% ("0")) %>%
-  dplyr::group_by(.data$municipality, catch_purpose) %>%
+  dplyr::group_by(.data$municipality, catch_use) %>%
   dplyr::summarise(
     obs = dplyr::n()
   ) %>%
@@ -625,7 +625,7 @@ preplot <-
 preplot %>% 
   dplyr::filter(!is.na(municipality)) %>%
   #dplyr::left_join(species, by = "catch_taxon") %>% 
-  ggplot(aes(x = reorder(municipality, tot_obs), y = prop_obs, fill = catch_purpose)) +
+  ggplot(aes(x = reorder(municipality, tot_obs), y = prop_obs, fill = catch_use)) +
   ggchicklet::geom_chicklet() +
   theme_minimal(9) +
   theme(
@@ -888,22 +888,22 @@ estimates$municipal %>%
   ))) %>%
   purrr::flatten() %>%
   purrr::set_names(names(estimates$municipal)) %>%
-  dplyr::bind_rows(.id = "municipality") %>%
-  dplyr::left_join(vessels_stats, by = "municipality") %>% 
-  dplyr::group_by(municipality, grouped_taxa) %>%
+  dplyr::bind_rows(.id = "reporting_region") %>%
+  dplyr::left_join(vessels_stats, by = "reporting_region") %>% 
+  dplyr::group_by(reporting_region, grouped_taxa) %>%
   dplyr::summarise(catch = sum(catch, na.rm = T)) %>%
   dplyr::ungroup() %>% 
   dplyr::left_join(species, by = "grouped_taxa") %>% 
   dplyr::select(-grouped_taxa) %>%
-  tidyr::complete(municipality, catch_name_en, fill = list(catch = 0)) %>%
+  tidyr::complete(reporting_region, catch_name_en, fill = list(catch = 0)) %>%
   # Calculate the total catch per municipality
-  dplyr::group_by(municipality) %>%
+  dplyr::group_by(reporting_region) %>%
   dplyr::mutate(total_catch = sum(catch)) %>%
   # Calculate the percentage of catch for each grouped_taxa within each municipality
   dplyr::mutate(percent_catch = (catch / total_catch) * 100) %>%
   dplyr::ungroup() %>%
   # Plot with ggplot2 using percent_catch
-  ggplot(aes(x = reorder(municipality, total_catch), y = percent_catch, fill = catch_name_en)) +
+  ggplot(aes(x = reorder(reporting_region, total_catch), y = percent_catch, fill = catch_name_en)) +
   #geom_col() +
   ggchicklet::geom_chicklet() +
   theme_minimal() +
@@ -944,7 +944,7 @@ dat <-
     fisher_number_child = dplyr::first(fisher_number_child),
     fisher_number_man = dplyr::first(fisher_number_man),
     fisher_number_woman = dplyr::first(fisher_number_woman),
-    catch_purpose = dplyr::first(catch_purpose),
+    catch_use = dplyr::first(catch_use),
     catch = sum(.data$catch, na.rm = T)
   ) %>% 
   dplyr::filter(!is.na(fisher_number_child),!is.na(fisher_number_woman),!is.na(fisher_number_man))
@@ -1012,7 +1012,7 @@ p1 <-
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
-                   catch_purpose = dplyr::first(catch_purpose)) %>% 
+                   catch_use = dplyr::first(catch_use)) %>% 
   dplyr::mutate(category = dplyr::case_when(fisher_number_man == 0  ~ "Women and childs",
                                             TRUE ~ "Only men")) %>% 
   dplyr::group_by(habitat, category) %>% 
@@ -1043,7 +1043,7 @@ p2 <-
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
-                   catch_purpose = dplyr::first(catch_purpose)) %>% 
+                   catch_use = dplyr::first(catch_use)) %>% 
   dplyr::mutate(category = dplyr::case_when(fisher_number_man == 0  ~ "Women and childs",
                                             TRUE ~ "Only men")) %>% 
   dplyr::group_by(gear, category) %>% 
@@ -1074,23 +1074,23 @@ p3 <-
                    fisher_number_child = dplyr::first(fisher_number_child),
                    fisher_number_man = dplyr::first(fisher_number_man),
                    fisher_number_woman = dplyr::first(fisher_number_woman),
-                   catch_purpose = dplyr::first(catch_purpose)) %>% 
+                   catch_use = dplyr::first(catch_use)) %>% 
   dplyr::mutate(category = dplyr::case_when(fisher_number_man == 0  ~ "Women and childs",
                                             TRUE ~ "Only men")) %>% 
-  dplyr::group_by(catch_purpose, category) %>% 
+  dplyr::group_by(catch_use, category) %>% 
   dplyr::count() %>% 
   dplyr::arrange(dplyr::desc(n)) %>% 
   dplyr::group_by(category) %>% 
   na.omit() %>% 
   dplyr::mutate(n_tot = sum(n, na.rm = T),
                 n = round(n/n_tot*100,2)) %>% 
-  ggplot(aes(area = n, fill = catch_purpose,
-             label = paste(catch_purpose, paste0(n, " %"), sep = "\n"))) +
+  ggplot(aes(area = n, fill = catch_use,
+             label = paste(catch_use, paste0(n, " %"), sep = "\n"))) +
   theme_minimal()+
   facet_grid(.~category) +
   scale_fill_manual(values = c("#bce784", "#ba9790", "#91b7c7"))+
   scale_color_manual(values = c("#bce784", "#ba9790", "#91b7c7"))+
-  treemapify::geom_treemap(aes(color = catch_purpose),alpha = 0.7, size = 2) +
+  treemapify::geom_treemap(aes(color = catch_use),alpha = 0.7, size = 2) +
   treemapify::geom_treemap_text(colour = "black",
                                 place = "centre",
                                 size = 13)+
@@ -1160,12 +1160,6 @@ ggplot2::ggplot() +
                             alpha = 0.8,
                             width = 1
   ) +
-  geom_text(base_plot,
-            mapping = aes(y = rdi, x = reorder(catch_name, tot), label = round(rdi, 2) * 100),
-            position = position_stack(0.5),
-            color = "white",
-            size = 3
-  ) +
   ggplot2::scale_fill_manual(values = nut_palette) +
   ggplot2::scale_color_manual(values = nut_palette) +
   ggplot2::scale_y_continuous(labels = scales::percent, n.breaks = 10) +
@@ -1181,7 +1175,7 @@ ggplot2::ggplot() +
   )
 ```
 
-```{r echo=FALSE, fig.height=5.5, fig.width=6, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
+```{r echo=FALSE, fig.height=5.5, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 habitat_nutrients <- 
   kobo_trips %>%
