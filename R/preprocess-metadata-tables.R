@@ -192,7 +192,7 @@ pt_validate_flags <- function(flags_table) {
 pt_validate_boats <- function(boats_table) {
   b <- boats_table %>%
     dplyr::mutate(
-      last_modified_time = lubridate::ymd_hms(.data$last_modified_time)
+      last_modified_time = lubridate::ymd_hm(.data$last_modified_time)
     )
 
   # Check that boat length is valid
@@ -238,7 +238,8 @@ pt_validate_fao_catch <- function(fao_catch_table) {
 #'
 #' @return a tibble
 pt_validate_morphometric_table <- function(morphometric_table) {
-  morphometric_table
+  morphometric_table %>%
+    dplyr::mutate(dplyr::across(c(.data$a, .data$b, .data$LengthMin:.data$bL), ~ as.double(.)))
 }
 
 #' Parse and validate centro de pescas table

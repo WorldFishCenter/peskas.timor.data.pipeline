@@ -31,7 +31,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   merged_landings <- get_merged_landings(pars)
-  metadata <- get_preprocessed_metadata(pars)
+  metadata <- get_preprocessed_sheets(pars)
   morphometric_tables <- get_morphometric_tables(pars, metadata$morphometric_table)
   nutrients_table <- get_nutrients_table(pars) %>%
     dplyr::rename(species = .data$interagency_code)
@@ -404,7 +404,9 @@ get_morphometric_tables <- function(pars, manual_table) {
     dplyr::mutate(
       DataRef = as.character(.data$DataRef),
       LengthMin = as.double(.data$LengthMin),
-      aL = as.double(.data$aL)
+      aL = as.double(.data$aL),
+      Length1 = as.double(.data$Length1),
+      Length2 = as.double(.data$Length2)
     )
 
   # merge the two tables
