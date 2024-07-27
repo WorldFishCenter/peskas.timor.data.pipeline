@@ -404,9 +404,7 @@ get_morphometric_tables <- function(pars, manual_table) {
     dplyr::mutate(
       DataRef = as.character(.data$DataRef),
       LengthMin = as.double(.data$LengthMin),
-      aL = as.double(.data$aL),
-      Length1 = as.double(.data$Length1),
-      Length2 = as.double(.data$Length2)
+      aL = as.double(.data$aL)
     )
 
   # merge the two tables

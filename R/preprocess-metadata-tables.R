@@ -239,7 +239,10 @@ pt_validate_fao_catch <- function(fao_catch_table) {
 #' @return a tibble
 pt_validate_morphometric_table <- function(morphometric_table) {
   morphometric_table %>%
-    dplyr::mutate(dplyr::across(c(.data$a, .data$b, .data$LengthMin:.data$bL), ~ as.double(.)))
+    dplyr::mutate(dplyr::across(c(
+      .data$a, .data$b, .data$LengthMin:.data$CoeffDetermination,
+      .data$aL, .data$bL
+    ), ~ as.double(.)))
 }
 
 #' Parse and validate centro de pescas table
