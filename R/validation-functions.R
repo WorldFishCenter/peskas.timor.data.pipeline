@@ -561,7 +561,8 @@ validate_sites <- function(landings, metadata_stations, metadata_reporting_units
     dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit) %>%
     dplyr::mutate(station_code = as.character(.data$station_code)) %>%
     dplyr::mutate(station_name = trimws(.data$station_name)) %>%
-    dplyr::rename(reporting_region = .data$reporting_unit)
+    dplyr::rename(reporting_region = .data$reporting_unit) %>%
+    dplyr::distinct()
 
   landings %>%
     dplyr::rename(submission_id = .data$`_id`) %>%
