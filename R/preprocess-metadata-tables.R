@@ -284,7 +284,7 @@ pt_validate_vessels_stats <- function(vessels_stats_table) {
     dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
 }
 
-pt_validate_reg_boats <- function(reg_boats_table) {
+pt_validate_reg_boats <- function(registered_boats) {
   registered_boats %>%
     dplyr::mutate(
       registered_boats_2016 = as.integer(.data$registered_boats_2016),
