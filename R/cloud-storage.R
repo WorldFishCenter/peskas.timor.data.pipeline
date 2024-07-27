@@ -1,4 +1,3 @@
-
 #' Authenticate to a storage cloud provider
 #'
 #' Usually used internally by other functions

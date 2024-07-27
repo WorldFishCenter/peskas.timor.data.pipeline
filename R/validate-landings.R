@@ -25,7 +25,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   pars <- read_config()
-  metadata <- get_preprocessed_metadata(pars)
+  metadata <- get_preprocessed_sheets(pars)
   landings <- get_merged_landings(pars, "_weight")
 
   # read arguments for outliers identification
@@ -36,7 +36,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
-  deployed_imeis <- metadata$devices$device_imei
+  deployed_imeis <- na.omit(metadata$devices$device_imei)
 
   logger::log_info("Validating IMEIs...")
   imei_alerts <- landings$`trip_group/IMEI` %>%

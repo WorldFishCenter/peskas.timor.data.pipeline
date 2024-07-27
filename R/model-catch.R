@@ -30,7 +30,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
     get_merged_trips(pars) %>%
     fill_missing_regions()
 
-  vessels_stats <- get_preprocessed_metadata(pars)$registered_boats
+  vessels_stats <- get_preprocessed_sheets(pars)$registered_boats
 
   municipal_models <-
     unique(na.omit(trips$reporting_region)) %>%
@@ -530,4 +530,3 @@ estimates_per_taxa <- function(catch_models, general_results, n_boats) {
   #     ggplot(aes(x = grouped_taxa, y = catch/1000)) +
   #     geom_col(aes(fill = grouped_taxa))
 }
-
