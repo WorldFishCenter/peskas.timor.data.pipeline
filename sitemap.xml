@@ -1,348 +1,119 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/404.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/CODE_OF_CONDUCT.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/CONTRIBUTING.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/SUPPORT.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/index.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/add_version.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_get_records.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_records_to_tibble.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_tibble_to_records.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_upload_records.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/alert_outlier.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/authenticate_google_drive.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/calculate_weights.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_catches.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_legacy_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_updated_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/cloud_object_name.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/cloud_storage_authenticate.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/coalist.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/convert_taxa_names.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/delete_dataset.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/delete_dataverse.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/download_cloud_file.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/estimate_fishery_indicators.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/fill_missing_regions.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/format_public_data.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_description.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_metadata.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_catch_types.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_distance.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_fao_composition.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_fish_length.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_full_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_full_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_host_url.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_models.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_nutrients_table.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_preprocessed_metadata.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_sync_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_timor_boundaries.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_descriptors.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_ids.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_map.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validated_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validation_sheet.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_complete_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_kepler_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_legacy_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_metadata_tables.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_map.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_matched_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_rfish_table.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_updated_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_validation_tables.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/insistent_download_cloud_file.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/insistent_upload_cloud_file.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/join_weights.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/kepler_mapper.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_consecutive_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_indicators.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_value.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pipe.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings_step_1.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings_step_2.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_legacy_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_metadata_tables.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_pds_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_pds_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_updated_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_nest_attachments.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_nest_species.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_boats.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_catch_types.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_centro_pescas.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_devices.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_fao_catch.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_flags.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_morphometric_table.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_vms_installs.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_dataverse.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_last_dataset.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_lengths.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_tracks.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_tracks_data.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_trips_data.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey_data.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey_metadata.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_sites_report.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/tidyeval.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_cloud_file.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_files.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_catch_params.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_catch_price.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_data.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_trips.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_price_weight.html</loc>
-  </url>
-  <url>
-    <loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_surveys_time.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/404.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/CODE_OF_CONDUCT.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/CONTRIBUTING.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/LICENSE.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/SUPPORT.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/authors.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/index.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/news/index.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/add_version.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_get_records.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_records_to_tibble.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_tibble_to_records.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/air_upload_records.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/alert_outlier.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/authenticate_google_drive.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/calculate_weights.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_catches.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_legacy_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/clean_updated_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/cloud_object_name.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/cloud_storage_authenticate.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/coalist.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/convert_taxa_names.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/delete_dataset.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/delete_dataverse.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/download_cloud_file.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/estimate_fishery_indicators.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/fill_missing_regions.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/format_public_data.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_description.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_metadata.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_catch_types.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_distance.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_fao_composition.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_fish_length.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_full_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_full_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_host_url.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_models.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_nutrients_table.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_preprocessed_metadata.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_preprocessed_sheets.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_sync_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_timor_boundaries.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_descriptors.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_ids.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_map.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validated_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validation_sheet.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/index.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_complete_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_kepler_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_legacy_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_metadata_tables.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_map.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_matched_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_pds_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_rfish_table.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_updated_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_validation_tables.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/insistent_download_cloud_file.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/insistent_upload_cloud_file.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/join_weights.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/kepler_mapper.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_consecutive_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_indicators.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/model_value.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pipe.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings_step_1.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings_step_2.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_legacy_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_metadata_tables.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_pds_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_pds_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_updated_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_nest_attachments.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_nest_species.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_boats.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_catch_types.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_centro_pescas.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_devices.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_fao_catch.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_flags.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_morphometric_table.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_vms_installs.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_dataverse.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_last_dataset.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_lengths.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_tracks.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_tracks_data.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_pds_trips_data.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey_data.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/retrieve_survey_metadata.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_sites_report.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/tidyeval.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_cloud_file.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_files.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_catch_params.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_catch_price.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_data.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_trips.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_price_weight.html</loc></url>
+<url><loc>https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_surveys_time.html</loc></url>
 </urlset>
+
