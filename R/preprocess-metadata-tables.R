@@ -38,7 +38,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   metadata_filename <- cloud_object_name(
-    prefix = pars$metadata$airtable$name,
+    prefix = pars$metadata$google_sheets$name,
     provider = pars$storage$google$key,
     extension = "rds",
     version = pars$metadata$version$preprocess,
@@ -75,7 +75,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
     conservation = pt_validate_conservation(metadata_tables$conservation)
   )
 
-  preprocessed_filename <- paste(pars$metadata$airtable$name,
+  preprocessed_filename <- paste(pars$metadata$google_sheets$name,
     "preprocessed",
     sep = "_"
   ) %>%
@@ -109,9 +109,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
 pt_validate_vms_installs <- function(vms_installs_table) {
   v <- vms_installs_table %>%
     dplyr::mutate(
-      device_event_date = lubridate::as_date(.data$device_event_date),
-      createdTime = lubridate::ymd_hms(.data$createdTime),
-      created_date = lubridate::as_date(.data$created_date)
+      device_event_date = lubridate::as_date(.data$device_event_date)
     )
 
   # Check that installs are recorded prior to damage
@@ -153,7 +151,6 @@ pt_validate_vms_installs <- function(vms_installs_table) {
 #'
 pt_validate_devices <- function(devices_table) {
   devices_table %>%
-    dplyr::mutate(createdTime = lubridate::ymd_hms(.data$createdTime)) %>%
     dplyr::mutate(device_imei = as.character(.data$device_imei))
 }
 
@@ -195,9 +192,7 @@ pt_validate_flags <- function(flags_table) {
 pt_validate_boats <- function(boats_table) {
   b <- boats_table %>%
     dplyr::mutate(
-      createdTime = lubridate::ymd_hms(.data$createdTime),
-      created_date = lubridate::as_date(.data$created_date),
-      last_modified_time = lubridate::ymd_hms(.data$last_modified_time)
+      last_modified_time = lubridate::ymd_hm(.data$last_modified_time)
     )
 
   # Check that boat length is valid
@@ -243,7 +238,11 @@ pt_validate_fao_catch <- function(fao_catch_table) {
 #'
 #' @return a tibble
 pt_validate_morphometric_table <- function(morphometric_table) {
-  morphometric_table
+  morphometric_table %>%
+    dplyr::mutate(dplyr::across(c(
+      .data$a, .data$b, .data$LengthMin:.data$CoeffDetermination,
+      .data$aL, .data$bL
+    ), ~ as.double(.)))
 }
 
 #' Parse and validate centro de pescas table
@@ -263,7 +262,8 @@ pt_validate_gear_types <- function(gear_types_table) {
 }
 
 pt_validate_vessel_types <- function(vessel_types_table) {
-  vessel_types_table
+  vessel_types_table %>%
+    dplyr::mutate(boat_code = as.integer(.data$boat_code))
 }
 
 pt_validate_stations <- function(stations_table) {
@@ -288,8 +288,12 @@ pt_validate_vessels_stats <- function(vessels_stats_table) {
     dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
 }
 
-pt_validate_reg_boats <- function(reg_boats_table) {
-  reg_boats_table %>%
+pt_validate_reg_boats <- function(registered_boats) {
+  registered_boats %>%
+    dplyr::mutate(
+      registered_boats_2016 = as.integer(.data$registered_boats_2016),
+      registered_boats_2022 = as.integer(.data$registered_boats_2022)
+    ) %>%
     dplyr::select(
       reporting_region = .data$Municipality,
       boats_2016 = .data$registered_boats_2016,

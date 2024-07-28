@@ -73,7 +73,6 @@ jobs:
       - name: Call preprocess_updated_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
 
-
   ingest-preprocess-v1-landings-step1:
     name: "Ingest-process landings 1/2"
     needs: build-container
@@ -195,6 +194,7 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_map()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_map()'
+
   validate-pds-data:
     name: Validate pds data
     needs: preprocess-pds-data

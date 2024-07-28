@@ -35,17 +35,22 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
 
-  metadata_filename <- add_version(pars$metadata$airtable$name, "rds")
+  metadata_filename <- add_version(pars$metadata$google_sheets$name, "rds")
 
+  logger::log_info("Authenticating for google drive")
+  googlesheets4::gs4_auth(
+    path = pars$storage$google$options$service_account_key,
+    use_oob = TRUE
+  )
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
 
-  pars$metadata$airtable$tables %>%
+  pars$metadata$google_sheets$tables %>%
     rlang::set_names() %>%
-    purrr::map(air_get_records,
-      base_id = pars$metadata$airtable$base_id,
-      api_key = pars$metadata$airtable$api_key
-    ) %>%
-    purrr::map(air_records_to_tibble) %>%
+    purrr::map(~ googlesheets4::range_read(
+      ss = "114v_Zxq3vDXmJcwnP5k7F12GtovioZKim2QzUUWB3-I",
+      sheet = .x,
+      col_types = "c"
+    )) %>%
     readr::write_rds(metadata_filename,
       compress = "gz"
     )
@@ -54,7 +59,6 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
   logger::log_success("File upload succeded")
 }
-
 
 #' Ingest flags tables
 #'

@@ -557,11 +557,12 @@ validate_sites <- function(landings, metadata_stations, metadata_reporting_units
   sites_df <-
     metadata_stations %>%
     dplyr::filter(!is.na(.data$station_code)) %>%
-    dplyr::inner_join(metadata_reporting_units, by = c("reporting_unit" = "id")) %>%
-    dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit.y) %>%
+    dplyr::inner_join(metadata_reporting_units, by = "reporting_unit") %>%
+    dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit) %>%
     dplyr::mutate(station_code = as.character(.data$station_code)) %>%
     dplyr::mutate(station_name = trimws(.data$station_name)) %>%
-    dplyr::rename(reporting_region = .data$reporting_unit.y)
+    dplyr::rename(reporting_region = .data$reporting_unit) %>%
+    dplyr::distinct()
 
   landings %>%
     dplyr::rename(submission_id = .data$`_id`) %>%

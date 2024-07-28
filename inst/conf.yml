@@ -58,10 +58,9 @@ default:
           file_prefix: indicators_gridded
           extension: rds
   metadata:
-    airtable:
+    google_sheets:
       name: metadata-tables
-      base_id: appjEVaN8kBNXAWak
-      api_key: !expr Sys.getenv("AIRTABLE_KEY")
+      sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
       tables:
         - boats
         - devices
@@ -213,8 +212,8 @@ local:
     landings_1:
       token: !expr readLines("auth/kobo-token-1")
   metadata:
-    airtable:
-      api_key: !expr readLines("auth/airtable-key")
+    google_sheets:
+      sheet_id: !expr readLines("auth/metadata-sheet-id")
   peskas_mail:
     key: !expr readLines("auth/blastula_cred_file")
   validation:

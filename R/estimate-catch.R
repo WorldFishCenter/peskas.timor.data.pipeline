@@ -30,7 +30,7 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
     get_merged_trips(pars) %>%
     fill_missing_regions()
 
-  vessels_stats <- get_preprocessed_metadata(pars)$registered_boats
+  vessels_stats <- get_preprocessed_sheets(pars)$registered_boats
 
   municipal_estimations <-
     unique(na.omit(trips$municipality)) %>%
@@ -296,9 +296,7 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
 
   estimations_total <-
     imputed_df$imputations %>%
-    purrr::keep(., stringr::str_detect(
-      names(.), stringr::fixed("imp")
-    )) %>%
+    purrr::discard(is.na(.)) %>%
     purrr::compact() %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period) %>%
