@@ -39,7 +39,7 @@ pars <- peskas.timor.data.pipeline::read_config()
 
 
 kobo_trips <- peskas.timor.data.pipeline::get_merged_trips(pars) %>% dplyr::filter(.data$landing_date >= "2018-01-01")
-metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
+metadata <- peskas.timor.data.pipeline::get_preprocessed_sheets(pars)
 nutrients_table <- peskas.timor.data.pipeline::get_nutrients_table(pars)
 estimates <- peskas.timor.data.pipeline::get_models(pars)
 

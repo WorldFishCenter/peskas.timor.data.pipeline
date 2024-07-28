@@ -49,7 +49,7 @@ library(magrittr)
 setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 
-metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
+metadata <- peskas.timor.data.pipeline::get_preprocessed_sheets(pars)
 
 metadata_stations <- metadata$stations %>%
   dplyr::select(landing_site = station_code, station_name) %>%
