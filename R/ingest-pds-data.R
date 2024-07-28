@@ -526,7 +526,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 #'
 convert_taxa_names <- function(data, pars) {
   catch_types <-
-    peskas.timor.data.pipeline::get_preprocessed_metadata(pars)$catch_types %>%
+    peskas.timor.data.pipeline::get_preprocessed_sheets(pars)$catch_types %>%
     dplyr::filter(!.data$catch_name_en %in% c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")) %>%
     dplyr::select(
       catch_taxon = .data$interagency_code,
