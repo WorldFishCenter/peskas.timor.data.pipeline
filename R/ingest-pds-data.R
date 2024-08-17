@@ -35,7 +35,7 @@
 #'
 #' @keywords workflow
 #'
-#' @return No output. This funcrion is used for it's side effects
+#' @return No output. This function is used for it's side effects
 #' @export
 #'
 ingest_pds_trips <- function(log_threshold = logger::DEBUG) {

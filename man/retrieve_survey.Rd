@@ -9,7 +9,7 @@ retrieve_survey(
   api,
   id,
   token,
-  format = c("csv", "json"),
+  format = c("parquet", "json"),
   metadata = TRUE,
   append_version = TRUE
 )
@@ -32,7 +32,7 @@ an example on how this can be obtained}
 
 \item{token}{access token for the account e.g. "Token XXXXXXX"}
 
-\item{format}{Either "csv" or "json"}
+\item{format}{Either "parquet" or "json"}
 
 \item{metadata}{whether to download metadata as well as data}
 
@@ -48,7 +48,7 @@ through the function is tracked using the package \emph{logger}.
 }
 \examples{
 \dontrun{
-# It's only possible to donwload survey metadata with the account Token
+# It's only possible to download survey metadata with the account Token
 retrieve_survey(
   prefix = "my-survey", api = "kobohr", id = 753491,
   token = "123XXXXXX"

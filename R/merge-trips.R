@@ -50,13 +50,14 @@ merge_trips <- function() {
     dplyr::select(-.data$unique_trip_per_day)
 
   merged_trips_filename <- pars$merged_trips$file_prefix %>%
-    add_version(extension = "rds")
+    add_version(extension = "parquet")
 
-  readr::write_rds(
+  arrow::write_parquet(
     x = merged_trips,
-    file = merged_trips_filename,
-    compress = "gz"
-  )
+    sink = merged_trips_filename,
+    compression = "lz4",
+    compression_level = 12)
+
   logger::log_info("Uploading {merged_trips_filename} to cloud storage")
   upload_cloud_file(
     file = merged_trips_filename,
@@ -130,7 +131,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
       pars$pds_storage$google$key,
       pars$pds_storage$google$options
     ) %>%
-    readr::read_csv() %>%
+    arrow::read_parquet() %>%
     dplyr::bind_rows()
 
   logger::log_info("Generating low resolution tracks")
@@ -152,9 +153,9 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
     dplyr::select(.data$Time, .data$Boat, .data$Trip, tidyselect::everything())
 
 
-  readr::write_csv(matched_pds_tracks, "matched_pds_tracks.csv")
-  readr::write_csv(matched_pds_tracks_reduced, "matched_pds_tracks_reduced_1min.csv")
-  readr::write_csv(matched_pds_landings, "matched_pds_landings.csv")
+  arrow::read_parquet(matched_pds_tracks, "matched_pds_tracks.parquet", compression = "lz4", compression_level = 12)
+  arrow::read_parquet(matched_pds_tracks_reduced, "matched_pds_tracks_reduced_1min.parquet", compression = "lz4", compression_level = 12)
+  arrow::read_parquet(matched_pds_landings, "matched_pds_landings.parquet", compression = "lz4", compression_level = 12)
 
   logger::log_info("Compressing files")
   zip::zip(
@@ -162,9 +163,9 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
     compression_level = 9,
     include_directories = FALSE,
     files = c(
-      "matched_pds_tracks.csv",
-      "matched_pds_tracks_reduced_1min.csv",
-      "matched_pds_landings.csv"
+      "matched_pds_tracks.parquet",
+      "matched_pds_tracks_reduced_1min.parquet",
+      "matched_pds_landings.parquet"
     )
   )
 

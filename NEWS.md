@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 4.0.0
+
+## Breaking changes
+
+- All package moves on the Parquet format rather than CSV. This change significantly improves data processing speed and efficiency.
+
 # peskas.timor.data.pipeline 3.2.0
 
 ## Improvements

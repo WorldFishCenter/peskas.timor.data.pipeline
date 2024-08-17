@@ -38,25 +38,24 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings_3$file_prefix,
+  landings_parquet <- cloud_object_name(
+    prefix = paste0(pars$surveys$landings_3$file_prefix, "_raw"),
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$surveys$landings_3$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {landings_csv}")
+  logger::log_info("Retrieving {landings_parquet}")
   download_cloud_file(
-    name = landings_csv,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
 
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  ) %>%
+  landings_raw <-
+    arrow::read_parquet(file = landings_parquet) %>%
+    dplyr::mutate_all(as.character) %>%
     clean_updated_landings() %>%
     dplyr::select(-c(dplyr::contains("stock_photo")))
 
@@ -68,10 +67,10 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
     landings_nested_attachments %>%
     # fill with taxon code 0 when there is no catch
     dplyr::mutate(dplyr::across(dplyr::contains("species_group/species"), ~
-      dplyr::case_when(
-        .data$catch_outcome == "0" ~ "0",
-        TRUE ~ .x
-      ))) %>%
+                                  dplyr::case_when(
+                                    .data$catch_outcome == "0" ~ "0",
+                                    TRUE ~ .x
+                                  ))) %>%
     pt_nest_species() %>%
     dplyr::mutate(species_group = purrr::map2(
       .data$species_group, .data$`group_conservation_trading/food_or_sale`,
@@ -81,13 +80,15 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 
 
 
-  preprocessed_filename <- paste(pars$surveys$landings_3$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+  preprocessed_filename <-
+    paste(pars$surveys$landings_3$file_prefix, "preprocessed", sep = "_") %>%
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = landngs_nested_species,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   upload_cloud_file(
@@ -143,25 +144,23 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings_2$file_prefix,
+  landings_parquet <- cloud_object_name(
+    prefix = paste0(pars$surveys$landings_2$file_prefix, "_raw"),
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {landings_csv}")
+  logger::log_info("Retrieving {landings_parquet}")
   download_cloud_file(
-    name = landings_csv,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
-
+  landings_raw <-
+    arrow::read_parquet(file = landings_parquet) %>%
+    dplyr::mutate_all(as.character)
 
   # split data
   half_data <- round(nrow(landings_raw) / 2, 0)
@@ -173,13 +172,15 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Nesting landings species fields")
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
-  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+  preprocessed_filename <-
+    paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_") %>%
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = landngs_nested_species,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   upload_cloud_file(
@@ -235,10 +236,10 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings_2$file_prefix,
+  landings_parquet <- cloud_object_name(
+    prefix = paste0(pars$surveys$landings_2$file_prefix, "_raw"),
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
@@ -246,25 +247,25 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   preprocessed_step_1 <- cloud_object_name(
     prefix = paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     version = pars$surveys$landings_2$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {landings_csv} and {preprocessed_step_1}")
+  logger::log_info("Retrieving {landings_parquet} and {preprocessed_step_1}")
 
-  c(landings_csv, preprocessed_step_1) %>%
+  c(landings_parquet, preprocessed_step_1) %>%
     purrr::map(download_cloud_file,
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
+               provider = pars$storage$google$key,
+               options = pars$storage$google$options
     )
 
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
+  landings_raw <-
+    arrow::read_parquet(file = landings_parquet) %>%
+    dplyr::mutate_all(as.character)
 
-  preprocessed_step_1 <- readr::read_rds(preprocessed_step_1)
+
+  preprocessed_step_1 <- arrow::read_parquet(preprocessed_step_1)
 
   # get ids of batch 2 to download and process
   batch_2_ids <- setdiff(landings_raw$`_id`, preprocessed_step_1$`_id`)
@@ -286,13 +287,16 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
       landings_nested_species
     )
 
-  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+  preprocessed_filename <-
+    paste(pars$surveys$landings_2$file_prefix, "preprocessed", sep = "_") %>%
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = preprocessed,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
+
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   upload_cloud_file(
@@ -343,24 +347,23 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
-    prefix = pars$surveys$landings_1$file_prefix,
+  landings_parquet <- cloud_object_name(
+    prefix = paste0(pars$surveys$landings_1$file_prefix, "_raw"),
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$surveys$landings_1$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {landings_csv}")
+  logger::log_info("Retrieving {landings_parquet}")
   download_cloud_file(
-    name = landings_csv,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
+  landings_raw <-
+    arrow::read_parquet(file = landings_parquet) %>%
+    dplyr::mutate_all(as.character)
 
   logger::log_info("Cleaning and recoding data")
   cleaned_landings_raw <- clean_legacy_landings(landings_raw)
@@ -372,12 +375,13 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
   preprocessed_filename <- paste(pars$surveys$landings_1$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = landngs_nested_species,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   purrr::map(pars$storage, ~ upload_cloud_file(preprocessed_filename, .$key, .$options))

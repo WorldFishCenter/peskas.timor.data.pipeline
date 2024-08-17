@@ -2,7 +2,7 @@
 % Please edit documentation in R/retrieve-pds-data.R
 \name{retrieve_pds_tracks_data}
 \alias{retrieve_pds_tracks_data}
-\title{Download pelagic data system tracks in as csv}
+\title{Download pelagic data system tracks in as parquet}
 \usage{
 retrieve_pds_tracks_data(
   path,
@@ -27,9 +27,9 @@ retrieve_pds_tracks_data(
 The file path
 }
 \description{
-Download pelagic data system tracks in as csv
+Download pelagic data system tracks in as parquet
 }
 \examples{
-retrieve_pds_tracks_data("test.csv")
-file.remove("test.csv")
+retrieve_pds_tracks_data("test.parquet")
+file.remove("test.parquet")
 }
