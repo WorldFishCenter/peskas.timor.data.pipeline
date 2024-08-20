@@ -59,7 +59,7 @@ RUN install2.r --error --skipinstalled \
     mime \
     janitor \
     reactable \
-    reactablefmtr 1
+    reactablefmtr \
     kableExtra \
     reticulate \
     apexcharter \
