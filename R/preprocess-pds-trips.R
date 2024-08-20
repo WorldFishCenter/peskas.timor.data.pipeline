@@ -37,7 +37,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   pds_trips_parquet <- cloud_object_name(
     prefix = pars$pds$trips$file_prefix,
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$pds$trips$version$preprocess,
     options = pars$storage$google$options
   )

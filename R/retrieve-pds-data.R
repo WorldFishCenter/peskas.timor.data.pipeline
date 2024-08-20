@@ -37,14 +37,12 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
   trips_data <- readr::read_csv(temp_csv)
 
   # Write the data frame to a Parquet file
-
   arrow::write_parquet(
     x = trips_data,
     sink = path,
     compression = "lz4",
     compression_level = 12
   )
-
 
   # Remove the temporary CSV file
   unlink(temp_csv)
@@ -95,7 +93,7 @@ retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date =
   }
 
 
-  logger::log_info("Downloading trips csv data as {parquet_filename}...")
+  logger::log_info("Downloading trips parquet data as {parquet_filename}...")
   retrieve_pds_trips_data(
     parquet_filename, secret, token,
     start_date, end_date

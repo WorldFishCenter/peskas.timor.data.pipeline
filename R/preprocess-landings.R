@@ -182,7 +182,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
     compression = "lz4",
     compression_level = 12)
 
-  logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
+  logger::log_info("Uploading {preprocessed_filename} to cloud storage")
   upload_cloud_file(
     file = preprocessed_filename,
     provider = pars$storage$google$key,
