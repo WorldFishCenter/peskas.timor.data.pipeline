@@ -79,13 +79,14 @@ RUN install2.r --error --skipinstalled \
     ggforce \
     treemapify \
     sf \
-    glmmTMBm \
     rfishbase
 
 
 
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
+RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
+
 
 
 # Install local package

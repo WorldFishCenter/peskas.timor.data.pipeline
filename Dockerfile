@@ -66,11 +66,11 @@ RUN install2.r --error --skipinstalled \
     ggforce \
     treemapify \
     sf \
-    glmmTMB \
     rfishbase
 
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
+RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 
 #RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
 # Rstudio interface preferences
