@@ -47,7 +47,7 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   pars$metadata$google_sheets$tables %>%
     rlang::set_names() %>%
     purrr::map(~ googlesheets4::range_read(
-      ss = "114v_Zxq3vDXmJcwnP5k7F12GtovioZKim2QzUUWB3-I",
+      ss = pars$metadata$google_sheets$sheet_id,
       sheet = .x,
       col_types = "c"
     )) %>%
