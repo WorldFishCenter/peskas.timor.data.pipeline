@@ -13,6 +13,8 @@ env:
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
   VALID_SHEET_ID: ${{ secrets.VALID_SHEET_ID }}
+  GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+
 jobs:
   build-container:
     name: Build R container
