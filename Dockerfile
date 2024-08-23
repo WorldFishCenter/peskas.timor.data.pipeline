@@ -65,12 +65,13 @@ RUN install2.r --error --skipinstalled \
     apexcharter \
     ggforce \
     treemapify \
-    sf \
-    rfishbase
+    sf
 
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
+RUN Rscript -e 'remotes::install_version("rfishbase", "4.1.2")'
+
 
 #RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
 # Rstudio interface preferences
