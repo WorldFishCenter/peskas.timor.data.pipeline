@@ -279,13 +279,15 @@ pt_validate_habitat <- function(x) {
 }
 
 pt_validate_vessels_stats <- function(vessels_stats_table) {
-  vessels_stats_table %>%
+  metadata_tables$fishing_vessel_statistics %>%
     tidyr::separate(.data$boat_numbers,
       into = c("reporting_region", "type", NA),
       sep = "([|])"
     ) %>%
     dplyr::select(.data$reporting_region, .data$type, .data$n_boats, .data$info_date) %>%
-    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
+    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim),
+      n_boats = as.integer(.data$n_boats)
+    )
 }
 
 pt_validate_reg_boats <- function(registered_boats) {
