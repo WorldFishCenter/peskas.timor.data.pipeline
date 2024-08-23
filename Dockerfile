@@ -70,7 +70,7 @@ RUN install2.r --error --skipinstalled \
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
-RUN Rscript -e 'remotes::install_version("rfishbase", "4.1.2")'
+RUN Rscript -e 'remotes::install_github("ropensci/rfishbase@slb-21.08")'
 
 
 #RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
