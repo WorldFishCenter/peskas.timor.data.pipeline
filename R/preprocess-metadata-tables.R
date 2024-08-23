@@ -279,7 +279,7 @@ pt_validate_habitat <- function(x) {
 }
 
 pt_validate_vessels_stats <- function(vessels_stats_table) {
-  metadata_tables$fishing_vessel_statistics %>%
+  vessels_stats_table %>%
     tidyr::separate(.data$boat_numbers,
       into = c("reporting_region", "type", NA),
       sep = "([|])"
