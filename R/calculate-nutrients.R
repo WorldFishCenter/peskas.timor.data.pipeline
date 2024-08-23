@@ -22,7 +22,6 @@
 #' @export
 #'
 get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
-
   logger::log_info("Retrieving nutritional values for each taxa group.")
   rfish_tab <- get_rfish_table(pars)
   # get invertebrates nutrients
@@ -30,9 +29,12 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
 
   logger::log_info("Get nutritional fishbase estimates")
   nutrients_tab <-
-    rfishbase::estimate(rfish_tab$Species) %>% # get updated nutrients values
-    dplyr::select(!dplyr::contains("_")) %>%
-    dplyr::select(.data$SpecCode, .data$Calcium:.data$Zinc) %>%
+    rfishbase::estimate(unique(rfish_tab$Species)) %>% # get updated nutrients values
+    dplyr::distinct() %>%
+    dplyr::select(
+      .data$SpecCode, .data$Calcium, .data$Iron, .data$Omega3,
+      .data$Protein, .data$Selenium, .data$VitaminA, .data$Zinc
+    ) %>%
     dplyr::right_join(rfish_tab) %>%
     dplyr::select(.data$interagency_code, .data$SpecCode, .data$Calcium:.data$Zinc) %>%
     # na.omit() %>%
