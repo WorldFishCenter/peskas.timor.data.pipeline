@@ -22,10 +22,13 @@
 #' @export
 #'
 get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
+
+  logger::log_info("Retrieving nutritional values for each taxa group.")
   rfish_tab <- get_rfish_table(pars)
   # get invertebrates nutrients
   fao_groups <- get_fao_composition()
 
+  logger::log_info("Get nutritional fishbase estimates")
   nutrients_tab <-
     rfishbase::estimate(rfish_tab$Species) %>% # get updated nutrients values
     dplyr::select(!dplyr::contains("_")) %>%
