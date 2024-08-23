@@ -71,7 +71,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 get_catch_types <- function(pars) {
-  metadata <- get_preprocessed_metadata(pars)
+  metadata <- get_preprocessed_sheets(pars)
 
   catch_types <- metadata$catch_types
   fao_records <- metadata$fao_catch
