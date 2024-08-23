@@ -28,8 +28,10 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
   fao_groups <- get_fao_composition()
 
   logger::log_info("Get nutritional fishbase estimates")
+  unique_species <- unique(rfish_tab$Species[!is.na(rfish_tab$Species)])
+
   nutrients_tab <-
-    rfishbase::estimate(unique(rfish_tab$Species)) %>% # get updated nutrients values
+    rfishbase::estimate(unique_species) %>% # get updated nutrients values
     dplyr::distinct() %>%
     dplyr::select(
       .data$SpecCode, .data$Calcium, .data$Iron, .data$Omega3,
