@@ -67,10 +67,15 @@ RUN install2.r --error --skipinstalled \
     treemapify \
     sf
 
+# Ensure remotes package is up to date
+RUN R -e "install.packages('remotes', repos='https://cran.rstudio.com/')"
+
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
-RUN Rscript -e 'remotes::install_version("rfishbase", version = "4.1.2", dependencies = TRUE)'
+
+# Install specific version of rfishbase
+RUN Rscript -e 'remotes::install_version("rfishbase", version = "4.1.2", dependencies = TRUE, verbose = TRUE)'
 
 
 #RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
