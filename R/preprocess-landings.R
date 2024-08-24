@@ -57,7 +57,8 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
     file = landings_csv,
     col_types = readr::cols(.default = readr::col_character())
   ) %>%
-    clean_updated_landings()
+    clean_updated_landings() %>%
+    dplyr::select(-c(dplyr::contains("stock_photo")))
 
   logger::log_info("Nesting landings attachment fields")
   landings_nested_attachments <- pt_nest_attachments(landings_raw)

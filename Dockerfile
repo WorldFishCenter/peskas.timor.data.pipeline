@@ -20,7 +20,8 @@ RUN install2.r --error --skipinstalled \
     tibble \
     tidyr \
     rlang \
-    googlesheets4
+    googlesheets4 \
+    rfishbase
 
 # Install suggests
 RUN install2.r --error --skipinstalled \
@@ -70,7 +71,6 @@ RUN install2.r --error --skipinstalled \
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
-RUN Rscript -e 'remotes::install_github("ropensci/rfishbase@slb-21.08")'
 
 
 #RUN Rscript -e "devtools::install_version('glmmTMB', version = '1.1.5')"
