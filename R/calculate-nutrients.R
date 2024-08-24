@@ -99,7 +99,6 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
       dplyr::vars(.data$Selenium_mu:.data$Vitamin_A_mu),
       ~ tidyr::replace_na(., stats::median(., na.rm = TRUE))
     )
-  logger::log_info("export nutrients table")
 }
 #' Get FAO Food Composition Data
 #'
