@@ -31,7 +31,7 @@ get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
   unique_species <- unique(rfish_tab$Species[!is.na(rfish_tab$Species)])
 
   nutrients_tab <-
-    estimate(unique_species) %>% # get updated nutrients values
+    rfishbase::estimate(unique_species) %>% # get updated nutrients values
     dplyr::select(!dplyr::contains("_")) %>%
     dplyr::select(.data$SpecCode, .data$Calcium:.data$Zinc) %>%
     dplyr::right_join(rfish_tab) %>%
