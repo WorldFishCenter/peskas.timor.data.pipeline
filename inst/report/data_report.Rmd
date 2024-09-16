@@ -139,6 +139,7 @@ This section contains information of the Timor-Leste SSF' fleet and the main cha
 metadata$boats %>%
   dplyr::select(.data$boat_length, .data$boat_engine_power) %>%
   tidyr::pivot_longer(cols = tidyr::everything()) %>%
+  dplyr::mutate(value = as.numeric(value)) %>% 
   ggplot() +
   theme_minimal(12) +
   facet_grid(. ~ name,
