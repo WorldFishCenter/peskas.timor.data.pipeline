@@ -34,24 +34,22 @@
 preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
-  pds_trips_csv <- cloud_object_name(
+  pds_trips_parquet <- cloud_object_name(
     prefix = pars$pds$trips$file_prefix,
     provider = pars$storage$google$key,
-    extension = "csv",
+    extension = "parquet",
     version = pars$pds$trips$version$preprocess,
     options = pars$storage$google$options
   )
 
-  logger::log_info("Retrieving {pds_trips_csv}")
+  logger::log_info("Retrieving {pds_trips_parquet}")
   download_cloud_file(
-    name = pds_trips_csv,
+    name = pds_trips_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  pds_trips_raw <- readr::read_csv(
-    file = pds_trips_csv,
-    col_types = "iTTicccdddccc"
-  ) %>%
+  pds_trips_raw <-
+    arrow::read_parquet(pds_trips_parquet) %>%
     dplyr::mutate(
       Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
@@ -62,12 +60,14 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
     )
 
   preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = pds_trips_raw,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
+
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   upload_cloud_file(
@@ -111,7 +111,7 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
         options = pars$pds_storage$google$options
       )
     ) %>%
-    readr::read_csv(show_col_types = FALSE)
+    arrow::read_parquet()
 
   file.remove(track_file)
 
@@ -211,12 +211,14 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   }
 
   preprocessed_filename <- paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = tracks_descriptors,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
+    sink = preprocessed_filename,
+    compression = "lz4",
+    compression_level = 12)
+
 
   logger::log_info("Uploading {preprocessed_filename} to cloud...")
   purrr::map(pars$storage, ~ purrr::walk(
@@ -232,18 +234,18 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
 
 # Download preprocessed tracks
 get_preprocessed_tracks <- function(pars) {
-  pds_tracks_rds <- cloud_object_name(
+  pds_tracks_parquet <- cloud_object_name(
     prefix = paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     version = pars$pds$tracks$version$preprocess,
     options = pars$storage$google$options
   )
-  logger::log_info("Downloading {pds_tracks_rds}...")
+  logger::log_info("Downloading {pds_tracks_parquet}...")
   download_cloud_file(
-    name = pds_tracks_rds,
+    name = pds_tracks_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = pds_tracks_rds)
+  arrow::read_parquet(file = pds_tracks_parquet)
 }

@@ -12,7 +12,7 @@ threshold for the logging infrastructure. See \link[logger:log_levels]{logger::l
 details}
 }
 \value{
-No output. This funcrion is used for it's side effects
+No output. This function is used for it's side effects
 }
 \description{
 Downloads Pelagic Data System (pds) trips information and uploads it to cloud

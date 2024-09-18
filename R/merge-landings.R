@@ -106,13 +106,13 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     merge_versions()
 
   merged_filename <- pars$surveys$merged_landings$file_prefix %>%
-    add_version(extension = "rds")
+    add_version(extension = "parquet")
 
-  readr::write_rds(
+  arrow::write_parquet(
     x = merged_landings,
-    file = merged_filename,
-    compress = "gz"
-  )
+    sink = merged_filename,
+    compression = "lz4",
+    compression_level = 12)
 
   logger::log_info("Uploading {merged_filename} to cloud sorage")
   upload_cloud_file(

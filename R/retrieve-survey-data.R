@@ -181,7 +181,7 @@ retrieve_basic_survey_metadata <- function(id, token, api) {
 #' @param api
 #' @param id
 #' @param token
-#' @param format Either "csv" or "json"
+#' @param format Either "parquet" or "json"
 #' @param metadata whether to download metadata as well as data
 #' @param append_version whether to append versioning information to the
 #'   filename using [add_version].
@@ -192,7 +192,7 @@ retrieve_basic_survey_metadata <- function(id, token, api) {
 #'
 #' @examples
 #' \dontrun{
-#' # It's only possible to donwload survey metadata with the account Token
+#' # It's only possible to download survey metadata with the account Token
 #' retrieve_survey(
 #'   prefix = "my-survey", api = "kobohr", id = 753491,
 #'   token = "123XXXXXX"
@@ -204,18 +204,18 @@ retrieve_basic_survey_metadata <- function(id, token, api) {
 #'   token = "123XXXXXX"
 #' )
 #' }
-retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
+retrieve_survey <- function(prefix, api, id, token, format = c("parquet", "json"),
                             metadata = TRUE, append_version = TRUE) {
   metadata_filename <- paste(prefix, "metadata", sep = "_")
   data_filename <- paste(prefix, "raw", sep = "_")
 
   if (isTRUE(append_version)) {
     metadata_filename <- add_version(metadata_filename, "json")
-    csv_filename <- add_version(data_filename, "csv")
+    parquet_filename <- add_version(data_filename, "parquet")
     json_filename <- add_version(data_filename, "json")
   } else {
     metadata_filename <- paste0(metadata_filename, ".json")
-    csv_filename <- paste0(data_filename, ".csv")
+    parquet_filename <- paste0(data_filename, ".parquet")
     json_filename <- paste0(data_filename, ".json")
   }
 
@@ -233,10 +233,10 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
   retrieve_survey_data(json_filename, id, token, api)
   logger::log_success("Survey json data download succeeded")
 
-  if ("csv" %in% format) {
-    logger::log_info("Converting json data to CSV as {csv_filename}...")
-    survey_json_to_csv(json_filename, csv_filename)
-    filenames <- c(filenames, csv_filename)
+  if ("parquet" %in% format) {
+    logger::log_info("Converting json data to Parquet as {parquet_filename}...")
+    survey_json_to_parquet(json_filename, parquet_filename)
+    filenames <- c(filenames, parquet_filename)
   }
 
   if ("json" %in% format) {
@@ -249,14 +249,12 @@ retrieve_survey <- function(prefix, api, id, token, format = c("csv", "json"),
   filenames
 }
 
-# Convert a Kobo survey in json format to a csv format that respects the
-# conventions from the data that could have been downloaded using the csv
-# request in the API v1
-survey_json_to_csv <- function(json_path, csv_path) {
+# Convert a Kobo survey in json format to a parquet format
+survey_json_to_parquet <- function(json_path, parquet_path) {
   survey <- jsonlite::read_json(json_path)
   survey_df <- purrr::map_dfr(survey, flatten_row)
-  readr::write_csv(survey_df, csv_path)
-  csv_path
+  arrow::write_parquet(survey_df, parquet_path)
+  parquet_path
 }
 
 flatten_row <- function(x) {

@@ -20,6 +20,9 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
     sep = "/"
   )
 
+  # Temporarily download the data as a CSV
+  temp_csv <- tempfile(fileext = ".csv")
+
   httr::GET(
     url = request_url,
     config = httr::add_headers("X-API-SECRET" = secret),
@@ -27,8 +30,24 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
       deviceInfo = TRUE,
       withLastSeen = TRUE
     ),
-    httr::write_disk(path, overwrite = overwrite)
+    httr::write_disk(temp_csv, overwrite = TRUE)
   )
+
+  # Read the CSV into a data frame
+  trips_data <- readr::read_csv(temp_csv)
+
+  # Write the data frame to a Parquet file
+  arrow::write_parquet(
+    x = trips_data,
+    sink = path,
+    compression = "lz4",
+    compression_level = 12
+  )
+
+  # Remove the temporary CSV file
+  unlink(temp_csv)
+
+  # Return the Parquet file path
   path
 }
 
@@ -68,24 +87,24 @@ retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date =
   data_filename <- paste(prefix, sep = "_")
 
   if (isTRUE(append_version)) {
-    csv_filename <- add_version(data_filename, "csv")
+    parquet_filename <- add_version(data_filename, "parquet")
   } else {
-    csv_filename <- paste0(data_filename, ".csv")
+    parquet_filename <- paste0(data_filename, ".parquet")
   }
 
 
-  logger::log_info("Downloading trips csv data as {csv_filename}...")
+  logger::log_info("Downloading trips parquet data as {parquet_filename}...")
   retrieve_pds_trips_data(
-    csv_filename, secret, token,
+    parquet_filename, secret, token,
     start_date, end_date
   )
-  logger::log_success("Trips csv data download succeeded")
+  logger::log_success("Trips parquet data download succeeded")
 
-  csv_filename
+  parquet_filename
 }
 
 
-#' Download pelagic data system tracks in as csv
+#' Download pelagic data system tracks in as parquet
 #'
 #' @param path String with path to file where API request should be saved
 #' @param secret Access secret code for the account
@@ -97,24 +116,39 @@ retrieve_pds_trips <- function(prefix, secret = NULL, token = NULL, start_date =
 #' @export
 #'
 #' @examples
-#' retrieve_pds_tracks_data("test.csv")
-#' file.remove("test.csv")
+#' retrieve_pds_tracks_data("test.parquet")
+#' file.remove("test.parquet")
 retrieve_pds_tracks_data <- function(path, secret = NULL, token = NULL,
                                      id = NULL, overwrite = TRUE) {
+  # Temporary file to save the CSV
+  temp_csv <- tempfile(fileext = ".csv")
+
   request_url <- paste("https://analytics.pelagicdata.com/api", token,
-    "v1/trips", id, "points",
-    sep = "/"
+                       "v1/trips", id, "points",
+                       sep = "/"
   )
 
   httr::GET(
     url = request_url,
     config = httr::add_headers("X-API-SECRET" = secret),
     query = list(format = "csv"),
-    httr::write_disk(path, overwrite = overwrite)
+    httr::write_disk(temp_csv, overwrite = TRUE)
   )
+
+  # Read the CSV file and write it as Parquet
+  data <- readr::read_csv(temp_csv)
+  arrow::write_parquet(
+    x = data,
+    sink = path,
+    compression = "lz4",
+    compression_level = 12
+  )
+
+  # Optionally, delete the temporary CSV file
+  unlink(temp_csv)
+
   path
 }
-
 
 #' Download pelagic data system tracks
 #'
@@ -142,13 +176,13 @@ retrieve_pds_tracks_data <- function(path, secret = NULL, token = NULL,
 #' )
 #' }
 retrieve_pds_tracks <- function(prefix, secret, token, id) {
-  data_filename <- paste(prefix, "raw", id, ".csv", sep = "_")
+  data_filename <- paste(prefix, "raw", id, ".parquet", sep = "_")
 
   filenames <- character()
 
-  logger::log_info("Downloading tracks csv data as {data_filename}...")
+  logger::log_info("Downloading tracks parquet data as {data_filename}...")
   retrieve_pds_tracks_data(path = data_filename, secret, token, id)
-  logger::log_success("Tracks csv data download succeeded")
+  logger::log_success("Tracks parquet data download succeeded")
   filenames <- c(filenames, data_filename)
 
   filenames

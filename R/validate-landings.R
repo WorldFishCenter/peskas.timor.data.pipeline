@@ -197,12 +197,14 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     "validated",
     sep = "_"
   ) %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = validated_landings,
-    file = validated_landings_filename,
-    compress = "gz"
-  )
+    sink = validated_landings_filename,
+    compression = "lz4",
+    compression_level = 12)
+
   logger::log_info("Uploading {validated_landings_filename} to cloud sorage")
   upload_cloud_file(
     file = validated_landings_filename,
@@ -282,12 +284,14 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Upload backup validation sheet to GC")
   alerts_filename <-
     pars$validation$google_sheets$file_prefix %>%
-    add_version(extension = "rds")
-  readr::write_rds(
+    add_version(extension = "parquet")
+
+  arrow::write_parquet(
     x = peskas_alerts,
-    file = alerts_filename,
-    compress = "gz"
-  )
+    sink = alerts_filename,
+    compression = "lz4",
+    compression_level = 12)
+
   upload_cloud_file(
     file = alerts_filename,
     provider = pars$storage$google$key,
@@ -357,20 +361,20 @@ get_validation_tables <- function(pars) {
 }
 
 get_preprocessed_landings <- function(pars) {
-  landings_rds <- cloud_object_name(
+  landings_parquet <- cloud_object_name(
     prefix = paste(pars$surveys$landings$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     version = pars$surveys$landings$version$preprocess,
     options = pars$storage$google$options
   )
-  logger::log_info("Downloading {landings_rds}...")
+  logger::log_info("Downloading {landings_parquet}...")
   download_cloud_file(
-    name = landings_rds,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = landings_rds)
+  arrow::read_parquet(file = landings_parquet)
 }
 
 get_preprocessed_metadata <- function(pars) {
@@ -400,19 +404,19 @@ get_preprocessed_metadata <- function(pars) {
 #' @return A dataframe.
 #' @export
 get_merged_landings <- function(pars, suffix = "") {
-  landings_rds <- cloud_object_name(
+  landings_parquet <- cloud_object_name(
     prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     version = pars$surveys$merged_landings$version,
     options = pars$storage$google$options,
     exact_match = TRUE
   )
-  logger::log_info("Downloading {landings_rds}...")
+  logger::log_info("Downloading {landings_parquet}...")
   download_cloud_file(
-    name = landings_rds,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = landings_rds)
+  arrow::read_parquet(file = landings_parquet)
 }

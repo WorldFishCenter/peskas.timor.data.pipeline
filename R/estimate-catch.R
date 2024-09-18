@@ -51,9 +51,15 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
       municipal = municipal_estimations
     )
 
-  models_filename <- add_version(pars$models$file_prefix, "rds")
-  readr::write_rds(results, models_filename, compress = "gz")
-  upload_cloud_file(
+  models_filename <- add_version(pars$models$file_prefix, "parquet")
+
+  arrow::write_parquet(
+    x = results,
+    sink = models_filename,
+    compression = "lz4",
+    compression_level = 12)
+
+    upload_cloud_file(
     models_filename,
     pars$storage$google$key,
     pars$storage$google$options

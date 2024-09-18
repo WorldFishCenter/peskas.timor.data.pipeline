@@ -11,21 +11,21 @@
 get_validated_landings <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
-  landings_rds <- cloud_object_name(
+  landings_parquet <- cloud_object_name(
     prefix = paste(pars$surveys$validated_landings$file_prefix),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     version = pars$surveys$validated_landings$version,
     options = pars$storage$google$options,
     exact_match = TRUE
   )
-  logger::log_info("Downloading {landings_rds}...")
+  logger::log_info("Downloading {landings_parquet}...")
   download_cloud_file(
-    name = landings_rds,
+    name = landings_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = landings_rds)
+  arrow::read_parquet(file = landings_parquet)
 }
 
 get_validated_pds_trips <- function(pars) {
@@ -38,7 +38,7 @@ get_validated_pds_trips <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 #' Download Peskas surveys and PDS data
@@ -61,7 +61,7 @@ get_merged_trips <- function(pars, ...) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 get_public_files <- function(pars) {
@@ -70,7 +70,7 @@ get_public_files <- function(pars) {
     purrr::map(~ paste0(pars$export$file_prefix, "_", .)) %>%
     purrr::map(
       .f = cloud_object_name,
-      extension = "rds",
+      extension = "parquet",
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     ) %>%
@@ -79,7 +79,7 @@ get_public_files <- function(pars) {
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     ) %>%
-    purrr::map(readr::read_rds)
+    purrr::map(arrow::read_parquet)
 }
 
 #' Download models estimates
@@ -99,7 +99,7 @@ get_models <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 #' Download Peskas metadata
@@ -109,19 +109,19 @@ get_models <- function(pars) {
 #' @param pars The configuration file
 #' @export
 get_preprocessed_metadata <- function(pars) {
-  metadata_rds <- cloud_object_name(
+  metadata_parquet <- cloud_object_name(
     prefix = paste(pars$metadata$google_sheets$name, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     options = pars$storage$google$options
   )
-  logger::log_info("Downloading {metadata_rds}...")
+  logger::log_info("Downloading {metadata_parquet}...")
   download_cloud_file(
-    name = metadata_rds,
+    name = metadata_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = metadata_rds)
+  arrow::read_parquet(file = metadata_rds)
 }
 
 #' Download Peskas metadata
@@ -131,19 +131,19 @@ get_preprocessed_metadata <- function(pars) {
 #' @param pars The configuration file
 #' @export
 get_preprocessed_sheets <- function(pars) {
-  metadata_rds <- cloud_object_name(
+  metadata_parquet <- cloud_object_name(
     prefix = paste(pars$metadata$google_sheets$name, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
-    extension = "rds",
+    extension = "parquet",
     options = pars$storage$google$options
   )
-  logger::log_info("Downloading {metadata_rds}...")
+  logger::log_info("Downloading {metadata_parquet}...")
   download_cloud_file(
-    name = metadata_rds,
+    name = metadata_parquet,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
-  readr::read_rds(file = metadata_rds)
+  arrow::read_parquet(file = metadata_parquet)
 }
 
 #' Download and synchronize tracks data in a single file
@@ -234,7 +234,7 @@ get_full_tracks <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 #' Get trips from single-file tracks data.
@@ -257,7 +257,7 @@ get_full_trips <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 #' Get map of Timor pds tracks.
@@ -294,7 +294,7 @@ get_tracks_ids <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
 
 #' Get peskas validation sheet
@@ -315,5 +315,5 @@ get_validation_sheet <- function(pars) {
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     ) %>%
-    readr::read_rds()
+    arrow::read_parquet()
 }
