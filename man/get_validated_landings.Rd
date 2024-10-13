@@ -6,10 +6,6 @@
 \usage{
 get_validated_landings(log_threshold = logger::DEBUG)
 }
-\arguments{
-\item{log_threshold}{The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
-}
 \value{
 A dataframe of validated survey landings.
 }

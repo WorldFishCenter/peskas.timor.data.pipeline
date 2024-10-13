@@ -28,7 +28,7 @@
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_landings_v1v3
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export
@@ -133,7 +133,7 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_landings_v1v3
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export
@@ -225,7 +225,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_landings_v1v3
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export
@@ -333,7 +333,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
 #' Progress through the function is tracked using the package *logger*.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_landings_v1v3
 #' @keywords workflow
 #' @return no outputs. This funcrion is used for it's side effects
 #' @export

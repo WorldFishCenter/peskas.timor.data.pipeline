@@ -12,7 +12,7 @@
 #'  that are  `hrs`, `method` and `k`.
 #'
 #' @param log_threshold
-#' @inheritParams ingest_landings
+#' @inheritParams ingest_landings_v1v3
 #' @inheritParams validate_surveys_time
 #' @inheritParams validate_catch_price
 #' @keywords workflow
