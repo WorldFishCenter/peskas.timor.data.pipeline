@@ -1,3 +1,10 @@
+# peskas.timor.data.pipeline 3.3.0
+
+### Breaking changes
+
+- Now kobo surveys are retrieved according the new v2 API. The function `retrieve_survey_data()` has been replaced by `get_kobo_data` updated to retrieve data from the new API. The function `retrieve_survey_metadata()` has been deprecated.
+
+
 # peskas.timor.data.pipeline 3.2.0
 
 ## Improvements

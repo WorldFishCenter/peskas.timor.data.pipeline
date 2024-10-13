@@ -8,8 +8,7 @@ estimate_fishery_indicators(log_threshold = logger::DEBUG)
 }
 \arguments{
 \item{log_threshold}{The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
-details}
+threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
 }
 \description{
 Uses the trip data to estimate various fisheries statistics.

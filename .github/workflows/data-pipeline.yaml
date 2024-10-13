@@ -6,8 +6,11 @@ on:
     - cron:  '0 0 */2 * *'
 
 env:
-  PESKAS_KOBO_TOKEN_2: ${{ secrets.PESKAS_KOBO_TOKEN_2 }}
-  PESKAS_KOBO_TOKEN_1: ${{ secrets.PESKAS_KOBO_TOKEN_1 }}
+  KOBO_PASSWORD: ${{ secrets.KOBO_PASSWORD }}
+  KOBO_USERNAME: ${{ secrets.KOBO_USERNAME }}
+  KOBO_PESKAS1: ${{ secrets.KOBO_PESKAS1 }}
+  KOBO_PESKAS2: ${{ secrets.KOBO_PESKAS2 }}
+  KOBO_PESKAS3: ${{ secrets.KOBO_PESKAS3 }}
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}

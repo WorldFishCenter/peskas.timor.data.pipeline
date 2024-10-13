@@ -8,31 +8,35 @@ ingest_landings(log_threshold = logger::DEBUG)
 }
 \arguments{
 \item{log_threshold}{The (standard Apache logj4) log level used as a
-threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
-details}
+threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
 }
 \value{
-No output. This funcrion is used for it's side effects
+No output. This function is used for its side effects
 }
 \description{
-Downloads landings information that has been collected using Kobo Toolbox and
+Downloads landings information for multiple surveys collected using Kobo Toolbox and
 uploads it to cloud storage services.
 }
 \details{
-This function downloads the survey metadata (survey information) as well as
-the survey responses. Afterwards it uploads this information to cloud
-services. File names used contain a
-versioning string that includes the date-time and, if available, the first 7
-digits of the git commit sha. This is acomplished using \code{\link[=add_version]{add_version()}}
+This function downloads the survey metadata and responses for multiple landing surveys
+(landings_1, landings_2, landings_3). It then uploads this information to cloud
+services. File names contain a versioning string that includes the date-time and,
+if available, the first 7 digits of the git commit sha, accomplished using \code{\link[=add_version]{add_version()}}.
 
 The parameters needed in \code{conf.yml} are:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
-  landings_2:
-    api:
-    survey_id:
-    token:
+  kobo_username:
+  kobo_password:
+  landings_1:
     file_prefix:
+    asset_id:
+  landings_2:
+    file_prefix:
+    asset_id:
+  landings_3:
+    file_prefix:
+    asset_id:
 storage:
   storage_name:
     key:

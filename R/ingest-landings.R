@@ -1,81 +1,28 @@
-#' Ingest Landings Survey data (Peskas 2)
-#'
-#' Downloads updated (Peskas 2) landings information that has been collected using Kobo Toolbox and
-#' uploads it to cloud storage services.
-#'
-#' This function downloads the survey metadata (survey information) as well as
-#' the survey responses. Afterwards it uploads this information to cloud
-#' services. File names used contain a
-#' versioning string that includes the date-time and, if available, the first 7
-#' digits of the git commit sha. This is acomplished using [add_version()]
-#'
-#' The parameters needed in `conf.yml` are:
-#'
-#' ```
-#' surveys:
-#'   landings_3:
-#'     api:
-#'     survey_id:
-#'     token:
-#'     file_prefix:
-#' storage:
-#'   storage_name:
-#'     key:
-#'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
-#' ```
-#'
-#' Progress through the function is tracked using the package *logger*.
-#'
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @keywords workflow
-#'
-#' @return No output. This funcrion is used for it's side effects
-#' @export
-#'
-ingest_updated_landings <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-
-  pars <- read_config()
-
-  file_list <- retrieve_survey(pars$surveys$landings_3$file_prefix,
-    api = pars$surveys$landings_3$api,
-    id = pars$surveys$landings_3$survey_id,
-    token = pars$surveys$landings_3$token
-  )
-
-  logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
-}
-
 #' Ingest Landings Survey data
 #'
-#' Downloads landings information that has been collected using Kobo Toolbox and
+#' Downloads landings information for multiple surveys collected using Kobo Toolbox and
 #' uploads it to cloud storage services.
 #'
-#' This function downloads the survey metadata (survey information) as well as
-#' the survey responses. Afterwards it uploads this information to cloud
-#' services. File names used contain a
-#' versioning string that includes the date-time and, if available, the first 7
-#' digits of the git commit sha. This is acomplished using [add_version()]
+#' This function downloads the survey metadata and responses for multiple landing surveys
+#' (landings_1, landings_2, landings_3). It then uploads this information to cloud
+#' services. File names contain a versioning string that includes the date-time and,
+#' if available, the first 7 digits of the git commit sha, accomplished using [add_version()].
 #'
 #' The parameters needed in `conf.yml` are:
 #'
 #' ```
 #' surveys:
-#'   landings_2:
-#'     api:
-#'     survey_id:
-#'     token:
+#'   kobo_username:
+#'   kobo_password:
+#'   landings_1:
 #'     file_prefix:
+#'     asset_id:
+#'   landings_2:
+#'     file_prefix:
+#'     asset_id:
+#'   landings_3:
+#'     file_prefix:
+#'     asset_id:
 #' storage:
 #'   storage_name:
 #'     key:
@@ -87,14 +34,12 @@ ingest_updated_landings <- function(log_threshold = logger::DEBUG) {
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
-#'
 #' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
+#'   threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @keywords workflow
 #'
-#' @return No output. This funcrion is used for it's side effects
+#' @return No output. This function is used for its side effects
 #' @export
 #'
 ingest_landings <- function(log_threshold = logger::DEBUG) {
@@ -102,72 +47,27 @@ ingest_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  file_list <- retrieve_survey(pars$surveys$landings_2$file_prefix,
-    api = pars$surveys$landings_2$api,
-    id = pars$surveys$landings_2$survey_id,
-    token = pars$surveys$landings_2$token
-  )
+  # Create a vector of landing numbers
+  landing_numbers <- 1:3
+
+  # Use purrr::map to apply get_kobo_data() to each landing number
+  file_lists <- purrr::map(landing_numbers, function(i) {
+    survey_name <- paste0("landings_", i)
+    logger::log_info("Retrieving data for {survey_name}...")
+
+    get_kobo_data(
+      prefix = pars$surveys[[survey_name]]$file_prefix,
+      uname = pars$surveys$kobo_username,
+      pwd = pars$surveys$kobo_password,
+      assetid = pars$surveys[[survey_name]]$asset_id
+    )
+  })
+
+  # Combine all file lists
+  all_files <- unlist(file_lists, recursive = FALSE)
 
   logger::log_info("Uploading files to cloud...")
   # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
-}
-
-#' Ingest legacy Landings Survey data
-#'
-#' Downloads legacy landings information that has been collected using Kobo Toolbox and
-#' uploads it to cloud storage services.
-#'
-#' This function downloads the survey metadata (survey information) as well as
-#' the survey responses. Afterwards it uploads this information to cloud
-#' services. File names used contain a
-#' versioning string that includes the date-time and, if available, the first 7
-#' digits of the git commit sha. This is acomplished using [add_version()]
-#'
-#' The parameters needed in `conf.yml` are:
-#'
-#' ```
-#' surveys:
-#'   landings_1:
-#'     api:
-#'     survey_id:
-#'     token:
-#'     file_prefix:
-#' storage:
-#'   storage_name:
-#'     key:
-#'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
-#' ```
-#'
-#' Progress through the function is tracked using the package *logger*.
-#'
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @keywords workflow
-#'
-#' @return No output. This funcrion is used for it's side effects
-#' @export
-#'
-ingest_legacy_landings <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-
-  pars <- read_config()
-
-  file_list <- retrieve_survey(pars$surveys$landings_1$file_prefix,
-    api = pars$surveys$landings_1$api,
-    id = pars$surveys$landings_1$survey_id,
-    token = pars$surveys$landings_1$token
-  )
-
-  logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
-  logger::log_success("File upload succeded")
+  purrr::walk(pars$storage, ~ upload_cloud_file(all_files, .$key, .$options))
+  logger::log_success("File upload succeeded")
 }

@@ -20,7 +20,8 @@ RUN install2.r --error --skipinstalled \
     tibble \
     tidyr \
     rlang \
-    googlesheets4
+    googlesheets4 \
+    httr2
 
 # Install suggests
 RUN install2.r --error --skipinstalled \

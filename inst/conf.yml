@@ -1,23 +1,19 @@
 default:
   surveys:
+    kobo_username: !expr Sys.getenv('KOBO_USERNAME')
+    kobo_password: !expr Sys.getenv('KOBO_PASSWORD')
     landings_3:
-      api: kobohr
-      survey_id: 1383430
-      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_2')
+      asset_id: !expr Sys.getenv('KOBO_PESKAS3')
       file_prefix: timor-landings-v3
       version:
         preprocess: latest
     landings_2:
-      api: kobohr
-      survey_id: 344563
-      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_1')
+      asset_id: !expr Sys.getenv('KOBO_PESKAS2')
       file_prefix: timor-landings-v2
       version:
         preprocess: latest
     landings_1:
-      api: kobohr
-      survey_id: 135272
-      token: !expr Sys.getenv('PESKAS_KOBO_TOKEN_1')
+      asset_id: !expr Sys.getenv('KOBO_PESKAS1')
       file_prefix: timor-landings-v1
       version:
         preprocess: latest
@@ -205,12 +201,14 @@ production:
 local:
   inherits: development
   surveys:
+    kobo_username: !expr readLines("auth/kobo-username")
+    kobo_password: !expr readLines("auth/kobo-password")
     landings_3:
-      token: !expr readLines("auth/kobo-token-2")
+      asset_id: !expr readLines("auth/peskas-timor-v3-id")
     landings_2:
-      token: !expr readLines("auth/kobo-token-1")
+      asset_id: !expr readLines("auth/peskas-timor-v2-id")
     landings_1:
-      token: !expr readLines("auth/kobo-token-1")
+      asset_id: !expr readLines("auth/peskas-timor-v1-id")
   metadata:
     google_sheets:
       sheet_id: !expr readLines("auth/metadata-sheet-id")
