@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">3.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">3.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,16 +61,16 @@
         <dd>Format public data</dd>
       </dl><dl><dt>
 
-          <code><a href="ingest_landings.html">ingest_landings()</a></code>
+          <code><a href="ingest_landings_v1v3.html">ingest_landings_v1v3()</a></code>
 
         </dt>
         <dd>Ingest Landings Survey data</dd>
       </dl><dl><dt>
 
-          <code><a href="ingest_legacy_landings.html">ingest_legacy_landings()</a></code>
+          <code><a href="ingest_landings_v2.html">ingest_landings_v2()</a></code>
 
         </dt>
-        <dd>Ingest legacy Landings Survey data</dd>
+        <dd>Ingest V2 Landings Survey data</dd>
       </dl><dl><dt>
 
           <code><a href="ingest_metadata_tables.html">ingest_metadata_tables()</a></code>
@@ -89,12 +89,6 @@
 
         </dt>
         <dd>Ingest Pelagic Data System trips data</dd>
-      </dl><dl><dt>
-
-          <code><a href="ingest_updated_landings.html">ingest_updated_landings()</a></code>
-
-        </dt>
-        <dd>Ingest Landings Survey data (Peskas 2)</dd>
       </dl><dl><dt>
 
           <code><a href="ingest_validation_tables.html">ingest_validation_tables()</a></code>
@@ -264,10 +258,10 @@
         <dd>Get trips from single-file tracks data.</dd>
       </dl><dl><dt>
 
-          <code><a href="get_host_url.html">get_host_url()</a></code>
+          <code><a href="get_kobo_data.html">get_kobo_data()</a></code>
 
         </dt>
-        <dd>Select server from kobo</dd>
+        <dd>Retrieve Data from Kobotoolbox API</dd>
       </dl><dl><dt>
 
           <code><a href="get_merged_landings.html">get_merged_landings()</a></code>
@@ -360,16 +354,16 @@
         <dd>Ingest a Kepler.gl map</dd>
       </dl><dl><dt>
 
-          <code><a href="ingest_landings.html">ingest_landings()</a></code>
+          <code><a href="ingest_landings_v1v3.html">ingest_landings_v1v3()</a></code>
 
         </dt>
         <dd>Ingest Landings Survey data</dd>
       </dl><dl><dt>
 
-          <code><a href="ingest_legacy_landings.html">ingest_legacy_landings()</a></code>
+          <code><a href="ingest_landings_v2.html">ingest_landings_v2()</a></code>
 
         </dt>
-        <dd>Ingest legacy Landings Survey data</dd>
+        <dd>Ingest V2 Landings Survey data</dd>
       </dl><dl><dt>
 
           <code><a href="ingest_metadata_tables.html">ingest_metadata_tables()</a></code>
@@ -406,12 +400,6 @@
 
         </dt>
         <dd>Ingest species weight-length info</dd>
-      </dl><dl><dt>
-
-          <code><a href="ingest_updated_landings.html">ingest_updated_landings()</a></code>
-
-        </dt>
-        <dd>Ingest Landings Survey data (Peskas 2)</dd>
       </dl><dl><dt>
 
           <code><a href="ingest_validation_tables.html">ingest_validation_tables()</a></code>
@@ -495,34 +483,10 @@
 
       <dl><dt>
 
-          <code><a href="retrieve_survey.html">retrieve_survey()</a></code>
-
-        </dt>
-        <dd>Download survey</dd>
-      </dl><dl><dt>
-
-          <code><a href="retrieve_survey_data.html">retrieve_survey_data()</a></code>
-
-        </dt>
-        <dd>Download kobo data in as json using the v1 API</dd>
-      </dl><dl><dt>
-
-          <code><a href="retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>
-
-        </dt>
-        <dd>Download survey metadata</dd>
-      </dl><dl><dt>
-
           <code><a href="validate_surveys_time.html">validate_surveys_time()</a></code>
 
         </dt>
         <dd>Validate surveys' temporal parameters</dd>
-      </dl><dl><dt>
-
-          <code><a href="get_host_url.html">get_host_url()</a></code>
-
-        </dt>
-        <dd>Select server from kobo</dd>
       </dl></div><div class="section level2">
 
       <h3 id="pds">PDS<a class="anchor" aria-label="anchor" href="#pds"></a></h3>
@@ -1023,7 +987,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer></div>

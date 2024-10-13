@@ -1,8 +1,8 @@
 pandoc: 2.7.3
-pkgdown: 2.1.0
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles: {}
-last_built: 2024-09-16T07:07Z
+last_built: 2024-10-13T17:48Z
 urls:
   reference: https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference
   article: https://worldfishcenter.github.io/peskas.timor.data.pipeline/articles

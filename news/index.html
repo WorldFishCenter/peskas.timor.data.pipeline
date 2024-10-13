@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">3.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">3.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,12 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="3.3.0" id="peskastimordatapipeline-330">peskas.timor.data.pipeline 3.3.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-330"></a></h2>
+<div class="section level4">
+<h4 id="breaking-changes-3-3-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-3-3-0"></a></h4>
+<ul><li>Now kobo surveys are retrieved according the new v2 API. The function <code>retrieve_survey_data()</code> has been replaced by <code>get_kobo_data</code> updated to retrieve data from the new API. The function <code>retrieve_survey_metadata()</code> has been deprecated.</li></ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="3.2.0" id="peskastimordatapipeline-320">peskas.timor.data.pipeline 3.2.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-320"></a></h2>
 <div class="section level3">
@@ -182,7 +188,7 @@
 <h2 class="pkg-version" data-toc-text="0.10.1" id="peskastimordatapipeline-0101">peskas.timor.data.pipeline 0.10.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-0101"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-10-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-10-1"></a></h3>
-<ul><li>Fixed the bug in survey retrieve process. Integrating a server response status check in <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>
+<ul><li>Fixed the bug in survey retrieve process. Integrating a server response status check in <code>retrieve_survey_data()</code>
 </li></ul></div>
 </div>
     <div class="section level2">
@@ -265,7 +271,7 @@
 <h2 class="pkg-version" data-toc-text="0.4.0" id="peskastimordatapipeline-040">peskas.timor.data.pipeline 0.4.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-040"></a></h2>
 <div class="section level4">
 <h4 id="breaking-changes-0-4-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-4-0"></a></h4>
-<ul><li>Renamed <code>ingest_timor_landings()</code> to <code><a href="../reference/ingest_landings.html">ingest_landings()</a></code> for brevity and because all functions relate to Timor anyways.</li></ul></div>
+<ul><li>Renamed <code>ingest_timor_landings()</code> to <code>ingest_landings()</code> for brevity and because all functions relate to Timor anyways.</li></ul></div>
 <div class="section level4">
 <h4 id="improvements-0-4-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-4-0"></a></h4>
 <ul><li>Renamed the job names in the github workflow as the functions that the job calls.</li>
@@ -295,7 +301,7 @@
 <div class="section level4">
 <h4 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h4>
 <ul><li>
-<code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code><a href="../reference/retrieve_survey_data.html">retrieve_survey_data()</a></code>, <code><a href="../reference/retrieve_survey_metadata.html">retrieve_survey_metadata()</a></code>, and <code><a href="../reference/retrieve_survey.html">retrieve_survey()</a></code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
+<code>download_survey_data()</code>, <code>download_survey_metadata()</code>, and <code>download_survey()</code> have been renamed to <code>retrieve_survey_data()</code>, <code>retrieve_survey_metadata()</code>, and <code>retrieve_survey()</code>. This is to avoid confusion with planned functions that download data from cloud locations.</li>
 <li>The suffix <em>raw</em> and <em>metadata</em> that is appended to the prefix when retrieving survey information is now separated using "_" rather than “-”. This is to more easily distinguish between information encoded in the file name.</li>
 </ul></div>
 <div class="section level4">
@@ -316,7 +322,7 @@
 <li>
 <code><a href="../reference/add_version.html">add_version()</a></code> is an utility function that appends date-time and sha information to a string and is used to version file names.</li>
 <li>
-<code><a href="../reference/get_host_url.html">get_host_url()</a></code> is an utility function that gets the host url of an electronic survey provider API.</li>
+<code>get_host_url()</code> is an utility function that gets the host url of an electronic survey provider API.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="pipeline-0-1-0">Pipeline<a class="anchor" aria-label="anchor" href="#pipeline-0-1-0"></a></h4>
@@ -332,7 +338,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer></div>
