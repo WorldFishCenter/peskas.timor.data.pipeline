@@ -96,7 +96,7 @@ jobs:
 
   ingest-preprocess-v2-landings-step2:
     name: "Ingest-process landings 2/2"
-    needs: ingest-preprocess-v1-landings-step1
+    needs: ingest-preprocess-v2-landings-step1
     runs-on: ubuntu-20.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
