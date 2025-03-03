@@ -44,7 +44,7 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
     )
 
   national_estimations <- get_national_estimates(municipal_estimations = municipal_estimations)
-
+ 
   results <-
     list(
       national = national_estimations,
