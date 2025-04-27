@@ -13,7 +13,7 @@ jobs:
 
   build-container:
     name: Build R container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -30,7 +30,7 @@ jobs:
   send-mail:
     name: Send summary mail
     needs: [build-container]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:

@@ -30,7 +30,7 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
     get_merged_trips(pars) %>%
     fill_missing_regions()
 
-  vessels_stats <- get_preprocessed_sheets(pars)$registered_boats
+  vessels_metadata <- get_preprocessed_sheets(pars)$registered_boats
 
   municipal_estimations <-
     unique(na.omit(trips$municipality)) %>%
@@ -39,7 +39,7 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
       pars = pars,
       trips = trips,
       modelled_taxa = "selected",
-      vessels_metadata = vessels_stats,
+      vessels_metadata = vessels_metadata,
       national_level = FALSE
     )
 
@@ -257,10 +257,59 @@ estimate_value <- function(trips) {
   value_df
 }
 
-estimate_indicators <- function(value_estimate, landings_model, catch_estimate, n_boats) {
-  n_landings <-
-    landings_model %>%
-    predict_variable(var = "n_landings_per_boat") %>%
+estimate_landings <- function(trips) {
+  landings_df <-
+    trips %>%
+    dplyr::mutate(
+      landing_period = lubridate::floor_date(.data$tracker_trip_end,
+        unit = "month"
+      ),
+      last_seen_period = lubridate::floor_date(.data$tracker_last_seen,
+        unit = "month"
+      )
+    ) %>%
+    # dplyr::filter(!is.na(.data$landing_period)) %>%
+    dplyr::group_by(.data$tracker_imei, .data$landing_period) %>%
+    dplyr::summarise(
+      n_landings = dplyr::n_distinct(.data$tracker_trip_id),
+      # need these two to know when the tracking started and ended
+      first_trip = min(.data$landing_period),
+      last_seen = max(.data$last_seen_period)
+    ) %>%
+    dplyr::ungroup() %>%
+    # Need to account for months that are no present in the data
+    tidyr::complete(.data$tracker_imei, .data$landing_period,
+      fill = list(n_landings = NA)
+    ) %>%
+    dplyr::group_by(.data$tracker_imei) %>%
+    # Removing observations from the first and last month as they are not complete
+    dplyr::filter(
+      .data$landing_period > dplyr::first(na.omit(.data$first_trip)),
+      .data$landing_period < dplyr::first(na.omit(.data$last_seen))
+    ) %>%
+    dplyr::select(-.data$first_trip, -.data$last_seen) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      year = as.character(lubridate::year(.data$landing_period)),
+      month = as.character(lubridate::month(.data$landing_period)),
+      period = paste(.data$year, .data$month, sep = "-"),
+      version = dplyr::case_when(
+        .data$landing_period <= "2019-05-01" ~ "v1",
+        .data$landing_period > "2019-05-01" ~ "v2"
+      )
+    ) %>%
+    dplyr::ungroup()
+
+  landings_df
+
+}
+
+
+estimate_indicators <- function(value_estimate, landings_estimate, catch_estimate, n_boats) {
+  n_landings <- 
+    landings_estimate |> 
+    dplyr::group_by(.data$period, .data$month, .data$version, .data$landing_period) |> 
+    dplyr::summarise(n_landings_per_boat = mean(.data$n_landings, na.rm = T), .groups = "drop") |> 
     dplyr::mutate(month = as.integer(.data$month))
 
   estimations <-
@@ -277,7 +326,8 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
       landing_catch = ifelse(.data$landing_catch < 0.5, NA_real_, .data$landing_catch),
       landing_catch_price = ifelse(.data$landing_catch_price < 0.5, NA_real_, .data$landing_catch_price)
     ) %>%
-    dplyr::arrange(.data$landing_period)
+    dplyr::arrange(.data$landing_period) |> 
+    as.data.frame()
 
   set.seed(666)
   imputed_df <-
@@ -291,10 +341,11 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
       ),
       boot.type = "ordinary"
     )
-
+  
   imputed_id <- dplyr::tibble(is_imputed = dplyr::as_tibble(imputed_df$missMatrix)$landing_catch)
-
-  estimations_total <-
+  
+  # First process the Amelia imputations
+  processed_data <-
     imputed_df$imputations %>%
     purrr::discard(is.na(.)) %>%
     purrr::compact() %>%
@@ -309,23 +360,77 @@ estimate_indicators <- function(value_estimate, landings_model, catch_estimate, 
       price_kg = ifelse(.data$price_kg > 15, NA_real_, .data$price_kg),
       landing_catch = ifelse(.data$price_kg > 15, NA_real_, .data$landing_catch),
       landing_catch_price = ifelse(.data$price_kg > 15, NA_real_, .data$landing_catch_price)
-    ) %>%
-    mice::mice(m = 5, maxit = 50, method = "pmm", seed = 666, printFlag = F) %>%
-    mice::complete(action = "all") %>%
-    purrr::map(dplyr::bind_rows) %>%
-    dplyr::bind_rows() %>%
-    dplyr::as_tibble() %>%
-    dplyr::mutate(
-      catch_price = .data$landing_catch_price * .data$n_landings_per_boat * n_boats,
-      catch = .data$landing_catch * .data$n_landings_per_boat * n_boats
-    ) %>%
-    dplyr::select(-c(.data$version)) %>%
-    dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$is_imputed) %>%
-    dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(.data$landing_period) %>%
-    dplyr::mutate(n_boats = rep(n_boats))
-
+    )
+  
+  # Instead of MICE, use a simpler imputation for the remaining NAs
+  # Identify which rows need imputation
+  needs_imputation <- is.na(processed_data$price_kg) | 
+                      is.na(processed_data$landing_catch) | 
+                      is.na(processed_data$landing_catch_price)
+  
+  if(any(needs_imputation)) {
+    # Use time-series aware imputation with zoo package
+    
+    # Create 5 imputed datasets (to match your original m=5)
+    imputed_datasets <- list()
+    
+    for(i in 1:5) {
+      # Add small random noise for each iteration to create variation
+      temp_data <- processed_data
+      
+      # Impute using time series interpolation with some randomness
+      for(col in c("price_kg", "landing_catch", "landing_catch_price")) {
+        # Get mean and sd for adding noise
+        col_mean <- mean(temp_data[[col]], na.rm = TRUE)
+        col_sd <- sd(temp_data[[col]], na.rm = TRUE) * 0.1 # 10% noise
+        
+        # Interpolate missing values
+        imputed_values <- zoo::na.approx(temp_data[[col]], na.rm = FALSE, rule = 2)
+        
+        # Add small random noise to imputed values
+        na_indices <- is.na(temp_data[[col]])
+        if(any(na_indices)) {
+          noise <- rnorm(sum(na_indices), 0, col_sd)
+          imputed_values[na_indices] <- imputed_values[na_indices] + noise
+          temp_data[[col]] <- imputed_values
+        }
+      }
+      
+      imputed_datasets[[i]] <- temp_data
+    }
+    
+    # Complete processing as in your original code
+    estimations_total <- 
+      imputed_datasets %>%
+      purrr::map(dplyr::bind_rows) %>%
+      dplyr::bind_rows() %>%
+      dplyr::as_tibble() %>%
+      dplyr::mutate(
+        catch_price = .data$landing_catch_price * .data$n_landings_per_boat * n_boats,
+        catch = .data$landing_catch * .data$n_landings_per_boat * n_boats
+      ) %>%
+      dplyr::select(-c(.data$version)) %>%
+      dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$is_imputed) %>%
+      dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+      dplyr::ungroup() %>%
+      dplyr::arrange(.data$landing_period) %>%
+      dplyr::mutate(n_boats = rep(n_boats))
+  } else {
+    # If no imputation needed, process directly
+    estimations_total <- 
+      processed_data %>%
+      dplyr::mutate(
+        catch_price = .data$landing_catch_price * .data$n_landings_per_boat * n_boats,
+        catch = .data$landing_catch * .data$n_landings_per_boat * n_boats
+      ) %>%
+      dplyr::select(-c(.data$version)) %>%
+      dplyr::group_by(.data$period, .data$month, .data$landing_period, .data$is_imputed) %>%
+      dplyr::summarise(dplyr::across(.cols = dplyr::everything(), ~ mean(.x))) %>%
+      dplyr::ungroup() %>%
+      dplyr::arrange(.data$landing_period) %>%
+      dplyr::mutate(n_boats = rep(n_boats))
+  }
+  
   estimations_total
 }
 
@@ -349,10 +454,10 @@ run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa
   }
 
   message("Modelling ", region)
-  landings_model <- model_landings(trips_region)
+  landings_estimate <- estimate_landings(trips_region)
   value_estimate <- estimate_value(trips_region)
   catch_estimate <- estimate_catch(trips_region)
-  results <- estimate_indicators(value_estimate, landings_model, catch_estimate, n_boats = region_boats)
+  results <- estimate_indicators(value_estimate, landings_estimate, catch_estimate, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
   catch_taxa_estimates <- estimate_catch_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)

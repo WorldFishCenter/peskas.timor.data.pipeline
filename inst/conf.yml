@@ -130,9 +130,9 @@ default:
       file_prefix: validation_alerts
       sheet_id: !expr Sys.getenv("VALID_SHEET_ID")
       table:
-        - flags-dev
+        - flags
         - alerts
-      flags_table: flags-dev
+      flags_table: flags
     version:
       preprocess: latest
   merged_trips:
@@ -161,21 +161,21 @@ default:
       key: gcs
       options:
         project: peskas
-        bucket: timor-dev
+        bucket: timor
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
   pds_storage:
     google:
       key: gcs
       options:
         project: peskas
-        bucket: pds-timor-dev
+        bucket: pds-timor
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
   public_storage:
     google:
       key: gcs
       options:
         project: peskas
-        bucket: public-timor-dev
+        bucket: public-timor
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
 production:
@@ -218,9 +218,9 @@ local:
     google_sheets:
       sheet_id: !expr readLines("auth/valid-sheet-id")
       table:
-        - flags-dev
+        - flags
         - alerts
-      flags_table: flags-dev
+      flags_table: flags
   pds:
     trips:
       token: !expr readLines("auth/pds-token")

@@ -21,7 +21,7 @@ env:
 jobs:
   build-container:
     name: Build R container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
   ingest-preprocess-metadata-tables:
     name: Ingest metadata tables
     needs: build-container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -59,7 +59,7 @@ jobs:
   ingest-preprocess-landings-v1-v3:
     name: Ingest and preprocess legacy and ongoing landings
     needs: build-container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -79,7 +79,7 @@ jobs:
   ingest-preprocess-v2-landings-step1:
     name: "Ingest-process landings 1/2"
     needs: build-container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -97,7 +97,7 @@ jobs:
   ingest-preprocess-v2-landings-step2:
     name: "Ingest-process landings 2/2"
     needs: ingest-preprocess-v2-landings-step1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -113,7 +113,7 @@ jobs:
   merge-landings:
     name: Merge landings
     needs: [ingest-preprocess-v2-landings-step2, ingest-preprocess-landings-v1-v3, ingest-preprocess-metadata-tables]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -131,7 +131,7 @@ jobs:
   validate-landings:
     name: Validate landings
     needs: [merge-landings]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -149,7 +149,7 @@ jobs:
   ingest-pds-data:
     name: Ingest pds data
     needs: build-container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -167,7 +167,7 @@ jobs:
   preprocess-pds-data:
     name: Preprocess pds data
     needs: [ingest-pds-data]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -185,7 +185,7 @@ jobs:
   validate-pds-data:
     name: Validate pds data
     needs: preprocess-pds-data
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -203,7 +203,7 @@ jobs:
   merge-trips:
     name: Merge trips
     needs: [validate-landings, validate-pds-data]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -221,7 +221,7 @@ jobs:
   model-indicators:
     name: Estimate fishery indicators
     needs: [merge-trips]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
@@ -237,7 +237,7 @@ jobs:
   export-trips:
     name: Export trips
     needs: [merge-trips, model-indicators]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
       image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
       credentials:
