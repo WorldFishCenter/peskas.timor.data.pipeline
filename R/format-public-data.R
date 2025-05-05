@@ -380,7 +380,7 @@ summarise_estimations <- function(bin_unit = "month", aggregated_predictions, gr
     by = "month"
   )
 
-  today <- Sys.Date()
+  today <- as.POSIXct(format(Sys.Date(), "%Y-%m-%d 00:00:00"))
 
   if (length(groupings) > 1) {
     standardised_predictions <- aggregated_predictions %>%
