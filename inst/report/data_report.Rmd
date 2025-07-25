@@ -35,7 +35,7 @@ library(apexcharter)
 
 
 setwd("../..")
-pars <- peskas.timor.data.pipeline::read_config()
+pars <- read_config()
 
 
 kobo_trips <- peskas.timor.data.pipeline::get_merged_trips(pars) %>% dplyr::filter(.data$landing_date >= "2018-01-01")
@@ -329,7 +329,7 @@ kobo_trips %>%
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 estimates$national$aggregated %>%
-  ggplot(aes(landing_period, n_landings_per_boat)) +
+  ggplot(aes(as.Date(landing_period), n_landings_per_boat)) +
   geom_line(color = "#447597") +
   geom_point(color = "#447597") +
   geom_area(fill = "#447597", alpha = 0.25) +
@@ -360,7 +360,7 @@ estimates$national$aggregated %>%
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 estimates$national$aggregated %>%
-  ggplot(aes(landing_period, catch / 1000)) +
+  ggplot(aes(as.Date(landing_period), catch / 1000)) +
   geom_line(color = "#447597") +
   geom_point(color = "#447597") +
   geom_area(fill = "#447597", alpha = 0.25) +
@@ -419,7 +419,7 @@ estimates$municipal %>%
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 estimates$national$aggregated %>%
-  ggplot(aes(landing_period, catch_price)) +
+  ggplot(aes(as.Date(landing_period), catch_price)) +
   geom_line(color = "#447597") +
   geom_point(color = "#447597") +
   geom_area(fill = "#447597", alpha = 0.25) +
@@ -478,7 +478,7 @@ estimates$municipal %>%
 ```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 estimates$national$aggregated %>%
-  ggplot(aes(landing_period, price_kg)) +
+  ggplot(aes(as.Date(landing_period), price_kg)) +
   geom_line(color = "#447597") +
   geom_point(color = "#447597") +
   geom_area(fill = "#447597", alpha = 0.25) +
@@ -845,7 +845,7 @@ estimates$national$taxa %>%
     "Garfish",
     "Tuna/Bonito",
     "Mackerel scad"))) %>% 
-  ggplot(aes(x = landing_period, y = catch / 1000)) +
+  ggplot(aes(x = as.Date(landing_period), y = catch / 1000)) +
   facet_grid(comm_name ~ ., scales = "free_y") +
   geom_line(aes(color = comm_name), show.legend = FALSE) +
   geom_area(aes(fill = comm_name), alpha = 0.5) +
