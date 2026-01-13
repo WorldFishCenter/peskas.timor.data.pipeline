@@ -55,13 +55,18 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
     dplyr::mutate(
       Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
       Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
-      `Last Seen` = lubridate::as_datetime(.data$`Last Seen`,
+      `Last Seen` = lubridate::as_datetime(
+        .data$`Last Seen`,
         format = "%a %b %d %X UTC %Y",
         tz = "UTC"
       )
     )
 
-  preprocessed_filename <- paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(
+    pars$pds$trips$file_prefix,
+    "preprocessed",
+    sep = "_"
+  ) %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = pds_trips_raw,
@@ -120,11 +125,15 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
     data.frame(
       Trip = Trip,
       Boat = unique(track$Boat),
-      start_end_distance = geosphere::distm(c(track[1, ]$Lng, track[1, ]$Lat),
+      start_end_distance = geosphere::distm(
+        c(track[1, ]$Lng, track[1, ]$Lat),
         c(track[nrow(track), ]$Lng, track[nrow(track), ]$Lat),
         fun = geosphere::distGeo
       )[1],
-      outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>% nrow() / nrow(track) * 100,
+      outliers_proportion = dplyr::filter(track, .data$`Speed (M/S)` > 30) %>%
+        nrow() /
+        nrow(track) *
+        100,
       timetrace_dispersion = stats::sd(diff(track$Time)),
       start_lat = dplyr::first(track$Lat),
       start_lng = dplyr::first(track$Lng),
@@ -173,25 +182,33 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   pds_trips <- get_preprocessed_trips(pars)
-  tracks_list <- googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket)
+  tracks_list <- googleCloudStorageR::gcs_list_objects(
+    pars$pds_storage$google$options$bucket
+  )
 
   # get list of preprocessed tracks files
   preprocessed_files <-
-    googleCloudStorageR::gcs_list_objects(pars$storage$google$options$bucket) %>%
+    googleCloudStorageR::gcs_list_objects(
+      pars$storage$google$options$bucket
+    ) %>%
     dplyr::filter(grepl(
       paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
       .data$name
     ))
 
-  future::plan(future::multisession,
-    workers = pars$pds$tracks$multisession$n_sessions
-  )
+  future::plan(future::multisession, workers = future::availableWorkers())
 
   # avoid to operate on tracks already preprocessed
   if (nrow(preprocessed_files) == 0) {
     tracks_to_download <- unique(pds_trips$Trip)
     tracks_descriptors <-
-      furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
+      furrr::future_map_dfr(
+        tracks_to_download,
+        get_tracks_descriptors,
+        pars,
+        tracks_list,
+        .progress = TRUE
+      )
   } else {
     # Read preprocessed tracks' file
     preprocessed_tracks <- get_preprocessed_tracks(pars)
@@ -204,13 +221,26 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
       unique()
 
     tracks_descriptors <-
-      furrr::future_map_dfr(tracks_to_download, get_tracks_descriptors, pars, tracks_list, .progress = TRUE)
+      furrr::future_map_dfr(
+        tracks_to_download,
+        get_tracks_descriptors,
+        pars,
+        tracks_list,
+        .progress = TRUE
+      )
 
     # bind new tracks_descriptors with latest ones
-    tracks_descriptors <- dplyr::bind_rows(preprocessed_tracks, tracks_descriptors)
+    tracks_descriptors <- dplyr::bind_rows(
+      preprocessed_tracks,
+      tracks_descriptors
+    )
   }
 
-  preprocessed_filename <- paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(
+    pars$pds$tracks$file_prefix,
+    "preprocessed",
+    sep = "_"
+  ) %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = tracks_descriptors,
@@ -219,14 +249,17 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud...")
-  purrr::map(pars$storage, ~ purrr::walk(
-    .x = preprocessed_filename,
-    .f = ~ insistent_upload_cloud_file(
-      file = .,
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
+  purrr::map(
+    pars$storage,
+    ~ purrr::walk(
+      .x = preprocessed_filename,
+      .f = ~ insistent_upload_cloud_file(
+        file = .,
+        provider = pars$storage$google$key,
+        options = pars$storage$google$options
+      )
     )
-  ))
+  )
   logger::log_success("File upload succeded")
 }
 
