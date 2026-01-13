@@ -196,7 +196,7 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
       .data$name
     ))
 
-  future::plan(future::multisession, workers = future::availableWorkers())
+  future::plan(future::multisession)
 
   # avoid to operate on tracks already preprocessed
   if (nrow(preprocessed_files) == 0) {
