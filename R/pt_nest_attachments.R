@@ -38,13 +38,14 @@
 #' )
 #' pt_nest_attachments(dummy_landings)
 pt_nest_attachments <- function(x) {
-  nested_attachments <- x %>%
+  nested_attachments <-
+    x %>%
     # Using the .data pronoun to avoid RMD check notes
-    dplyr::select(.data$`_id`, dplyr::starts_with("_attachments")) %>%
+    dplyr::select("_id", dplyr::starts_with("_attachments")) %>%
     dplyr::mutate_all(as.character) %>%
     # Column names follow the form "_attachments.0.download_large_url"
     tidyr::pivot_longer(
-      cols = -.data$`_id`,
+      cols = -"_id",
       names_to = c("n", "field"),
       names_prefix = "_attachments.",
       names_sep = "\\."
@@ -58,10 +59,12 @@ pt_nest_attachments <- function(x) {
     dplyr::ungroup() %>%
     dplyr::rename("_attachments" = "data") %>%
     # If there are no attachments empty the nested data frames
-    dplyr::mutate(`_attachments` = purrr::map(
-      .data$`_attachments`,
-      ~ dplyr::filter(., !is.na(.data$id))
-    ))
+    dplyr::mutate(
+      `_attachments` = purrr::map(
+        .data$`_attachments`,
+        ~ dplyr::filter(., !is.na("_id"))
+      )
+    )
 
   x %>%
     dplyr::select(-dplyr::starts_with("_attachments")) %>%
