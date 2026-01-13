@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.2
+FROM rocker/geospatial:4.5
 
 # Install imports
 RUN install2.r --error --skipinstalled \
@@ -69,7 +69,7 @@ RUN install2.r --error --skipinstalled \
     sf
 
 # Install specific version of rfishbase
-RUN Rscript -e 'remotes::install_github("ropensci/rfishbase", ref = "v5.0.1")'
+RUN Rscript -e 'remotes::install_version("rfishbase", version = "5.0.1")'
 
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
