@@ -122,7 +122,11 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
     magrittr::extract2("Trip") %>%
     unique()
 
-  if (isTRUE(pars$pds$tracks$compress)) ext <- "csv.gz" else ext <- "csv"
+  if (isTRUE(pars$pds$tracks$compress)) {
+    ext <- "csv.gz"
+  } else {
+    ext <- "csv"
+  }
 
   # list id tracks already in bucket
   file_list_id <- cloud_object_name(
@@ -139,7 +143,8 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
       add_version(extension = "csv")
     on.exit(file.remove(path))
 
-    retrieve_pds_tracks_data(path,
+    retrieve_pds_tracks_data(
+      path,
       secret = pars$pds$trips$secret,
       token = pars$pds$trips$token,
       id = id
@@ -149,7 +154,8 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
       logger::log_info("Compressing file...")
       csv_path <- path
       path <- paste0(path, ".gz")
-      readr::read_csv(csv_path,
+      readr::read_csv(
+        csv_path,
         col_types = readr::cols(.default = readr::col_character())
       ) %>%
         readr::write_csv(path)
@@ -158,28 +164,31 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
 
     logger::log_info("Uploading {path} to cloud...")
     # Iterate over multiple storage providers if there are more than one
-    purrr::map(pars$pds_storage, ~ purrr::walk(
-      .x = path,
-      .f = ~ insistent_upload_cloud_file(
-        file = .,
-        provider = pars$pds_storage$google$key,
-        options = pars$pds_storage$google$options
+    purrr::map(
+      pars$pds_storage,
+      ~ purrr::walk(
+        .x = path,
+        .f = ~ insistent_upload_cloud_file(
+          file = .,
+          provider = pars$pds_storage$google$key,
+          options = pars$pds_storage$google$options
+        )
       )
-    ))
+    )
     logger::log_success("File upload succeded")
   }
 
   tracks_to_download <- trips_ID[!(trips_ID %in% file_list_id)]
   if (isTRUE(pars$pds$tracks$multisession$parallel)) {
-    future::plan(future::multisession,
-      workers = pars$pds$tracks$multisession$n_sessions
-    )
+    future::plan(future::multisession)
   }
   furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
 
   # Store names of pds-tracks (useful for map generation)
   tracks_names <-
-    googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
+    googleCloudStorageR::gcs_list_objects(
+      pars$pds_storage$google$options$bucket
+    ) %>%
     dplyr::select(.data$name) %>%
     dplyr::mutate(Trip = stringr::str_extract(.data$name, "[[:digit:]]+"))
 
@@ -214,7 +223,8 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 insistent_upload_cloud_file <- function(..., delay = 3) {
-  purrr::insistently(upload_cloud_file,
+  purrr::insistently(
+    upload_cloud_file,
     rate = purrr::rate_backoff(
       pause_cap = 60 * 5,
       max_times = 10
@@ -238,7 +248,8 @@ insistent_upload_cloud_file <- function(..., delay = 3) {
 #' @export
 #'
 insistent_download_cloud_file <- function(..., delay = 3) {
-  purrr::insistently(download_cloud_file,
+  purrr::insistently(
+    download_cloud_file,
     rate = purrr::rate_backoff(
       pause_cap = 60 * 5,
       max_times = 10
@@ -247,7 +258,6 @@ insistent_download_cloud_file <- function(..., delay = 3) {
   )(...)
   Sys.sleep(delay)
 }
-
 
 
 #' Ingest tracks data as a single file
@@ -273,7 +283,8 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
       list(data, trips),
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
-    purrr::walk(upload_cloud_file,
+    purrr::walk(
+      upload_cloud_file,
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     )
@@ -301,17 +312,28 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Retrieving PDS tracks")
 
   tracks <- get_sync_tracks(pars) %>%
-    dplyr::filter(.data$Lng > 124.03 & .data$Lng < 127.29 & .data$Lat > -9.74 & .data$ Lat < -7.98) # exclude track points outside borders
+    dplyr::filter(
+      .data$Lng > 124.03 &
+        .data$Lng < 127.29 &
+        .data$Lat > -9.74 &
+        .data$Lat < -7.98
+    ) # exclude track points outside borders
 
   logger::log_info("Retrieving merged trips")
 
   merged_trips <-
     get_merged_trips(pars) %>%
     dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
-    dplyr::mutate(n_fishermen = .data$fisher_number_child + .data$fisher_number_man + .data$fisher_number_woman) %>%
+    dplyr::mutate(
+      n_fishermen = .data$fisher_number_child +
+        .data$fisher_number_man +
+        .data$fisher_number_woman
+    ) %>%
     tidyr::unnest(.data$landing_catch, keep_empty = T) %>%
     tidyr::unnest(.data$length_frequency, keep_empty = T) %>%
-    dplyr::mutate(length = ifelse(.data$number_of_fish == 0, NA_real_, .data$length)) %>%
+    dplyr::mutate(
+      length = ifelse(.data$number_of_fish == 0, NA_real_, .data$length)
+    ) %>%
     dplyr::group_by(.data$landing_id, .data$landing_date) %>%
     dplyr::arrange(dplyr::desc(.data$catch), .by_group = TRUE) %>%
     dplyr::summarise(
@@ -325,8 +347,12 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       weight = sum(.data$catch, na.rm = TRUE) / 1000,
       length = mean(.data$length, na.rm = TRUE)
     ) %>%
-    dplyr::mutate(remove_label = dplyr::case_when(!.data$catch_taxon == "0" & .data$weight == 0
-    ~ "remove", TRUE ~ "keep")) %>%
+    dplyr::mutate(
+      remove_label = dplyr::case_when(
+        !.data$catch_taxon == "0" & .data$weight == 0 ~ "remove",
+        TRUE ~ "keep"
+      )
+    ) %>%
     dplyr::filter(.data$remove_label == "keep") %>%
     dplyr::select(-.data$remove_label) %>%
     dplyr::mutate(
@@ -336,12 +362,14 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::ungroup()
 
   logger::log_info("Opening shapefiles ...")
-  timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
+  timor_nation <- system.file(
+    "report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
     package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
 
-  timor_regions <- system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
+  timor_regions <- system.file(
+    "report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
     package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read()
@@ -365,7 +393,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   tracks_grid <-
     tracks_ids %>%
     dplyr::mutate(
-      cell = paste(findInterval(.data$Lng, gridx),
+      cell = paste(
+        findInterval(.data$Lng, gridx),
         findInterval(.data$Lat, gridy),
         sep = ","
       )
@@ -383,19 +412,39 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   map <-
     ggplot2::ggplot() +
     ggplot2::theme_void() +
-    ggplot2::geom_point(tracks_grid,
+    ggplot2::geom_point(
+      tracks_grid,
       mapping = ggplot2::aes(x = .data$Lng, y = .data$Lat, color = .data$trips),
-      size = 0.01, alpha = 0.5
+      size = 0.01,
+      alpha = 0.5
     ) +
-    ggplot2::geom_sf(data = timor_nation, size = 0.4, color = "#963b00", fill = "white") +
-    ggplot2::geom_sf(data = timor_regions, size = 0.1, color = "black", fill = "grey", linetype = 2, alpha = 0.1) +
+    ggplot2::geom_sf(
+      data = timor_nation,
+      size = 0.4,
+      color = "#963b00",
+      fill = "white"
+    ) +
+    ggplot2::geom_sf(
+      data = timor_regions,
+      size = 0.1,
+      color = "black",
+      fill = "grey",
+      linetype = 2,
+      alpha = 0.1
+    ) +
     ggplot2::geom_sf_text(
-      data = timor_regions, ggplot2::aes(label = .data$ADM1_EN), size = 2.8,
+      data = timor_regions,
+      ggplot2::aes(label = .data$ADM1_EN),
+      size = 2.8,
       fontface = "bold"
     ) +
     ggplot2::annotate(
-      geom = "text", y = -8.16, x = 125.45, label = "Atauro",
-      size = 2.8, fontface = "bold"
+      geom = "text",
+      y = -8.16,
+      x = 125.45,
+      label = "Atauro",
+      size = 2.8,
+      fontface = "bold"
     ) +
     ggplot2::scale_colour_viridis_c(
       begin = 0.1,
@@ -421,7 +470,11 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     )
 
   map_filename <-
-    paste(pars$pds$tracks$map$png$file_prefix, pars$pds$tracks$map$png$extension, sep = ".")
+    paste(
+      pars$pds$tracks$map$png$file_prefix,
+      pars$pds$tracks$map$png$extension,
+      sep = "."
+    )
 
   ggplot2::ggsave(
     filename = map_filename,
@@ -453,8 +506,16 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dplyr::left_join(tracks_ids_summarised, by = "trip")
 
   degx <- degy <- 0.1 # define grid size (0.1 is 11.1 km)
-  gridx <- seq(min(tracks_ids_summarised$Lng), max(tracks_ids_summarised$Lng) + degx, by = degx)
-  gridy <- seq(min(tracks_ids_summarised$Lat), max(tracks_ids_summarised$Lat) + degy, by = degy)
+  gridx <- seq(
+    min(tracks_ids_summarised$Lng),
+    max(tracks_ids_summarised$Lng) + degx,
+    by = degx
+  )
+  gridy <- seq(
+    min(tracks_ids_summarised$Lat),
+    max(tracks_ids_summarised$Lat) + degy,
+    by = degy
+  )
 
   logger::log_info("Generating indicators data frame...")
 
@@ -462,14 +523,21 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     landings_geo %>%
     dplyr::filter(!is.na(.data$Lat)) %>%
     dplyr::mutate(
-      cell = paste(findInterval(.data$Lng, gridx),
+      cell = paste(
+        findInterval(.data$Lng, gridx),
         findInterval(.data$Lat, gridy),
         sep = ","
       )
     ) %>%
     dplyr::mutate(
-      CPE = dplyr::case_when(is.infinite(.data$CPE) ~ NA_real_, TRUE ~ .data$CPE),
-      RPE = dplyr::case_when(is.infinite(.data$RPE) ~ NA_real_, TRUE ~ .data$RPE)
+      CPE = dplyr::case_when(
+        is.infinite(.data$CPE) ~ NA_real_,
+        TRUE ~ .data$CPE
+      ),
+      RPE = dplyr::case_when(
+        is.infinite(.data$RPE) ~ NA_real_,
+        TRUE ~ .data$RPE
+      )
     ) %>%
     dplyr::group_by(.data$region) %>%
     dplyr::mutate(
@@ -479,7 +547,12 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       region_cpe = round(mean(.data$CPE, na.rm = TRUE), 2),
       region_rpe = round(mean(.data$RPE, na.rm = TRUE), 2)
     ) %>%
-    dplyr::group_by(.data$cell, .data$month_date, .data$gear_type, .data$catch_taxon) %>%
+    dplyr::group_by(
+      .data$cell,
+      .data$month_date,
+      .data$gear_type,
+      .data$catch_taxon
+    ) %>%
     dplyr::summarise(
       region = dplyr::first(.data$region),
       Lat = stats::median(.data$Lat),
@@ -514,8 +587,6 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 }
 
 
-
-
 #' Convert taxa codes to common names
 #'
 #' @param data A dataframe with taxa codes under a column named "catch_taxon"
@@ -527,34 +598,97 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 convert_taxa_names <- function(data, pars) {
   catch_types <-
     peskas.timor.data.pipeline::get_preprocessed_sheets(pars)$catch_types %>%
-    dplyr::filter(!.data$catch_name_en %in% c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")) %>%
+    dplyr::filter(
+      !.data$catch_name_en %in%
+        c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")
+    ) %>%
     dplyr::select(
       catch_taxon = .data$interagency_code,
       "Common name" = .data$catch_name_en
     ) %>%
-    dplyr::mutate("Common name" = dplyr::case_when(
-      catch_taxon == "RAX" ~ "Short mackerel",
-      catch_taxon == "CGX" ~ "Jacks/Trevally",
-      catch_taxon == "CLP" ~ "Sardines",
-      catch_taxon == "TUN" ~ "Tuna/Bonito",
-      catch_taxon == "SNA" ~ "Snapper",
-      TRUE ~ .data$`Common name`
-    ))
+    dplyr::mutate(
+      "Common name" = dplyr::case_when(
+        catch_taxon == "RAX" ~ "Short mackerel",
+        catch_taxon == "CGX" ~ "Jacks/Trevally",
+        catch_taxon == "CLP" ~ "Sardines",
+        catch_taxon == "TUN" ~ "Tuna/Bonito",
+        catch_taxon == "SNA" ~ "Snapper",
+        TRUE ~ .data$`Common name`
+      )
+    )
   data %>%
     dplyr::left_join(catch_types, by = "catch_taxon") %>%
-    dplyr::mutate(fish_group = dplyr::case_when(
-      catch_taxon %in% c("COZ") ~ "Molluscs",
-      catch_taxon %in% c("PEZ") ~ "Shrimps",
-      catch_taxon %in% c("MZZ") ~ "Unknown",
-      catch_taxon %in% c("SLV", "CRA") ~ "Crustaceans",
-      catch_taxon %in% c("OCZ", "IAX") ~ "Cephalopods",
-      catch_taxon %in% c("SKH", "SRX") ~ "Sharks and rays",
-      catch_taxon %in% c("SNA", "GPX", "PWT", "SUR", "GRX", "MUI", "BGX") ~ "Large demersals",
-      catch_taxon %in% c("CGX", "TUN", "BEN", "LWX", "BAR", "SFA", "CBA", "DOX", "ECN", "DOS") ~ "Large pelagics",
-      catch_taxon %in% c("YDX", "SPI", "EMP", "SUR", "TRI", "MOJ", "WRA", "MOO", "BWH", "LGE", "MOB", "MHL", "GOX", "THO", "IHX", "APO", "IHX", "PUX", "DRZ") ~ "Small demersals",
-      catch_taxon %in% c("RAX", "SDX", "CJX", "CLP", "GZP", "FLY", "KYX", "CLP", "MUL", "DSF", "MIL", "THF") ~ "Small pelagics",
-      TRUE ~ NA_character_
-    )) %>%
+    dplyr::mutate(
+      fish_group = dplyr::case_when(
+        catch_taxon %in% c("COZ") ~ "Molluscs",
+        catch_taxon %in% c("PEZ") ~ "Shrimps",
+        catch_taxon %in% c("MZZ") ~ "Unknown",
+        catch_taxon %in% c("SLV", "CRA") ~ "Crustaceans",
+        catch_taxon %in% c("OCZ", "IAX") ~ "Cephalopods",
+        catch_taxon %in% c("SKH", "SRX") ~ "Sharks and rays",
+        catch_taxon %in%
+          c(
+            "SNA",
+            "GPX",
+            "PWT",
+            "SUR",
+            "GRX",
+            "MUI",
+            "BGX"
+          ) ~ "Large demersals",
+        catch_taxon %in%
+          c(
+            "CGX",
+            "TUN",
+            "BEN",
+            "LWX",
+            "BAR",
+            "SFA",
+            "CBA",
+            "DOX",
+            "ECN",
+            "DOS"
+          ) ~ "Large pelagics",
+        catch_taxon %in%
+          c(
+            "YDX",
+            "SPI",
+            "EMP",
+            "SUR",
+            "TRI",
+            "MOJ",
+            "WRA",
+            "MOO",
+            "BWH",
+            "LGE",
+            "MOB",
+            "MHL",
+            "GOX",
+            "THO",
+            "IHX",
+            "APO",
+            "IHX",
+            "PUX",
+            "DRZ"
+          ) ~ "Small demersals",
+        catch_taxon %in%
+          c(
+            "RAX",
+            "SDX",
+            "CJX",
+            "CLP",
+            "GZP",
+            "FLY",
+            "KYX",
+            "CLP",
+            "MUL",
+            "DSF",
+            "MIL",
+            "THF"
+          ) ~ "Small pelagics",
+        TRUE ~ NA_character_
+      )
+    ) %>%
     dplyr::select(-.data$catch_taxon) %>%
     dplyr::rename(catch_taxon = .data$`Common name`)
 }
@@ -591,14 +725,16 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
     dplyr::count() %>%
     dplyr::rename("GPS tracks" = .data$n)
 
-  timor_nation <- system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
+  timor_nation <- system.file(
+    "report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
     package = "peskas.timor.data.pipeline"
   ) %>%
     sf::st_read() %>%
     dplyr::mutate(area = sf::st_area(.data$geometry))
 
   coordinates_sf <-
-    sf::st_as_sf(counts[1:2],
+    sf::st_as_sf(
+      counts[1:2],
       coords = c("Lng", "Lat"),
       crs = sf::st_crs(timor_nation)
     )
@@ -606,7 +742,9 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Dropping on land PDS tracks")
   points <-
     coordinates_sf %>%
-    dplyr::mutate(on_land = lengths(sf::st_within(coordinates_sf, timor_nation))) %>%
+    dplyr::mutate(
+      on_land = lengths(sf::st_within(coordinates_sf, timor_nation))
+    ) %>%
     dplyr::mutate(
       Lng = sf::st_coordinates(.data$geometry)[, 1],
       Lat = sf::st_coordinates(.data$geometry)[, 2]
@@ -676,28 +814,42 @@ get_timor_boundaries <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Extracting Timor shape boundaries...")
 
-  timor_nation <- sf::read_sf(system.file("report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp", package = "peskas.timor.data.pipeline"))
+  timor_nation <- sf::read_sf(system.file(
+    "report/timor_shapefiles/tls_admbnda_adm0_who_ocha_20200911.shp",
+    package = "peskas.timor.data.pipeline"
+  ))
   timor_atauro <-
-    sf::read_sf(system.file("report/timor_shapefiles/tls_admbnda_adm2_who_ocha_20200911.shp", package = "peskas.timor.data.pipeline")) %>%
+    sf::read_sf(system.file(
+      "report/timor_shapefiles/tls_admbnda_adm2_who_ocha_20200911.shp",
+      package = "peskas.timor.data.pipeline"
+    )) %>%
     dplyr::filter(.data$ADM2_EN == "Atauro") %>%
     dplyr::rename(region = .data$ADM2_EN) %>%
     dplyr::select(-c("ADM0_EN", "ADM0_PCODE"))
 
   timor_dili <-
-    sf::read_sf(system.file("report/timor_shapefiles/tls_admbnda_adm2_who_ocha_20200911.shp", package = "peskas.timor.data.pipeline")) %>%
+    sf::read_sf(system.file(
+      "report/timor_shapefiles/tls_admbnda_adm2_who_ocha_20200911.shp",
+      package = "peskas.timor.data.pipeline"
+    )) %>%
     dplyr::rename(region = .data$ADM1_EN) %>%
     dplyr::filter(.data$region == "Dili" & !.data$ADM2_EN == "Atauro") %>%
     dplyr::summarise(region = "Dili")
 
   timor_region <-
-    sf::read_sf(system.file("report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp", package = "peskas.timor.data.pipeline")) %>%
-    dplyr::rename(region = .data$ADM1_EN) %>%
-    dplyr::mutate(region = dplyr::case_when(
-      .data$region == "Laut\u00E9m" ~ "Lautem",
-      .data$region == "Liqui\u00E7\u00E1" ~ "Liquica",
-      .data$region == "Oecussi" ~ "Oecusse",
-      TRUE ~ .data$region
+    sf::read_sf(system.file(
+      "report/timor_shapefiles/tls_admbnda_adm1_who_ocha_20200911.shp",
+      package = "peskas.timor.data.pipeline"
     )) %>%
+    dplyr::rename(region = .data$ADM1_EN) %>%
+    dplyr::mutate(
+      region = dplyr::case_when(
+        .data$region == "Laut\u00E9m" ~ "Lautem",
+        .data$region == "Liqui\u00E7\u00E1" ~ "Liquica",
+        .data$region == "Oecussi" ~ "Oecusse",
+        TRUE ~ .data$region
+      )
+    ) %>%
     dplyr::filter(!.data$region %in% c("Ermera", "Aileu", "Atauro", "Dili")) %>%
     dplyr::bind_rows(timor_atauro) %>%
     dplyr::bind_rows(timor_dili) %>%
