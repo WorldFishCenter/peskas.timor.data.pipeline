@@ -69,7 +69,7 @@ RUN install2.r --error --skipinstalled \
     sf
 
 # Install specific version of rfishbase
-RUN Rscript -e 'install.packages("rfishbase", repos="https://cran.rstudio.com/", dependencies = TRUE)'
+RUN Rscript -e 'remotes::install_version("rfishbase", version = "5.0.1")'
 
 # Install GitHub packages
 RUN installGithub.r hrbrmstr/ggchicklet
