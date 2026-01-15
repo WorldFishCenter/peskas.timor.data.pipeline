@@ -32,7 +32,10 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 
   merged_landings <- get_merged_landings(pars)
   metadata <- get_preprocessed_sheets(pars)
-  morphometric_tables <- get_morphometric_tables(pars, metadata$morphometric_table)
+  morphometric_tables <- get_morphometric_tables(
+    pars,
+    metadata$morphometric_table
+  )
   nutrients_table <- get_nutrients_table(pars) %>%
     dplyr::rename(species = .data$interagency_code)
 
@@ -43,7 +46,11 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
     nutrients_table
   )
 
-  landings_with_weight_filename <- paste(pars$surveys$merged_landings$file_prefix, "weight", sep = "_") %>%
+  landings_with_weight_filename <- paste(
+    pars$surveys$merged_landings$file_prefix,
+    "weight",
+    sep = "_"
+  ) %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landings_with_weight,
@@ -76,13 +83,21 @@ get_catch_types <- function(pars) {
   catch_types <- metadata$catch_types
   fao_records <- metadata$fao_catch
 
-  catches_tab <- dplyr::left_join(catch_types, fao_records, by = "interagency_code") %>%
+  catches_tab <- dplyr::left_join(
+    catch_types,
+    fao_records,
+    by = "interagency_code"
+  ) %>%
     dplyr::filter(!is.na(.data$interagency_code))
 
   spp <- catches_tab %>%
     dplyr::select(
-      .data$interagency_code, .data$isscaap_taxocode.x, .data$name_scientific,
-      .data$catch_family, .data$catch_name_en, .data$taxo_name_en
+      .data$interagency_code,
+      .data$isscaap_taxocode.x,
+      .data$name_scientific,
+      .data$catch_family,
+      .data$catch_name_en,
+      .data$taxo_name_en
     )
 
   ranks <- taxize::tax_rank(spp$name_scientific, db = "gbif", rows = 1)
@@ -141,9 +156,7 @@ get_catch_types <- function(pars) {
 #'   country_code = 626
 #' )
 #' }
-get_fish_length <- function(taxa,
-                            rank = NULL,
-                            country_code = NULL) {
+get_fish_length <- function(taxa, rank = NULL, country_code = NULL) {
   if (rank == "comm_name") {
     sp_list <- rfishbase::common_to_sci(taxa) %>%
       magrittr::extract2("Species") %>%
@@ -180,10 +193,15 @@ get_fish_length <- function(taxa,
   specs_weigth <- rfishbase::length_weight(specs)
 
   specs_length <- rfishbase::length_length(specs) %>%
-    dplyr::filter(.data$Length1 %in% c("TL", "FL") &
-      .data$Length2 %in% c("TL", "FL")) %>%
-    dplyr::select(.data$Species, .data$Length1, .data$Length2,
-      aL = .data$a, bL = .data$b
+    dplyr::filter(
+      .data$Length1 %in% c("TL", "FL") & .data$Length2 %in% c("TL", "FL")
+    ) %>%
+    dplyr::select(
+      .data$Species,
+      .data$Length1,
+      .data$Length2,
+      aL = .data$a,
+      bL = .data$b
     )
 
   specs_lw <- dplyr::left_join(specs_weigth, specs_length, by = "Species")
@@ -223,7 +241,10 @@ retrieve_lengths <- function(data, country_code) {
         country_code = country_code
       )
 
-    sp_len <- dplyr::mutate(sp_len, interagency_code = rep(int_code, nrow(sp_len))) %>%
+    sp_len <- dplyr::mutate(
+      sp_len,
+      interagency_code = rep(int_code, nrow(sp_len))
+    ) %>%
       dplyr::select(.data$interagency_code, tidyselect::everything())
 
     rfish_tab <- rbind(rfish_tab, sp_len)
@@ -271,54 +292,79 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
       catch_taxon = .data$interagency_code,
       length_type = .data$length_type
     ) %>%
-    dplyr::mutate(catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon))
+    dplyr::mutate(
+      catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon)
+    )
 
   data %>%
     dplyr::mutate(
       species_group = purrr::map(
-        .x = .data$species_group, .f = dplyr::left_join,
-        catch_codes, by = c("species")
+        .x = .data$species_group,
+        .f = dplyr::left_join,
+        catch_codes,
+        by = c("species")
       ),
       species_group = purrr::map(
-        .x = .data$species_group, .f = dplyr::select,
+        .x = .data$species_group,
+        .f = dplyr::select,
         -.data$species
       ),
       species_group = purrr::map(
-        .x = .data$species_group, .f = dplyr::rename,
+        .x = .data$species_group,
+        .f = dplyr::rename,
         species = .data$catch_taxon
       )
     ) %>%
     tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
     tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     # fix conditions for "no catch" and "other" labels
-    dplyr::mutate(species = dplyr::case_when(
-      is.na(.data$species) & .data$n_individuals > 0 |
-        is.na(.data$species) & !.data$total_catch_value == "0" ~ "MZZ",
-      is.na(.data$species) & is.na(.data$n_individuals) & is.na(.data$total_catch_value) |
-        is.na(.data$species) & is.na(.data$n_individuals) & .data$total_catch_value == "0" |
-        is.na(.data$species) & .data$n_individuals == 0 & is.na(.data$total_catch_value) |
-        is.na(.data$species) & .data$n_individuals == 0 & .data$total_catch_value == "0" ~ "0",
-      TRUE ~ .data$species
-    )) %>%
+    dplyr::mutate(
+      species = dplyr::case_when(
+        is.na(.data$species) &
+          .data$n_individuals > 0 |
+          is.na(.data$species) & !.data$total_catch_value == "0" ~ "MZZ",
+        is.na(.data$species) &
+          is.na(.data$n_individuals) &
+          is.na(.data$total_catch_value) |
+          is.na(.data$species) &
+            is.na(.data$n_individuals) &
+            .data$total_catch_value == "0" |
+          is.na(.data$species) &
+            .data$n_individuals == 0 &
+            is.na(.data$total_catch_value) |
+          is.na(.data$species) &
+            .data$n_individuals == 0 &
+            .data$total_catch_value == "0" ~ "0",
+        TRUE ~ .data$species
+      )
+    ) %>%
     # Excluding FL and TL for weight calculation in legacy and recent landings
     # respectively. Keep group DRZ as it has FL=TL.
-    dplyr::mutate(length_type = dplyr::case_when(
-      !is.na(length_type) ~ length_type,
-      .data$survey_version == "v1" ~ "FL",
-      .data$survey_version %in% c("v2", "v3") ~ "TL"
-    )) %>%
-    dplyr::mutate(length_type = dplyr::case_when(
-      .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",
-      .data$species == "MOO" ~ "TL",
-      TRUE ~ .data$length_type
-    )) %>%
+    dplyr::mutate(
+      length_type = dplyr::case_when(
+        !is.na(length_type) ~ length_type,
+        .data$survey_version == "v1" ~ "FL",
+        .data$survey_version %in% c("v2", "v3") ~ "TL"
+      )
+    ) %>%
+    dplyr::mutate(
+      length_type = dplyr::case_when(
+        .data$species %in% c("OCZ", "SLV", "IAX") ~ "TL",
+        .data$species == "MOO" ~ "TL",
+        TRUE ~ .data$length_type
+      )
+    ) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(weight = estimate_weight(
-      length = .data$mean_length, .data$length_type,
-      code = .data$species, .data$n_individuals,
-      rfish_tab$length_weight,
-      rfish_tab$length_length
-    )) %>%
+    dplyr::mutate(
+      weight = estimate_weight(
+        length = .data$mean_length,
+        .data$length_type,
+        code = .data$species,
+        .data$n_individuals,
+        rfish_tab$length_weight,
+        rfish_tab$length_length
+      )
+    ) %>%
     dplyr::ungroup() %>%
     dplyr::left_join(nutrients_table, by = "species") %>%
     dplyr::mutate(
@@ -328,21 +374,25 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
         ~ .x * .data$weight
       )
     ) %>%
-    tidyr::nest(length_individuals = c(
-      .data$mean_length,
-      .data$n_individuals,
-      .data$weight,
-      tidyselect::ends_with("_mu")
-    )) %>%
-    tidyr::nest(species_group = c(
-      .data$n,
-      .data$species,
-      .data$food_or_sale,
-      .data$other_species_name,
-      .data$photo,
-      .data$length_individuals,
-      .data$length_type
-    ))
+    tidyr::nest(
+      length_individuals = c(
+        .data$mean_length,
+        .data$n_individuals,
+        .data$weight,
+        tidyselect::ends_with("_mu")
+      )
+    ) %>%
+    tidyr::nest(
+      species_group = c(
+        .data$n,
+        .data$species,
+        .data$food_or_sale,
+        .data$other_species_name,
+        .data$photo,
+        .data$length_individuals,
+        .data$length_type
+      )
+    )
 }
 
 
@@ -361,7 +411,8 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
   rfish_tab <- get_catch_types(pars) %>%
     retrieve_lengths(country_code = pars$metadata$rfishtable$country_codes)
 
-  rfish_table_filename <- paste(pars$metadata$rfishtable$file_prefix,
+  rfish_table_filename <- paste(
+    pars$metadata$rfishtable$file_prefix,
     sep = "_"
   ) %>%
     add_version(extension = "rds")
@@ -416,17 +467,38 @@ get_morphometric_tables <- function(pars, manual_table) {
     dplyr::bind_rows(rfish_tab) %>%
     # There are some that have "No" low quality which means is OK?
     dplyr::filter(!is.na(.data$a), !isTRUE(tolower(.data$EsQ) == "yes")) %>%
-    dplyr::select(.data$interagency_code, .data$Species, .data$LengthMin, .data$LengthMax, .data$Type, .data$a, .data$b) %>%
+    dplyr::select(
+      .data$interagency_code,
+      .data$Species,
+      .data$LengthMin,
+      .data$LengthMax,
+      .data$Type,
+      .data$a,
+      .data$b
+    ) %>%
     dplyr::distinct()
 
   ll <- rfish_tab %>%
     # Relationship is reciprocal and we could use that information too
     dplyr::mutate(
-      l1 = .data$Length1, l2 = .data$Length2, a1 = .data$aL, b1 = .data$bL,
-      Length1 = .data$l2, Length2 = .data$l1, aL = .data$a1 / .data$b1 * (-1), bL = 1 / .data$b1
+      l1 = .data$Length1,
+      l2 = .data$Length2,
+      a1 = .data$aL,
+      b1 = .data$bL,
+      Length1 = .data$l2,
+      Length2 = .data$l1,
+      aL = .data$a1 / .data$b1 * (-1),
+      bL = 1 / .data$b1
     ) %>%
     dplyr::bind_rows(rfish_tab) %>%
-    dplyr::select(.data$interagency_code, .data$Species, .data$Length1, .data$Length2, .data$aL, .data$bL) %>%
+    dplyr::select(
+      .data$interagency_code,
+      .data$Species,
+      .data$Length1,
+      .data$Length2,
+      .data$aL,
+      .data$bL
+    ) %>%
     dplyr::filter(!is.na(.data$aL)) %>%
     dplyr::distinct()
 
@@ -438,7 +510,13 @@ get_morphometric_tables <- function(pars, manual_table) {
 
 
 estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
-  if (is.na(length) | is.na(length_type) | is.na(code) | is.na(n_individuals) | code == "0") {
+  if (
+    is.na(length) |
+      is.na(length_type) |
+      is.na(code) |
+      is.na(n_individuals) |
+      code == "0"
+  ) {
     return(NA)
   }
 
@@ -451,7 +529,10 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
 
   # Transform length to other types if relevant
   this_ll <- ll %>%
-    dplyr::filter(.data$interagency_code == code, .data$Length2 == length_type) %>%
+    dplyr::filter(
+      .data$interagency_code == code,
+      .data$Length2 == length_type
+    ) %>%
     dplyr::mutate(
       length = .data$aL + length * .data$bL,
       Type = .data$Length1
@@ -469,7 +550,9 @@ estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
     # Augment the info with transformations
     dplyr::bind_rows(this_ll)
 
-  w <- dplyr::full_join(this_lw, this_length,
+  w <- dplyr::full_join(
+    this_lw,
+    this_length,
     by = c("interagency_code", "Species", "Type")
   ) %>%
     dplyr::mutate(

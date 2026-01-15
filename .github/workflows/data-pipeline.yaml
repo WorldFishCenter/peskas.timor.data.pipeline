@@ -249,6 +249,8 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call format_public_data()
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
+      - name: Call export_files()
+        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'        
       - name: Test public data
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
       - name: Generate and upload enumerators report
