@@ -145,13 +145,20 @@ format_aggregated_data <- function(
 #' groups[["Small pelagics"]]
 #' }
 label_taxa_groups <- function(x) {
-  label_groups <- data.table::data.table(
-    taxa = x$catch_taxon,
-    group = x$fish_group
-  )
-  label_groups <- label_groups[, list(taxa = unique(taxa)), by = "group"]
-  label_groups_list <- split(as.list(label_groups$taxa), label_groups$group)
-  label_groups_list
+  x <- indicators_grid
+  label_groups <-
+    dplyr::tibble(
+      taxa = x$catch_taxon,
+      group = x$fish_group
+    ) |>
+    dplyr::distinct(.data$group, .data$taxa)
+
+  label_groups_list <- split(label_groups$taxa, label_groups$group)
+
+  # make each element a list of 1-length character vectors (data.table-like)
+  label_groups_list <- lapply(label_groups_list, as.list)
+
+  str(label_groups_list)
 }
 
 #' Rename fields to match the portal ontology
