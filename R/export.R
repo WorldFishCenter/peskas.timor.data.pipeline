@@ -157,7 +157,7 @@ label_taxa_groups <- function(x) {
   # make each element a list of 1-length character vectors (data.table-like)
   label_groups_list <- lapply(label_groups_list, as.list)
 
-  str(label_groups_list)
+  label_groups_list
 }
 
 #' Rename fields to match the portal ontology
@@ -232,6 +232,7 @@ rename_ontology <- function(x) {
 #' export_files()
 #' }
 export_files <- function() {
+  library(data.table)
   aggregated <- get_file("timor_aggregated")
   data_last_updated <- attr(aggregated, "data_last_updated")
   aggregated <- aggregated %>% purrr::map(rename_ontology)
