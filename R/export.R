@@ -146,8 +146,8 @@ format_aggregated_data <- function(
 #' }
 label_taxa_groups <- function(x) {
   label_groups <- data.table::data.table(
-    taxa = indicators_grid$catch_taxon,
-    group = indicators_grid$fish_group
+    taxa = x$catch_taxon,
+    group = x$fish_group
   )
   label_groups <- label_groups[, list(taxa = unique(taxa)), by = "group"]
   label_groups_list <- split(as.list(label_groups$taxa), label_groups$group)
