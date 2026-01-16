@@ -145,7 +145,6 @@ format_aggregated_data <- function(
 #' groups[["Small pelagics"]]
 #' }
 label_taxa_groups <- function(x) {
-  x <- indicators_grid
   label_groups <-
     dplyr::tibble(
       taxa = x$catch_taxon,
