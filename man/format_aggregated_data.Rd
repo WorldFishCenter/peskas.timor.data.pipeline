@@ -17,8 +17,8 @@ table; otherwise treat it as a list of time-binned tables.}
 \code{n_boats} column in national mode.}
 }
 \value{
-The formatted \code{aggregated} object: a \code{data.table} (municipal mode) or
-a list of \code{data.table}s (national mode) with added/updated label columns.
+The formatted \code{aggregated} object: a data frame (municipal mode) or
+a list of data frames (national mode) with added/updated label columns.
 }
 \description{
 Adds human-readable date labels (day/week/month/year) to aggregated datasets.
@@ -27,7 +27,7 @@ Supports two modes:
 \item Municipal mode (\code{municipal = TRUE}): expects a single data frame with
 \code{date_bin_start} and adds \code{month} and \code{year} columns.
 \item National mode (\code{municipal = FALSE}): expects a list of data frames
-(e.g., \code{day}, \code{week}, \code{month}, \code{year}), converts each to \code{data.table},
+(e.g., \code{day}, \code{week}, \code{month}, \code{year}), processes each data frame,
 sets \code{n_boats} to \code{national_boats}, and adds formatted date label columns.
 }
 }
@@ -50,6 +50,6 @@ m2 <- format_aggregated_data(m, municipal = TRUE)
 }
 }
 \seealso{
-data.table::as.data.table
+dplyr::mutate
 }
 \keyword{internal}
