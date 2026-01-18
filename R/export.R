@@ -237,6 +237,7 @@ rename_ontology <- function(x) {
 #' export_files()
 #' }
 export_files <- function() {
+  pars <- read_config()
   aggregated <- get_file("timor_aggregated")
   data_last_updated <- attr(aggregated, "data_last_updated")
   aggregated <- aggregated %>% purrr::map(rename_ontology)
