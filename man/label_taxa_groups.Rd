@@ -7,7 +7,7 @@
 label_taxa_groups(x)
 }
 \arguments{
-\item{x}{A data frame with at least columns \code{catch_taxon} and
+\item{x}{A data frame/data.table with at least columns \code{catch_taxon} and
 \code{fish_group}.}
 }
 \value{
@@ -20,7 +20,7 @@ named list where each element corresponds to one \code{fish_group} and contains
 the unique taxa (from \code{catch_taxon}) observed in that group.
 }
 \details{
-Internally creates a tibble with unique taxa within group, and
+Internally converts to a \code{data.table}, unique-ifies taxa within group, and
 uses \code{split()} to produce the group-wise list.
 }
 \examples{
@@ -32,6 +32,6 @@ groups[["Small pelagics"]]
 }
 }
 \seealso{
-dplyr::tibble, split
+data.table::data.table, split
 }
 \keyword{internal}

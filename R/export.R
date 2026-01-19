@@ -59,7 +59,7 @@ get_file <- function(prefix) {
 #' - Municipal mode (`municipal = TRUE`): expects a single data frame with
 #'   `date_bin_start` and adds `month` and `year` columns.
 #' - National mode (`municipal = FALSE`): expects a list of data frames
-#'   (e.g., `day`, `week`, `month`, `year`), processes each data frame,
+#'   (e.g., `day`, `week`, `month`, `year`), converts each to `data.table`,
 #'   sets `n_boats` to `national_boats`, and adds formatted date label columns.
 #'
 #' @param aggregated A data frame (municipal mode) or a list of data frames
@@ -69,8 +69,8 @@ get_file <- function(prefix) {
 #' @param national_boats Numeric/integer. Total number of boats to assign to the
 #'   `n_boats` column in national mode.
 #'
-#' @return The formatted `aggregated` object: a data frame (municipal mode) or
-#'   a list of data frames (national mode) with added/updated label columns.
+#' @return The formatted `aggregated` object: a `data.table` (municipal mode) or
+#'   a list of `data.table`s (national mode) with added/updated label columns.
 #'
 #' @details
 #' In national mode, formatted labels are:
@@ -79,7 +79,7 @@ get_file <- function(prefix) {
 #' - `month`: `"%B %Y"` plus `year` as `"%Y"`
 #' - `year`: `"%Y"`
 #'
-#' @seealso dplyr::mutate
+#' @seealso data.table::as.data.table
 #' @keywords internal
 #' @export
 #' @examples
@@ -96,29 +96,40 @@ format_aggregated_data <- function(
   national_boats = NULL
 ) {
   if (isTRUE(municipal)) {
-    aggregated <- aggregated %>%
-      dplyr::mutate(
-        month = format(.data$date_bin_start, format = "%B %Y"),
-        year = format(.data$date_bin_start, format = "%Y")
-      )
+    aggregated <- data.table::as.data.table(aggregated)
+    aggregated$month <- format(aggregated$date_bin_start, format = "%B %Y")
+    aggregated$year <- format(aggregated$date_bin_start, format = "%Y")
   } else {
+    aggregated <- lapply(aggregated, data.table::as.data.table)
     aggregated <- lapply(aggregated, function(x) {
-      x %>%
-        dplyr::mutate(
-          n_boats = national_boats
-        )
+      data.table::set(x, j = "n_boats", value = national_boats)
+      x
     })
-    aggregated$day <- aggregated$day %>%
-      dplyr::mutate(day = format(.data$date_bin_start, format = "%d %b %y"))
-    aggregated$week <- aggregated$week %>%
-      dplyr::mutate(week = format(.data$date_bin_start, format = "%d %b %y"))
-    aggregated$month <- aggregated$month %>%
-      dplyr::mutate(
-        month = format(.data$date_bin_start, format = "%B %Y"),
-        year = format(.data$date_bin_start, format = "%Y")
-      )
-    aggregated$year <- aggregated$year %>%
-      dplyr::mutate(year = format(.data$date_bin_start, format = "%Y"))
+    data.table::set(
+      aggregated$day,
+      j = "day",
+      value = format(aggregated$day$date_bin_start, format = "%d %b %y")
+    )
+    data.table::set(
+      aggregated$week,
+      j = "week",
+      value = format(aggregated$week$date_bin_start, format = "%d %b %y")
+    )
+    data.table::set(
+      aggregated$month,
+      j = "month",
+      value = format(aggregated$month$date_bin_start, format = "%B %Y")
+    )
+    data.table::set(
+      aggregated$month,
+      j = "year",
+      value = format(aggregated$month$date_bin_start, format = "%Y")
+    )
+    data.table::set(
+      aggregated$year,
+      j = "year",
+      value = format(aggregated$year$date_bin_start, format = "%Y")
+    )
   }
   aggregated
 }
@@ -129,17 +140,17 @@ format_aggregated_data <- function(
 #' named list where each element corresponds to one `fish_group` and contains
 #' the unique taxa (from `catch_taxon`) observed in that group.
 #'
-#' @param x A data frame with at least columns `catch_taxon` and
+#' @param x A data frame/data.table with at least columns `catch_taxon` and
 #'   `fish_group`.
 #'
 #' @return A named list. Names are fish group labels; values are lists of unique
 #'   taxa strings belonging to each group.
 #'
 #' @details
-#' Internally creates a tibble with unique taxa within group, and
+#' Internally converts to a `data.table`, unique-ifies taxa within group, and
 #' uses `split()` to produce the group-wise list.
 #'
-#' @seealso dplyr::tibble, split
+#' @seealso data.table::data.table, split
 #' @keywords internal
 #' @export
 #' @examples
@@ -159,7 +170,7 @@ label_taxa_groups <- function(x) {
 
   label_groups_list <- split(label_groups$taxa, label_groups$group)
 
-  # make each element a list of 1-length character vectors
+  # make each element a list of 1-length character vectors (data.table-like)
   label_groups_list <- lapply(label_groups_list, as.list)
 
   label_groups_list
@@ -237,6 +248,7 @@ rename_ontology <- function(x) {
 #' export_files()
 #' }
 export_files <- function() {
+  library(data.table)
   pars <- read_config()
   aggregated <- get_file("timor_aggregated")
   data_last_updated <- attr(aggregated, "data_last_updated")
@@ -250,7 +262,8 @@ export_files <- function() {
     purrr::map(., ~ dplyr::filter(.x, !nutrient == "selenium"))
   summary_data <- get_file("summary_data")
 
-  indicators_grid <- get_file("indicators_gridded")
+  indicators_grid <- get_file("indicators_gridded") %>%
+    data.table::as.data.table()
   label_groups_list <- label_taxa_groups(indicators_grid)
 
   boats <- sum(unique(municipal_aggregated$n_boats))
@@ -368,11 +381,23 @@ export_files <- function() {
       nutrients_per_catch = summary_data$nutrients_per_catch,
       nutrients_habitat = summary_data$nutrients_norm,
       conservation = summary_data$conservation,
-      region_cpue = summary_data$cpue_df,
-      timor_boundaries = summary_data$timor_shape
+      region_cpue = summary_data$cpue_df
     )
 
   write_json <- function(x, path) {
+    # Convert data.tables to data.frames for proper JSON serialization
+    x <- rapply(
+      x,
+      function(obj) {
+        if (data.table::is.data.table(obj)) {
+          as.data.frame(obj)
+        } else {
+          obj
+        }
+      },
+      how = "replace"
+    )
+
     writeLines(
       jsonlite::toJSON(x, auto_unbox = TRUE, null = "null", pretty = TRUE),
       path
@@ -394,14 +419,17 @@ export_files <- function() {
   tmp_dir <- file.path(tempdir(), "portal-json")
   dir.create(tmp_dir, showWarnings = FALSE, recursive = TRUE)
 
-  files <- purrr::imap_chr(names(objs), \(nm, ...) {
-    file.path(tmp_dir, add_version(paste0("portal-", nm), extension = "json"))
+  filenames <- purrr::map_chr(names(objs), \(nm) {
+    add_version(paste0("portal-", nm), extension = "json")
   })
+
+  files <- file.path(tmp_dir, filenames)
 
   purrr::walk2(objs, files, write_json)
 
-  purrr::walk(
+  purrr::walk2(
     files,
+    filenames,
     upload_cloud_file,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
