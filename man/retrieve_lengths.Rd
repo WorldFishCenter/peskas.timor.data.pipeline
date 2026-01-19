@@ -8,6 +8,8 @@ retrieve_lengths(data, country_code)
 }
 \arguments{
 \item{data}{A table returned from \code{get_catch_types}}
+
+\item{country_code}{ISO country code for species lookup}
 }
 \value{
 A data frame containing species length parameters

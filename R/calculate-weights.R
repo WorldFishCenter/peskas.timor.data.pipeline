@@ -161,15 +161,15 @@ get_fish_length <- function(taxa, rank = NULL, country_code = NULL) {
       magrittr::extract2("Species") %>%
       unique()
   } else if (rank == "Class") {
-    sp_list <- rfishbase::species_list(Class = taxa) %>% unique()
+    sp_list <- rfishbase::species(Class = taxa) %>% unique()
   } else if (rank == "Order") {
-    sp_list <- rfishbase::species_list(Order = taxa) %>% unique()
+    sp_list <- rfishbase::species(Order = taxa) %>% unique()
   } else if (rank == "Family") {
-    sp_list <- rfishbase::species_list(Family = taxa) %>% unique()
+    sp_list <- rfishbase::species(Family = taxa) %>% unique()
   } else if (rank == "Genus") {
-    sp_list <- rfishbase::species_list(Genus = taxa) %>% unique()
+    sp_list <- rfishbase::species(Genus = taxa) %>% unique()
   } else if (rank == "Species") {
-    sp_list <- rfishbase::species_list(Species = taxa) %>% unique()
+    sp_list <- rfishbase::species(Species = taxa) %>% unique()
   }
 
   country_table <- sp_list %>%
@@ -214,6 +214,7 @@ get_fish_length <- function(taxa, rank = NULL, country_code = NULL) {
 #' weight-length parameters from each species group.
 #'
 #' @param data A table returned from `get_catch_types`
+#' @param country_code ISO country code for species lookup
 #'
 #' @return A data frame containing species length parameters
 #' @export
