@@ -15,3 +15,8 @@ A dataframe with filled regions (where possible).
 \description{
 Replace empty region data based on boats geographic activity (trough tracker imeis)
 }
+\examples{
+\dontrun{
+fill_missing_regions(trips)
+}
+}

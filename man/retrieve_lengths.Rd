@@ -8,10 +8,6 @@ retrieve_lengths(data, country_code)
 }
 \arguments{
 \item{data}{A table returned from \code{get_catch_types}}
-
-\item{country_code}{The code of the country associated to FishBase database, default
-code include Timor-Leste and Indonesia. Full list at
-\url{https://www.fishbase.se/country/ListOfCountryCodes.php}.}
 }
 \value{
 A data frame containing species length parameters

@@ -8,8 +8,7 @@
 #' `preprocess_pds_trips()`, as well as parameters needed to identify anomalous
 #' trips.
 #'
-#' @param log_threshold
-#' @inheritParams ingest_pds_trips
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @return no outputs. This function is used for it's side effects
 #' @export

@@ -25,8 +25,7 @@
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
-#' @param log_threshold
-#' @inheritParams ingest_pds_trips
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export
@@ -171,8 +170,7 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
-#' @param log_threshold
-#' @inheritParams ingest_pds_tracks
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #' @export

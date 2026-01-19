@@ -7,7 +7,7 @@
 pt_nest_species(x)
 }
 \arguments{
-\item{x}{A data frame containing raw landings data from the Timor operations.}
+\item{x}{A data frame containing raw landings survey data with species columns}
 }
 \value{
 Landings data in which the information about multiple species has

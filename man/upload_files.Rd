@@ -18,3 +18,13 @@ upload_files(file_list = NULL, key = NULL, dataverse = NULL, server = NULL)
 \description{
 This function upload a list files in a specific Dataverse repository.
 }
+\examples{
+\dontrun{
+upload_files(
+  file_list = c("file1.tsv", "file2.tsv"),
+  key = "my_key",
+  dataverse = "my_dataverse",
+  server = "dataverse.example.com"
+)
+}
+}

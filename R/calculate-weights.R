@@ -21,8 +21,7 @@
 #'
 #' Progress through the function is tracked using the package *logger*.
 #'
-#' @param log_threshold
-#' @inheritParams preprocess_legacy_landings
+#' @param log_threshold The logging threshold level
 #' @return No outputs. This function is used for it's side effects.
 #' @keywords workflow
 #' @export
@@ -215,7 +214,6 @@ get_fish_length <- function(taxa, rank = NULL, country_code = NULL) {
 #' weight-length parameters from each species group.
 #'
 #' @param data A table returned from `get_catch_types`
-#' @inheritParams get_fish_length
 #'
 #' @return A data frame containing species length parameters
 #' @export

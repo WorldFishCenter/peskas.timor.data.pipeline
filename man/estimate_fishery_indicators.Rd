@@ -6,6 +6,9 @@
 \usage{
 estimate_fishery_indicators(log_threshold = logger::DEBUG)
 }
+\arguments{
+\item{log_threshold}{The logging threshold level}
+}
 \description{
 Uses the trip data to estimate various fisheries statistics.
 }

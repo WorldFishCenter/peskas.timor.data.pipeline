@@ -24,13 +24,15 @@
 #'       service_account_key:
 #' ```
 #'
-#' @param log_threshold
-#' @inheritParams ingest_landings
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @export
 #' @keywords workflow
 #'
 #' @examples
+#' \dontrun{
+#' ingest_metadata_tables()
+#' }
 ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()
@@ -85,13 +87,15 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
 #'       service_account_key:
 #' ```
 #'
-#' @param log_threshold
-#' @inheritParams ingest_landings
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @export
 #' @keywords workflow
 #'
 #' @examples
+#' \dontrun{
+#' ingest_validation_tables()
+#' }
 ingest_validation_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   pars <- read_config()

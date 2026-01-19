@@ -16,3 +16,8 @@ publish_dataverse(key, dataverse, server)
 \description{
 This function publish a specific Dataverse repository.
 }
+\examples{
+\dontrun{
+publish_dataverse(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
+}
+}

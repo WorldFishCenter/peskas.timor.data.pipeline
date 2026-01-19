@@ -22,12 +22,12 @@ cloud_object_name(
 \item{extension}{extension of the desired file. Use an empty string "" to
 return all extensions founds}
 
-\item{provider}{cloud provider to use, either "gcs" or "aws"}
+\item{provider}{The cloud storage provider (e.g., "gcs")}
 
 \item{exact_match}{logical indicating whether the prefix should be matched
 exactly}
 
-\item{options}{named list with cloud provider options, see details}
+\item{options}{A list of provider-specific options}
 }
 \value{
 A string vector with the object names in the cloud storage that match

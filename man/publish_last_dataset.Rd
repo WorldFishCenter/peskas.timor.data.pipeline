@@ -17,3 +17,8 @@ publish_last_dataset(key = NULL, dataverse = NULL, server = NULL)
 The function converts from "draft" to "public" the latest dataset uploaded
 in a specific Dataverse repository.
 }
+\examples{
+\dontrun{
+publish_last_dataset(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
+}
+}

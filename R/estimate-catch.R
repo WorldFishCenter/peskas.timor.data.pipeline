@@ -16,8 +16,7 @@
 #'       service_account_key:
 #' ```
 #'
-#' @param log_threshold
-#' @inheritParams ingest_landings
+#' @param log_threshold The logging threshold level
 #'
 #' @export
 #' @keywords workflow
@@ -556,6 +555,9 @@ get_frame <- function() {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' fill_missing_regions(trips)
+#' }
 fill_missing_regions <- function(trips = NULL) {
   imei_regions <-
     trips %>%

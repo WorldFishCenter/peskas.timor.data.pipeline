@@ -6,6 +6,9 @@
 \usage{
 ingest_validation_tables(log_threshold = logger::DEBUG)
 }
+\arguments{
+\item{log_threshold}{The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
+}
 \description{
 Flags tables are manually updated in a Google Drive spreadsheet. This
 function downloads the table and uploads it to a drive location. These tables
@@ -30,5 +33,10 @@ storage:
       bucket:
       service_account_key:
 }\if{html}{\out{</div>}}
+}
+\examples{
+\dontrun{
+ingest_validation_tables()
+}
 }
 \keyword{workflow}

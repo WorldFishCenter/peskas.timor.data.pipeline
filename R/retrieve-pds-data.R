@@ -36,13 +36,12 @@ retrieve_pds_trips_data <- function(path, secret = NULL, token = NULL, start_dat
 #'
 #' @param prefix Name to be used as the prefix of the file names to be
 #'   downloaded. Can be a path.
-#' @param secret
-#' @param token
-#' @param start_date
-#' @param end_date
+#' @param secret Access secret code for the account
+#' @param token Access token for the account
+#' @param start_date Start date from which download trips information
+#' @param end_date Last date to download trips information
 #' @param append_version whether to append versioning information to the
 #'   filename using [add_version].
-#' @inheritParams retrieve_pds_trips_data
 #'
 #' @return A character vector with paths of the downloaded files
 #' @export
@@ -120,10 +119,9 @@ retrieve_pds_tracks_data <- function(path, secret = NULL, token = NULL,
 #'
 #' @param prefix Name to be used as the prefix of the file names to be
 #'   downloaded. Can be a path.
-#' @param secret
-#' @param token
-#' @param id
-#' @inheritParams retrieve_pds_tracks_data
+#' @param secret Access secret code for the account
+#' @param token Access token for the account
+#' @param id Trip unique id from which download tracks data
 #'
 #' @return A character vector with paths of the downloaded files
 #' @export

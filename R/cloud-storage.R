@@ -47,10 +47,9 @@ cloud_storage_authenticate <- function(provider, options) {
 #'
 #' @param file a file-path (character) to upload. A vector with multiple files
 #'   is also supported.
-#' @param provider
-#' @param options
+#' @param provider The cloud storage provider (e.g., "gcs")
+#' @param options A list of provider-specific options
 #' @param name What to call the file once uploaded. Default is the filepath
-#' @inheritParams cloud_storage_authenticate
 #' @details
 #'
 #' ### Google Cloud Services
@@ -116,11 +115,10 @@ upload_cloud_file <- function(file, provider, options, name = file) {
 #'   [add_version] when the file was uploaded to the cloud provider
 #' @param extension extension of the desired file. Use an empty string "" to
 #'   return all extensions founds
-#' @param provider
+#' @param provider The cloud storage provider (e.g., "gcs")
 #' @param exact_match logical indicating whether the prefix should be matched
 #'   exactly
-#' @param options
-#' @inheritParams upload_cloud_file
+#' @param options A list of provider-specific options
 #'
 #'
 #' @details
@@ -221,11 +219,10 @@ cloud_object_name <- function(prefix, version = "latest", extension = "",
 #' Download object from the cloud storage to a local file
 #'
 #' @param name the name of the object in the storage bucket.
-#' @param provider
-#' @param options
+#' @param provider The cloud storage provider (e.g., "gcs")
+#' @param options A list of provider-specific options
 #' @param file a file-path (character) where the object will be saved. Default
 #'   is the object name.
-#' @inheritParams upload_cloud_file
 #'
 #'
 #' @return the file path

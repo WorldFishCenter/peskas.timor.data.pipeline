@@ -2,8 +2,7 @@
 #'
 #' Download validated Peskas data from Google Cloud.
 #'
-#' @param log_threshold
-#' @inheritParams ingest_landings
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @return A dataframe of validated survey landings.
 #' @export

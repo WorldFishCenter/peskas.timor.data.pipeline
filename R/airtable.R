@@ -195,13 +195,12 @@ air_tibble_to_records <- function(this_tibble, id_fields = NULL, link_fields = N
 #' each record. Each element of body must be up to 10 records long.
 #'
 #' @param body list with the records, as formatted by `tibble_to_air_records()`
-#' @param table
-#' @param base_id
-#' @param api_key
+#' @param table The name of the Airtable table
+#' @param base_id The Airtable base ID
+#' @param api_key The Airtable API key
 #' @param request_type Whether to create a new record or update an existing one.
 #'   If updating an existing one, an `id_field` needs to be specified when
 #'   calling `tibble_to_air_records()`
-#' @inheritParams air_get_records
 #' @return List of request responses
 #' @export
 air_upload_records <- function(body, table, base_id,

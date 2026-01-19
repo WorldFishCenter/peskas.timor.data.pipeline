@@ -9,9 +9,9 @@ download_cloud_file(name, provider, options, file = name)
 \arguments{
 \item{name}{the name of the object in the storage bucket.}
 
-\item{provider}{cloud provider to use, either "gcs" or "aws"}
+\item{provider}{The cloud storage provider (e.g., "gcs")}
 
-\item{options}{named list with cloud provider options, see details}
+\item{options}{A list of provider-specific options}
 
 \item{file}{a file-path (character) where the object will be saved. Default
 is the object name.}

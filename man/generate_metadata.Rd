@@ -18,3 +18,9 @@ A list with metadata information
 The function generate a list of metadata information to append to the
 files to upload to a Dataverse repository.
 }
+\examples{
+\dontrun{
+pars <- read_config()
+generate_metadata(pars, temp_coverage = "2018-2024")
+}
+}

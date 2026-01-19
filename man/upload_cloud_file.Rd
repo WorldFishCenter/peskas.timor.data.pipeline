@@ -10,9 +10,9 @@ upload_cloud_file(file, provider, options, name = file)
 \item{file}{a file-path (character) to upload. A vector with multiple files
 is also supported.}
 
-\item{provider}{cloud provider to use, either "gcs" or "aws"}
+\item{provider}{The cloud storage provider (e.g., "gcs")}
 
-\item{options}{named list with cloud provider options, see details}
+\item{options}{A list of provider-specific options}
 
 \item{name}{What to call the file once uploaded. Default is the filepath}
 }

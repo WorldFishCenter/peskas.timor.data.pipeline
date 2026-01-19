@@ -3,8 +3,7 @@
 #' Nests species columns obtained when reading structured data from the kobo
 #' landings survey
 #'
-#' @param x
-#' @inheritParams pt_nest_attachments
+#' @param x A data frame containing raw landings survey data with species columns
 #' @inherit pt_nest_attachments details
 #'
 #' @return Landings data in which the information about multiple species has

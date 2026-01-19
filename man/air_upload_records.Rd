@@ -15,12 +15,11 @@ air_upload_records(
 \arguments{
 \item{body}{list with the records, as formatted by \code{tibble_to_air_records()}}
 
-\item{table}{name of the table (string)}
+\item{table}{The name of the Airtable table}
 
-\item{base_id}{id of the Airtable base where the table is located}
+\item{base_id}{The Airtable base ID}
 
-\item{api_key}{API key for Airtable. By default it looks at the
-\code{AIRTABLE_KEY} environment variable.}
+\item{api_key}{The Airtable API key}
 
 \item{request_type}{Whether to create a new record or update an existing one.
 If updating an existing one, an \code{id_field} needs to be specified when

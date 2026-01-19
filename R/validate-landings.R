@@ -11,10 +11,7 @@
 #' as well as parameters needed to outliers identification
 #'  that are  `hrs`, `method` and `k`.
 #'
-#' @param log_threshold
-#' @inheritParams ingest_landings_v1v3
-#' @inheritParams validate_surveys_time
-#' @inheritParams validate_catch_price
+#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #' @keywords workflow
 #' @return no outputs. This function is used for it's side effects
 #'

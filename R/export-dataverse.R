@@ -103,6 +103,9 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' publish_dataverse(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
+#' }
 publish_dataverse <- function(key, dataverse, server) {
   url <- paste0("https://", server, "/api/dataverses/", dataverse, "/actions/:publish")
   res <- httr::POST(
@@ -125,6 +128,10 @@ publish_dataverse <- function(key, dataverse, server) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' pars <- read_config()
+#' generate_metadata(pars, temp_coverage = "2018-2024")
+#' }
 generate_metadata <- function(pars, temp_coverage = NULL) {
   metadat <- list(
     title = as.character(pars$export_dataverse$metadata$title),
@@ -153,6 +160,14 @@ generate_metadata <- function(pars, temp_coverage = NULL) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' upload_files(
+#'   file_list = c("file1.tsv", "file2.tsv"),
+#'   key = "my_key",
+#'   dataverse = "my_dataverse",
+#'   server = "dataverse.example.com"
+#' )
+#' }
 upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server = NULL) {
   dataverse_content <-
     dataverse::dataverse_contents(
@@ -248,6 +263,9 @@ delete_dataset <- function(key, id, server) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' publish_last_dataset(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
+#' }
 publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
   dataverse_content <-
     dataverse::dataverse_contents(
