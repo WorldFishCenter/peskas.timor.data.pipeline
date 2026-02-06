@@ -62,19 +62,24 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
     boats = pt_validate_boats(metadata_tables$boats),
     catch_types = pt_validate_catch_types(metadata_tables$catch_types),
     fao_catch = pt_validate_fao_catch(metadata_tables$fao_catch),
-    morphometric_table = pt_validate_morphometric_table(metadata_tables$morphometric_table),
+    morphometric_table = pt_validate_morphometric_table(
+      metadata_tables$morphometric_table
+    ),
     centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas),
     vessel_types = pt_validate_vessel_types(metadata_tables$vessel_types),
     gear_types = pt_validate_gear_types(metadata_tables$gear_types),
     stations = pt_validate_stations(metadata_tables$stations),
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
     habitat = pt_validate_habitat(metadata_tables$habitat),
-    vessels_stats = pt_validate_vessels_stats(metadata_tables$fishing_vessel_statistics),
+    vessels_stats = pt_validate_vessels_stats(
+      metadata_tables$fishing_vessel_statistics
+    ),
     registered_boats = pt_validate_reg_boats(metadata_tables$registered_boats),
     conservation = pt_validate_conservation(metadata_tables$conservation)
   )
 
-  preprocessed_filename <- paste(pars$metadata$google_sheets$name,
+  preprocessed_filename <- paste(
+    pars$metadata$google_sheets$name,
     "preprocessed",
     sep = "_"
   ) %>%
@@ -106,7 +111,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 pt_validate_vms_installs <- function(vms_installs_table) {
-  v <- vms_installs_table %>%
+  v <- metadata_tables$vms_installs %>%
     dplyr::mutate(
       device_event_date = lubridate::as_date(.data$device_event_date)
     )
@@ -115,12 +120,13 @@ pt_validate_vms_installs <- function(vms_installs_table) {
   ok_date_damage <- v %>%
     dplyr::group_by(.data$device_imei) %>%
     dplyr::filter(any(.data$device_event_type == "damage recorded")) %>%
-    dplyr::summarise(
-      ok_date_damage =
-        .data$device_event_date[.data$device_event_type == "damage recorded"] >
-          .data$device_event_date[.data$device_event_type == "installation"],
-      .groups = "drop"
-    )
+    dplyr::reframe(
+      ok_date_damage = .data$device_event_date[
+        .data$device_event_type == "damage recorded"
+      ] >
+        .data$device_event_date[.data$device_event_type == "installation"]
+    ) |>
+    dplyr::ungroup()
   if (any(isFALSE(ok_date_damage$ok_date_damage))) {
     stop("detected damage recorded in vms prior to vms installation")
   }
@@ -172,8 +178,12 @@ pt_validate_flags <- function(flags_table) {
 
   n_codes <- dplyr::n_distinct(f$flag_id)
   n_flags <- nrow(f)
-  if (any(is.na(f$flag_id))) stop("not all flags have a flag_id")
-  if (n_codes < n_flags) stop("flag_id are not unique")
+  if (any(is.na(f$flag_id))) {
+    stop("not all flags have a flag_id")
+  }
+  if (n_codes < n_flags) {
+    stop("flag_id are not unique")
+  }
 
   f
 }
@@ -197,8 +207,10 @@ pt_validate_boats <- function(boats_table) {
   # Check that boat length is valid
   boat_length_ok <- b %>%
     dplyr::filter(!is.na(.data$boat_length)) %>%
-    dplyr::mutate(boat_length_ok = .data$boat_length > 0 &
-      .data$boat_length < 30)
+    dplyr::mutate(
+      boat_length_ok = .data$boat_length > 0 &
+        .data$boat_length < 30
+    )
 
   if (any(isFALSE(boat_length_ok$boat_length_ok))) {
     stop("detected boats with unvalid lengths")
@@ -238,10 +250,16 @@ pt_validate_fao_catch <- function(fao_catch_table) {
 #' @return a tibble
 pt_validate_morphometric_table <- function(morphometric_table) {
   morphometric_table %>%
-    dplyr::mutate(dplyr::across(c(
-      .data$a, .data$b, .data$LengthMin:.data$CoeffDetermination,
-      .data$aL, .data$bL
-    ), ~ as.double(.)))
+    dplyr::mutate(dplyr::across(
+      c(
+        .data$a,
+        .data$b,
+        .data$LengthMin:.data$CoeffDetermination,
+        .data$aL,
+        .data$bL
+      ),
+      ~ as.double(.)
+    ))
 }
 
 #' Parse and validate centro de pescas table
@@ -279,12 +297,19 @@ pt_validate_habitat <- function(x) {
 
 pt_validate_vessels_stats <- function(vessels_stats_table) {
   vessels_stats_table %>%
-    tidyr::separate(.data$boat_numbers,
+    tidyr::separate(
+      .data$boat_numbers,
       into = c("reporting_region", "type", NA),
       sep = "([|])"
     ) %>%
-    dplyr::select(.data$reporting_region, .data$type, .data$n_boats, .data$info_date) %>%
-    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim),
+    dplyr::select(
+      .data$reporting_region,
+      .data$type,
+      .data$n_boats,
+      .data$info_date
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(where(is.character), stringr::str_trim),
       n_boats = as.integer(.data$n_boats)
     )
 }
@@ -300,11 +325,14 @@ pt_validate_reg_boats <- function(registered_boats) {
       boats_2016 = .data$registered_boats_2016,
       boats_2022 = .data$registered_boats_2022
     ) %>%
-    dplyr::mutate(n_boats = dplyr::case_when(
-      .data$reporting_region == "Dili" ~ .data$boats_2022,
-      is.na(.data$boats_2022) | .data$boats_2022 < .data$boats_2016 ~
-        .data$boats_2016, TRUE ~ .data$boats_2022
-    )) %>%
+    dplyr::mutate(
+      n_boats = dplyr::case_when(
+        .data$reporting_region == "Dili" ~ .data$boats_2022,
+        is.na(.data$boats_2022) | .data$boats_2022 < .data$boats_2016 ~
+          .data$boats_2016,
+        TRUE ~ .data$boats_2022
+      )
+    ) %>%
     dplyr::select(.data$reporting_region, .data$n_boats)
 }
 
