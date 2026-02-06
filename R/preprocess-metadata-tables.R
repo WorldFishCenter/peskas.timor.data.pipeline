@@ -111,7 +111,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 pt_validate_vms_installs <- function(vms_installs_table) {
-  v <- metadata_tables$vms_installs %>%
+  v <- vms_installs_table %>%
     dplyr::mutate(
       device_event_date = lubridate::as_date(.data$device_event_date)
     )
