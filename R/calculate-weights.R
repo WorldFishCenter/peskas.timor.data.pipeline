@@ -435,7 +435,7 @@ get_rfish_table <- function(pars) {
     prefix = paste(pars$metadata$rfishtable$file_prefix),
     provider = pars$storage$google$key,
     extension = "rds",
-    version = pars$metadata$rfishtable$version,
+    version = "20241013011806_a41d5ff",
     options = pars$storage$google$options,
     exact_match = TRUE
   )
