@@ -21,26 +21,34 @@ env:
 jobs:
   build-container:
     name: Build R container
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Build image with cache
-        id: build-docker
-        uses: whoan/docker-build-with-cache-action@v5
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          username: $GITHUB_ACTOR
-          password: "${{ secrets.GITHUB_TOKEN }}"
-          registry: docker.pkg.github.com
-          image_name: r-runner-peskas-timor
-          dockerfile: Dockerfile.prod
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.prod
+          push: true
+          tags: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+          cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
+          cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max
 
   ingest-preprocess-metadata-tables:
     name: Ingest metadata tables
     needs: build-container
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +69,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +89,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -99,7 +107,7 @@ jobs:
     needs: ingest-preprocess-v2-landings-step1
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -115,7 +123,7 @@ jobs:
     needs: [ingest-preprocess-v2-landings-step2, ingest-preprocess-landings-v1-v3, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -133,7 +141,7 @@ jobs:
     needs: [merge-landings]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -151,7 +159,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -169,7 +177,7 @@ jobs:
     needs: [ingest-pds-data]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -187,7 +195,7 @@ jobs:
     needs: preprocess-pds-data
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -205,7 +213,7 @@ jobs:
     needs: [validate-landings, validate-pds-data]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -223,7 +231,7 @@ jobs:
     needs: [merge-trips]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -239,7 +247,7 @@ jobs:
     needs: [merge-trips, model-indicators]
     runs-on: ubuntu-22.04
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
