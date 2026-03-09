@@ -2,7 +2,9 @@ name: Generate and upload data report
 
 on:
   schedule:
-    - cron:  '0 0 * * 1,4'
+    - cron: '0 0 * * 1,4'
+  workflow_dispatch:
+  
 
 env:
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
