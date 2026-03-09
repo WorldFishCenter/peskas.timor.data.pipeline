@@ -11,7 +11,11 @@ get_kobo_data(
   uname = NULL,
   pwd = NULL,
   encoding = "UTF-8",
-  format = "json"
+  format = "json",
+  limit = 1000,
+  since_id = NULL,
+  retry_times = 3,
+  progress = TRUE
 )
 }
 \arguments{
