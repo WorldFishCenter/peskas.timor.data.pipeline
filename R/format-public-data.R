@@ -467,7 +467,8 @@ summarise_estimations <- function(
     by = "month"
   )
 
-  today <- as.POSIXct(format(Sys.Date(), "%Y-%m-%d 00:00:00"))
+  data_tz <- attr(aggregated_predictions$landing_period, "tzone") %||% "UTC"
+  today <- as.POSIXct(format(Sys.Date(), "%Y-%m-%d 00:00:00"), tz = data_tz)
 
   if (length(groupings) > 1) {
     standardised_predictions <- aggregated_predictions %>%
@@ -475,12 +476,9 @@ summarise_estimations <- function(
       tidyr::complete(date_bin_start = all_months) %>%
       # Correct last month as predictions are for the full month but we should present only the estimates to date
       dplyr::mutate(
-        current_period = today >= .data$date_bin_start &
-          today < dplyr::lead(.data$date_bin_start),
+        current_period = lubridate::floor_date(today, "month") == .data$date_bin_start,
         elapsed = as.numeric(today - .data$date_bin_start + 1),
-        period_length = as.numeric(
-          dplyr::lead(.data$date_bin_start) - .data$date_bin_start
-        ),
+        period_length = lubridate::days_in_month(.data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(
           .data$current_period,
           .data$n_landings_per_boat * .data$elapsed / .data$period_length,
@@ -529,12 +527,9 @@ summarise_estimations <- function(
       tidyr::complete(date_bin_start = all_months) %>%
       # Correct last month as predictions are for the full month but we should present only the estimates to date
       dplyr::mutate(
-        current_period = today >= .data$date_bin_start &
-          today < dplyr::lead(.data$date_bin_start),
+        current_period = lubridate::floor_date(today, "month") == .data$date_bin_start,
         elapsed = as.numeric(today - .data$date_bin_start + 1),
-        period_length = as.numeric(
-          dplyr::lead(.data$date_bin_start) - .data$date_bin_start
-        ),
+        period_length = lubridate::days_in_month(.data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(
           .data$current_period,
           .data$n_landings_per_boat * .data$elapsed / .data$period_length,
