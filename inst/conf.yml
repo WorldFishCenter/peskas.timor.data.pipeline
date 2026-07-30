@@ -161,21 +161,21 @@ default:
       key: gcs
       options:
         project: peskas
-        bucket: timor
+        bucket: timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
   pds_storage:
     google:
       key: gcs
       options:
         project: peskas
-        bucket: pds-timor
+        bucket: pds-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
   public_storage:
     google:
       key: gcs
       options:
         project: peskas
-        bucket: public-timor
+        bucket: public-timor-dev
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
 production:
