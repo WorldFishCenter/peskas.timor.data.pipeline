@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.4
+FROM rocker/geospatial:4.5
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -12,78 +12,93 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     libssh2-1-dev && \
   rm -rf /var/lib/apt/lists/*
 
-# Install imports
+# Imports (DESCRIPTION Imports:)
+#
+# rfishbase is installed unpinned from CRAN. It used to be pinned to 5.0.1 via
+# remotes::install_version(); peskas.coasts imports rfishbase unpinned, so the
+# pin was a latent conflict. All six entry points Timor uses — common_to_sci(),
+# species(), country(), length_weight(), length_length(), estimate() — are
+# still exported in 5.0.3, and coasts' fb_tbl() works on both.
 RUN install2.r --error --skipinstalled \
+    arrow \
+    blastula \
     config \
+    data.table \
+    dataverse \
+    digest \
+    dotenv \
     dplyr \
+    furrr \
+    future \
+    geosphere \
+    ggplot2 \
     git2r \
+    glue \
     googleAuthR \
     googleCloudStorageR \
     googledrive \
+    googlesheets4 \
     httr \
+    httr2 \
     jsonlite \
     logger \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
     readr \
+    remotes \
+    reticulate \
+    rfishbase \
+    rlang \
+    sf \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    googlesheets4 \
-    httr2
-
-# Install suggests
-RUN install2.r --error --skipinstalled \
-    covr \
-    pkgdown \
-    sessioninfo \
-    testthat \
-    roxygen2 \
     tidyselect \
-    textclean \
-    dataverse \
-    rmarkdown \
-    geosphere \
-    broom \
-    zoo \
-    kableExtra \
-    ggplot2 \
-    bookdown \
-    cowplot \
-    broom \
-    ggpubr \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    tidytext \
-    zip \
-    leaflet \
-    htmltools \
+    univOutl
+
+# Suggests exercised by the pipeline, the tinytest suites and the Rmd reports
+RUN install2.r --error --skipinstalled \
     Amelia \
-    mice \
-    blastula \
-    glue \
-    mime \
-    janitor \
-    reactable \
-    reactablefmtr \
-    kableExtra \
-    reticulate \
     apexcharter \
+    bookdown \
+    broom \
+    covr \
+    cowplot \
     ggforce \
+    ggpubr \
+    htmltools \
+    imputeTS \
+    janitor \
+    kableExtra \
+    leaflet \
+    mice \
+    mime \
+    pkgdown \
+    RCurl \
+    reactable \
+    readxl \
+    rmarkdown \
+    roxygen2 \
+    sessioninfo \
+    taxize \
+    testthat \
+    textclean \
+    tidytext \
+    tinytest \
     treemapify \
-    sf
+    zip \
+    zoo
 
-# Install specific version of rfishbase
-RUN Rscript -e 'remotes::install_version("rfishbase", version = "5.0.1")'
-
-# Install GitHub packages
+# GitHub packages.
+#
+# COASTS_REF pins the shared hub to a release tag for the duration of the
+# migration (PLAN §6, risk row "coasts ships a breaking change mid-migration").
+# It is unpinned in Phase 11, when the workflow resolves the latest release and
+# passes it as a build argument. The default keeps a plain `docker build`
+# working with no build args.
+ARG COASTS_REF=v4.5.0
+RUN Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 

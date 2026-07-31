@@ -31,6 +31,7 @@ divergence is structural, not cosmetic:
 | Kobo retrieval | own `get_kobo_data()` that writes files to disk | `coasts::get_kobo_data()` returning a list | delegate |
 | PDS | bespoke: `ingest-pds-data.R` (858 l), `retrieve-pds-data.R`, `preprocess-pds-trips.R` | `coasts::ingest_pds_trips/ingest_pds_tracks/preprocess_pds_tracks/predict_pds_tracks` + H3 gridding | delegate (decided) |
 | Validation flags | Google Sheets (`validation_alerts`, `VALID_SHEET_ID`) | MongoDB `validation-{dev,prod}` collections `flags-<asset_id>`, plus write-back of validation status to Kobo | change |
+| Reference data | 15 Google Sheets metadata tables; own `air_*` Airtable client, orphaned | PESKAS \| FRAME Airtable base → `coasts::ingest_assets()` assets snapshot, read by ingestion, PDS, taxa, modelling and export | **adopt — see §2.5** |
 | Cross-country API | **none** | `export_api_raw()` / `export_api_validated()` → `peskas-api-{dev,prod}` bucket, `<country>/{raw,validated}/trips-{raw,validated}` | **add — this is the real payoff** |
 | Portal | `format_public_data()` + `export_files()` → `public-timor` versioned `portal-*.json`, consumed by `peskas.timor.portal.v2` (`scripts/fetchData.js`) | `coasts::summarize_data()` + `coasts::export_portal()` → MongoDB `portal-prod` | **keep Timor's JSON** (decided) |
 | Modelling | `estimate_fishery_indicators()` (glmmTMB), nutrients/RDI, Dataverse | `coasts::model_cpue`, `generate_fleet_analysis` | keep Timor-only, upstream generic parts |
@@ -66,6 +67,56 @@ checks, landing regularity, mesh, gleaners, fuel, conservation, happiness).
    to `coasts` in a late phase.
 4. **PDS** — switch to `coasts::*`. Largest single deletion; needs a parity check
    and a compatibility shim for the products `format_public_data()` consumes.
+5. **Airtable frame — adopt it. Added 2026-07-31.** This was missing from the
+   plan entirely; both earlier readings ("reconcile in P8", then AUDIT §7.7
+   "delete") were answering about Timor's *own* orphaned `air_*` client and
+   silently skipped the standard's frame integration, which Timor has never
+   had.
+
+   The **PESKAS | FRAME** base (`appMMEJYlJdfSJEjm`) is the cross-country
+   harmonization layer: it maps each country's raw form labels to
+   `standard_name` / `alpha3_code` / FAO codes. `coasts::ingest_assets()`
+   snapshots taxa/gears/vessels/landing_sites/forms to
+   `assets__<version>__.rds`, and `conf$metadata$airtable$name` is then read by
+   coasts in `ingestion.R`, `ingestion-pds.R`, `model-fishery.R`, `fishbase.R`,
+   `export.R`, `predict-tracks.R` and `aggregate-effort.R`.
+
+   **Without it, Phase 6 produces a correctly-shaped API parquet full of
+   untranslated Tetum labels** — schema-conformant and useless to consumers.
+   That makes this a prerequisite for the payoff, not an optional extra.
+
+   Timor's rows exist and are current (measured 2026-07-31): 57 taxa tagged
+   `form_version: PeskAAS 2` with `alpha3_code`s matching `models.all_taxa`,
+   7 gears (`original_name` in Tetum → `standard_name` + `code` +
+   `FAO_abbrev`), 2 vessels, 40 landing sites, 457 `pds_devices`, and
+   `countries.Current Form` = the live v3 asset id.
+
+   Decisions:
+   - **Airtable is authoritative where the two overlap** — taxa, gears,
+     vessels, landing_sites, districts/regions, pds_devices. The Google Sheets
+     tables keep only what Airtable does not cover: `morphometric_table`,
+     `habitat`, `conservation`, `fishing_vessel_statistics`,
+     `registered_boats`. Timor drops from 15 metadata tables to 5.
+   - Config **and** the removal of the legacy client landed in **Phase 1**
+     (the deletion was pulled forward from Phase 8 at the user's request);
+     ingestion lands in **Phase 3**; the joins move off the Sheets in
+     **Phase 4**.
+   - **Key paths follow coasts, not Mozambique.** coasts' `fetch_asset()`
+     reads `conf$airtable$frame$base_id` / `conf$airtable$token` at the top
+     level, while Moz nests the same values under `metadata.airtable` because
+     it vendors its own copy of the Airtable module. Timor imports coasts and
+     calls it directly, so it keeps no local copy. `conf$metadata$airtable$name`
+     / `$assets` (the snapshot prefix) are provided too — coasts reads both
+     spellings.
+   - **No `AIRTABLE_BASE_ID_ASSETS`.** It exists in Mozambique's `.env` but is
+     referenced by nothing in coasts or in any country package. The assets
+     snapshot is built from the frame base.
+   - Credentials, resolved 2026-07-31: the working PAT has read access to
+     PESKAS \| FRAME and PESKAS \| TRACKS. It must be stored **bare** (`pat…`)
+     — `coasts::airtable_to_df()` does `paste("Bearer", token)`, whereas the
+     retired `air_get_records()` passed the value verbatim as the header, so
+     credentials inherited from `auth/` carry a stale `Bearer ` prefix. The
+     `AIRTABLE_KEY` GitHub secret still carries it.
 
 ### Sub-decision still open (raise at Phase 5)
 
@@ -250,10 +301,25 @@ done in the current code.
 - Delete `ingest_landings_v1v3()`, `ingest_landings_v2()`, `preprocess_legacy_landings()`,
   `preprocess_updated_landings()`, `merge_landings()`, `merge_versions()`,
   `R/retrieve-survey-data.R`, and the corresponding workflow jobs.
-- Harmonize `ingest_metadata_tables()` toward the `get_metadata()` pattern; keep
-  Timor's 15 metadata tables.
+- Harmonize `ingest_metadata_tables()` toward the `get_metadata()` pattern.
+- **Add `ingest_assets()`** (decision §2.5), modelled on `coasts::ingest_assets()`
+  or delegating to it with `package = "peskas.timor.data.pipeline"`: pull taxa /
+  gears / vessels / landing_sites / forms for Timor-Leste from the frame base and
+  write one versioned `assets__*.rds` snapshot. Run it in the same workflow job as
+  the metadata tables.
+  - Resolve the token blocker first — see §2.5. Nothing here works until the PAT
+    can read `appMMEJYlJdfSJEjm`.
+  - Note a coasts inconsistency to pin down here: `ingestion.R` writes the
+    snapshot to `conf$storage$google$options` (the country bucket) while
+    `ingestion-pds.R` reads it from `resolve_storage_opts(conf, "coasts")` (the
+    hub bucket). Decide one and be explicit.
+  - Do **not** delete the five Google Sheets tables Airtable does not cover
+    (`morphometric_table`, `habitat`, `conservation`,
+    `fishing_vessel_statistics`, `registered_boats`).
 - Verify: v2 + v3 raw parquet row counts ≥ their current submission counts
-  (64,997 and 22,037 as of 2026-07-31); schema recorded in STATE.
+  (64,997 and 22,037 as of 2026-07-31); schema recorded in STATE. Assets
+  snapshot contains 57 taxa / 7 gears / 2 vessels / 40 sites for Timor-Leste,
+  and every `alpha3_code` in it is present in `models.all_taxa`.
 
 ---
 
@@ -279,9 +345,19 @@ species/length-frequency unnesting. Moz's `reshape_species_groups()`,
 `expand_length_frequency()` and `process_over100_length_groups()` are the shape to
 follow, not code to copy.
 
+**Label joins move to the assets snapshot.** Wherever preprocessing currently
+joins a Google Sheets table to resolve a code to a name — catch types, gear
+types, vessel types, stations/centro_pescas, reporting units — join the Phase 3
+assets snapshot instead (decision §2.5) and emit the standard
+`standard_name` / `alpha3_code` columns. Diff the resulting label distribution
+against the golden snapshot before accepting: a mapping that silently drops a
+gear will look like a clean run.
+
 **4b — weights and taxa.** `R/calculate-weights.R` → `R/model-taxa.R`, reusing
 `coasts` fishbase helpers (`enrich_taxa`, `expand_taxonomic_info`) where they fit.
-Keep `ingest_rfish_table()` and the Timor morphometric tables.
+Keep `ingest_rfish_table()` and the Timor morphometric tables. If those helpers
+are adopted, add `metadata.fishbase.taxa_enriched.file_prefix` to the config —
+coasts reads it and Phase 1 deliberately left it out.
 
 Verify against the Phase 0 golden snapshot: row counts, column set, and per-column
 summary stats (mean/median/NA-rate) for `catch_kg`, `catch_price`, `length`.
@@ -347,6 +423,11 @@ The interoperability payoff. Small, high value, low risk.
   `estimate-catch.R` + `model-catch.R` → `R/model-fishery.R`;
   `calculate-nutrients.R` → `R/nutrients.R`;
   `export-dataverse.R` stays; `send-email.R` + `inst/report/` → `R/reports.R`.
+- ~~Delete `R/airtable.R` and `inst/airtable/edit-submission-link.js`.~~
+  **Done in Phase 1**, pulled forward at the user's request — see §2.5 and the
+  Phase 1 STATE entry. Nothing Airtable-related is left for this phase except
+  dropping the `AIRTABLE_KEY` secret from the workflows (Phase 9), which is
+  where the other secret renames live.
 - Point `format_public_data()` at the new validated/merged parquet.
 - **Hard gate:** the emitted `portal-*.json` files must match the Phase 0 golden
   snapshot structurally (same keys, same nesting, same types) and numerically within

@@ -414,15 +414,51 @@ plan before the phase that depends on them.
 6. **The validation email is already dead** — see §5. Lowers the cost of the
    Phase 5 MongoDB move.
 
-7. **`AIRTABLE_KEY` is dead in CI.** Passed to two workflows, read by nothing.
-   `R/airtable.R` is orphaned: `ingest_validation_tables()` and
-   `get_validation_tables()` read `pars$validation$airtable$*`, which no longer
-   exists in `inst/conf.yml`. STRUCTURAL-DIFF §4 says "reconcile in P8, don't
-   leave two" — the measured answer is likely **delete**, not reconcile.
+7. **`AIRTABLE_KEY` is dead in CI** — measurement correct, **conclusion
+   partly wrong, corrected 2026-07-31.**
+
+   What was measured holds: `AIRTABLE_KEY` is passed to two workflows and read
+   by nothing, and `R/airtable.R` is orphaned — `ingest_validation_tables()`
+   and `get_validation_tables()` read `pars$validation$airtable$*`, a key that
+   no longer exists. Deleting that client is right.
+
+   What the finding missed is that "Airtable" means two different things here,
+   and the audit only looked at Timor's own. The **standard's** integration —
+   the PESKAS | FRAME base read via `coasts::airtable_to_df()` /
+   `ingest_assets()` — is the cross-country harmonization layer, and Timor has
+   never had it. That is an **adoption**, not a deletion, and PLAN.md did not
+   scope it. Now PLAN §2.5, with config in Phase 1 and ingestion in Phase 3.
+
+   Measured 2026-07-31 in base `appMMEJYlJdfSJEjm`:
+
+   | table | Timor-Leste rows | created |
+   |---|---|---|
+   | `taxa` | 57, `form_version: PeskAAS 2`, with `alpha3_code` | 2026-07-30 |
+   | `gears` | 7, Tetum `original_name` → `standard_name` / `code` / `FAO_abbrev` | 2026-07-30 |
+   | `vessels` | 2 | **2026-07-31 09:14** |
+   | `landing_sites` | 40 | — |
+   | `pds_devices` | 457 | — |
+   | `countries` | `Current Form` = `aEoWV7aprG47Q4uTpaopgD` (live v3 asset) | — |
+
+   The vessels rows post-date the first pass of this audit, which is part of
+   why it read the base as irrelevant to Timor. The taxa `alpha3_code`s (TRI,
+   CJX, MIL, BGX, MOJ, …) are the same codes as `models.all_taxa` in the
+   config, so the frame is already aligned to Timor's vocabulary.
+
+   Two credential facts, both blocking Phase 3:
+   - `auth/airtable-key` stored the value as **`Bearer pat…`**, because
+     `air_get_records()` passes it verbatim as the Authorization header
+     ([airtable.R:43](../../R/airtable.R#L43)).
+     `coasts::airtable_to_df()` does `paste("Bearer", token)`, so the bare
+     `pat…` is required. Normalised in `.env` during Phase 1.
+   - Even bare, that PAT returns `INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND`
+     against both `appMMEJYlJdfSJEjm` and `/v0/meta/bases`. It needs base
+     access plus the `schema.bases:read` scope. **User action.**
 
 8. **`inst/airtable/edit-submission-link.js` is dead.** It targets
    `kobo.humanitarianresponse.info` (Timor now uses `eu.kobotoolbox.org`) and
-   hardcodes the **v2** asset id. Retire it.
+   hardcodes the **v2** asset id. ✅ **Deleted in Phase 1**, with `R/airtable.R`
+   and `ingest_validation_tables()`.
 
 ---
 
@@ -438,11 +474,12 @@ plan before the phase that depends on them.
    `form-summary.yaml`, which has failed every run since ≥2025-08. Plausible root
    cause.
 
-2. **Dead helpers reading removed config keys**, all in `validate-landings.R`:
-   `get_validation_tables()` (`pars$validation$airtable$name`),
+2. ~~**Dead helpers reading removed config keys**~~ — **fixed in Phase 1.**
+   `get_validation_tables()` (`pars$validation$airtable$name`) and
    `get_preprocessed_landings()` (`pars$surveys$landings$file_prefix` — config
-   has `landings_1/2/3`, no `landings`). Neither is called from R; delete at
-   Phase 11.
+   has `landings_1/2/3`, no `landings`), both in `validate-landings.R`, both
+   unexported and uncalled. Removed together with the rest of the orphaned
+   Airtable surface rather than waiting for Phase 11.
 
 3. **`ingest_rfish_table()` is `continue-on-error: true`** but its output is a
    hard dependency of `calculate_weights()` two jobs later. Turns a fast, clear

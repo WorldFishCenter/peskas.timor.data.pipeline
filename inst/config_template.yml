@@ -1,0 +1,398 @@
+# =============================================================================
+# PESKAS UNIFIED CONFIGURATION TEMPLATE — TIMOR-LESTE VARIANT
+# =============================================================================
+#
+# This is Timor's copy of the cross-country configuration spec. It documents
+# the harmonized key structure shared by every Peskas country pipeline
+# (Kenya, Mozambique, Zanzibar, Timor-Leste) and records, per section, the
+# choice Timor made and why.
+#
+# The live file is `inst/config.yml`. This template is documentation: it is not
+# read at runtime. Keep the two in step — when a section here changes, change
+# `config.yml` in the same commit.
+#
+# STRUCTURAL DECISIONS (inherited from the cross-country template):
+#
+# 1. INGESTION separated from SURVEYS
+#    Credentials live in `ingestion.<source>`; pipeline stage artefacts live in
+#    `surveys.<source>`.
+#
+# 2. MONGODB standardized
+#    Connection strings grouped once at the top, databases under `databases`,
+#    consistent `database_name` / `collections` key names.
+#
+# 3. SURVEY STAGE NAMING standardized
+#    `raw` / `preprocessed` / `validated` / `merged` — not `*_surveys`.
+#
+# 4. AIRTABLE placed under METADATA.
+#
+# 5. The per-source `version: preprocess: latest` field was REMOVED from the
+#    template. Pipelines that read `version$preprocess` must add it back at the
+#    source level. Timor does read it — see the note in `config.yml`.
+#
+# 6. DASHBOARD database naming: `dashboard` is the generic key; the
+#    `database_name` differs per country ("portal", "app", ...).
+#
+# TIMOR DEVIATIONS FROM THE TEMPLATE (all deliberate, all recorded):
+#
+#   a. No `dashboard` MongoDB database. Timor's portal
+#      (`peskas.timor.portal.v2`) reads versioned `portal-*.json` objects from
+#      `gs://public-timor`, discovered by prefix. That contract is frozen and
+#      out of scope for the migration.
+#   b. An extra top-level `public_storage` block for that bucket. No other
+#      country has one.
+#   c. Extra Timor-only top-level blocks: `models`, `export`,
+#      `export_dataverse`, `report`, `peskas_mail`, `merged_trips`.
+#   d. `validation` carries Timor's much deeper threshold set (mesh, gleaners,
+#      fuel, survey_time, cook_dist, pds_trips, ...) rather than the
+#      template's four `k_*` scalars.
+#   e. PDS track file prefix is singular (`pds-track`), matching eleven years
+#      of existing objects, not the template's `pds-tracks`.
+#   f. Airtable key paths follow **coasts**, not Mozambique. coasts reads
+#      `airtable.token` / `airtable.frame.base_id` at the top level; Mozambique
+#      nests the same values under `metadata.airtable` because it vendors its
+#      own copy of the Airtable module. Timor imports coasts and calls it
+#      directly, so it keeps no local copy and uses the hub's paths.
+#      Timor's own legacy `air_*` client was deleted in Phase 1.
+#
+# =============================================================================
+
+default:
+
+  # ===========================================================================
+  # COUNTRY
+  # ===========================================================================
+  # Slug used by coasts helpers and as the cross-country API path prefix.
+  #   Kenya: kenya | Mozambique: mozambique | Zanzibar: zanzibar | Timor: timor
+  country: timor
+
+  # ===========================================================================
+  # INGESTION — data source credentials
+  # ===========================================================================
+  # One entry per data source. Versioned sources (several form versions of the
+  # same instrument) nest the version below the source name, mirroring the
+  # `surveys` block.
+  #
+  #   Zanzibar sources: wcs, wf_v1, wf_v2, ba
+  #   Kenya sources:    wcs, wcs_kf, kefs
+  #   Mozambique:       lurio, adnap
+  #   Timor:            landings.{v1,v2,v3}   (three KoBo form generations)
+  # ===========================================================================
+  ingestion:
+    landings:
+      v3:                                                  # PeskAAS 2 — current form
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V3')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+      v2:                                                  # peskAAS — live, low volume
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V2')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+      v1:                                                  # SSF Landings — frozen
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V1')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+
+  # ===========================================================================
+  # SURVEYS — pipeline stage artefacts
+  # ===========================================================================
+  # Flow: raw -> preprocessed -> validated, plus optional cross-version
+  # products (merged, weight) and a validation flags artefact.
+  #
+  # Every stage has:
+  #   file_prefix  (required) — cloud object prefix
+  #   version      (optional) — usually `latest`
+  #
+  # Structure options:
+  #   Simple:    {source}: raw / preprocessed / validated
+  #   Versioned: {source}: {version}: raw / preprocessed / validated
+  #   Multi-type (Kenya): {source}: catch: {version}: ... / price: {version}: ...
+  #
+  # Timor uses the versioned form. File prefixes match the object families
+  # already present in `gs://timor` so that switching serialization format
+  # (.csv/.rds -> parquet) does not orphan the history.
+  # ===========================================================================
+  surveys:
+    landings:
+      v3:
+        raw:
+          file_prefix: timor-landings-v3_raw
+          version: latest
+        preprocessed:
+          file_prefix: timor-landings-v3_preprocessed
+          version: latest
+        validated:
+          file_prefix: timor-landings-v3_validated
+          version: latest
+      # v2 and v1 follow the same three-stage shape.
+      merged:
+        file_prefix: timor-landings-merged
+        version: latest
+      weight:                                              # Timor-only stage:
+        file_prefix: timor-landings-merged_weight          # length-weight modelling
+        version: latest
+      validated:
+        file_prefix: timor-landings-merged_validated
+        version: latest
+      validation:
+        flags:
+          file_prefix: validation_alerts
+          version: latest
+
+  # ===========================================================================
+  # PDS — Pelagic Data Systems (vessel tracking)
+  # ===========================================================================
+  # Credentials at the source level; one block per stage artefact. `customers`
+  # filters the PDS device list to this country's fleet and is required by
+  # `coasts::ingest_pds_trips()`. Timor's customer name is not yet recorded —
+  # it is established in migration Phase 7, together with the switch to the
+  # coasts PDS functions.
+  # ===========================================================================
+  pds:
+    token: !expr Sys.getenv('PDS_TOKEN')
+    secret: !expr Sys.getenv('PDS_SECRET')
+    # customers:
+    #   - "WorldFish - Timor-Leste"                        # TODO Phase 7: confirm against the PDS API
+    pds_trips:
+      file_prefix: pds-trips
+      version: latest
+    pds_tracks:
+      file_prefix: pds-track                               # singular, see deviation (e)
+      version: latest
+
+  # ===========================================================================
+  # API — cross-country trip interchange
+  # ===========================================================================
+  # Published to the `storage.google.options_api` bucket
+  # (peskas-api-dev / peskas-api-prod). Kenya, Mozambique and Zanzibar already
+  # publish here on every pipeline run; the schema is observable in
+  # `gs://peskas-api-prod/mozambique/validated/trips-validated__*.parquet` and
+  # must be matched exactly rather than inferred.
+  # ===========================================================================
+  api:
+    trips:
+      raw:
+        file_prefix: trips-raw
+        cloud_path: timor/raw
+      validated:
+        file_prefix: trips-validated
+        cloud_path: timor/validated
+
+  # ===========================================================================
+  # STORAGE
+  # ===========================================================================
+  storage:
+    google:
+      key: gcs
+      options:                                             # country bucket
+        project: peskas
+        bucket: timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+      options_coasts:                                      # shared hub bucket
+        project: peskas
+        bucket: peskas-coasts-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+      options_api:                                         # cross-country API bucket
+        project: peskas
+        bucket: peskas-api-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+    # -------------------------------------------------------------------------
+    # MongoDB
+    # -------------------------------------------------------------------------
+    # NOT yet enabled in Timor's `config.yml`. Two prerequisites:
+    #
+    #   1. Five call sites iterate `purrr::map(pars$storage, ...)` treating
+    #      every child of `storage` as a storage provider. A `mongodb` sibling
+    #      makes them fire a second time with NULL provider/options. They must
+    #      be narrowed to `pars$storage$google` first (migration Phase 2).
+    #   2. The validation flags sink decision (Google Sheets -> MongoDB) is
+    #      migration Phase 5.
+    #
+    # The shape below is the harmonized one; adopt it verbatim when enabling.
+    mongodb:
+      connection_strings:
+        main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
+        validation: !expr Sys.getenv('MONGODB_CONNECTION_STRING_VALIDATION')
+      databases:
+        pipeline:
+          database_name: timor-dev
+          collections:
+            export: export
+        validation:
+          database_name: validation-dev
+          collections:
+            flags: surveys_flags
+            enumerators_stats: enumerators_stats
+        # No `dashboard` database — see deviation (a).
+
+  # ===========================================================================
+  # PDS STORAGE — separate bucket for GPS track objects
+  # ===========================================================================
+  pds_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: pds-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+  # ===========================================================================
+  # PUBLIC STORAGE — Timor-only, see deviation (b)
+  # ===========================================================================
+  # The live portal contract. `export_files()` writes nine versioned
+  # `portal-*.json` objects here; `peskas.timor.portal.v2` discovers them by
+  # prefix, so a renamed object silently disappears from the site.
+  # ===========================================================================
+  public_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: public-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+  # ===========================================================================
+  # METADATA — reference data and lookup tables
+  # ===========================================================================
+  # Reference data has two sources, and which one wins is a locked decision:
+  #
+  #   Airtable (PESKAS | FRAME) is AUTHORITATIVE where the two overlap —
+  #     taxa, gears, vessels, landing_sites, districts/regions, pds_devices.
+  #     This is the cross-country harmonization layer; it is what makes
+  #     `standard_name` / `alpha3_code` comparable between countries, and
+  #     therefore what makes the `api` block above meaningful rather than
+  #     merely schema-shaped.
+  #   Google Sheets keeps only what Airtable does not cover: Timor's
+  #     `morphometric_table`, `habitat`, `conservation`,
+  #     `fishing_vessel_statistics`, `registered_boats`.
+  #
+  # Timor also has two Timor-only sub-blocks: `rfishtable` (rfishbase
+  # length-weight coefficients) and `nutrients` (nutrient predictions and RDI
+  # conversion factors). The nutrients block is an upstream candidate for
+  # coasts — no other country implements it.
+  # ===========================================================================
+  metadata:
+    google_sheets:
+      name: metadata-tables
+      sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
+      tables:
+        - '{table_name}'                                   # 15 today, 5 after Phase 3
+    airtable:
+      name: assets                                         # prefix of the assets snapshot
+      assets: assets                                       # coasts reads both spellings
+    version:
+      preprocess: latest                                   # re-added: Timor reads it
+    rfishtable:
+      file_prefix: rfish-table
+      version: latest
+      country_codes: [626, 360]
+    nutrients:
+      resource: '{url}'
+      RDI:
+        convert: TRUE
+        name: {}
+
+  # ===========================================================================
+  # AIRTABLE — the cross-country frame
+  # ===========================================================================
+  # `coasts::ingest_assets()` pulls taxa / gears / vessels / landing_sites /
+  # forms from the frame base and writes one versioned snapshot to cloud
+  # storage; everything downstream reads the snapshot, not the API.
+  #
+  # AIRTABLE_TOKEN is the BARE `pat…`: coasts does paste("Bearer", token).
+  # Timor's retired `air_get_records()` passed the value verbatim as the
+  # Authorization header, so any credential inherited from the old `auth/`
+  # directory carries a "Bearer " prefix that must be stripped.
+  # ===========================================================================
+  airtable:
+    token: !expr Sys.getenv('AIRTABLE_TOKEN')
+    frame:
+      base_id: !expr Sys.getenv('AIRTABLE_BASE_ID_FRAME')
+      tables:
+        countries: countries
+        pds_devices: pds_devices
+    # Only if coasts::sync_device_users() is adopted (PESKAS | TRACKS base):
+    # tracks_app:
+    #   base_id: !expr Sys.getenv('AIRTABLE_BASE_ID_TRACKS_APP')
+    #   tables:
+    #     users: users
+
+  # ===========================================================================
+  # VALIDATION — thresholds and flag sink
+  # ===========================================================================
+  # The template carries four scalars (k_nboats, k_nfishers, k_catch,
+  # k_pricekg). Timor's validators are substantially deeper — see deviation
+  # (d) and `R/validation-functions.R`. The full block lives in `config.yml`.
+  # ===========================================================================
+  validation:
+    landings: {}                                           # thresholds, see config.yml
+    pds_trips: {}                                          # trip-level thresholds
+    google_sheets:                                         # current flag sink (Phase 5 decides)
+      file_prefix: validation_alerts
+      sheet_id: !expr Sys.getenv("VALID_SHEET_ID")
+      flags_table: flags
+    version:
+      preprocess: latest                                   # re-added: Timor reads it
+
+  # ===========================================================================
+  # TIMOR-ONLY BLOCKS — see deviation (c)
+  # ===========================================================================
+  # merged_trips      surveys joined to PDS trips (`all_trips`)
+  # models            glmmTMB fishery indicator model, taxa lists
+  # export            public-file prefix for the Dataverse/legacy outputs
+  # export_dataverse  Harvard Dataverse publishing target and metadata
+  # report            Rmd report artefacts
+  # peskas_mail       blastula credentials for the validation email
+  #
+  # Full definitions in `config.yml`.
+
+# =============================================================================
+# PRODUCTION — overrides only
+# =============================================================================
+# Only values that differ from `default`. config merges these on top.
+# CI sets R_CONFIG_ACTIVE=production on `main` only, so every branch push
+# exercises the whole pipeline against the -dev buckets. That is the
+# integration test for the migration.
+# =============================================================================
+production:
+  storage:
+    google:
+      options:
+        bucket: timor
+      options_coasts:
+        bucket: peskas-coasts
+      options_api:
+        bucket: peskas-api-prod
+    mongodb:
+      databases:
+        pipeline:
+          database_name: timor-prod
+        validation:
+          database_name: validation-prod
+
+  pds_storage:
+    google:
+      options:
+        bucket: pds-timor
+
+  public_storage:
+    google:
+      options:
+        bucket: public-timor
+
+# =============================================================================
+# NO `local` ENVIRONMENT
+# =============================================================================
+# Timor used to carry a `local:` environment that read 15 plaintext files from
+# `auth/` via readLines(), so a developer's local run resolved a *different*
+# config branch than CI. That is gone. Local runs use `default` and read their
+# secrets from `.env`, loaded by `read_config()`. Local and CI now differ only
+# by `R_CONFIG_ACTIVE`.
+#
+# Mozambique's `.Renviron` sets `R_CONFIG_ACTIVE=dev` and no `dev` environment
+# exists in its config — do not copy that pattern.
+# =============================================================================

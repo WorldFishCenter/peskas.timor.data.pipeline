@@ -22,6 +22,7 @@
 #' the environment variable `GITHUB_SHA`. If both of these methods fail, no sha
 #' versioning is added.
 #'
+#' @keywords helper
 #' @examples
 #' if (git2r::in_repository()) {
 #'   add_version("my_file", "csv")
@@ -51,20 +52,78 @@ add_version <- function(filename, extension = "", sha_nchar = 7, sep = "__") {
 }
 
 
+#' Load environment variables from a .env file
+#'
+#' Loads environment variables from a `.env` file if one exists. Called by
+#' [read_config()] before the configuration is resolved, so that the
+#' `!expr Sys.getenv(...)` entries in `inst/config.yml` see the local secrets.
+#'
+#' In CI the variables come from the workflow environment and no `.env` file is
+#' present, so this is a no-op there. Values already set in the environment win:
+#' [dotenv::load_dot_env()] does not overwrite them.
+#'
+#' @param file Path to the `.env` file. Defaults to `.env` in the working
+#'   directory.
+#'
+#' @return `NULL`, invisibly. Called for its side effect.
+#'
+#' @keywords helper
+#' @export
+#'
+load_dotenv <- function(file = ".env") {
+  if (file.exists(file)) {
+    logger::log_info("Loading environment variables from {file}")
+    dotenv::load_dot_env(file = file)
+  } else {
+    logger::log_debug("No .env file found at {file}, skipping dotenv loading")
+  }
+  invisible(NULL)
+}
+
 #' Read configuration file
 #'
-#' Reads configuration file in `conf.yml` and adds some logging lines. Wrapped
-#' for convenience
+#' Reads the package configuration and adds some logging lines. Wrapped for
+#' convenience.
+#'
+#' Environment variables are loaded from `.env` first (see [load_dotenv()]), so
+#' local runs and CI resolve the *same* configuration branch and differ only by
+#' `R_CONFIG_ACTIVE`. The former `local:` environment, which read plaintext
+#' files from `auth/`, no longer exists.
+#'
+#' The configuration file is `inst/config.yml`. `conf.yml` is still accepted as
+#' a fallback so that an older installed copy of the package keeps resolving.
 #'
 #' @return the environment parameters
+#'
+#' @keywords helper
 #' @export
 #'
 read_config <- function() {
+  # Load .env first so config.yml's Sys.getenv() entries can see the values
+  load_dotenv()
+
   logger::log_info("Loading configuration file...")
+
+  conf_file <- system.file(
+    "config.yml",
+    package = "peskas.timor.data.pipeline"
+  )
+  if (!nzchar(conf_file)) {
+    conf_file <- system.file(
+      "conf.yml",
+      package = "peskas.timor.data.pipeline"
+    )
+  }
+  if (!nzchar(conf_file)) {
+    stop(
+      "No 'inst/config.yml' found in package 'peskas.timor.data.pipeline'.",
+      call. = FALSE
+    )
+  }
 
   pars <- config::get(
     config = Sys.getenv("R_CONFIG_ACTIVE", "default"),
-    file = system.file("conf.yml", package = "peskas.timor.data.pipeline")
+    file = conf_file
   )
 
   logger::log_info("Using configutation: {attr(pars, 'config')}")

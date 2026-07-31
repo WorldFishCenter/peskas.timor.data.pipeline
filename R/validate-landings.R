@@ -336,55 +336,21 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     logger::log_info("No new flags to append")
   }
 }
-get_validation_tables <- function(pars) {
-  validation_rds <- cloud_object_name(
-    prefix = paste(pars$validation$airtable$name, sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$validation$version$preprocess,
-    options = pars$storage$google$options
-  )
-  logger::log_info("Downloading {validation_rds}...")
-  download_cloud_file(
-    name = validation_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = validation_rds)
-}
-
-get_preprocessed_landings <- function(pars) {
-  landings_rds <- cloud_object_name(
-    prefix = paste(pars$surveys$landings$file_prefix, "preprocessed", sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$surveys$landings$version$preprocess,
-    options = pars$storage$google$options
-  )
-  logger::log_info("Downloading {landings_rds}...")
-  download_cloud_file(
-    name = landings_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = landings_rds)
-}
-
-get_preprocessed_metadata <- function(pars) {
-  metadata_rds <- cloud_object_name(
-    prefix = paste(pars$metadata$airtable$name, "preprocessed", sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    options = pars$storage$google$options
-  )
-  logger::log_info("Downloading {metadata_rds}...")
-  download_cloud_file(
-    name = metadata_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = metadata_rds)
-}
+# NOTE: three dead helpers used to live here, all removed in migration Phase 1
+# (AUDIT.md §8.1 and §8.2):
+#
+#   get_preprocessed_metadata()  a second, broken definition reading the
+#                                long-removed `pars$metadata$airtable$name`.
+#                                Collation put this file after
+#                                get-cloud-files.R, so it *shadowed* the
+#                                correct exported definition at
+#                                get-cloud-files.R:110. That one now wins.
+#   get_validation_tables()      read `pars$validation$airtable$*`, removed
+#                                with the orphaned air_* Airtable client.
+#   get_preprocessed_landings()  read `pars$surveys$landings$file_prefix`,
+#                                a key that has never existed.
+#
+# None were exported and none were called.
 
 #' Download merged landings
 #'

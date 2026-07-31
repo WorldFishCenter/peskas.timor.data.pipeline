@@ -13,7 +13,6 @@
 ^docker-compose.yaml$
 ^.dockerignore$
 ^rstudio-prefs.json$
-^auth$
 ^.DS_Store$
 ^peskas\.mozambique\.data\.pipeline/
 ^\.env$

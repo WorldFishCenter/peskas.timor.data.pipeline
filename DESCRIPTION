@@ -1,8 +1,8 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 3.3.0
-Authors@R: 
+Version: 4.0.0
+Authors@R:
     c(person(given = "Lorenzo",
              family = "Longobardi",
              role = c("aut", "cre"),
@@ -22,73 +22,88 @@ Authors@R:
 Description: This package implements the data and modelling
     pipelines underpining the Peskas system.
 License: GPL-3
+URL: https://worldfishcenter.github.io/peskas.timor.data.pipeline/
+BugReports:
+    https://github.com/WorldFishCenter/peskas.timor.data.pipeline/issues
+Depends:
+    R (>= 2.10)
 Imports:
+    arrow,
+    blastula,
+    coasts,
     config,
     data.table,
-    dplyr,
+    dataverse,
     digest,
+    dotenv,
+    dplyr,
+    furrr,
+    future,
+    geosphere,
+    ggplot2,
     git2r,
     glmmTMB,
+    glue,
     googleAuthR,
     googleCloudStorageR,
     googledrive,
+    googlesheets4,
     httr,
+    httr2,
     jsonlite,
     logger,
+    lubridate,
     magrittr,
     purrr,
     readr,
-    tidyr,
-    rlang (>= 0.1.2),
-    googlesheets4,
     reticulate,
-    httr2
-Suggests: 
-    covr,
-    pkgdown,
-    remotes,
-    sessioninfo,
-    testthat,
-    RCurl,
-    roxygen2,
-    geosphere,
-    tidyselect,
-    textclean,
-    tinytest,
-    dataverse,
-    rmarkdown,
-    cowplot,
-    broom,
-    zoo,
-    ggplot2,
-    ggpubr,
-    lubridate,
-    readxl,
+    rfishbase,
+    rlang (>= 0.1.2),
+    sf,
+    stats,
     stringr,
     tibble,
-    furrr,
-    future,
-    rfishbase,
-    taxize,
+    tidyr,
+    tidyselect,
     univOutl,
-    zip,
-    leaflet,
+    utils
+Suggests:
+    Amelia,
+    apexcharter,
+    broom,
+    covr,
+    cowplot,
+    ggchicklet,
+    ggforce,
+    ggpubr,
     htmltools,
     imputeTS,
-    Amelia,
-    mice,
-    blastula,
-    glue,
-    mime,
     janitor,
-    reactable,
     kableExtra,
-    ggchicklet,
-    treemapify,
-    ggforce,
-    apexcharter,
+    leaflet,
+    mice,
+    mime,
+    mongolite,
+    pkgdown,
+    RCurl,
+    reactable,
+    readxl,
+    remotes,
+    rmarkdown,
+    roxygen2,
+    sessioninfo,
+    taxize,
+    testthat,
+    textclean,
     tidytext,
-    sf
+    tinytest,
+    treemapify,
+    zip,
+    zoo
+Remotes:
+    github::WorldFishCenter/peskas.coasts@v4.5.0,
+    github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R
+Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

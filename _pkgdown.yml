@@ -34,11 +34,6 @@ reference:
   desc: Functions to interact with Google Drive and Spreadsheets
   contents:
   - matches("google")
-- subtitle: Airtable
-  desc: Functions to interact with Airtable
-  contents:
-  - matches("air")
-
 - title: Data
 - subtitle: Survey
   desc: Functions that help retrieving survey data

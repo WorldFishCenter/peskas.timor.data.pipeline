@@ -10,6 +10,16 @@ read_config()
 the environment parameters
 }
 \description{
-Reads configuration file in \code{conf.yml} and adds some logging lines. Wrapped
-for convenience
+Reads the package configuration and adds some logging lines. Wrapped for
+convenience.
 }
+\details{
+Environment variables are loaded from \code{.env} first (see \code{\link[=load_dotenv]{load_dotenv()}}), so
+local runs and CI resolve the \emph{same} configuration branch and differ only by
+\code{R_CONFIG_ACTIVE}. The former \verb{local:} environment, which read plaintext
+files from \verb{auth/}, no longer exists.
+
+The configuration file is \code{inst/config.yml}. \code{conf.yml} is still accepted as
+a fallback so that an older installed copy of the package keeps resolving.
+}
+\keyword{helper}

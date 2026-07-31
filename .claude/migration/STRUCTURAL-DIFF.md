@@ -67,7 +67,8 @@ then differ only by `R_CONFIG_ACTIVE`, not by config branch.
 | `metadata-sheet-id` | `GOOGLE_SHEET_ID` | already in CI |
 | `valid-sheet-id` | `VALID_SHEET_ID` | drops if flags move to Mongo **[P5]** |
 | `pds-token` / `pds-secret` | `PDS_TOKEN` / `PDS_SECRET` | already in CI |
-| `airtable-key` | `AIRTABLE_TOKEN` | CI currently calls it `AIRTABLE_KEY` — rename |
+| `airtable-key` | `AIRTABLE_TOKEN` | CI currently calls it `AIRTABLE_KEY` — rename. **Strip the `Bearer ` prefix**: the stored value is a header, not a token (AUDIT §7.7) |
+| — | `AIRTABLE_BASE_ID_FRAME` | new, PESKAS \| FRAME base `appMMEJYlJdfSJEjm` **[P1]** |
 | `dataverse-token` | `DATAVERSE_TOKEN` | already referenced by conf.yml |
 | `peskas-gmail-key` / `blastula_cred_file` | `PESKAS_GMAIL_KEY` | two files, one config key today |
 | — | `MONGODB_CONNECTION_STRING`, `MONGODB_CONNECTION_STRING_VALIDATION` | new, if flags move to Mongo **[P5]** |
@@ -204,13 +205,31 @@ away.
 | `format-public-data.R`, `export.R` | `export.R` | P8 |
 | `export-dataverse.R` | keep name | P8 |
 | `send-email.R` | `reports.R` | P8 |
-| `airtable.R` | keep name; reconcile with `coasts::airtable_to_df` etc. | P8 |
+| `airtable.R` | **deleted** — orphaned `air_*` client; the frame integration is delegated to `coasts::*` | P1 |
 | `utils.R`, `utils-pipe.R`, `utils-tidy-eval.R`, `globals.R` | keep | P1 |
 | — (new) | `peskas.timor.data.pipeline-package.R` | P1 |
 
 Timor's `airtable.R` (`air_get_records`, `air_tibble_to_records`, …) is an entirely
 different API from the standard's (`airtable_to_df`, `bulk_update_airtable`,
-`device_sync`, all also present in `coasts`). Reconcile in P8, don't leave two.
+`device_sync`, all also present in `coasts`). ~~Reconcile in P8, don't leave two.~~
+**Superseded 2026-07-31.** "Reconcile" was the wrong frame — these are not two
+implementations of the same thing:
+
+- Timor's `air_*` client was orphaned and read a config key that no longer
+  exists. ✅ **Deleted in P1** (pulled forward from P8), together with its only
+  consumer `ingest_validation_tables()`, the two dead helpers in
+  `validate-landings.R`, `inst/airtable/edit-submission-link.js`, and the
+  `matches("air")` section in `_pkgdown.yml`.
+- The standard's integration reads the shared PESKAS | FRAME base and is the
+  cross-country harmonization layer. Timor has never had it. **Adopt it** —
+  config in P1, `ingest_assets()` in P3, joins moved off Google Sheets in P4.
+  Timor delegates to `coasts::` rather than vendoring a copy of the module the
+  way Mozambique does, so its key paths are the hub's (`airtable.token`,
+  `airtable.frame.base_id`) rather than Moz's `metadata.airtable.*`.
+
+See PLAN §2.5 and the corrected AUDIT §7.7 for the measured Timor row counts and
+the credential handling (the value must be stored bare — the standard adds the
+`Bearer ` prefix itself).
 
 ---
 
@@ -335,7 +354,7 @@ expectations as schemas change; never delete assertions to make a phase pass. Ad
 | `docker-compose.yaml`, `Dockerfile` (dev), `rstudio-prefs.json` | keep |
 | `inst/report/` (Rmd, bib, css, shapefiles) | keep → `R/reports.R` **[P8]** |
 | `inst/export/` (README.Rmd, dataset-fields.json, PNGs) | keep, Dataverse metadata **[P8]** |
-| `inst/airtable/edit-submission-link.js` | audit — likely dead **[P0]** |
+| `inst/airtable/edit-submission-link.js` | **deleted** — dead: old kobo host, hardcoded v2 asset **[P1]** |
 | `inst/kepler_mapper.py`, `inst/__pycache__/` | `__pycache__` delete now; the `.py` depends on the P7 kepler decision |
 | `cran-comments.md` | delete **[P11]** — never going to CRAN |
 | `docs/` | gitignored but present on disk; pkgdown regenerates it **[P11]** |

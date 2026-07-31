@@ -12,8 +12,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > **One migration phase per session — never two.** End every session by appending
 > a STATE.md entry.
 >
-> Everything below documents the repo **as it is today** (pre-migration), not the
-> target state. Where the target differs, the plan says so.
+> Everything below documents the repo **as it is today**, not the target state.
+> Where the target differs, the plan says so. Phases completed so far: **0, 1**
+> — so config, secrets and the container are already on the standard; ingestion,
+> preprocessing, validation, PDS and export are not.
 
 ---
 
@@ -35,8 +37,9 @@ be structural, not cosmetic.
 | Path | What |
 |---|---|
 | [R/](R/) | 32 source files, verb-noun naming (see module map below) |
-| [inst/conf.yml](inst/conf.yml) | the config file (note: `conf.yml`, not `config.yml`) |
-| `auth/` | 15 plaintext credential files, gitignored, read by the `local:` config env |
+| [inst/config.yml](inst/config.yml) | the config file. A **superset**: harmonized keys plus every legacy key, so old code keeps running mid-migration |
+| [inst/config_template.yml](inst/config_template.yml) | Timor's copy of the cross-country spec, with its deviations recorded |
+| `.env` | local secrets, gitignored. Template: [.env.example](.env.example). Replaced the old `auth/` directory in Phase 1 |
 | [inst/tinytest/](inst/tinytest/) | 4 assertion suites, run as steps **inside** the pipeline workflow |
 | [inst/report/](inst/report/) | Rmd reports + `generate_*.R` drivers, shapefiles, bib, css |
 | [inst/export/](inst/export/) | Dataverse dataset metadata (README.Rmd, dataset-fields.json, PNGs) |
@@ -48,7 +51,7 @@ be structural, not cosmetic.
 Ingestion
 - [ingest-landings.R](R/ingest-landings.R) — `ingest_landings_v1v3()`, `ingest_landings_v2()`
 - [retrieve-survey-data.R](R/retrieve-survey-data.R) — Timor's own `get_kobo_data()` (writes files to disk) plus `flatten_row()`/`flatten_field()`/`rename_child()`
-- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 15 Google Sheets metadata tables
+- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 15 Google Sheets metadata tables. Six of them are superseded in Phase 3 by the Airtable frame (see below); five stay
 - [ingest-pds-data.R](R/ingest-pds-data.R) — 858 lines: PDS trips + tracks, kepler map, retry wrappers
 - [retrieve-pds-data.R](R/retrieve-pds-data.R) — PDS API client
 
@@ -69,43 +72,92 @@ Merge / model / export
 
 Infrastructure
 - [cloud-storage.R](R/cloud-storage.R) (261 l) + [get-cloud-files.R](R/get-cloud-files.R) (318 l) — own GCS layer; deleted in Phase 2 in favour of `coasts::*`
-- [airtable.R](R/airtable.R) — `air_*` API, **entirely different** from the standard's `airtable_to_df`/`bulk_update_airtable`
-- [utils.R](R/utils.R) — `add_version()`, `read_config()`
+- [utils.R](R/utils.R) — `add_version()`, `read_config()`, `load_dotenv()`
+- [peskas.timor.data.pipeline-package.R](R/peskas.timor.data.pipeline-package.R) — package-level roxygen block
 - [google-drive.R](R/google-drive.R), [utils-pipe.R](R/utils-pipe.R), [utils-tidy-eval.R](R/utils-tidy-eval.R), [globals.R](R/globals.R)
 
 ## Configuration
 
-`inst/conf.yml`, read via `read_config()` → `config::get(config = Sys.getenv("R_CONFIG_ACTIVE", "default"))`.
+`inst/config.yml`, read via `read_config()`, which calls `load_dotenv()` and then
+`config::get(config = Sys.getenv("R_CONFIG_ACTIVE", "default"))`.
 
-Three environments:
+Two environments — the `local:` environment was deleted in Phase 1:
 
-| env | storage buckets | secrets from |
+| env | storage buckets | api / hub buckets |
 |---|---|---|
-| `default` | `timor-dev`, `pds-timor-dev`, `public-timor-dev` | `Sys.getenv()` |
-| `production` | `timor`, `pds-timor`, `public-timor` | `Sys.getenv()` |
-| `local` | inherits `development` **(which does not exist)** | `readLines("auth/<file>")` |
+| `default` | `timor-dev`, `pds-timor-dev`, `public-timor-dev` | `peskas-api-dev`, `peskas-coasts-dev` |
+| `production` | `timor`, `pds-timor`, `public-timor` | `peskas-api-prod`, `peskas-coasts` |
 
-`.Renviron` currently sets `R_CONFIG_ACTIVE=local`, so a local run uses a
-*different config branch* than CI — a recurring source of "works in CI, not
-locally". CI sets `R_CONFIG_ACTIVE=production` only on `main`; **any push to a
-non-main branch runs the whole pipeline against the `-dev` buckets.** That is the
-integration-test mechanism for the migration.
+Secrets come from the environment in both cases: from `.env` locally (loaded by
+`load_dotenv()`), from the workflow environment in CI. **Local and CI now
+resolve the same config branch and differ only by `R_CONFIG_ACTIVE`.**
+`.Renviron` sets `default`. CI sets `R_CONFIG_ACTIVE=production` only on `main`;
+**any push to a non-main branch runs the whole pipeline against the `-dev`
+buckets.** That is the integration-test mechanism for the migration.
 
-### Environment variables (CI) → `auth/` files (local)
+The file is a **superset**: harmonized keys (`country`, `ingestion`,
+`surveys.landings.{v1,v2,v3}`, `api`, `storage.google.options_{coasts,api}`)
+sit alongside every legacy key the current functions still read
+(`surveys.landings_{1,2,3}`, `pds.{trips,tracks}`, `models`, `export*`, …).
+Legacy keys are marked `# [legacy]` and are deleted in Phase 11. Do not remove
+one before the phase that removes its last reader.
 
-| env var | `auth/` file | notes |
+`storage.mongodb` is present but **commented out**: five call sites do
+`purrr::map(pars$storage, ~ upload_cloud_file(files, .$key, .$options))`, so any
+non-`google` child of `storage` gets treated as a second storage provider.
+Narrow those to `pars$storage$google` before enabling it.
+
+### Environment variables
+
+Copy [.env.example](.env.example) to `.env` and fill it in. Both JSON-valued
+entries must be minified onto one line — dotenv parses line by line.
+
+| env var | GitHub secret | notes |
 |---|---|---|
-| `KOBO_USERNAME` / `KOBO_PASSWORD` | `kobo-username` / `kobo-password` | basic auth against `eu.kobotoolbox.org` |
-| `KOBO_PESKAS1/2/3` | `peskas-timor-v1/2/3-id` | asset ids; renamed to `KOBO_ASSET_ID_V*` in Phase 1 |
-| `GCP_SA_KEY` | `gcp-sa-peskas_ingestion-key.json` | full JSON; GH secret is named `PESKAS_DATAINGESTION_GCS_KEY` |
-| `GOOGLE_SHEET_ID` | `metadata-sheet-id` | metadata tables |
-| `VALID_SHEET_ID` | `valid-sheet-id` | validation flags sheet |
-| `PDS_TOKEN` / `PDS_SECRET` | `pds-token` / `pds-secret` | GH secrets `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` |
-| `AIRTABLE_KEY` | `airtable-key` | renamed to `AIRTABLE_TOKEN` in Phase 1 |
-| `DATAVERSE_TOKEN` | `dataverse-token` | GH secret `PESKAS_DATAVERSE_TOKEN` |
-| `PESKAS_GMAIL_KEY` | `peskas-gmail-key`, `blastula_cred_file` | two files, one config key |
+| `KOBO_USERNAME` / `KOBO_PASSWORD` | same | basic auth against `eu.kobotoolbox.org` |
+| `KOBO_TOKEN` | *not set in CI yet* | token auth, used by the new `ingestion` block |
+| `KOBO_ASSET_ID_V1/2/3` | *not set in CI yet* | new names, read by `ingestion.landings.<v>` |
+| `KOBO_PESKAS1/2/3` | same | legacy names, read by `surveys.landings_{1,2,3}`; secrets renamed in Phase 9 |
+| `GCP_SA_KEY` | `PESKAS_DATAINGESTION_GCS_KEY` | full service-account JSON, minified |
+| `GOOGLE_SHEET_ID` | same | metadata tables |
+| `VALID_SHEET_ID` | same | validation flags sheet |
+| `PDS_TOKEN` / `PDS_SECRET` | `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` | |
+| `DATAVERSE_TOKEN` | `PESKAS_DATAVERSE_TOKEN` | |
+| `PESKAS_GMAIL_KEY` | same | the serialized blastula credentials JSON, **not** a bare app password |
+| `AIRTABLE_TOKEN` | same | the **bare** `pat…` — coasts prepends `Bearer `. Needs frame-base read access + `schema.bases:read` |
+| `AIRTABLE_BASE_ID_FRAME` | same | PESKAS \| FRAME, `appMMEJYlJdfSJEjm` |
 
-There is **no `.env` file and no `dotenv`** yet; that arrives in Phase 1.
+**Before Phase 3 ingestion can run in CI**, `KOBO_ASSET_ID_V1/2/3` must be
+added to the workflow `env:` block — the existing `KOBO_PESKAS*` secrets can
+supply the values. `KOBO_TOKEN` has no secret yet and is optional (basic auth
+works). The stale `AIRTABLE_KEY` secret still exists and is deleted in Phase 9;
+nothing maps it any more.
+
+### Reference data — two sources, one of them authoritative
+
+There are **two unrelated Airtables** in this repo's history; do not conflate
+them.
+
+1. `R/airtable.R` — Timor's own `air_*` client, orphaned (it read
+   `validation.airtable.*`, a key that no longer exists). **Deleted in
+   Phase 1**, with its only consumer `ingest_validation_tables()` and
+   `inst/airtable/edit-submission-link.js`.
+2. **PESKAS | FRAME** (`appMMEJYlJdfSJEjm`) — the cross-country harmonization
+   layer, mapping each country's raw form labels to `standard_name` /
+   `alpha3_code` / FAO codes. `coasts::ingest_assets()` snapshots it to
+   `assets__*.rds` and the rest of the coasts pipeline reads that snapshot.
+   Timor's rows were populated 2026-07-30/31 (57 taxa, 7 gears, 2 vessels, 40
+   sites, 457 pds_devices). Adopted in Phase 3 by calling `coasts::` directly
+   — Timor keeps **no** local copy of the Airtable module, unlike Mozambique,
+   so its config uses the hub's key paths (`airtable.token`,
+   `airtable.frame.base_id`) rather than Moz's `metadata.airtable.*`.
+
+Where the frame and the Google Sheets tables overlap, **Airtable is
+authoritative** (PLAN §2.5): taxa, gears, vessels, landing_sites,
+districts/regions, pds_devices. The Sheets keep only `morphometric_table`,
+`habitat`, `conservation`, `fishing_vessel_statistics`, `registered_boats`.
+This is not cosmetic — without it the Phase 6 API export would be
+schema-correct but full of untranslated Tetum labels.
 
 ## Storage
 
@@ -199,10 +251,22 @@ docker compose up          # RStudio on :8802, DISABLE_AUTH=true
 docker build -f Dockerfile.prod -t peskas-timor .
 ```
 
-`Dockerfile.prod`: `rocker/geospatial:4.4`, ~70 packages via `install2.r`,
-`rfishbase` pinned to 5.0.1, `ggchicklet` + `glmmTMB` from GitHub, then
-`COPY . /home` + `remotes::install_local()`. Image is pushed to
+`Dockerfile.prod`: `rocker/geospatial:4.5`, packages via `install2.r`
+(`rfishbase` unpinned — the old 5.0.1 pin conflicted with `coasts`),
+`ARG COASTS_REF=v4.5.0` → `install_github('WorldFishCenter/peskas.coasts')`,
+`ggchicklet` + `glmmTMB` from GitHub, then `COPY . /home` +
+`remotes::install_local()`. Image is pushed to
 `ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest`.
+`Dockerfile` (dev, used by `docker-compose.yaml`) mirrors the same package set
+and the same `COASTS_REF`. Keep the two in step.
+
+**`devtools::check()` baseline** (measured 2026-07-31 against the Phase 0
+commit and again after Phase 1): 1 WARNING (undocumented `get_kobo_data()`
+arguments), 5 NOTEs, and one pre-existing testthat failure —
+`test-pre-process-landings.R:16`, `nrow(nested$_attachments[[1]])` is 3, not 2.
+Do not read those as a regression. Two of the NOTEs are Phase 1's own and are
+expected to clear later: `arrow` and `coasts` are declared in Imports but not
+used until Phases 3 and 2.
 
 ## CI health — most workflows are dead
 
@@ -235,17 +299,23 @@ function is exercised just because a workflow references it.
   the level.
 - `pt_nest_species()` / `pt_nest_attachments()` build the nested list-columns
   the `.rds` interchange format depends on.
-- `pars$...$version$preprocess: latest` appears on `landings_1/2/3`, `pds.trips`,
-  `pds.tracks`, `metadata` and `validation`. The unified template dropped this
-  field; do not drop it here without deciding per key.
+- `pars$...$version$preprocess: latest` is read on `landings_1/2/3`,
+  `pds.trips`, `pds.tracks`, `metadata` and `validation`. The unified template
+  dropped this field; it is kept on each of those legacy keys and deliberately
+  **not** re-added in the new tree, which uses the per-stage `version:` field.
+  Every reader is a legacy-key reader and moves across in Phases 3–7.
 - Timezone handling was fixed in commit `15f6b18` — re-verify it after any
   rewrite of the export path.
-- **Known live bug:** `get_preprocessed_metadata()` is defined twice, in
-  [get-cloud-files.R:110](R/get-cloud-files.R#L110) (correct, reads
-  `pars$metadata$google_sheets$name`) and
-  [validate-landings.R:373](R/validate-landings.R#L373) (broken, reads the
-  removed `pars$metadata$airtable$name`). Collation order means the broken one
-  wins. Several other helpers in `validate-landings.R` reference config keys
-  that no longer exist. Catalogued in AUDIT.md.
+- **Known live bugs** (AUDIT.md §8). Fixed in Phase 1: the duplicate
+  `get_preprocessed_metadata()` in `validate-landings.R` that shadowed the
+  correct definition at [get-cloud-files.R:110](R/get-cloud-files.R#L110), and
+  the `local:` config env inheriting a non-existent `development` env. Still
+  open: two dead helpers in
+  [validate-landings.R](R/validate-landings.R) (`get_validation_tables()`,
+  `get_preprocessed_landings()`) read config keys that no longer exist — they
+  are uncalled, and are deleted in Phase 11;
+  `ingest_rfish_table()` is `continue-on-error` despite being a hard dependency
+  two jobs later (Phase 9); `export_files()` uploads unnormalised object names
+  (Phase 8).
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.
