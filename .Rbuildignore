@@ -15,3 +15,14 @@
 ^rstudio-prefs.json$
 ^auth$
 ^.DS_Store$
+^peskas\.mozambique\.data\.pipeline/
+^\.env$
+^\.env\.example$
+^\.Renviron$
+^\.Rhistory$
+^\.claude$
+^CLAUDE\.md$
+^\.venv$
+^reference$
+^.*\.parquet$
+^.*\.rds$
