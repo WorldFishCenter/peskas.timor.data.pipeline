@@ -105,7 +105,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {validated_trips_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = validated_trips_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -204,7 +204,7 @@ validate_pds_data <- function(data,
 }
 
 get_preprocessed_trips <- function(pars) {
-  pds_trips_rds <- cloud_object_name(
+  pds_trips_rds <- coasts::cloud_object_name(
     prefix = paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
@@ -212,7 +212,7 @@ get_preprocessed_trips <- function(pars) {
     options = pars$storage$google$options
   )
   logger::log_info("Downloading {pds_trips_rds}...")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = pds_trips_rds,
     provider = pars$storage$google$key,
     options = pars$storage$google$options

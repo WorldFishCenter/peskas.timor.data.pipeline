@@ -12,12 +12,12 @@
 #'   `data_last_updated` (POSIXlt) indicating the timestamp extracted from the filename.
 #'
 #' @details
-#' Requires configuration from `read_config()`. Uses `cloud_object_name()` to
-#' resolve the object name and `download_cloud_file()` to download it. Assumes
+#' Requires configuration from `read_config()`. Uses `coasts::cloud_object_name()` to
+#' resolve the object name and `coasts::download_cloud_file()` to download it. Assumes
 #' filenames follow a convention like `..._<timestamp>_...` where `<timestamp>`
 #' is in `%Y%m%d%H%M` format and located at position 4 after splitting on `_`.
 #'
-#' @seealso read_config, cloud_object_name, download_cloud_file
+#' @seealso read_config, coasts::cloud_object_name, coasts::download_cloud_file
 #' @export
 #'
 #' @keywords internal
@@ -28,14 +28,14 @@
 #' }
 get_file <- function(prefix) {
   pars <- read_config()
-  filename <- cloud_object_name(
+  filename <- coasts::cloud_object_name(
     prefix = prefix,
     provider = pars$public_storage$google$key,
     extension = "rds",
     options = pars$public_storage$google$options,
     exact_match = TRUE
   )
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = filename,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
@@ -236,10 +236,10 @@ rename_ontology <- function(x) {
 #'
 #' Assumes a configured public Google cloud storage provider in
 #' `pars$public_storage$google` and relies on helper functions such as
-#' `add_version()`, `upload_cloud_file()`, and JSON serialization via `toJSON()`.
+#' `add_version()`, `coasts::upload_cloud_file()`, and JSON serialization via `toJSON()`.
 #'
 #' @seealso get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
-#'   upload_cloud_file, add_version
+#'   coasts::upload_cloud_file, add_version
 #'
 #' @keywords workflow
 #' @export
@@ -429,7 +429,7 @@ export_files <- function() {
   purrr::walk2(
     files,
     filenames,
-    upload_cloud_file,
+    coasts::upload_cloud_file,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )

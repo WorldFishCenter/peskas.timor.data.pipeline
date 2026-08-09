@@ -12,3 +12,4 @@ get_preprocessed_metadata(pars)
 \description{
 Download preprocessed Peskas metadata from Google Cloud
 }
+\keyword{storage}

@@ -213,7 +213,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       ~ readr::write_tsv(.y, .x)
     ) %>%
     purrr::walk(
-      upload_cloud_file,
+      coasts::upload_cloud_file,
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     )
@@ -243,7 +243,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
     purrr::walk(
-      upload_cloud_file,
+      coasts::upload_cloud_file,
       provider = pars$public_storage$google$key,
       options = pars$public_storage$google$options
     )
@@ -276,7 +276,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {summary_data_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = summary_data_filename,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options

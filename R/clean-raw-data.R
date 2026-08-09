@@ -18,7 +18,7 @@
 #' authentication_details <- readLines("location_of_json_file.json")
 #' # obtain the latest version of all files corresponding to timor-landings-v1
 #' legacy_data <-
-#'   cloud_object_name(
+#'   coasts::cloud_object_name(
 #'     prefix = "timor-landings-v1",
 #'     version = "latest",
 #'     provider = "gcs",
@@ -207,7 +207,7 @@ clean_catches <- function(x) {
 #' authentication_details <- readLines("location_of_json_file.json")
 #' # obtain the latest version of all files corresponding to timor-landings-v1
 #' legacy_data <-
-#'   cloud_object_name(
+#'   coasts::cloud_object_name(
 #'     prefix = "timor-landings-v1",
 #'     version = "latest",
 #'     provider = "gcs",
@@ -270,7 +270,7 @@ coalist <- function(data, to_coal, return_dat = FALSE) {
 #' authentication_details <- readLines("location_of_json_file.json")
 #' # obtain the latest version of all files corresponding to timor-landings-v1
 #' legacy_data <-
-#'   cloud_object_name(
+#'   coasts::cloud_object_name(
 #'     prefix = "timor-landings-v1",
 #'     version = "latest",
 #'     provider = "gcs",
@@ -420,7 +420,7 @@ clean_legacy_landings <- function(x) {
 #' authentication_details <- readLines("location_of_json_file.json")
 #' # obtain the latest version of all files corresponding to timor-landings-v1
 #' peskas2_data <-
-#'   cloud_object_name(
+#'   coasts::cloud_object_name(
 #'     prefix = "timor-landings-v3",
 #'     version = "latest",
 #'     provider = "gcs",

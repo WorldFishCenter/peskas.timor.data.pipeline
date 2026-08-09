@@ -64,8 +64,11 @@ ingest_landings_v1v3 <- function(log_threshold = logger::DEBUG) {
   all_files <- unlist(file_lists, recursive = FALSE)
 
   logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::walk(pars$storage, ~ upload_cloud_file(all_files, .$key, .$options))
+  coasts::upload_cloud_file(
+    file = all_files,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   logger::log_success("File upload succeeded")
 }
 
@@ -131,7 +134,10 @@ ingest_landings_v2 <- function(log_threshold = logger::DEBUG) {
   all_files <- unlist(file_lists, recursive = FALSE)
 
   logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::walk(pars$storage, ~ upload_cloud_file(all_files, .$key, .$options))
+  coasts::upload_cloud_file(
+    file = all_files,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
   logger::log_success("File upload succeeded")
 }

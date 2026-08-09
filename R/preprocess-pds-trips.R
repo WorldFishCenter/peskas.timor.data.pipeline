@@ -33,7 +33,7 @@
 preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
-  pds_trips_csv <- cloud_object_name(
+  pds_trips_csv <- coasts::cloud_object_name(
     prefix = pars$pds$trips$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
@@ -42,7 +42,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Retrieving {pds_trips_csv}")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = pds_trips_csv,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -74,7 +74,7 @@ preprocess_pds_trips <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = preprocessed_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -109,7 +109,7 @@ get_tracks_descriptors <- function(Trip, pars, tracks_list) {
   track <-
     purrr::walk(
       .x = track_file[1],
-      .f = ~ download_cloud_file(
+      .f = ~ coasts::download_cloud_file(
         name = .,
         provider = pars$pds_storage$google$key,
         options = pars$pds_storage$google$options
@@ -247,15 +247,13 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud...")
-  purrr::map(
-    pars$storage,
-    ~ purrr::walk(
-      .x = preprocessed_filename,
-      .f = ~ insistent_upload_cloud_file(
-        file = .,
-        provider = pars$storage$google$key,
-        options = pars$storage$google$options
-      )
+  # Retry each file individually rather than the batch as a whole
+  purrr::walk(
+    .x = preprocessed_filename,
+    .f = ~ coasts::insistent_upload_cloud_file(
+      file = .,
+      provider = pars$storage$google$key,
+      options = pars$storage$google$options
     )
   )
   logger::log_success("File upload succeded")
@@ -263,7 +261,7 @@ preprocess_pds_tracks <- function(log_threshold = logger::DEBUG) {
 
 # Download preprocessed tracks
 get_preprocessed_tracks <- function(pars) {
-  pds_tracks_rds <- cloud_object_name(
+  pds_tracks_rds <- coasts::cloud_object_name(
     prefix = paste(pars$pds$tracks$file_prefix, "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
@@ -271,7 +269,7 @@ get_preprocessed_tracks <- function(pars) {
     options = pars$storage$google$options
   )
   logger::log_info("Downloading {pds_tracks_rds}...")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = pds_tracks_rds,
     provider = pars$storage$google$key,
     options = pars$storage$google$options

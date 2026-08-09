@@ -203,16 +203,14 @@ default:
     # -------------------------------------------------------------------------
     # MongoDB
     # -------------------------------------------------------------------------
-    # NOT yet enabled in Timor's `config.yml`. Two prerequisites:
+    # Declared in Timor's `config.yml` since migration Phase 2, which narrowed
+    # the six call sites that used to iterate `purrr::map(pars$storage, ...)`
+    # — treating every child of `storage` as a storage provider — down to
+    # `pars$storage$google`. Until that landed, a `mongodb` sibling made those
+    # calls fire a second time with NULL provider/options.
     #
-    #   1. Five call sites iterate `purrr::map(pars$storage, ...)` treating
-    #      every child of `storage` as a storage provider. A `mongodb` sibling
-    #      makes them fire a second time with NULL provider/options. They must
-    #      be narrowed to `pars$storage$google` first (migration Phase 2).
-    #   2. The validation flags sink decision (Google Sheets -> MongoDB) is
-    #      migration Phase 5.
-    #
-    # The shape below is the harmonized one; adopt it verbatim when enabling.
+    # The block is inert until a reader exists: the validation flags sink
+    # decision (Google Sheets -> MongoDB) is migration Phase 5.
     mongodb:
       connection_strings:
         main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')

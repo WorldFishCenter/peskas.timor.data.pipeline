@@ -90,15 +90,12 @@ RUN install2.r --error --skipinstalled \
     zip \
     zoo
 
-# GitHub packages.
-#
-# COASTS_REF pins the shared hub to a release tag for the duration of the
-# migration (PLAN §6, risk row "coasts ships a breaking change mid-migration").
-# It is unpinned in Phase 11, when the workflow resolves the latest release and
-# passes it as a build argument. The default keeps a plain `docker build`
-# working with no build args.
-ARG COASTS_REF=v4.5.0
-RUN Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
+# GitHub packages. COASTS_REF has no default: the workflow resolves the latest
+# peskas.coasts release and passes it in, so a build always records which hub
+# release it used. Local builds must pass --build-arg COASTS_REF=<tag>.
+ARG COASTS_REF
+RUN test -n "$COASTS_REF" && \
+    Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 

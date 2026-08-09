@@ -64,7 +64,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 
   models_filename <- add_version(pars$models$file_prefix, "rds")
   readr::write_rds(results, models_filename, compress = "gz")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     models_filename,
     pars$storage$google$key,
     pars$storage$google$options

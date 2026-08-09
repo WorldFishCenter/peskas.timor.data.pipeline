@@ -38,7 +38,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   preprocessed_updated_landings <-
-    cloud_object_name(
+    coasts::cloud_object_name(
       prefix = paste(pars$surveys$landings_3$file_prefix,
         "preprocessed",
         sep = "_"
@@ -51,7 +51,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
 
 
   preprocessed_landings <-
-    cloud_object_name(
+    coasts::cloud_object_name(
       prefix = paste(pars$surveys$landings_2$file_prefix,
         "preprocessed",
         sep = "_"
@@ -63,7 +63,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     )
 
   preprocessed_legacy_landings <-
-    cloud_object_name(
+    coasts::cloud_object_name(
       prefix = paste(pars$surveys$landings_1$file_prefix,
         "preprocessed",
         sep = "_"
@@ -81,7 +81,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
       preprocessed_landings,
       preprocessed_legacy_landings
     ),
-    download_cloud_file,
+    coasts::download_cloud_file,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
@@ -114,7 +114,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {merged_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = merged_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options

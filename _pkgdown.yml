@@ -26,14 +26,9 @@ reference:
 - subtitle: Cloud storage
   desc: Functions that interact with cloud storage providers.
   contents:
-  - matches("cloud")
   - matches("get")
   - matches("ingest")
   - add_version
-- subtitle: Google Spreadsheets
-  desc: Functions to interact with Google Drive and Spreadsheets
-  contents:
-  - matches("google")
 - title: Data
 - subtitle: Survey
   desc: Functions that help retrieving survey data

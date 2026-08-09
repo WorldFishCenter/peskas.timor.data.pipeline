@@ -34,12 +34,26 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve latest peskas.coasts release
+        id: coasts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ref=$(gh api repos/WorldFishCenter/peskas.coasts/releases/latest --jq .tag_name)
+          if [ -z "$ref" ] || [ "$ref" = "null" ]; then
+            echo "Failed to resolve latest peskas.coasts release" >&2
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "Resolved peskas.coasts ref: $ref"
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile.prod
           push: true
+          build-args: |
+            COASTS_REF=${{ steps.coasts.outputs.ref }}
           tags: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
           cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
           cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max

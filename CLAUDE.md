@@ -13,9 +13,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > a STATE.md entry.
 >
 > Everything below documents the repo **as it is today**, not the target state.
-> Where the target differs, the plan says so. Phases completed so far: **0, 1**
-> — so config, secrets and the container are already on the standard; ingestion,
-> preprocessing, validation, PDS and export are not.
+> Where the target differs, the plan says so. Phases completed so far:
+> **0, 1, 2** — so config, secrets, the container and the **storage layer** are
+> already on the standard; ingestion, preprocessing, validation, PDS and export
+> are not.
 
 ---
 
@@ -36,7 +37,7 @@ be structural, not cosmetic.
 
 | Path | What |
 |---|---|
-| [R/](R/) | 32 source files, verb-noun naming (see module map below) |
+| [R/](R/) | 30 source files, verb-noun naming (see module map below) |
 | [inst/config.yml](inst/config.yml) | the config file. A **superset**: harmonized keys plus every legacy key, so old code keeps running mid-migration |
 | [inst/config_template.yml](inst/config_template.yml) | Timor's copy of the cross-country spec, with its deviations recorded |
 | `.env` | local secrets, gitignored. Template: [.env.example](.env.example). Replaced the old `auth/` directory in Phase 1 |
@@ -71,10 +72,10 @@ Merge / model / export
 - [export-dataverse.R](R/export-dataverse.R), [send-email.R](R/send-email.R)
 
 Infrastructure
-- [cloud-storage.R](R/cloud-storage.R) (261 l) + [get-cloud-files.R](R/get-cloud-files.R) (318 l) — own GCS layer; deleted in Phase 2 in favour of `coasts::*`
+- [get-cloud-files.R](R/get-cloud-files.R) — 13 `get_*` accessors over one internal `download_versioned_rds()` helper. Timor's own GCS layer (`cloud-storage.R`, `google-drive.R`) was **deleted in Phase 2**; everything delegates to `coasts::*`
 - [utils.R](R/utils.R) — `add_version()`, `read_config()`, `load_dotenv()`
 - [peskas.timor.data.pipeline-package.R](R/peskas.timor.data.pipeline-package.R) — package-level roxygen block
-- [google-drive.R](R/google-drive.R), [utils-pipe.R](R/utils-pipe.R), [utils-tidy-eval.R](R/utils-tidy-eval.R), [globals.R](R/globals.R)
+- [utils-pipe.R](R/utils-pipe.R), [utils-tidy-eval.R](R/utils-tidy-eval.R), [globals.R](R/globals.R)
 
 ## Configuration
 
@@ -102,10 +103,13 @@ sit alongside every legacy key the current functions still read
 Legacy keys are marked `# [legacy]` and are deleted in Phase 11. Do not remove
 one before the phase that removes its last reader.
 
-`storage.mongodb` is present but **commented out**: five call sites do
-`purrr::map(pars$storage, ~ upload_cloud_file(files, .$key, .$options))`, so any
-non-`google` child of `storage` gets treated as a second storage provider.
-Narrow those to `pars$storage$google` before enabling it.
+`storage.mongodb` is **declared and inert** since Phase 2. It has no reader yet
+— the validation flags sink decision is Phase 5. It was safe to declare only
+because Phase 2 narrowed the six call sites that used to do
+`purrr::map(pars$storage, ~ upload_cloud_file(files, .$key, .$options))`, which
+treated every child of `storage` as a storage *provider*. **Nothing walks the
+children of `storage` or `pds_storage` any more; keep it that way** — always
+address a provider explicitly as `pars$storage$google`.
 
 ### Environment variables
 
@@ -172,14 +176,47 @@ Versioned object naming, from `add_version()`:
 ```
 
 The sha comes from `git2r::sha(git2r::last_commit())`, falling back to
-`$GITHUB_SHA` inside containers. `cloud_object_name(version = "latest")` resolves
-the newest.
+`$GITHUB_SHA` inside containers.
+`coasts::cloud_object_name(version = "latest")` resolves the newest.
+
+### The layer is `coasts::*` (since Phase 2)
+
+`R/cloud-storage.R` and `R/google-drive.R` are gone. Every call site is
+namespaced `coasts::{cloud_storage_authenticate, upload_cloud_file,
+download_cloud_file, cloud_object_name}`. **Always write the `coasts::` prefix**
+— Timor no longer exports these names, so an unqualified call would resolve off
+the search path or not at all.
+
+Two things Timor keeps, deliberately:
+
+- **`insistent_upload_cloud_file()` / `insistent_download_cloud_file()`** —
+  `purrr::insistently()` retry wrappers used on the PDS paths. `coasts` has no
+  retry logic anywhere; these are an upstream candidate for Phase 10.
+- **`add_version()`** — a naming helper, not a storage function. `coasts` exports
+  a body-identical copy, but delegating would mean editing ~40 call sites plus
+  three `inst/report/` drivers to remove an exported name for no behavioural
+  gain. Dedupe when it is upstreamed, not before.
+
+**`coasts::cloud_object_name()` is not a drop-in for Timor's deleted version.**
+The signatures match, but coasts returns `selected_rows$name[1]` where Timor
+returned the whole vector. Every Timor call site was audited against the dev
+buckets and only one relied on the vector: the track enumeration in
+`ingest_pds_tracks()`, which needs ~96k names. It now calls
+`googleCloudStorageR::gcs_list_objects()` directly — a bucket scan, which is
+what it always was. Never use `cloud_object_name()` to enumerate a bucket.
+
+Prefer `coasts::resolve_storage_opts(pars, type)` over reaching into
+`pars$storage$google$options_*` by hand. It knows `"coasts"` (hub, falling back
+to `options`), `"country"` and `"pds"` — but **not** Timor's `public_storage`,
+which is read directly in `get_public_files()` / `get_tracks_map()`.
 
 | bucket | contents |
 |---|---|
 | `timor` / `timor-dev` | surveys and derived tables: raw `.csv`, everything downstream `.rds` |
 | `pds-timor` / `pds-timor-dev` | one gzipped CSV per GPS trip: `pds-track-<trip_id>__*__.csv.gz` |
 | `public-timor` / `public-timor-dev` | `portal-*.json` — the live portal contract |
+| `peskas-coasts` / `peskas-coasts-dev` | the shared cross-country hub (`options_coasts`). **Read *and* written** by coasts: `assets__*`, `taxa-fishbase-enriched`, H3 effort/CPUE grids, and per-country `*_fishery_metrics` / `*_monthly_summaries_map`. Both are live — `default` must stay on `-dev` |
+| `peskas-api-prod` / `peskas-api-dev` | cross-country API parquet (`options_api`), live for Kenya/Moz/Zanzibar; Timor lands in Phase 6 |
 
 **No lifecycle policy is set.** Every pipeline run appends new versions and
 nothing is ever deleted; `gs://timor` holds ~33k objects and `gs://pds-timor`
@@ -260,13 +297,18 @@ docker build -f Dockerfile.prod -t peskas-timor .
 `Dockerfile` (dev, used by `docker-compose.yaml`) mirrors the same package set
 and the same `COASTS_REF`. Keep the two in step.
 
-**`devtools::check()` baseline** (measured 2026-07-31 against the Phase 0
-commit and again after Phase 1): 1 WARNING (undocumented `get_kobo_data()`
-arguments), 5 NOTEs, and one pre-existing testthat failure —
-`test-pre-process-landings.R:16`, `nrow(nested$_attachments[[1]])` is 3, not 2.
-Do not read those as a regression. Two of the NOTEs are Phase 1's own and are
-expected to clear later: `arrow` and `coasts` are declared in Imports but not
-used until Phases 3 and 2.
+**`devtools::check()` baseline** (measured 2026-07-31 against the Phase 0 and
+Phase 1 commits, and again after Phase 2): 1 WARNING (undocumented
+`get_kobo_data()` arguments), 5 NOTEs, and one pre-existing testthat failure —
+`test-pre-process-landings.R:16`, `nrow(nested$_attachments[[1]])` is 3, not 2
+(`FAIL 1 | WARN 9 | SKIP 0 | PASS 9`; the 9 warnings are all `.data`-in-
+tidyselect deprecations from `pt_nest_*`). Do not read those as a regression.
+
+The unused-Imports NOTE now names **`arrow` only** — `coasts` dropped out of it
+in Phase 2 when the storage calls became real `coasts::*` calls. That NOTE is
+the canary for whether `coasts` is genuinely wired in; if `coasts` ever
+reappears in it, the delegation has been undone. `arrow` clears in Phase 3/4
+when parquet lands.
 
 ## CI health — most workflows are dead
 
@@ -315,7 +357,9 @@ function is exercised just because a workflow references it.
   `get_preprocessed_landings()`) read config keys that no longer exist — they
   are uncalled, and are deleted in Phase 11;
   `ingest_rfish_table()` is `continue-on-error` despite being a hard dependency
-  two jobs later (Phase 9); `export_files()` uploads unnormalised object names
-  (Phase 8).
+  two jobs later (Phase 9). **AUDIT §8.5 is stale**: `export_files()` already
+  passes basenames as `name` and normalises correctly — verified in Phase 2. The
+  45 leaked absolute-path objects in `public-timor` date from January 2026 and
+  are historical residue, not a live bug. Deleting them is Phase 11.
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.

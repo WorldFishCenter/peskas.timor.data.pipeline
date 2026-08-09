@@ -1,0 +1,168 @@
+# Changes needed in `peskas.coasts` before Timor can delegate
+
+Companion to [PLAN.md](PLAN.md). Written 2026-08-02 while scoping the removal of
+Timor's `rfish-table` dependency. Every item is measured, not inferred — the
+evidence is in [STATE.md](STATE.md) Addenda 1–3.
+
+Repo: `WorldFishCenter/peskas.coasts` (local checkout
+`~/Desktop/work/wf_projects/peskas.coasts`, currently at `v4.5.0` / `c2bdc58`).
+Timor is pinned to `v4.5.0` for the migration, so each of these lands in a new
+release that Timor then re-pins to.
+
+---
+
+## Blocking — Timor's weight path cannot move off `rfish-table` without these
+
+### C1. `enrich_taxa()` hardcodes FAO Area 57
+
+`R/fishbase.R`:
+
+```r
+dplyr::filter(.data$AreaCode %in% c(NA_integer_, 57))   # Western Indian Ocean
+```
+
+**Timor-Leste is FAO Area 71** (Western Central Pacific). Called as-is for Timor
+it filters out the species it is meant to enrich. Kenya, Mozambique, Zanzibar are
+all Area 51/57, which is why nobody has hit this.
+
+Make the area(s) a config value, e.g. `conf$metadata$fishbase$fao_areas`,
+defaulting to the current behaviour so existing countries are unaffected.
+
+### C2. coasts has no length-weight coefficients
+
+`enrich_taxa()` currently emits traits and nutrients only — `Vulnerability`,
+`DemersPelag`, `FoodTroph`, `feeding_guild`, `Calcium`, `Iron`, `Omega3`,
+`Protein`, `VitaminA`, `Zinc`. **No `a`, no `b`.**
+
+The length-weight fetch exists only in
+`peskas.mozambique.data.pipeline/R/model-taxa.R`
+(`getLWCoeffs()` / `get_length_weight_batch()`). Upstream it.
+
+**Do not upstream Moz's `Type == "TL"` filter.** Moz does:
+
+```r
+dplyr::filter((database == "fishbase" & Type == "TL") | database == "sealifebase", ...)
+```
+
+Measured against Timor's known-good coefficient table: no taxon loses *all*
+coefficients under TL-only, but four lose more than half their species —
+`CJX` 10→3, `EMP` 25→12, `MOB` 9→4, `YDX` 11→4. Since Timor's
+`estimate_weight()` aggregates across the species within a taxon code, that
+shifts the estimate. Return **all** `Type` values plus `EsQ` and let the caller
+filter.
+
+### C3. coasts has no length-length conversion
+
+`grep -rn "length_length"` over `coasts/R/` and Moz's `R/` returns **nothing**.
+
+Timor needs `rfishbase::length_length()` → `aL`, `bL`, `Length1`, `Length2`
+(filtered to `Length1`/`Length2` in `TL`/`FL`), because **Timor's v1 survey
+records fork length**:
+
+```r
+length_type = dplyr::case_when(
+  !is.na(length_type)                  ~ length_type,
+  survey_version == "v1"               ~ "FL",
+  survey_version %in% c("v2", "v3")    ~ "TL")
+```
+
+The coefficient table is 2,684 TL rows vs 1,829 FL and 617 SL. Without
+length-length, every v1 catch row with a measured length loses its weight.
+Moz never hit this because its form records one length type.
+
+Add it alongside C2, keyed the same way (`alpha3_code` → species → coefficients).
+
+### C4. Decide where the enriched snapshot lives
+
+`enrich_taxa()` writes to `conf$storage$google$options` (the **country** bucket),
+while `ingestion-pds.R` reads the assets snapshot from
+`resolve_storage_opts(conf, "coasts")` (the **hub**). PLAN's Phase 3 flags this
+already. The hub holds 118 prod / 22 dev `taxa-fishbase-enriched__*` objects, so
+the hub is the de-facto home — make the writer agree with the readers.
+
+---
+
+## Non-blocking, but worth batching into the same release
+
+### C5. No retry logic anywhere in coasts
+
+Confirmed by grep over `pds-api.R` and `ingestion-pds.R` for
+`retry` / `insistently` / `req_retry`. Timor keeps
+`insistent_upload_cloud_file()` / `insistent_download_cloud_file()`
+(`purrr::insistently` + `rate_backoff`) precisely because coasts has no
+equivalent — PLAN §10 already lists these as upstream candidates.
+
+Priority case: the PDS **trip** fetch is a single unprotected `httr::GET` for the
+whole history and it is what failed run 30637659244.
+
+### C6. `resolve_storage_opts()` has no `public` type
+
+It knows `"coasts"`, `"country"`, `"pds"`. Timor also has a `public_storage`
+bucket (the live portal JSON), read directly in `get_public_files()` and
+`get_tracks_map()`. Minor.
+
+### C7. Register Timor
+
+- Add `timor` to the `api.trips` block of `peskas.coasts/inst/conf.yml` (needed
+  for migration Phase 6).
+- Add Timor's PDS customer name to the coasts customer list (Phase 7). **The
+  string is not recorded anywhere in Timor's repo** — read it off the PDS API
+  first.
+
+---
+
+## Direction reversal to note
+
+PLAN §10 lists **nutrients / RDI** as a Timor→coasts upstream candidate,
+"Timor's is the only implementation". That is no longer true: `enrich_taxa()`
+already emits `Calcium`, `Iron`, `Omega3`, `Protein`, `VitaminA`, `Zinc`. So the
+Phase 8 task is to **compare Timor's `calculate-nutrients.R` against coasts'
+output and delete Timor's if they agree** — not to donate it.
+
+Likewise, PLAN sequences Phase 4b (adopt coasts helpers) *before* Phase 10
+(upstream to coasts). For weights the dependency runs the other way: **C1–C3
+must land before Phase 4b can do anything.**
+
+---
+
+## What Timor gains, beyond consistency
+
+Not just deduplication — measured coverage:
+
+`rfishbase::species()` (Timor's current expansion) is **FishBase-only**. The
+known-good pinned table therefore has **zero `a`/`b` for 11 of 56 taxon codes**:
+`COZ` cockles, `CRA` crabs, `CUX` sea cucumbers, `IAX` cuttlefish, `OCZ`
+octopus, `PEZ` shrimps, `SLV` lobster, `SWX` seaweed — plus `FLY`, `LGE`, `MZZ`.
+Eight are invertebrates or algae, i.e. **SeaLifeBase** territory.
+
+Moz's fetch queries `server = "fishbase"` *and* `server = "sealifebase"`, and
+`coasts::get_combined_tbl()` / `get_taxa_backbone()` already combine both. So
+adopting it should *add* weight coverage for taxa Timor currently cannot weigh
+at all — an improvement, not just a refactor.
+
+It also removes an undeclared **GBIF** dependency: `get_catch_types()` calls
+`taxize::tax_rank(db = "gbif")` to derive the rank that `get_fish_length()`
+branches on. `coasts::expand_taxonomic_info()` uses the FishBase/SeaLifeBase
+backbone instead.
+
+---
+
+## Acceptance gate for any replacement
+
+The regeneration has been silently broken for ~21 months (STATE Addendum 1):
+every `rfish-table` version since 2026-01-19 has 1,323 rows / 88 species against
+the pinned 5,926 / 693. **Do not accept a replacement because "the job ran".**
+
+Required before the pin is removed:
+
+| check | baseline |
+|---|---|
+| distinct species | **693** |
+| coefficient rows | **5,926** |
+| taxon codes with ≥1 `a`/`b` | **45 of 56** (target: >45, via SeaLifeBase) |
+| mean `a` | 0.02716 |
+| mean `b` | 2.9781 |
+| length-length rows present | 40 of 56 codes |
+
+Then re-run `calculate_weights()` and diff total catch weight against the Phase 0
+golden snapshot. The portal publishes these numbers.

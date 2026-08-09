@@ -15,3 +15,4 @@ A dataframe of validated survey landings.
 \description{
 Download validated Peskas data from Google Cloud.
 }
+\keyword{storage}

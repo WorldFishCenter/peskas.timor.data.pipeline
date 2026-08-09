@@ -412,41 +412,31 @@ default:
         service_account_key: !expr Sys.getenv('GCP_SA_KEY')
 
     # -------------------------------------------------------------------------
-    # MongoDB — DELIBERATELY NOT ENABLED YET. Do not uncomment in isolation.
+    # MongoDB — [new] enabled in Phase 2.
     # -------------------------------------------------------------------------
-    # Five call sites iterate over `pars$storage` treating every child as a
-    # storage *provider*:
-    #
-    #   purrr::map(pars$storage, ~ upload_cloud_file(files, .$key, .$options))
-    #
-    #   R/ingest-landings.R:68, R/ingest-landings.R:135,
-    #   R/ingest-pds-data.R:54, R/preprocess-landings.R:379,
-    #   R/preprocess-pds-trips.R:251
-    #
-    # Adding a `mongodb` sibling under `storage` makes those calls run a second
-    # time with `key = NULL, options = NULL` — a live-pipeline break, not a
-    # no-op. Narrow them to `pars$storage$google` first (Phase 2), then enable
-    # this block with the flags-sink decision (Phase 5). The shape is kept in
-    # `inst/config_template.yml`.
-    #
-    # mongodb:
-    #   connection_strings:
-    #     main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
-    #     validation: !expr Sys.getenv('MONGODB_CONNECTION_STRING_VALIDATION')
-    #   databases:
-    #     pipeline:
-    #       database_name: timor-dev
-    #       collections:
-    #         export: export
-    #     validation:
-    #       database_name: validation-dev
-    #       collections:
-    #         flags: surveys_flags
-    #         enumerators_stats: enumerators_stats
+    # Safe to declare only because Phase 2 narrowed every call site that used to
+    # iterate `purrr::map(pars$storage, ...)` — treating each child of `storage`
+    # as a storage *provider* — down to `pars$storage$google`. Nothing walks
+    # `storage`'s children any more, so a `mongodb` sibling is inert until a
+    # reader is written. The flags sink itself is decided in Phase 5.
     #
     # There is no `dashboard` database: Timor's portal is served from
     # versioned `portal-*.json` in the public bucket, not from MongoDB.
     # That is a locked decision (PLAN §2.1).
+    mongodb:
+      connection_strings:
+        main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
+        validation: !expr Sys.getenv('MONGODB_CONNECTION_STRING_VALIDATION')
+      databases:
+        pipeline:
+          database_name: timor-dev
+          collections:
+            export: export
+        validation:
+          database_name: validation-dev
+          collections:
+            flags: surveys_flags
+            enumerators_stats: enumerators_stats
 
   pds_storage:
     google:
@@ -477,12 +467,12 @@ production:
         bucket: peskas-coasts
       options_api:
         bucket: peskas-api-prod
-    # mongodb:
-    #   databases:
-    #     pipeline:
-    #       database_name: timor-prod
-    #     validation:
-    #       database_name: validation-prod
+    mongodb:
+      databases:
+        pipeline:
+          database_name: timor-prod
+        validation:
+          database_name: validation-prod
   pds_storage:
     google:
       options:

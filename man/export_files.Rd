@@ -36,7 +36,7 @@ The function expects \code{summary_data} (downloaded) to contain fields such as
 
 Assumes a configured public Google cloud storage provider in
 \code{pars$public_storage$google} and relies on helper functions such as
-\code{add_version()}, \code{upload_cloud_file()}, and JSON serialization via \code{toJSON()}.
+\code{add_version()}, \code{coasts::upload_cloud_file()}, and JSON serialization via \code{toJSON()}.
 }
 \examples{
 \dontrun{
@@ -45,6 +45,6 @@ export_files()
 }
 \seealso{
 get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
-upload_cloud_file, add_version
+coasts::upload_cloud_file, add_version
 }
 \keyword{workflow}

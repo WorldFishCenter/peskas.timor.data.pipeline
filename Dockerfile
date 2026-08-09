@@ -80,8 +80,10 @@ RUN install2.r --error --skipinstalled \
 
 # GitHub packages. COASTS_REF matches Dockerfile.prod — keep the two in step so
 # a local RStudio session runs against the same coasts release as CI.
-ARG COASTS_REF=v4.5.0
-RUN Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
+# docker-compose passes it; a bare `docker build` needs --build-arg.
+ARG COASTS_REF
+RUN test -n "$COASTS_REF" && \
+    Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
 RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 

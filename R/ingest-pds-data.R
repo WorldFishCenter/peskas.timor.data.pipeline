@@ -50,8 +50,11 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading files to cloud...")
-  # Iterate over multiple storage providers if there are more than one
-  purrr::map(pars$storage, ~ upload_cloud_file(file_list, .$key, .$options))
+  coasts::upload_cloud_file(
+    file = file_list,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 
   logger::log_success("File upload succeded")
 }
@@ -100,7 +103,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   pars <- read_config()
 
   pds_trips_csv <-
-    cloud_object_name(
+    coasts::cloud_object_name(
       prefix = pars$pds$trips$file_prefix,
       provider = pars$storage$google$key,
       extension = "csv",
@@ -108,7 +111,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
     )
   logger::log_info("Retrieving {pds_trips_csv}")
   # get trips data frame
-  pds_trips_mat <- download_cloud_file(
+  pds_trips_mat <- coasts::download_cloud_file(
     name = pds_trips_csv,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -128,13 +131,26 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
     ext <- "csv"
   }
 
-  # list id tracks already in bucket
-  file_list_id <- cloud_object_name(
-    prefix = pars$pds$tracks$file_prefix,
+  # List the track ids already in the bucket. This is a *bucket enumeration*,
+  # not a versioned-object lookup: every track lives under its own base name
+  # (`pds-track-<trip_id>`), so ~96k names have to come back. Timor's deleted
+  # `cloud_object_name()` returned the whole vector, but
+  # `coasts::cloud_object_name()` returns only the first match, so it cannot be
+  # used here — a single name would make `tracks_to_download` the entire trip
+  # list and re-fetch every track from the PDS API. Enumerate the bucket
+  # directly, exactly as the tail of this same function already does for
+  # `tracks_names`.
+  coasts::cloud_storage_authenticate(
     provider = pars$pds_storage$google$key,
-    extension = ext,
     options = pars$pds_storage$google$options
-  ) %>%
+  )
+  file_list_id <-
+    googleCloudStorageR::gcs_list_objects(
+      bucket = pars$pds_storage$google$options$bucket,
+      prefix = pars$pds$tracks$file_prefix
+    ) %>%
+    dplyr::filter(stringr::str_detect(.data$name, paste0("\\.", ext, "$"))) %>%
+    dplyr::pull(.data$name) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
@@ -163,16 +179,13 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
     }
 
     logger::log_info("Uploading {path} to cloud...")
-    # Iterate over multiple storage providers if there are more than one
-    purrr::map(
-      pars$pds_storage,
-      ~ purrr::walk(
-        .x = path,
-        .f = ~ insistent_upload_cloud_file(
-          file = .,
-          provider = pars$pds_storage$google$key,
-          options = pars$pds_storage$google$options
-        )
+    # Retry each file individually rather than the batch as a whole
+    purrr::walk(
+      .x = path,
+      .f = ~ coasts::insistent_upload_cloud_file(
+        file = .,
+        provider = pars$pds_storage$google$key,
+        options = pars$pds_storage$google$options
       )
     )
     logger::log_success("File upload succeded")
@@ -202,62 +215,13 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {tracks_names_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = tracks_names_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
   )
 }
 
-#' Insistent version of `upload_cloud_file()`
-#'
-#' Just like `upload_cloud_file()`, this function takes a vector of tracks files
-#' as argument and upload them to the cloud. The function uses
-#' [purrr::insistently] in order to continue to upload files despite stale OAuth
-#' token.
-#'
-#' @param delay he time interval to suspend execution for, in seconds.
-#' @param ... Inputs to `upload_cloud_file()`
-#'
-#' @return No output. This function is used for it's side effects
-#' @export
-#'
-insistent_upload_cloud_file <- function(..., delay = 3) {
-  purrr::insistently(
-    upload_cloud_file,
-    rate = purrr::rate_backoff(
-      pause_cap = 60 * 5,
-      max_times = 10
-    ),
-    quiet = F
-  )(...)
-  Sys.sleep(delay)
-}
-
-#' Insistent version of `download_cloud_file()`
-#'
-#' Just like `download_cloud_file()`, this function takes a vector of tracks files
-#' as argument and download them to the cloud. The function uses
-#' [purrr::insistently] in order to continue to download files despite stale OAuth
-#' token.
-#'
-#' @param delay he time interval to suspend execution for, in seconds.
-#' @param ... Inputs to `download_cloud_file()`
-#'
-#' @return No output. This function is used for it's side effects
-#' @export
-#'
-insistent_download_cloud_file <- function(..., delay = 3) {
-  purrr::insistently(
-    download_cloud_file,
-    rate = purrr::rate_backoff(
-      pause_cap = 60 * 5,
-      max_times = 10
-    ),
-    quiet = F
-  )(...)
-  Sys.sleep(delay)
-}
 
 
 #' Ingest tracks data as a single file
@@ -284,7 +248,7 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
       ~ readr::write_rds(.y, .x, compress = "gz")
     ) %>%
     purrr::walk(
-      upload_cloud_file,
+      coasts::upload_cloud_file,
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     )
@@ -485,7 +449,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     dpi = pars$pds$tracks$map$png$dpi_resolution
   )
   logger::log_info("Uploading {map_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = map_filename,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
@@ -579,7 +543,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   readr::write_rds(tracks_grid, map_grid_name)
 
   logger::log_info("Uploading {map_grid_name} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = map_grid_name,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
@@ -760,7 +724,7 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
   kepler_mapper("kepler_tracks.csv")
 
   logger::log_info("Uploading kepler_pds_map.html to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = "kepler_pds_map.html",
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options

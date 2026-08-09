@@ -9,7 +9,8 @@ get_merged_trips(pars, ...)
 \arguments{
 \item{pars}{The configuration file}
 
-\item{...}{Any additional parameters}
+\item{...}{Any additional parameters, passed on to
+\code{\link[coasts:cloud_object_name]{coasts::cloud_object_name()}} — for example \code{version} or \code{exact_match}.}
 }
 \value{
 A dataframe of validated survey landings and PDS trips.
@@ -17,3 +18,4 @@ A dataframe of validated survey landings and PDS trips.
 \description{
 Download validated Peskas surveys and PDS data merged by temporal matching
 }
+\keyword{storage}

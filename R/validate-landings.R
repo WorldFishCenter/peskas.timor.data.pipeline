@@ -201,7 +201,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     compress = "gz"
   )
   logger::log_info("Uploading {validated_landings_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = validated_landings_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -285,7 +285,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     file = alerts_filename,
     compress = "gz"
   )
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = alerts_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -363,7 +363,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #' @return A dataframe.
 #' @export
 get_merged_landings <- function(pars, suffix = "") {
-  landings_rds <- cloud_object_name(
+  landings_rds <- coasts::cloud_object_name(
     prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
     provider = pars$storage$google$key,
     extension = "rds",
@@ -372,7 +372,7 @@ get_merged_landings <- function(pars, suffix = "") {
     exact_match = TRUE
   )
   logger::log_info("Downloading {landings_rds}...")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = landings_rds,
     provider = pars$storage$google$key,
     options = pars$storage$google$options

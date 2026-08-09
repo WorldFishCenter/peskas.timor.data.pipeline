@@ -11,7 +11,7 @@ rmarkdown::render(
 
 path <- paste("report", filename, sep = "/")
 
-peskas.timor.data.pipeline::upload_cloud_file(
+coasts::upload_cloud_file(
   file = system.file(path, package = "peskas.timor.data.pipeline"),
   name = filename,
   provider = pars$public_storage$google$key,

@@ -57,7 +57,7 @@ merge_trips <- function() {
     compress = "gz"
   )
   logger::log_info("Uploading {merged_trips_filename} to cloud storage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = merged_trips_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -125,7 +125,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   matched_pds_tracks <-
     purrr::map(
       tracks_list,
-      download_cloud_file,
+      coasts::download_cloud_file,
       pars$pds_storage$google$key,
       pars$pds_storage$google$options
     ) %>%
@@ -169,7 +169,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
 
   # upload
   logger::log_info("Uploading zip folder to cloud storage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = "matched_tracks_landings.zip",
     provider = pars$storage$google$key,
     options = pars$storage$google$options

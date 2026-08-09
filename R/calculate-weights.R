@@ -58,7 +58,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {landings_with_weight_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = landings_with_weight_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -421,7 +421,7 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
     compress = "gz"
   )
   logger::log_info("Uploading {rfish_table_filename} to cloud storage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = rfish_table_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -431,7 +431,7 @@ ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
 
 # get weight-length table from google cloud
 get_rfish_table <- function(pars) {
-  rfish_rds <- cloud_object_name(
+  rfish_rds <- coasts::cloud_object_name(
     prefix = paste(pars$metadata$rfishtable$file_prefix),
     provider = pars$storage$google$key,
     extension = "rds",
@@ -440,7 +440,7 @@ get_rfish_table <- function(pars) {
     exact_match = TRUE
   )
   logger::log_info("Downloading {rfish_rds}...")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = rfish_rds,
     provider = pars$storage$google$key,
     options = pars$storage$google$options

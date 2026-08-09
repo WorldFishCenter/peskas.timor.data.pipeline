@@ -16,3 +16,4 @@ A vector of unique trips.
 Download the list of trips from the latest version of PDS single-file
 tracks data.
 }
+\keyword{storage}

@@ -23,7 +23,7 @@ the same format and syntax as recent landings.
 authentication_details <- readLines("location_of_json_file.json")
 # obtain the latest version of all files corresponding to timor-landings-v1
 legacy_data <-
-  cloud_object_name(
+  coasts::cloud_object_name(
     prefix = "timor-landings-v1",
     version = "latest",
     provider = "gcs",

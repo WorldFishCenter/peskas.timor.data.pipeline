@@ -12,3 +12,4 @@ get_tracks_map(pars)
 \description{
 Download the static map of Timor pds tracks.
 }
+\keyword{storage}

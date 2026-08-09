@@ -18,3 +18,4 @@ storage in a single file. Since the transferred data is relatively large,
 the synchronization and uploading are refreshed when the complete track file
 is outdated by at least 5000 trips.
 }
+\keyword{storage}

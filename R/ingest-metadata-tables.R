@@ -58,6 +58,6 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
     )
 
   logger::log_success("Uploading to the cloud...")
-  upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
+  coasts::upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
   logger::log_success("File upload succeded")
 }

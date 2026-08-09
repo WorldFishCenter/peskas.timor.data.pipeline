@@ -37,7 +37,7 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
+  landings_csv <- coasts::cloud_object_name(
     prefix = pars$surveys$landings_3$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
@@ -46,7 +46,7 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Retrieving {landings_csv}")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = landings_csv,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -89,7 +89,7 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = preprocessed_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -141,7 +141,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
+  landings_csv <- coasts::cloud_object_name(
     prefix = pars$surveys$landings_2$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
@@ -150,7 +150,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Retrieving {landings_csv}")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = landings_csv,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -180,7 +180,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = preprocessed_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -232,7 +232,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
+  landings_csv <- coasts::cloud_object_name(
     prefix = pars$surveys$landings_2$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
@@ -240,7 +240,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
     options = pars$storage$google$options
   )
 
-  preprocessed_step_1 <- cloud_object_name(
+  preprocessed_step_1 <- coasts::cloud_object_name(
     prefix = paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_"),
     provider = pars$storage$google$key,
     extension = "rds",
@@ -251,7 +251,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Retrieving {landings_csv} and {preprocessed_step_1}")
 
   c(landings_csv, preprocessed_step_1) %>%
-    purrr::map(download_cloud_file,
+    purrr::map(coasts::download_cloud_file,
       provider = pars$storage$google$key,
       options = pars$storage$google$options
     )
@@ -292,7 +292,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = preprocessed_filename,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -339,7 +339,7 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
 
   pars <- read_config()
 
-  landings_csv <- cloud_object_name(
+  landings_csv <- coasts::cloud_object_name(
     prefix = pars$surveys$landings_1$file_prefix,
     provider = pars$storage$google$key,
     extension = "csv",
@@ -348,7 +348,7 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Retrieving {landings_csv}")
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = landings_csv,
     provider = pars$storage$google$key,
     options = pars$storage$google$options
@@ -376,5 +376,9 @@ preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  purrr::map(pars$storage, ~ upload_cloud_file(preprocessed_filename, .$key, .$options))
+  coasts::upload_cloud_file(
+    file = preprocessed_filename,
+    provider = pars$storage$google$key,
+    options = pars$storage$google$options
+  )
 }

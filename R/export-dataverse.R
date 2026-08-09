@@ -19,7 +19,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   prefixes <- c("trips", "catch", "aggregated-month")
   files_names <-
-    purrr::map(prefixes, ~ cloud_object_name(
+    purrr::map(prefixes, ~ coasts::cloud_object_name(
       prefix = paste(pars$export$file_prefix, .x, sep = "_"),
       version = "latest",
       extension = "tsv",
@@ -32,7 +32,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Retrieving public data to release...")
   purrr::map(files_names,
-    download_cloud_file,
+    coasts::download_cloud_file,
     provider = pars$public_storage$google$key,
     options = pars$public_storage$google$options
   )

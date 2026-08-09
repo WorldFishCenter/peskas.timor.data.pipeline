@@ -12,3 +12,4 @@ get_validation_sheet(pars)
 \description{
 Get the peskas validation backup sheet from google cloud
 }
+\keyword{storage}

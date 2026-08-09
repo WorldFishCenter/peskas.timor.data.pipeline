@@ -12,3 +12,4 @@ get_preprocessed_sheets(pars)
 \description{
 Download preprocessed Peskas metadata from Google Sheets
 }
+\keyword{storage}
