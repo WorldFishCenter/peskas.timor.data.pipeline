@@ -35,7 +35,12 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
     pars,
     metadata$morphometric_table
   )
-  nutrients_table <- get_nutrients_table(pars) %>%
+  # Reuse the expansion the coefficient fetch already did, rather than paying
+  # for a second FishBase round-trip.
+  nutrients_table <- get_nutrients_table(
+    pars,
+    expanded = morphometric_tables$expanded
+  ) %>%
     dplyr::rename(species = .data$interagency_code)
 
   landings_with_weight <- join_weights(
@@ -66,200 +71,9 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 }
 
 
-#' Download metadata catch types
-#'
-#' This function downloads airtable tables containing catches metadata.
-#'
-#' @param pars The configuration file
-#'
-#' @return A dataframe containing taxonomic info and common names associated to
-#'  species groups.
-#' @export
-#'
-get_catch_types <- function(pars) {
-  metadata <- get_preprocessed_sheets(pars)
-
-  catch_types <- metadata$catch_types
-  fao_records <- metadata$fao_catch
-
-  catches_tab <- dplyr::left_join(
-    catch_types,
-    fao_records,
-    by = "interagency_code"
-  ) %>%
-    dplyr::filter(!is.na(.data$interagency_code))
-
-  spp <- catches_tab %>%
-    dplyr::select(
-      .data$interagency_code,
-      .data$isscaap_taxocode.x,
-      .data$name_scientific,
-      .data$catch_family,
-      .data$catch_name_en,
-      .data$taxo_name_en
-    )
-
-  ranks <- taxize::tax_rank(spp$name_scientific, db = "gbif", rows = 1)
-
-  ranks_tab <-
-    ranks %>%
-    purrr::map(~ stringr::str_to_title(.x)) %>%
-    purrr::map(~ tidyr::as_tibble(.x)) %>%
-    purrr::map_dfr(~ dplyr::mutate_all(.x, as.character)) %>%
-    dplyr::rename(taxa_rank = .data$value) %>%
-    dplyr::bind_cols(spp) %>%
-    dplyr::mutate(name = gsub(" spp", "", .data$name_scientific)) %>%
-    dplyr::mutate(name = gsub("\\s*\\([^\\)]+\\)", "", .data$name)) %>%
-    dplyr::mutate(
-      name = dplyr::case_when(
-        name == "Thunnini" ~ "Tuna",
-        name == "Selachimorpha" ~ "Shark",
-        name == "Rajiformes" ~ "Myliobatiformes",
-        name == "Hyporhamphus quoyi" ~ "Garfish",
-        TRUE ~ .data$name
-      ),
-      taxa_rank = dplyr::case_when(
-        name == "Tuna" ~ "comm_name",
-        name == "Shark" ~ "comm_name",
-        name == "Garfish" ~ "comm_name",
-        TRUE ~ .data$taxa_rank
-      )
-    )
-
-  ranks_tab %>%
-    dplyr::group_by(.data$interagency_code) %>%
-    dplyr::filter(dplyr::row_number() == 1)
-}
 
 
-#' Download species body-length parameters
-#'
-#' This function takes species, group of species or common names as arguments and
-#' returns a data frame containing weigth-length parameters from
-#' FishBase database.
-#'
-#' @param taxa The name of the species/groups from which retrieve lengths parameters.
-#' @param rank The taxonomical ranking, can be `Species`, `Genus`, `Family`, or
-#' `comm_name.` The latter is an abbreviation for the  common name of a species/group.
-#' @param country_code The code of the country associated to FishBase database, default
-#' code include Timor-Leste and Indonesia. Full list at
-#' \url{https://www.fishbase.se/country/ListOfCountryCodes.php}.
-#'
-#' @return A data frame containing species length parameters
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' get_fish_length(
-#'   taxa = "Sardine", rank = "comm_name",
-#'   country_code = 626
-#' )
-#' }
-get_fish_length <- function(taxa, rank = NULL, country_code = NULL) {
-  if (rank == "comm_name") {
-    sp_list <- rfishbase::common_to_sci(taxa) %>%
-      magrittr::extract2("Species") %>%
-      unique()
-  } else if (rank == "Class") {
-    sp_list <- rfishbase::species(Class = taxa) %>% unique()
-  } else if (rank == "Order") {
-    sp_list <- rfishbase::species(Order = taxa) %>% unique()
-  } else if (rank == "Family") {
-    sp_list <- rfishbase::species(Family = taxa) %>% unique()
-  } else if (rank == "Genus") {
-    sp_list <- rfishbase::species(Genus = taxa) %>% unique()
-  } else if (rank == "Species") {
-    sp_list <- rfishbase::species(Species = taxa) %>% unique()
-  }
 
-  country_table <- sp_list %>%
-    rfishbase::country()
-
-  specs <- country_table %>%
-    dplyr::filter(.data$C_Code %in% country_code) %>%
-    magrittr::extract2("Species") %>%
-    unique()
-
-  # If its not found in the country just get them all. THis is because it's
-  # likely the species is present but there are no museum records in the
-  # FishBase database
-  if (length(specs) == 0) {
-    specs <- country_table %>%
-      magrittr::extract2("Species") %>%
-      unique()
-  }
-
-  specs_weigth <- rfishbase::length_weight(specs)
-
-  specs_length <- rfishbase::length_length(specs) %>%
-    dplyr::filter(
-      .data$Length1 %in% c("TL", "FL") & .data$Length2 %in% c("TL", "FL")
-    ) %>%
-    dplyr::select(
-      .data$Species,
-      .data$Length1,
-      .data$Length2,
-      aL = .data$a,
-      bL = .data$b
-    )
-
-  specs_lw <- dplyr::left_join(specs_weigth, specs_length, by = "Species")
-
-  specs_lw
-}
-
-#' Retrieve weight-length parameters
-#'
-#' This function takes a table returned from `get_catch_types` and returns detailed
-#' weight-length parameters from each species group.
-#'
-#' @param data A table returned from `get_catch_types`
-#' @param country_code ISO country code for species lookup
-#'
-#' @return A data frame containing species length parameters
-#' @export
-#' @importFrom stats na.omit
-#'
-#' @examples
-#' \dontrun{
-#' rank_tab <- get_catch_types(pars)
-#' retrieve_lengths(rank_tab)
-#' }
-#'
-retrieve_lengths <- function(data, country_code) {
-  rfish_tab <- NULL
-
-  for (i in unique(data$interagency_code)) {
-    dat <- dplyr::filter(data, .data$interagency_code %in% i)
-    int_code <- unique(i)
-
-    sp_len <-
-      get_fish_length(
-        taxa = dat$name,
-        rank = dat$taxa_rank,
-        country_code = country_code
-      )
-
-    sp_len <- dplyr::mutate(
-      sp_len,
-      interagency_code = rep(int_code, nrow(sp_len))
-    ) %>%
-      dplyr::select(.data$interagency_code, tidyselect::everything())
-
-    rfish_tab <- rbind(rfish_tab, sp_len)
-  }
-  miss_groups <-
-    dplyr::setdiff(
-      data$interagency_code,
-      rfish_tab$interagency_code
-    ) %>%
-    dplyr::as_tibble() %>%
-    dplyr::rename(interagency_code = .data$value) %>%
-    na.omit(.data)
-
-  rfish_tab <- dplyr::add_row(rfish_tab, miss_groups)
-  rfish_tab
-}
 
 #' Join length-weights and nutritional parameters info to preprocessed landings
 #'
@@ -353,18 +167,9 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
         TRUE ~ .data$length_type
       )
     ) %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(
-      weight = estimate_weight(
-        length = .data$mean_length,
-        .data$length_type,
-        code = .data$species,
-        .data$n_individuals,
-        rfish_tab$length_weight,
-        rfish_tab$length_length
-      )
-    ) %>%
-    dplyr::ungroup() %>%
+    normalise_length_to_tl(rfish_tab$length_length) %>%
+    estimate_weight(rfish_tab$length_weight) %>%
+    dplyr::select(-"length_tl") %>%
     dplyr::left_join(nutrients_table, by = "species") %>%
     dplyr::mutate(
       weight = abs(.data$weight),
@@ -395,175 +200,297 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
 }
 
 
-#' Ingest species weight-length info
+
+
+#' Build per-taxon length-weight and length-length coefficients
 #'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
+#' Fetches coefficients from FishBase and SeaLifeBase via
+#' [coasts::get_taxa_morphometrics()] and collapses them to **one coefficient
+#' pair per taxon code**, the same aggregation Mozambique uses: geometric mean
+#' of `a`, arithmetic mean of `b`.
 #'
-#' @return No output. This function is used for it's side effects
+#' Two flags are non-default and both are required for Timor. `filter_by_area`
+#' is off because FAO-area filtering costs ~40% of the species that carry usable
+#' coefficients, and body form does not stop applying at an area boundary.
+#' `strip_parentheticals` is on because several FAO names carry a bracketed
+#' synonym (`"Haemulidae (=Pomadasyidae)"`) and match nothing as written.
+#'
+#' @param pars The configuration file.
+#' @param manual_table Timor's curated morphometric rows
+#'   (`metadata$morphometric_table`), pooled with the fetched coefficients
+#'   before aggregation.
+#'
+#' @return A list with `length_weight` (`alpha3_code`, `lw_a`, `lw_b`) and
+#'   `length_length` (`alpha3_code`, `Length1`, `Length2`, `aL`, `bL`).
+#' @keywords helper
 #' @export
-#'
-ingest_rfish_table <- function(log_threshold = logger::DEBUG) {
-  pars <- read_config()
+get_morphometric_tables <- function(pars, manual_table = NULL) {
+  taxa <- get_taxa_list(pars)
 
-  rfish_tab <- get_catch_types(pars) %>%
-    retrieve_lengths(country_code = pars$metadata$rfishtable$country_codes)
-
-  rfish_table_filename <- paste(
-    pars$metadata$rfishtable$file_prefix,
-    sep = "_"
-  ) %>%
-    add_version(extension = "rds")
-  readr::write_rds(
-    x = rfish_tab,
-    file = rfish_table_filename,
-    compress = "gz"
+  m <- coasts::get_taxa_morphometrics(
+    taxa,
+    fao_areas = pars$metadata$fishbase$fao_areas,
+    filter_by_area = FALSE,
+    strip_parentheticals = TRUE
   )
-  logger::log_info("Uploading {rfish_table_filename} to cloud storage")
-  coasts::upload_cloud_file(
-    file = rfish_table_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-}
 
+  lw <- m$length_weight
+  ll <- m$length_length
 
-# get weight-length table from google cloud
-get_rfish_table <- function(pars) {
-  rfish_rds <- coasts::cloud_object_name(
-    prefix = paste(pars$metadata$rfishtable$file_prefix),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = "20241013011806_a41d5ff",
-    options = pars$storage$google$options,
-    exact_match = TRUE
-  )
-  logger::log_info("Downloading {rfish_rds}...")
-  coasts::download_cloud_file(
-    name = rfish_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = rfish_rds)
-}
+  # expand_taxonomic_info() matches the FishBase/SeaLifeBase backbone, so it
+  # resolves nothing for tribes or informal groupings. These three are reachable
+  # by common name only.
+  lw <- dplyr::bind_rows(lw, rescue_by_common_name(taxa))
 
-#
-get_morphometric_tables <- function(pars, manual_table) {
-  rfish_table <- get_rfish_table(pars) %>%
-    dplyr::mutate(
-      DataRef = as.character(.data$DataRef),
-      LengthMin = as.double(.data$LengthMin),
-      aL = as.double(.data$aL)
+  if (!is.null(manual_table)) {
+    lw <- dplyr::bind_rows(
+      lw,
+      dplyr::transmute(
+        manual_table,
+        alpha3_code = as.character(.data$interagency_code),
+        Type = as.character(.data$Type),
+        EsQ = as.character(.data$EsQ),
+        a = as.double(.data$a),
+        b = as.double(.data$b)
+      )
     )
-
-  # merge the two tables
-  rfish_tab <- dplyr::bind_rows(rfish_table, manual_table)
-
-  lw <- rfish_tab %>%
-    # There are extra coefficients in the aTL column that we should use
-    dplyr::mutate(Type = "TL", a = .data$aTL) %>%
-    dplyr::bind_rows(rfish_tab) %>%
-    # There are some that have "No" low quality which means is OK?
-    dplyr::filter(!is.na(.data$a), !isTRUE(tolower(.data$EsQ) == "yes")) %>%
-    dplyr::select(
-      .data$interagency_code,
-      .data$Species,
-      .data$LengthMin,
-      .data$LengthMax,
-      .data$Type,
-      .data$a,
-      .data$b
-    ) %>%
-    dplyr::distinct()
-
-  ll <- rfish_tab %>%
-    # Relationship is reciprocal and we could use that information too
-    dplyr::mutate(
-      l1 = .data$Length1,
-      l2 = .data$Length2,
-      a1 = .data$aL,
-      b1 = .data$bL,
-      Length1 = .data$l2,
-      Length2 = .data$l1,
-      aL = .data$a1 / .data$b1 * (-1),
-      bL = 1 / .data$b1
-    ) %>%
-    dplyr::bind_rows(rfish_tab) %>%
-    dplyr::select(
-      .data$interagency_code,
-      .data$Species,
-      .data$Length1,
-      .data$Length2,
-      .data$aL,
-      .data$bL
-    ) %>%
-    dplyr::filter(!is.na(.data$aL)) %>%
-    dplyr::distinct()
+  }
 
   list(
-    length_weight = lw,
-    length_length = ll
+    expanded = m$expanded,
+    length_weight = summarise_lw_coeffs(lw),
+    length_length = summarise_ll_coeffs(ll)
   )
 }
 
-
-estimate_weight <- function(length, length_type, code, n_individuals, lw, ll) {
-  if (
-    is.na(length) |
-      is.na(length_type) |
-      is.na(code) |
-      is.na(n_individuals) |
-      code == "0"
-  ) {
-    return(NA)
+#' Taxon-to-species expansion, in the column names the nutrients code expects
+#'
+#' @param pars The configuration file.
+#' @param expanded Optional pre-computed `expanded` table from
+#'   [get_morphometric_tables()], to avoid a second FishBase round-trip.
+#' @return A tibble: `interagency_code`, `Species`, `SpecCode`.
+#' @keywords helper
+#' @noRd
+get_taxa_expansion <- function(pars, expanded = NULL) {
+  if (is.null(expanded)) {
+    expanded <- coasts::get_taxa_morphometrics(
+      get_taxa_list(pars),
+      fao_areas = pars$metadata$fishbase$fao_areas,
+      filter_by_area = FALSE,
+      strip_parentheticals = TRUE
+    )$expanded
   }
 
-  if (n_individuals == 0) {
-    return(0)
-  }
-
-  this_lw <- lw %>%
-    dplyr::filter(.data$interagency_code == code)
-
-  # Transform length to other types if relevant
-  this_ll <- ll %>%
-    dplyr::filter(
-      .data$interagency_code == code,
-      .data$Length2 == length_type
+  expanded %>%
+    dplyr::transmute(
+      interagency_code = .data$alpha3_code,
+      Species = .data$species_found,
+      SpecCode = .data$SpecCode
     ) %>%
-    dplyr::mutate(
-      length = .data$aL + length * .data$bL,
-      Type = .data$Length1
-    )
+    dplyr::distinct()
+}
 
-  this_length <-
-    dplyr::tibble(
-      interagency_code = code,
-      # We have to do it for each species because we don't know what is the
-      # actual species
-      Species = unique(this_lw$Species),
-      length = length,
-      Type = length_type
-    ) %>%
-    # Augment the info with transformations
-    dplyr::bind_rows(this_ll)
+#' Taxon list driving the coefficient fetch
+#'
+#' `alpha3_code` + `scientific_name`, the pair
+#' [coasts::expand_taxonomic_info()] expects.
+#'
+#' Sourced from the Google Sheets `catch_types` table. The PESKAS | FRAME
+#' Airtable base is authoritative for taxa and carries the same pair, but Timor
+#' has no assets snapshot until migration Phase 3 wires `ingest_assets()`. This
+#' is a one-line swap at that point.
+#'
+#' @param pars The configuration file.
+#' @return A tibble with `alpha3_code` and `scientific_name`.
+#' @keywords helper
+#' @noRd
+get_taxa_list <- function(pars) {
+  metadata <- get_preprocessed_sheets(pars)
 
-  w <- dplyr::full_join(
-    this_lw,
-    this_length,
-    by = c("interagency_code", "Species", "Type")
+  dplyr::left_join(
+    metadata$catch_types,
+    metadata$fao_catch,
+    by = "interagency_code"
   ) %>%
-    dplyr::mutate(
-      weight = .data$a * .data$length^.data$b,
-      quantile_coeff = dplyr::case_when(
-        unique(.data$interagency_code) == "FLY" ~ 0.75,
-        unique(.data$interagency_code) == "CGX" ~ 0.75,
-        unique(.data$interagency_code) %in% c("EMP", "CLP") ~ 0.7,
-        TRUE ~ 0.9
+    dplyr::transmute(
+      alpha3_code = as.character(.data$interagency_code),
+      # "Pomadasys spp" is a genus written the FAO way; the taxonomic backbone
+      # stores the bare genus. Parentheticals are handled by coasts'
+      # `strip_parentheticals`.
+      scientific_name = sub(
+        "\\s+spp\\.?$",
+        "",
+        as.character(.data$name_scientific)
       )
     ) %>%
-    dplyr::filter(!is.na(.data$weight))
+    dplyr::filter(!is.na(.data$alpha3_code), !is.na(.data$scientific_name)) %>%
+    dplyr::distinct()
+}
 
-  stats::quantile(w$weight, stats::median(w$quantile_coeff)) * n_individuals
+#' Recover taxa the taxonomic backbone cannot resolve
+#'
+#' `Thunnini` (tribe), `Selachimorpha` (informal) and `Hyporhamphus quoyi`
+#' (superseded binomial) return nothing from the FishBase/SeaLifeBase backbone.
+#' [rfishbase::common_to_sci()] reaches them.
+#'
+#' @param taxa Output of [get_taxa_list()].
+#' @return A tibble in `coasts::get_length_weight_coeffs()` shape.
+#' @keywords helper
+#' @noRd
+rescue_by_common_name <- function(taxa) {
+  overrides <- c(TUN = "Tuna", SKH = "Shark", GZP = "Garfish")
+  overrides <- overrides[names(overrides) %in% taxa$alpha3_code]
+  if (length(overrides) == 0) {
+    return(NULL)
+  }
+
+  purrr::imap_dfr(overrides, function(common, code) {
+    species <- tryCatch(
+      unique(rfishbase::common_to_sci(common)$Species),
+      error = function(e) character(0)
+    )
+    if (length(species) == 0) {
+      logger::log_warn("No species found for {code} via common name {common}")
+      return(NULL)
+    }
+    rfishbase::length_weight(species) %>%
+      dplyr::transmute(
+        alpha3_code = code,
+        Type = .data$Type,
+        EsQ = .data$EsQ,
+        a = .data$a,
+        b = .data$b
+      )
+  })
+}
+
+#' Collapse length-weight coefficients to one pair per taxon
+#'
+#' Geometric mean of `a`, arithmetic mean of `b` — `a` is a scale factor whose
+#' published values span orders of magnitude, so it is averaged in log space,
+#' while `b` is an exponent clustered near 3.
+#'
+#' No filtering on `Type` is applied. Restricting to `Type == "TL"` discards
+#' more than half the matched species for `CJX`, `EMP`, `MOB` and `YDX`.
+#' Low-quality studies (`EsQ == "yes"`) are dropped, as they were before.
+#'
+#' @param lw Length-weight rows from [coasts::get_length_weight_coeffs()].
+#' @return A tibble: `alpha3_code`, `n_studies`, `lw_a`, `lw_b`.
+#' @keywords helper
+#' @noRd
+summarise_lw_coeffs <- function(lw) {
+  lw %>%
+    dplyr::filter(
+      !is.na(.data$a),
+      !is.na(.data$b),
+      .data$a > 0,
+      is.na(.data$EsQ) | tolower(.data$EsQ) != "yes"
+    ) %>%
+    dplyr::group_by(.data$alpha3_code) %>%
+    dplyr::summarise(
+      n_studies = dplyr::n(),
+      lw_a = exp(mean(log(.data$a))),
+      lw_b = mean(.data$b),
+      .groups = "drop"
+    )
+}
+
+#' Collapse length-length coefficients to one pair per taxon and conversion
+#'
+#' Timor's v1 survey records fork length while most coefficients are expressed
+#' in total length, so a conversion is needed for ~10% of merged landings. The
+#' relationship is reciprocal, so the inverse of every published pair is added.
+#'
+#' Once migration Phase 3 freezes v1 with lengths already normalised to `TL`,
+#' this and [normalise_length_to_tl()] can both be deleted.
+#'
+#' @param ll Length-length rows from [coasts::get_length_length_coeffs()].
+#' @return A tibble: `alpha3_code`, `Length1`, `Length2`, `aL`, `bL`.
+#' @keywords helper
+#' @noRd
+summarise_ll_coeffs <- function(ll) {
+  reciprocal <- ll %>%
+    dplyr::filter(!is.na(.data$bL), .data$bL != 0) %>%
+    dplyr::transmute(
+      alpha3_code = .data$alpha3_code,
+      Length1 = .data$Length2,
+      Length2 = .data$Length1,
+      aL = -.data$aL / .data$bL,
+      bL = 1 / .data$bL
+    )
+
+  dplyr::bind_rows(ll, reciprocal) %>%
+    dplyr::filter(!is.na(.data$aL), !is.na(.data$bL)) %>%
+    dplyr::group_by(.data$alpha3_code, .data$Length1, .data$Length2) %>%
+    dplyr::summarise(
+      aL = mean(.data$aL),
+      bL = mean(.data$bL),
+      .groups = "drop"
+    )
+}
+
+#' Convert measured lengths to total length
+#'
+#' Rows already in `TL`, and rows with no conversion available, are returned
+#' unchanged.
+#'
+#' @param data Catch rows with `species`, `mean_length` and `length_type`.
+#' @param ll Output of [summarise_ll_coeffs()].
+#' @return `data` with `length_tl` added.
+#' @keywords helper
+#' @noRd
+normalise_length_to_tl <- function(data, ll) {
+  to_tl <- ll %>%
+    dplyr::filter(.data$Length1 == "TL") %>%
+    dplyr::select(
+      species = "alpha3_code",
+      length_type = "Length2",
+      "aL",
+      "bL"
+    )
+
+  data %>%
+    dplyr::left_join(to_tl, by = c("species", "length_type")) %>%
+    dplyr::mutate(
+      length_tl = dplyr::case_when(
+        is.na(.data$mean_length) ~ NA_real_,
+        .data$length_type == "TL" ~ .data$mean_length,
+        !is.na(.data$aL) ~ .data$aL + .data$mean_length * .data$bL,
+        TRUE ~ .data$mean_length
+      )
+    ) %>%
+    dplyr::select(-"aL", -"bL")
+}
+
+#' Estimate catch weight from length
+#'
+#' `W = a * L^b * N`, the relationship Mozambique's `calculate_catch_adnap()`
+#' applies.
+#'
+#' **Units are grams.** FishBase publishes `a` for a result in grams, and the
+#' portal export divides by 1000 downstream. Do not convert here.
+#'
+#' @param data Catch rows carrying `species`, `length_tl` and `n_individuals`.
+#' @param lw Output of [summarise_lw_coeffs()].
+#' @return `data` with `weight` added, in grams.
+#' @keywords helper
+#' @noRd
+estimate_weight <- function(data, lw) {
+  data %>%
+    dplyr::left_join(
+      dplyr::select(lw, species = "alpha3_code", "lw_a", "lw_b"),
+      by = "species"
+    ) %>%
+    dplyr::mutate(
+      weight = dplyr::if_else(
+        !is.na(.data$length_tl) &
+          !is.na(.data$lw_a) &
+          !is.na(.data$lw_b) &
+          !is.na(.data$n_individuals),
+        .data$lw_a * .data$length_tl^.data$lw_b * .data$n_individuals,
+        NA_real_
+      ),
+      weight = dplyr::if_else(.data$n_individuals == 0, 0, .data$weight)
+    ) %>%
+    dplyr::select(-"lw_a", -"lw_b")
 }

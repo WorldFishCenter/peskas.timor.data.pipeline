@@ -75,9 +75,6 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
       - name: Call preprocess_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-      - name: Call ingest_rfish_table()
-        continue-on-error: true
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
 
   ingest-preprocess-landings-v1-v3:
     name: Ingest and preprocess legacy and ongoing landings

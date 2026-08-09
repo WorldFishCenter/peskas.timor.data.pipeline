@@ -90,7 +90,6 @@ Suggests:
     rmarkdown,
     roxygen2,
     sessioninfo,
-    taxize,
     testthat,
     textclean,
     tidytext,

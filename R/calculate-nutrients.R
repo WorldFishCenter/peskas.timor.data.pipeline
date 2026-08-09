@@ -12,6 +12,8 @@
 #'
 #'
 #' @param pars The configuration file.
+#' @param expanded Optional pre-computed taxon-to-species expansion from
+#'   [get_morphometric_tables()], to avoid a second FishBase round-trip.
 #' @param summarise Whether you want to summarise the nutritional values for each
 #' group. The function use the median by default.
 #' @param convert Whether you want to convert the nutritional values units to
@@ -21,9 +23,12 @@
 #' @return A data frame with nutritional values for each taxa group.
 #' @export
 #'
-get_nutrients_table <- function(pars, summarise = TRUE, convert = TRUE) {
+get_nutrients_table <- function(pars,
+                                expanded = NULL,
+                                summarise = TRUE,
+                                convert = TRUE) {
   logger::log_info("Retrieving nutritional values for each taxa group.")
-  rfish_tab <- get_rfish_table(pars)
+  rfish_tab <- get_taxa_expansion(pars, expanded)
   # get invertebrates nutrients
   fao_groups <- get_fao_composition()
 

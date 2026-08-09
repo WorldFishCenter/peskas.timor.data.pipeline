@@ -4,10 +4,13 @@
 \alias{get_nutrients_table}
 \title{Get taxa nutritional values}
 \usage{
-get_nutrients_table(pars, summarise = TRUE, convert = TRUE)
+get_nutrients_table(pars, expanded = NULL, summarise = TRUE, convert = TRUE)
 }
 \arguments{
 \item{pars}{The configuration file.}
+
+\item{expanded}{Optional pre-computed taxon-to-species expansion from
+\code{\link[=get_morphometric_tables]{get_morphometric_tables()}}, to avoid a second FishBase round-trip.}
 
 \item{summarise}{Whether you want to summarise the nutritional values for each
 group. The function use the median by default.}
