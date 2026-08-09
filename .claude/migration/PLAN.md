@@ -309,17 +309,34 @@ done in the current code.
   the metadata tables.
   - Resolve the token blocker first — see §2.5. Nothing here works until the PAT
     can read `appMMEJYlJdfSJEjm`.
-  - Note a coasts inconsistency to pin down here: `ingestion.R` writes the
-    snapshot to `conf$storage$google$options` (the country bucket) while
-    `ingestion-pds.R` reads it from `resolve_storage_opts(conf, "coasts")` (the
-    hub bucket). Decide one and be explicit.
+  - **A coasts inconsistency to resolve here, sharper since 4.6.0.**
+    `ingest_assets()` still writes the snapshot to
+    `conf$storage$google$options` (the **country** bucket), while
+    `ingestion-pds.R` and — as of 4.6.0 — `enrich_taxa()` both read it through
+    `resolve_storage_opts(conf, "coasts")` (the **hub**). The writer and the
+    readers now actively disagree. The hub holds 118 prod / 22 dev copies, so
+    the hub is the de-facto home; fix `ingest_assets()` upstream (see
+    COASTS-TODO C11) rather than working around it in Timor.
   - Do **not** delete the five Google Sheets tables Airtable does not cover
     (`morphometric_table`, `habitat`, `conservation`,
     `fishing_vessel_statistics`, `registered_boats`).
+- **Freeze v1 with lengths normalised to total length.** New requirement, added
+  2026-08-09. v1 records **fork length**; v2/v3 record TL. The weight path
+  carries `summarise_ll_coeffs()` + `normalise_length_to_tl()` purely to convert
+  it, for 10.4% of merged landings from a source frozen since 2020-08-28.
+  Converting once at the freeze deletes both functions and removes a
+  per-run FishBase round-trip.
 - Verify: v2 + v3 raw parquet row counts ≥ their current submission counts
   (64,997 and 22,037 as of 2026-07-31); schema recorded in STATE. Assets
-  snapshot contains 57 taxa / 7 gears / 2 vessels / 40 sites for Timor-Leste,
-  and every `alpha3_code` in it is present in `models.all_taxa`.
+  snapshot for Timor-Leste contains **60 taxa rows over 56 distinct
+  `alpha3_code`s, 9 gears, 2 vessels, 40 landing sites** (re-measured
+  2026-08-09 — the earlier "57 taxa / 7 gears" is stale), every `alpha3_code`
+  is present in `models.all_taxa` with zero difference either way, and
+  `survey_label` is populated on every taxa, gear and vessel row.
+- Once the snapshot exists, point `get_taxa_list()`
+  ([calculate-weights.R](../../R/calculate-weights.R)) at it instead of the
+  Google Sheets `catch_types` + `fao_catch` join. One-line swap, flagged in the
+  weight-path commit.
 
 ---
 
@@ -353,11 +370,29 @@ assets snapshot instead (decision §2.5) and emit the standard
 against the golden snapshot before accepting: a mapping that silently drops a
 gear will look like a clean run.
 
-**4b — weights and taxa.** `R/calculate-weights.R` → `R/model-taxa.R`, reusing
-`coasts` fishbase helpers (`enrich_taxa`, `expand_taxonomic_info`) where they fit.
-Keep `ingest_rfish_table()` and the Timor morphometric tables. If those helpers
-are adopted, add `metadata.fishbase.taxa_enriched.file_prefix` to the config —
-coasts reads it and Phase 1 deliberately left it out.
+**4b — weights and taxa. ~~Pending~~ mostly DONE, pulled forward 2026-08-09**
+(commit `a2c2881`). The coefficient path already runs on
+`coasts::get_taxa_morphometrics()` with Mozambique's aggregation (geometric
+mean of `a`, arithmetic mean of `b`) and Mozambique's `W = a * L^b * N`.
+`get_catch_types()`, `get_fish_length()`, `retrieve_lengths()`,
+`get_rfish_table()`, `ingest_rfish_table()` and the `taxize`/GBIF dependency
+are all deleted. Measured against the golden snapshot: coefficients now cover
+53 of 56 taxa (was 45), species expanded 693 → 5,259, total catch weight
+**−15.4%** — expected, since the old code took the 90th percentile of
+per-species weights.
+
+What remains for 4b:
+
+- Rename `R/calculate-weights.R` → `R/model-taxa.R` with the rest of the
+  Phase 4 file reorganisation.
+- Delete `summarise_ll_coeffs()` and `normalise_length_to_tl()` once Phase 3
+  freezes v1 in total length.
+- Point `get_taxa_list()` at the assets snapshot (Phase 3 dependency).
+- Compare `R/calculate-nutrients.R` against `enrich_taxa()`'s nutrient columns
+  and delete Timor's if they agree — **not** upstream it, contrary to §10.
+- `metadata.fishbase.taxa_enriched.file_prefix` is still not in the config, and
+  is only needed if Timor ever calls `enrich_taxa()` itself. It does not today:
+  it calls `get_taxa_morphometrics()` with its own taxa list.
 
 Verify against the Phase 0 golden snapshot: row counts, column set, and per-column
 summary stats (mean/median/NA-rate) for `catch_kg`, `catch_price`, `length`.

@@ -166,3 +166,38 @@ Required before the pin is removed:
 
 Then re-run `calculate_weights()` and diff total catch weight against the Phase 0
 golden snapshot. The portal publishes these numbers.
+
+---
+
+## Added after 4.6.0
+
+### C11. `ingest_assets()` writes where the readers no longer look
+
+4.6.0 fixed `enrich_taxa()` to read *and* write through
+`resolve_storage_opts(conf, "coasts")` (C4). `ingest_assets()`
+([R/ingestion.R](../../peskas.coasts/R/ingestion.R)) was not touched and still
+ends with:
+
+```r
+upload_cloud_file(
+  file = asset_filename,
+  provider = conf$storage$google$key,
+  options  = conf$storage$google$options    # country bucket
+)
+```
+
+So the writer targets the country bucket while both readers — `ingestion-pds.R`
+and now `enrich_taxa()` — look in the hub. Inside coasts the two resolve to the
+same bucket, so it is invisible there; from a downstream package that defines
+`storage.google.options_coasts` it means the snapshot is written somewhere
+nothing reads. Timor hits this in migration Phase 3.
+
+Fix: resolve through `resolve_storage_opts(conf, "coasts")`, matching C4.
+
+### C12. Trip-fetch window literals (was C9, still open)
+
+`ingest_pds_trips()`'s `dateFrom` and `predict_pds_tracks()`'s `date_from` are
+`"2018-01-01"` literals. Correct for Timor — 371 of its 442 devices were last
+seen before 2023 — and harmless for the WIO fleets, which have no trips before
+2023. Should be config keys, in the same pattern as
+`metadata.fishbase.fao_areas`.
