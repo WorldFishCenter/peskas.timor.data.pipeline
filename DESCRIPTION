@@ -89,7 +89,6 @@ Suggests:
     roxygen2,
     sessioninfo,
     testthat,
-    textclean,
     tidytext,
     tinytest,
     treemapify,

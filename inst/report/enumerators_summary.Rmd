@@ -56,7 +56,7 @@ metadata_stations <- metadata$stations %>%
   dplyr::mutate(landing_site = as.character(landing_site))
 
 landings_raw <-
-  peskas.timor.data.pipeline::get_merged_landings(pars, "_weight") %>%
+  peskas.timor.data.pipeline::get_weighted_landings(pars) %>%
   dplyr::mutate(date = as.Date(date)) %>%
   dplyr::mutate(Year = lubridate::year(date)) %>%
   dplyr::filter(Year >= last_year) %>%

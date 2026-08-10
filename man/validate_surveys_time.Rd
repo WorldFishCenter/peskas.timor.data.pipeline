@@ -26,7 +26,7 @@ info associated to each survey.
 \examples{
 \dontrun{
 conf <- read_config()
-landings <- get_merged_landings(conf)
+landings <- get_weighted_landings(conf)
 validate_surveys_time(landings, hrs = 18)
 }
 }

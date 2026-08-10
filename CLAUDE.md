@@ -14,9 +14,9 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3** — so config, secrets, the container, the **storage layer** and
-> **ingestion** are already on the standard; preprocessing, validation, PDS and
-> export are not.
+> **0, 1, 2, 3, 4** — so config, secrets, the container, the **storage layer**,
+> **ingestion** and **preprocessing** are already on the standard; validation,
+> PDS and export are not.
 
 ---
 
@@ -50,14 +50,16 @@ be structural, not cosmetic.
 ## Module map (`R/`)
 
 Ingestion
-- [ingestion.R](R/ingestion.R) — `ingest_landings()` (v2 + v3 → raw parquet via `coasts::get_kobo_data()`), `ingest_assets()` (the Airtable frame snapshot), the `flatten_row()`/`flatten_field()`/`rename_child()` helpers, and the internal `get_raw_landings()` reader. Added in Phase 3, replacing `ingest-landings.R` and `retrieve-survey-data.R`
-- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 15 Google Sheets metadata tables. Six are superseded by the Airtable frame; the joins move off them in Phase 4, so the list is still 15
+- [ingestion.R](R/ingestion.R) — `ingest_landings()` (v2 + v3 → raw parquet via `coasts::get_kobo_data()`), `ingest_assets()` (the Airtable frame snapshot) and the `flatten_row()`/`flatten_field()`/`rename_child()` helpers. Added in Phase 3, replacing `ingest-landings.R` and `retrieve-survey-data.R`
+- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 14 Google Sheets metadata tables. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame but the validators still keep their own Sheets copies, so only `fao_catch` could be dropped; each remaining table is annotated in `inst/config.yml` with the phase that removes it
 - [ingest-pds-data.R](R/ingest-pds-data.R) — 858 lines: PDS trips + tracks, kepler map, retry wrappers
 - [retrieve-pds-data.R](R/retrieve-pds-data.R) — PDS API client
 
 Preprocessing
-- [clean-raw-data.R](R/clean-raw-data.R), [preprocess-landings.R](R/preprocess-landings.R) (`step_1`/`step_2`), [pt_nest_species.R](R/pt_nest_species.R), [pt_nest_attachments.R](R/pt_nest_attachments.R), [merge-landings.R](R/merge-landings.R), [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R)
-- [calculate-weights.R](R/calculate-weights.R) — morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot
+- [preprocessing-surveys.R](R/preprocessing-surveys.R) — `preprocess_landings(versions = c("v2","v3"))` (raw parquet → **flat long catch parquet**), `merge_landings()`, the per-version `harmonise_*()` reconciliation, and the assets-snapshot label joins (`survey_labels()`). Added in Phase 4, replacing `clean-raw-data.R`, `preprocess-landings.R` (`step_1`/`step_2`) and `merge-landings.R`
+- [survey-reshaping.R](R/survey-reshaping.R) — `reshape_species_groups()`, `expand_length_frequency()`, the bin-midpoint and free-text-trim helpers. Replaces `pt_nest_species.R` / `pt_nest_attachments.R`
+- [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot. Renamed from `calculate-weights.R` in Phase 4
+- [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R) — the Google Sheets `pt_validate_*` parsers
 
 Validation
 - [validate-landings.R](R/validate-landings.R) — orchestrator, writes flags to Google Sheets
@@ -240,7 +242,7 @@ Prefer `coasts::resolve_storage_opts(pars, type)` over reaching into
 
 | bucket | contents |
 |---|---|
-| `timor` / `timor-dev` | surveys and derived tables. Raw landings are **parquet** since Phase 3 (`timor-landings-v{2,3}_raw__*.parquet`); everything downstream is still `.rds`, including the frozen `timor-landings-v1-frozen__*.rds` |
+| `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight and validated artefacts are still `.rds` because they carry nested list-columns |
 | `pds-timor` / `pds-timor-dev` | one gzipped CSV per GPS trip: `pds-track-<trip_id>__*__.csv.gz` |
 | `public-timor` / `public-timor-dev` | `portal-*.json` — the live portal contract |
 | `peskas-coasts` / `peskas-coasts-dev` | the shared cross-country hub (`options_coasts`). **Read *and* written** by coasts: `assets__*`, `taxa-fishbase-enriched`, H3 effort/CPUE grids, and per-country `*_fishery_metrics` / `*_monthly_summaries_map`. Both are live — `default` must stay on `-dev` |
@@ -251,9 +253,12 @@ nothing is ever deleted; `gs://timor` holds ~33k objects and `gs://pds-timor`
 ~98k. See [.claude/migration/AUDIT.md](.claude/migration/AUDIT.md) for the full
 prefix inventory including orphaned prefixes.
 
-Interchange format is **parquet for raw landings** (Phase 3) and `.rds` with
-**nested list-columns** (`landing_catch`, `length_frequency`) from preprocessing
-onward. The migration flips the rest to flat long parquet in Phase 4.
+Interchange format is **flat long parquet** from raw through merged (Phases 3
+and 4): one row per (submission, catch, length bin). `join_weights()` then
+re-nests the catch columns into `species_group` / `length_individuals` and the
+weight and validated artefacts stay `.rds` — that nesting is the last thing
+holding the old format up and it exists only because the 19 validators read it.
+It goes in Phase 5.
 
 ## Portal contract (do not break)
 
@@ -283,9 +288,7 @@ From [.github/workflows/data-pipeline.yaml](.github/workflows/data-pipeline.yaml
 build-container
 ├── ingest-preprocess-metadata-tables   ingest_metadata_tables → preprocess_metadata_tables → ingest_assets
 ├── ingest-landings                     ingest_landings                 [v2 + v3 → raw parquet]
-│   ├── preprocess-v3-landings          preprocess_updated_landings
-│   └── ingest-preprocess-v2-landings-step1 preprocess_landings_step_1
-│       └── step2                       preprocess_landings_step_2
+│   └── preprocess-landings             preprocess_landings   [v2 + v3 → long parquet]
 └── ingest-pds-data                     ingest_pds_trips → ingest_pds_tracks
     └── preprocess-pds-data             preprocess_pds_trips → preprocess_pds_tracks
         └── validate-pds-data           validate_pds_trips        [tinytest]
@@ -326,11 +329,14 @@ docker build -f Dockerfile.prod -t peskas-timor .
 `Dockerfile` (dev, used by `docker-compose.yaml`) mirrors the same package set
 and the same `COASTS_REF`. Keep the two in step.
 
-**`devtools::check()` baseline** (re-measured after Phase 3): **0 WARNINGs,
-4 NOTEs**, plus the one pre-existing testthat failure —
-`test-pre-process-landings.R:16`, `nrow(nested$_attachments[[1]])` is 3, not 2
-(`FAIL 1 | WARN 9 | SKIP 0 | PASS 9`; the 9 warnings are all `.data`-in-
-tidyselect deprecations from `pt_nest_*`). Do not read those as a regression.
+**`devtools::check()` baseline** (re-measured after Phase 4): **0 errors,
+0 WARNINGs, 4 NOTEs**, and testthat is now **green**. The long-standing
+`FAIL 1 | WARN 9 | PASS 9` is gone: `tests/testthat/test-pre-process-landings.R`
+tested `pt_nest_attachments()` / `pt_nest_species()`, both deleted in Phase 4,
+and was replaced by `test-survey-reshaping.R` (8 passing assertions over
+`reshape_species_groups()` and `expand_length_frequency()`). The 9 warnings were
+`.data`-in-tidyselect deprecations from `pt_nest_*` and went with it. **No
+assertion was weakened to get there** — the code under test no longer exists.
 
 Two things moved in Phase 3 and both are improvements, not drift:
 
@@ -374,18 +380,31 @@ function is exercised just because a workflow references it.
   latest inputs → process → `logger::log_info()` → `add_version()` → upload.
 - Logging is `logger`; the `log_threshold` argument on workflow functions sets
   the level.
-- `pt_nest_species()` / `pt_nest_attachments()` build the nested list-columns
-  the `.rds` interchange format depends on.
+- **The preprocessed table is one row per (submission, catch, length bin)**, and
+  it is a **superset**: the standard columns (`submission_id`, `landing_date`,
+  `gaul_*`, `landing_site`, `n_fishers`, `trip_duration`, `gear`,
+  `vessel_type`, `habitat`, `catch_outcome`, `n_catch`, `catch_taxon`,
+  `scientific_name`, `length`, `catch_price`, …) sit beside every raw KoBo
+  column, reconciled per form version by `harmonise_v2()` / `harmonise_v3()`.
+  The raw columns are what the validators read; they go in Phase 5.
+- **Length bins with no count are kept.** A catch expands to one row per 5 cm
+  bin whether or not anybody was counted in it, because that is what the nested
+  `length_frequency` has always held and it reaches the portal —
+  `timor_catch` is 1.7 M rows of which 93% have no weight. Dropping them would
+  change a published table.
 - **v1 is frozen** (last submission 2020-08-28). It is not ingested and not
   preprocessed; `merge_landings()` reads
-  `timor-landings-v1-frozen__*.rds`, produced once per environment by
+  `timor-landings-v1-frozen__*.parquet`, produced once per environment by
   [data-raw/freeze-landings-v1.R](data-raw/freeze-landings-v1.R). The freeze
   also converted v1's **fork lengths to total length**, so every source now
   carries TL and `join_weights()` no longer branches on `survey_version`.
   `summarise_ll_coeffs()` and `normalise_length_to_tl()` were deleted with it;
   the length-length logic now lives **inside the freeze script**, its only
-  consumer. **The snapshot exists in `timor-dev` only** — run the script
-  against `production` before the Phase 11 cutover.
+  consumer. Phase 4 also moved v1's column reconciliation and its flattening to
+  the long shape into that script, deliberately — the form is dead and
+  `preprocess_landings()` should not carry a shape nothing will produce again.
+  **The snapshot exists in `timor-dev` only** — run the script against
+  `production` before the Phase 11 cutover.
 - **`length_type` is descriptive, not functional.** It is not a survey field —
   the form records only counts per length bin, and `mean_length` is the bin
   midpoint. It comes from the Sheets `catch_types`, per taxon, non-`NA` for
@@ -399,11 +418,10 @@ function is exercised just because a workflow references it.
 - Variables holding the resolved configuration are named **`conf`**, matching
   the other country pipelines. The old `pars` was renamed throughout in
   Phase 3; do not reintroduce it.
-- `get_raw_landings()` coerces the raw parquet to all-character and reproduces
-  readr's trim / `""` → `NA` semantics, because preprocessing was written
-  against `read_csv(col_types = cols(.default = col_character()))`. Do not
-  "clean it up" before Phase 4 rewrites preprocessing — it is what keeps the
-  parquet switch numerically inert.
+- ~~`get_raw_landings()` coerces the raw parquet to all-character~~ — deleted in
+  Phase 4. Preprocessing reads the typed parquet directly. The trim it used to
+  reproduce now happens deliberately in `trim_free_text()`, which also strips
+  the stray leading and trailing newlines ~60 free-text answers carry.
 - `conf$...$version$preprocess: latest` is read on `landings_1/2/3`,
   `pds.trips`, `pds.tracks`, `metadata` and `validation`. The unified template
   dropped this field; it is kept on each of those legacy keys and deliberately

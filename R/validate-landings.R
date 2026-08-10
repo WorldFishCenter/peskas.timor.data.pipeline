@@ -23,7 +23,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   conf <- read_config()
   metadata <- get_preprocessed_sheets(conf)
-  landings <- get_merged_landings(conf, "_weight")
+  landings <- get_weighted_landings(conf)
 
   # read arguments for outliers identification
   default_max_limit <- conf$validation$landings$default$max
@@ -352,30 +352,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #
 # None were exported and none were called.
 
-#' Download merged landings
-#'
-#' Download validated surveys landings and PDS trips.
-#'
-#' @param conf Configuration file.
-#' @param suffix A character indicating dataframe version. Use "_weight" to download
-#' version with calculated catch weight.
-#'
-#' @return A dataframe.
-#' @export
-get_merged_landings <- function(conf, suffix = "") {
-  landings_rds <- coasts::cloud_object_name(
-    prefix = paste0(conf$surveys$merged_landings$file_prefix, suffix),
-    provider = conf$storage$google$key,
-    extension = "rds",
-    version = conf$surveys$merged_landings$version,
-    options = conf$storage$google$options,
-    exact_match = TRUE
-  )
-  logger::log_info("Downloading {landings_rds}...")
-  coasts::download_cloud_file(
-    name = landings_rds,
-    provider = conf$storage$google$key,
-    options = conf$storage$google$options
-  )
-  readr::read_rds(file = landings_rds)
-}
+# NOTE: `get_merged_landings()` moved to get-cloud-files.R with the other
+# storage accessors in migration Phase 4, and split in two: the merged table is
+# parquet now, the weight artefact is still `.rds`.

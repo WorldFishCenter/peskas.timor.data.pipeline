@@ -241,18 +241,24 @@ default:
       name: metadata-tables
       sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
       tables:
-        - boats
-        - devices
-        - vms_installs
-        - catch_types
-        - fao_catch
-        - morphometric_table
-        - centro_pescas
-        - vessel_types
-        - gear_types
-        - stations
-        - reporting_units
-        - habitat
+        # Airtable is authoritative wherever the two overlap (PLAN §2.5), so
+        # this list shrinks as each join moves onto the frame. `fao_catch` went
+        # in Phase 4 — Phase 3 moved `get_taxa_list()` onto the assets snapshot
+        # and left it with no reader at all. The tables marked `[phase 5]` are
+        # read only by the validators, which keep their own Sheets joins for one
+        # more phase; the frame equivalents are already resolved in
+        # `preprocess_landings()`.
+        - boats               # [phase 11] read only by inst/report/data_report.Rmd
+        - devices             # [phase 5]  IMEI validation
+        - vms_installs        # [phase 11] device_installs, read by a dead helper
+        - catch_types         # keep: the per-taxon length_type (COASTS-TODO C14)
+        - morphometric_table  # keep: Timor-curated coefficients
+        - centro_pescas       # keep: the only source of landing-site lat/lon
+        - vessel_types        # [phase 5]
+        - gear_types          # [phase 5]
+        - stations            # [phase 5]
+        - reporting_units     # [phase 5]
+        - habitat             # keep: no frame equivalent
         - fishing_vessel_statistics
         - registered_boats
         - conservation

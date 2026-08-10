@@ -68,7 +68,7 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
 #' @examples
 #' \dontrun{
 #' conf <- read_config()
-#' landings <- get_merged_landings(conf)
+#' landings <- get_weighted_landings(conf)
 #' validate_surveys_time(landings, hrs = 18)
 #' }
 validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
@@ -200,7 +200,7 @@ validate_landing_regularity <- function(landings) {
 #' @examples
 #' \dontrun{
 #' conf <- read_config()
-#' landings <- get_merged_landings(conf)
+#' landings <- get_weighted_landings(conf)
 #' validate_catch_value(landings, method = "MAD", k = 13)
 #' }
 #'
@@ -239,6 +239,7 @@ validate_catch_price <- function(data, method = NULL, k = NULL) {
 #' @param ... arguments for `univOutl::LocScaleB()`
 #'
 #' @return a vector of the same lenght as x
+#' @keywords internal
 #' @importFrom stats mad
 alert_outlier <- function(x,
                           no_alert_value = NA_real_,
@@ -296,7 +297,7 @@ alert_outlier <- function(x,
 #' @examples
 #' \dontrun{
 #' conf <- read_config()
-#' landings <- get_merged_landings(conf)
+#' landings <- get_weighted_landings(conf)
 #' validate_catch_params(landings, k = 3)
 #' }
 #'

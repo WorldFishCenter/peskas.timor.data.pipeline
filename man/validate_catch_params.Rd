@@ -24,7 +24,7 @@ a nested column \code{species_group} containing validated catches parameters.
 \examples{
 \dontrun{
 conf <- read_config()
-landings <- get_merged_landings(conf)
+landings <- get_weighted_landings(conf)
 validate_catch_params(landings, k = 3)
 }
 

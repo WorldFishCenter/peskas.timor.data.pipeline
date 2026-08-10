@@ -157,21 +157,72 @@ message(
   round(mean(after$mean_length, na.rm = TRUE), 3)
 )
 
-# --- Write ------------------------------------------------------------------
-# Stays `.rds`. The interchange format is still nested list-columns; arrow
-# reads them back as `vctrs_list_of`, which `dplyr::bind_rows()` refuses to
-# combine with the plain lists coming out of the v2/v3 `.rds` files in
-# `merge_landings()`. Phase 4 flattens every source to long parquet and the
-# question disappears.
-filename <- add_version(
-  conf$surveys$landings$v1$frozen$file_prefix,
-  extension = "rds"
-)
-readr::write_rds(frozen, filename, compress = "gz")
+# --- Flatten to the long catch table ----------------------------------------
+# Migration Phase 4 made the interchange format a flat long parquet, one row
+# per (submission, catch, length bin). v1's own column reconciliation lives
+# here rather than in the package: the form is dead, and `preprocess_landings()`
+# should not carry a shape nothing will ever produce again.
+labels <- survey_labels(conf)
 
-coasts::upload_cloud_file(
-  file = filename,
+long <- frozen %>%
+  select(-dplyr::any_of(c("_attachments", "_bamboo_dataset_id"))) %>%
+  mutate(
+    fuel_L = NA_character_,
+    reason_no_activity = .data$reason_for_zero_boats,
+    catch_outcome = NA_character_
+  ) %>%
+  rename(`trip_group/habitat` = "trip_group/habitat_boat") %>%
+  select(-"reason_for_zero_boats") %>%
+  tidyr::unnest("species_group", keep_empty = TRUE) %>%
+  tidyr::unnest("length_individuals", keep_empty = TRUE) %>%
+  rename(
+    n_catch = "n",
+    length = "mean_length",
+    catch_use = "food_or_sale"
+  ) %>%
+  mutate(
+    survey_version = "v1",
+    n_catch = as.integer(.data$n_catch) + 1L,
+    submission_id = as.character(.data$`_id`),
+    survey_id = .data$`_uuid`,
+    landing_date = lubridate::as_date(.data$date),
+    submission_date = lubridate::with_tz(
+      lubridate::ymd_hms(.data$`_submission_time`), "Asia/Dili"
+    ),
+    landing_site_code = as.character(.data$landing_site_name),
+    habitat_code = as.character(.data$`trip_group/habitat`),
+    gear_code = as.character(.data$`trip_group/gear_type`),
+    vessel_code = as.character(.data$`trip_group/boat_type`),
+    trip_duration = as.numeric(.data$`trip_group/duration`),
+    catch_price = as.numeric(.data$total_catch_value),
+    tracker_imei = NA_character_,
+    no_men_fishers = as.numeric(.data$`trip_group/no_fishers/no_men_fishers`),
+    no_women_fishers = as.numeric(
+      .data$`trip_group/no_fishers/no_women_fishers`
+    ),
+    no_child_fishers = as.numeric(
+      .data$`trip_group/no_fishers/no_child_fishers`
+    ),
+    n_fishers = peskas.timor.data.pipeline:::sum_fishers(
+      .data$no_men_fishers, .data$no_women_fishers, .data$no_child_fishers
+    )
+  ) %>%
+  peskas.timor.data.pipeline:::resolve_catch_taxa(labels) %>%
+  peskas.timor.data.pipeline:::resolve_survey_labels(labels) %>%
+  select(-dplyr::any_of(c(
+    "landing_site_code", "habitat_code", "gear_code", "vessel_code"
+  )))
+
+stopifnot(
+  dplyr::n_distinct(long$submission_id) == nrow(v1),
+  nrow(long) == nrow(after)
+)
+message("Frozen long table: ", nrow(long), " catch rows")
+
+# --- Write ------------------------------------------------------------------
+coasts::upload_parquet_to_cloud(
+  data = long,
+  prefix = conf$surveys$landings$v1$frozen$file_prefix,
   provider = conf$storage$google$key,
   options = coasts::resolve_storage_opts(conf, "country")
 )
-message("Uploaded ", filename)

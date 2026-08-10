@@ -53,10 +53,10 @@ reference:
 - subtitle: Data preprocessing
   desc: Functions dedicated to data processing.
   contents:
-  - matches("nest")
   - matches("pt_validate")
-  - matches("clean")
-  - coalist
+  - reshape_landings
+  - reshape_species_groups
+  - expand_length_frequency
   - merge_consecutive_trips
   - join_weights
   - fill_missing_regions
@@ -66,6 +66,8 @@ reference:
 - subtitle: Utils
   contents:
   - read_config
+  - load_dotenv
+  - timor_assets
 
 - title: Data sharing
 - subtitle: Publishing

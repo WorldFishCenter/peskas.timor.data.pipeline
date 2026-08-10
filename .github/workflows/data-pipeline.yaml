@@ -99,9 +99,9 @@ jobs:
       - name: Call ingest_landings()
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
-  preprocess-v3-landings:
-    name: Preprocess v3 landings
-    needs: ingest-landings
+  preprocess-landings:
+    name: Preprocess landings
+    needs: [ingest-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-22.04
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
@@ -112,44 +112,12 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_updated_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
-
-  ingest-preprocess-v2-landings-step1:
-    name: "Preprocess v2 landings 1/2"
-    needs: ingest-landings
-    runs-on: ubuntu-22.04
-    container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_landings_step_1()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_1()'
-
-  ingest-preprocess-v2-landings-step2:
-    name: "Preprocess v2 landings 2/2"
-    needs: ingest-preprocess-v2-landings-step1
-    runs-on: ubuntu-22.04
-    container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_landings_step_2()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_2()'
+      - name: Call preprocess_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
   merge-landings:
     name: Merge landings
-    needs: [ingest-preprocess-v2-landings-step2, preprocess-v3-landings, ingest-preprocess-metadata-tables]
+    needs: [preprocess-landings]
     runs-on: ubuntu-22.04
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest

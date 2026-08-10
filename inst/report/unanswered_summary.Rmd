@@ -21,9 +21,9 @@ setwd("../..")
 pars <- peskas.timor.data.pipeline::read_config()
 metadata <- peskas.timor.data.pipeline::get_preprocessed_metadata(pars)
 
-landings <- peskas.timor.data.pipeline::get_merged_landings(pars, "_weight") %>%
+landings <- peskas.timor.data.pipeline::get_weighted_landings(pars) %>%
   dplyr::rename(date = date, submitted_by = `_submitted_by`) %>%
-  dplyr::select(-c(`_attachments`, species_group, dplyr::starts_with("_"))) %>%
+  dplyr::select(-c(dplyr::any_of("_attachments"), species_group, dplyr::starts_with("_"))) %>%
   dplyr::rename_all(~ stringr::str_remove(., "trip_group/")) %>%
   dplyr::filter(!is.na(landing_site_name)) %>%
   dplyr::filter(date >= "2018-01-01")

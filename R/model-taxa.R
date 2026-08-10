@@ -45,16 +45,11 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 
   landings_with_weight <- join_weights(
     merged_landings,
-    metadata,
     morphometric_tables,
     nutrients_table
   )
 
-  landings_with_weight_filename <- paste(
-    conf$surveys$merged_landings$file_prefix,
-    "weight",
-    sep = "_"
-  ) %>%
+  landings_with_weight_filename <- conf$surveys$landings$weight$file_prefix %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landings_with_weight,
@@ -97,76 +92,25 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' (TL) in survey version 1 and fork length (FL) in survey version 2" — and an
 #' `SRX` → disk-width rule that was never implemented. Both were wrong.
 #'
-#' @param data The survey landings data frame
-#' @param metadata Metadata tables
+#' @section Input and output shape:
+#' The input is the **flat long** merged table produced by
+#' [merge_landings()] — one row per (submission, catch, length bin), with the
+#' taxon already resolved from the assets snapshot by
+#' [preprocess_landings()]. The output re-nests the catch columns into
+#' `species_group` / `length_individuals`, which is what validation still
+#' reads. That nesting is the last thing holding the old interchange format up;
+#' it goes when validation moves onto the long table in migration Phase 5.
+#'
+#' @param data The merged long landings table
 #' @param rfish_tab Table with length weight parameters
 #' @param nutrients_table Table with nutritional parameters
 #'
 #' @return A new landings data frame including length-weights info
 #' @export
 #'
-join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
-  catch_codes <- metadata$catch_types %>%
-    dplyr::transmute(
-      species = as.character(.data$catch_number),
-      catch_taxon = .data$interagency_code,
-      length_type = .data$length_type
-    ) %>%
-    dplyr::mutate(
-      catch_taxon = dplyr::if_else(.data$species == "0", "0", .data$catch_taxon)
-    )
-
+join_weights <- function(data, rfish_tab, nutrients_table) {
   data %>%
-    dplyr::mutate(
-      species_group = purrr::map(
-        .x = .data$species_group,
-        .f = dplyr::left_join,
-        catch_codes,
-        by = c("species")
-      ),
-      species_group = purrr::map(
-        .x = .data$species_group,
-        .f = dplyr::select,
-        -.data$species
-      ),
-      species_group = purrr::map(
-        .x = .data$species_group,
-        .f = dplyr::rename,
-        species = .data$catch_taxon
-      )
-    ) %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
-    # fix conditions for "no catch" and "other" labels
-    dplyr::mutate(
-      species = dplyr::case_when(
-        is.na(.data$species) &
-          .data$n_individuals > 0 |
-          is.na(.data$species) & !.data$total_catch_value == "0" ~ "MZZ",
-        is.na(.data$species) &
-          is.na(.data$n_individuals) &
-          is.na(.data$total_catch_value) |
-          is.na(.data$species) &
-            is.na(.data$n_individuals) &
-            .data$total_catch_value == "0" |
-          is.na(.data$species) &
-            .data$n_individuals == 0 &
-            is.na(.data$total_catch_value) |
-          is.na(.data$species) &
-            .data$n_individuals == 0 &
-            .data$total_catch_value == "0" ~ "0",
-        TRUE ~ .data$species
-      )
-    ) %>%
-    # Descriptive only — see the "Length types" section. Every measurement is a
-    # total length by the time it gets here, so nothing is converted.
-    dplyr::mutate(
-      length_type = dplyr::case_when(
-        .data$species %in% c("OCZ", "SLV", "IAX", "MOO") ~ "TL",
-        !is.na(length_type) ~ length_type,
-        TRUE ~ "TL"
-      )
-    ) %>%
+    dplyr::rename(species = "catch_taxon", mean_length = "length") %>%
     estimate_weight(rfish_tab$length_weight) %>%
     dplyr::left_join(nutrients_table, by = "species") %>%
     dplyr::mutate(
@@ -174,8 +118,18 @@ join_weights <- function(data, metadata, rfish_tab, nutrients_table) {
       dplyr::across(
         c(.data$Selenium_mu:.data$Vitamin_A_mu),
         ~ .x * .data$weight
-      )
+      ),
+      # The catch index is 1-based in the long table and 0-based in the nest.
+      n = as.character(.data$n_catch - 1L)
     ) %>%
+    dplyr::rename(food_or_sale = "catch_use") %>%
+    # Catch-level columns that are not part of the nest would leave the outer
+    # frame with more than one row per submission. The standard columns go too:
+    # this artefact is the legacy-shaped input to validation, which reads the
+    # raw KoBo columns and re-nests on every grouping column it is handed.
+    dplyr::select(-dplyr::any_of(c(
+      standard_survey_cols(), "submission_id", "n_catch", "scientific_name"
+    ))) %>%
     tidyr::nest(
       length_individuals = c(
         .data$mean_length,

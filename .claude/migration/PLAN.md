@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–3 complete** (2026-08-10). Phase 4 next.
+Status: **Phases 0–4 complete** (2026-08-10). Phase 5 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -167,7 +167,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 1 | Foundations | `config.yml` superset, `read_config()`, DESCRIPTION, Docker, `.env` | low | 1 ✅ |
 | 2 | Storage delegation | delete `cloud-storage.R`/`get-cloud-files.R`, call `coasts::*` | medium | 1 ✅ |
 | 3 | Ingestion | `ingestion.R`, v2+v3 live, freeze v1, metadata | medium | 1 ✅ |
-| 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 |
+| 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 ✅ (1 used) |
 | 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 |
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 |
 | 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 |
@@ -323,102 +323,49 @@ Numerically inert: 97,328 submissions compared against the previous dev run,
 
 ---
 
-### Phase 4 — Preprocessing (2 sessions)
+### Phase 4 — Preprocessing ✅ done 2026-08-10
 
-The largest genuinely Timor-specific rewrite. Split:
+Shipped as scoped, in one session rather than two, with the deviations recorded
+in the STATE Phase 4 entry. What Phase 5 inherits:
 
-**4a — reshaping to long format.** Replace `R/clean-raw-data.R`, `R/preprocess-landings.R`
-(`step_1`/`step_2`), `R/pt_nest_species.R`, `R/pt_nest_attachments.R` with
-`R/preprocessing-surveys.R` + `R/survey-reshaping.R` producing a flat long
-catch-level table.
+- **`R/preprocessing-surveys.R`** — `preprocess_landings(versions = c("v2","v3"))`
+  writing **flat long catch parquet** (one row per submission × catch × length
+  bin), `merge_landings()` reduced to a bind, the per-version `harmonise_*()`
+  reconciliation, and `survey_labels()` / `resolve_catch_taxa()` /
+  `resolve_survey_labels()` — the label joins, off the assets snapshot.
+- **`R/survey-reshaping.R`** — `reshape_species_groups()`,
+  `expand_length_frequency()`, `bin_midpoint()`, `trim_free_text()`.
+- `R/calculate-weights.R` → **`R/model-taxa.R`**. `clean-raw-data.R`,
+  `preprocess-landings.R`, `pt_nest_species.R`, `pt_nest_attachments.R`,
+  `merge-landings.R` and `get_raw_landings()` are gone.
+- **`join_weights()` is the only remaining bridge to the old format.** It renames
+  the catch columns back, re-nests `species_group` / `length_individuals`, and
+  drops the standard submission columns again, so the weight artefact is exactly
+  what it was minus `_attachments`. **Phase 5's first job is to delete that
+  bridge**: point the validators at the merged long parquet, drop the raw KoBo
+  column names, and the nesting goes with them.
+- The label joins are **duplicated for one phase, deliberately**: preprocessing
+  resolves gear / vessel / site / taxa from the frame, while
+  `validate_gear_type()`, `validate_vessel_type()` and `validate_sites()` keep
+  their Google Sheets joins because they also emit alert codes 12–16. Phase 5
+  moves them onto the preprocessed columns, and that is what lets
+  `metadata.google_sheets.tables` finally shrink — every entry is annotated in
+  `inst/config.yml` with the phase that removes it.
+- v1's column reconciliation and flattening live in
+  `data-raw/freeze-landings-v1.R`, which now writes **parquet**. The production
+  freeze is still un-run.
+- Nutrients: **keep Timor's.** `coasts::enrich_taxa()` emits six nutrients
+  (Calcium, Iron, Omega3, Protein, VitaminA, Zinc) against Timor's seven, has no
+  Selenium, does no unit conversion, and has no FAO food-composition override for
+  the invertebrates FishBase cannot estimate (`OCZ`, `IAX`, `COZ`, `PEZ`, `CRA`,
+  `SLV`) or the hardcoded `FLY` row. They do not agree, so the PLAN §4b
+  "delete Timor's if they agree" test fails and `R/calculate-nutrients.R` stays.
+  It is renamed to `R/nutrients.R` in Phase 8 as planned.
 
-**Only v2 and v3 need porting** — v1 is frozen (Phase 3), so its form shape can
-be ignored entirely. Input is the raw parquet, read directly rather than through
-`get_raw_landings()`; **delete that shim and the all-character coercion** once
-nothing downstream depends on character columns. Note what the shim was
-hiding: the CSV era trimmed spaces/tabs and mapped `""`→`NA`, and ~60 free-text
-answers carry stray leading/trailing newlines that both paths preserve. Strip
-them deliberately here, in the reshaping code.
-
-Target columns, matching the standard:
-
-```
-submission_id, survey_id, landing_date, submission_date,
-gaul_1_code, gaul_1_name, gaul_2_code, gaul_2_name, landing_site,
-n_fishers (or the men/women/children triple), trip_duration,
-gear, vessel_type, habitat, catch_outcome,
-n_catch, catch_taxon / alpha3_code, scientific_name, length, catch_kg, catch_price
-```
-
-Timor's v3 form differs from the ADNAP form — expect real work in the nested
-species/length-frequency unnesting. Moz's `reshape_species_groups()`,
-`expand_length_frequency()` and `process_over100_length_groups()` are the shape to
-follow, not code to copy.
-
-**Label joins move to the assets snapshot.** Wherever preprocessing currently
-joins a Google Sheets table to resolve a code to a name — catch types, gear
-types, vessel types, stations/centro_pescas, reporting units — join the Phase 3
-assets snapshot instead (decision §2.5) and emit the standard
-`standard_name` / `alpha3_code` columns. Diff the resulting label distribution
-against the golden snapshot before accepting: a mapping that silently drops a
-gear will look like a clean run.
-
-Read it with `get_assets(conf)` and **always** narrow with
-`timor_assets(x, conf)` — the snapshot is cross-country and carries no
-`country` column, so an unfiltered join pulls in Kenya's, Mozambique's and
-Zanzibar's rows. `survey_label` is the join key to the raw form values and is
-populated on every Timor taxa, gear and vessel row (verified 2026-08-09);
-for taxa it holds `catch_types$catch_number`. Two caveats: the snapshot drops
-`landing_sites` lat/lon (still in the Sheets `centro_pescas`), and
-`metadata.google_sheets.tables` still lists all 15 tables — trim it here to the
-five Airtable does not cover, plus `catch_types`, whose `length_type` column
-has no frame equivalent (COASTS-TODO C14 explains why it should not get one).
-
-**4b — weights and taxa. ~~Pending~~ mostly DONE, pulled forward 2026-08-09**
-(commit `a2c2881`). The coefficient path already runs on
-`coasts::get_taxa_morphometrics()` with Mozambique's aggregation (geometric
-mean of `a`, arithmetic mean of `b`) and Mozambique's `W = a * L^b * N`.
-`get_catch_types()`, `get_fish_length()`, `retrieve_lengths()`,
-`get_rfish_table()`, `ingest_rfish_table()` and the `taxize`/GBIF dependency
-are all deleted. Measured against the golden snapshot: coefficients now cover
-53 of 56 taxa (was 45), species expanded 693 → 5,259, total catch weight
-**−15.4%** — expected, since the old code took the 90th percentile of
-per-species weights.
-
-What remains for 4b:
-
-- Rename `R/calculate-weights.R` → `R/model-taxa.R` with the rest of the
-  Phase 4 file reorganisation.
-- ~~Delete `summarise_ll_coeffs()` and `normalise_length_to_tl()`~~ — **done in
-  Phase 3.** The freeze made them unreachable; the length-length logic now
-  lives in `data-raw/freeze-landings-v1.R`, its only consumer. Proven a no-op:
-  0.000000% weight delta over all 97,328 submissions.
-- ~~Point `get_taxa_list()` at the assets snapshot~~ — **done in Phase 3.**
-  Measured identical to the Sheets join it replaced: 56 codes each, zero
-  differing `scientific_name`.
-- **Known wart, deliberately left:** `summarise_lw_coeffs()` pools
-  length-weight coefficients across every measurement axis (`SLV` = 34
-  carapace-length studies + 19 total-length). Harmless while all recorded
-  lengths are TL — confirmed 2026-08-10 — but filtering each declaring taxon to
-  its own `Type` would move national catch weight **+0.63%**. Revisit only if
-  the field protocol changes.
-- Compare `R/calculate-nutrients.R` against `enrich_taxa()`'s nutrient columns
-  and delete Timor's if they agree — **not** upstream it, contrary to §10.
-- `metadata.fishbase.taxa_enriched.file_prefix` is still not in the config, and
-  is only needed if Timor ever calls `enrich_taxa()` itself. It does not today:
-  it calls `get_taxa_morphometrics()` with its own taxa list.
-
-Verify against the Phase 0 golden snapshot: row counts, column set, and per-column
-summary stats (mean/median/NA-rate) for `catch_kg`, `catch_price`, `length`.
-Investigate any delta over ~1%.
-
-Current dev baselines to diff against, all measured 2026-08-09/10 and all
-reproducible from `timor-dev`: merged **97,328 × 26**, weight artefact
-**97,328 × 61** over **1,751,969** catch rows and **5,196,740 kg**
-(v1 64,089.1 / v2 4,819,710.8 / v3 312,940.2 kg). Phase 3 changed none of these,
-so any Phase 4 movement is Phase 4's.
-
----
+Numerically inert where it matters: 97,328 submissions, **5,196,740 kg**,
+**0.000000%** weight delta, 0 submissions differing by more than 1e-6 kg. Catch
+rows fell 1,751,969 → 1,647,260 by removing 104,709 phantom no-catch rows — see
+the STATE entry.
 
 ### Phase 5 — Validation
 

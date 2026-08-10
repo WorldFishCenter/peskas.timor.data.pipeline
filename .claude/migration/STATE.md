@@ -6,23 +6,28 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 3 **complete** (2026-08-09). Phase 4 not started.
+- **Phase:** 4 **complete** (2026-08-10). Phase 5 not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
-  (+ `a2c2881` weight rewrite, `7902012` docs). Phase 3 = **`a89f96e`** on
-  `feat/align-coasts-phase3`, committed 2026-08-10, **not pushed** — so no dev
-  pipeline run has exercised it end to end yet. All verification below is
-  local, against the dev buckets. Pushing the branch is the next integration
-  gate and will run the whole pipeline against `-dev`.
+  (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
+  docs). Phase 4 on `feat/align-coasts-phase4`, committed 2026-08-10, **not
+  pushed** — no dev pipeline run has exercised Phase 3 or Phase 4 end to end
+  yet. All verification below is local, against the dev buckets. Pushing the
+  branch is the next integration gate and will run the whole pipeline against
+  `-dev`.
 - **Environment:** `gs://timor-dev` seeded from prod run `90ede9a` (21
   prefixes, re-verified 2026-07-31); `timor/{raw,validated}` markers exist in
   both `peskas-api-dev` and `peskas-api-prod`. `coasts` is **unpinned** since
   Addendum 4 — `DESCRIPTION` and both Dockerfiles resolve the latest release at
   build time; locally installed release is **4.6.0**.
-- **Read before Phase 4:** the Phase 3 entry's "Findings that change later
-  phases" — in particular COASTS-TODO C13 (the assets snapshot has no
-  `country` column, so every country-specific read needs the brittle
-  `metadata.airtable.form_ids` filter) and that `devtools::load_all()` cannot
-  be used to test a delegated `coasts::` workflow function.
+- **Read before Phase 5:** the Phase 4 entry's "Findings that change later
+  phases". Phase 5's first job is deleting the `join_weights()` bridge: it is
+  the only thing still producing the nested `species_group` /
+  `length_individuals` shape, and it exists solely because the 19 validators
+  read raw KoBo column names. The merged long parquet already carries the
+  standard columns they should move onto. Also note COASTS-TODO C13 (the assets
+  snapshot has no `country` column, so every country-specific read needs the
+  brittle `metadata.airtable.form_ids` filter) and that `devtools::load_all()`
+  cannot be used to test a delegated `coasts::` workflow function.
 - **Action for the user, security:** `read_config()` was printing the full GCP
   service-account private key, the Airtable PAT, the Dataverse token and the
   blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
@@ -1641,3 +1646,350 @@ be re-introduced.
   `join_weights()` simplified, roxygen corrected), `inst/config.yml`,
   `inst/config_template.yml`, `CLAUDE.md`, `.claude/migration/COASTS-TODO.md`
   (C14 withdrawn), `man/*.Rd` (regenerated)
+---
+
+## Phase 4 — Preprocessing — 2026-08-10
+
+Branch: `feat/align-coasts-phase4` (off `feat/align-coasts-phase3` at `0e8ab28`)
+
+**Done**
+
+*1. `R/survey-reshaping.R` + `R/preprocessing-surveys.R` — new*
+
+- `reshape_species_groups()` — the `species_group.<n>.species_group/<field>`
+  blocks to one row per (submission, catch), empty catch slots dropped,
+  `n_catch` 1-based as in the other pipelines.
+- `expand_length_frequency()` — one row per 5 cm length bin, with the over-60
+  bin taking the recorded `fish_length_over60` measurement in place of the
+  60 cm midpoint. `bin_midpoint()` keeps the old regex verbatim so no midpoint
+  can move; it is vectorised over the distinct bin names instead of per row.
+- `trim_free_text()` — the deliberate newline strip Phase 3 deferred.
+- `preprocess_landings(versions = c("v2", "v3"))` — **one** workflow function
+  replacing `preprocess_updated_landings()` + `preprocess_landings_step_1/2()`,
+  writing `timor-landings-v{2,3}_preprocessed__*.parquet`.
+- `merge_landings()` moved here and reduced to a bind: per-version column
+  reconciliation now happens in `harmonise_v2()` / `harmonise_v3()`, so
+  `merge_versions()` is gone.
+- `survey_labels()` / `resolve_catch_taxa()` / `resolve_survey_labels()` — the
+  label joins, off the assets snapshot.
+
+Deleted: `R/clean-raw-data.R`, `R/preprocess-landings.R`, `R/pt_nest_species.R`,
+`R/pt_nest_attachments.R`, `R/merge-landings.R`, `get_raw_landings()`.
+`R/calculate-weights.R` → `R/model-taxa.R` (the 4b rename).
+
+*2. The interchange format is flat long parquet through the merge*
+
+One row per (submission, catch, length bin). The table is a **superset**: the
+standard columns sit beside every raw KoBo column, reconciled per form version.
+The raw ones are what the 19 validators read and they go in Phase 5.
+
+`join_weights()` is now the whole bridge to the old format: it renames the catch
+columns back, re-nests `species_group` / `length_individuals`, and **drops the
+18 standard submission columns again**. That last part is not cosmetic — carried
+through, they add 18 grouping columns to the three `unnest()`/`nest()` cycles
+inside validation for no benefit, since Phase 5 will read them off the merged
+table instead. The weight artefact is therefore the old artefact minus
+`_attachments`.
+
+*3. `_attachments` dropped*
+
+`pt_nest_attachments()` built a list-column whose only consumer,
+`inst/report/unanswered_summary.Rmd`, immediately `select(-\`_attachments\`)`s it.
+Nothing else in `R/`, `inst/` or the portal path reads it. Dropped, and the
+report now uses `any_of()`.
+
+*4. Labels move to the PESKAS | FRAME assets snapshot*
+
+`survey_labels()` reads taxa, gear, vessels, landing sites and geo from the
+snapshot (always through `timor_assets()`) and habitat plus the per-taxon
+`length_type` from the Sheets, which have no frame equivalent. The taxon
+resolution — including the `MZZ` / `0` rules and the
+`OCZ`/`SLV`/`IAX`/`MOO` → `TL` overrides — moved out of `join_weights()` into
+`resolve_catch_taxa()`, so the weight path no longer touches `catch_types` for
+taxa at all.
+
+Measured against the Sheets tables it replaces: the frame's 60 `survey_label` →
+`alpha3_code` rows are **identical** to `catch_types` for all 60 shared labels
+(the only difference is the `0` "no catch" sentinel, which the frame correctly
+does not carry); all 9 gear codes, both vessel codes and all 40 station codes
+used by the live forms are covered.
+
+*5. Metadata tables trimmed by one, and annotated*
+
+`fao_catch` dropped from `metadata.google_sheets.tables` and from
+`preprocess_metadata_tables()` — Phase 3 orphaned it when `get_taxa_list()`
+moved to the snapshot and it has had no reader since. `pt_validate_fao_catch()`
+went with it.
+
+**The brief asked for a trim to six tables and that is not yet possible.** The
+seven it would remove (`devices`, `vessel_types`, `gear_types`, `stations`,
+`reporting_units`, `boats`, `vms_installs`) are read by the validators and by
+`data_report.Rmd`, not by preprocessing — preprocessing never joined a Sheets
+table. The frame equivalents are now resolved in `preprocess_landings()`, so the
+validators can move onto them in Phase 5 and the tables go then. Every entry in
+the config list is annotated with the phase that removes it.
+
+*6. v1's flattening lives in the freeze script*
+
+`data-raw/freeze-landings-v1.R` now also reconciles v1's columns and flattens the
+snapshot to the long shape, writing **parquet**. Deliberate: the form is dead and
+`preprocess_landings()` should not carry a shape nothing will produce again. The
+`.rds`-vs-parquet reason recorded in Phase 3 (arrow returns list-columns as
+`vctrs_list_of`) disappears with the list-columns.
+
+*7. CI*
+
+The three preprocessing jobs collapse to one `preprocess-landings`, which now
+also needs `ingest-preprocess-metadata-tables` (it reads the assets snapshot and
+the Sheets). The v2 split into halves existed because 65k submissions with nested
+list-columns did not fit one container; the long table costs less, and both
+versions now run in one job in **1.1 minutes**.
+
+**Verified**
+
+*Reshaping, cell by cell against the Phase 3 weight artefact*
+
+Every catch column of both live forms, compared row for row after sorting:
+
+| | catch rows compared | differing cells |
+|---|---|---|
+| v2 | 1,131,090 | **0** in all of `catch_taxon`, `catch_use`, `length_type`, `length`, `n_individuals`, `photo`, `other_species_name`, `n_catch` |
+| v3 | 374,648 | **0**, same columns |
+
+v3 excludes the 627 no-catch submissions, which are a deliberate change — see
+the deltas below.
+
+*Submission columns*
+
+Column for column against the Phase 3 merged artefact, the only differences are
+the two intended ones: whitespace trimming (19 v2 cells, 35 v3 cells, all
+verified pure trims) and 289 + 9 `reason_no_activity` values that were `NA`
+before.
+
+*End to end against `timor-dev`*
+
+| artefact | rows | baseline |
+|---|---|---|
+| `timor-landings-v1-frozen__*.parquet` | 10,117 submissions / 140,895 catch rows | = Phase 3's 140,895 |
+| `timor-landings-v2_preprocessed__*.parquet` | 64,997 / 1,131,090 | — |
+| `timor-landings-v3_preprocessed__*.parquet` | 22,214 / 375,275 | — |
+| `timor-landings-merged__*.parquet` | 97,328 / 1,647,260 | = 97,328 submissions |
+| `timor-landings-merged_weight__*.rds` | 97,328 × 60 | was 97,328 × 61 |
+
+| survey_version | kg before | kg after | delta |
+|---|---|---|---|
+| v1 | 64,089.1 | 64,089.1 | 0 |
+| v2 | 4,819,710.8 | 4,819,710.8 | 0 |
+| v3 | 312,940.2 | 312,940.2 | 0 |
+| **all** | **5,196,740** | **5,196,740** | **0.000000%** |
+
+Submissions differing by more than 1e-6 kg: **0** of 97,328. The freeze
+reproduced its Phase 3 numbers exactly (40 convertible taxa, 88,764 conversions,
+mean length 34.800 → 36.776 cm).
+
+**Deltas, all explained**
+
+1. **−104,709 catch rows (−6.0%)**, and `catch_taxon == "0"` 178,642 → 73,933.
+   `preprocess_updated_landings()` applied `catch_outcome == "0" ~ "0"` across
+   *every* `species_group/species` column, including the empty slots, so each of
+   v3's 627 no-catch submissions carried **168** phantom catch rows (14 slots ×
+   12 bins) instead of one. They hold no individuals and no weight, which is why
+   total catch weight is unchanged to six decimal places. Checked before
+   accepting: no portal aggregation reads catch `length` — `format-public-data.R`
+   only ever sums `catch` and takes `first()` of submission columns — so the only
+   affected published object is the `timor_catch.rds` row count, which
+   `fetchData.js` does not consume.
+2. **`_attachments` gone**: merged/weight lose one column.
+3. **`group_conservation_trading/trader` was a literal string on all 22,214 v3
+   rows.** `clean_updated_landings()` coalesced two column *names* rather than
+   the columns, so the field held
+   `"group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA"` verbatim. Fixed;
+   nothing reads the column.
+4. **298 `reason_no_activity` values recovered.** `clean_updated_landings()`
+   renamed v3's `Tanba_sa_...` but not `Seluk_hakerek_manualmente`, so the
+   "other, written in" branch resolved to `NA` for every v3 row. Fixed; nothing
+   reads the column.
+5. **Length bins are now in ascending order** inside `length_frequency`. The old
+   order followed raw column order and was not even consistent between
+   submissions (15 distinct orders in 2,000 v2 rows), so this cannot be a
+   regression. Catch order within a submission is unchanged — `n` was already
+   `0..k-1`, verified over all 30,347 multi-catch submissions, which is what
+   `dplyr::first(species)` in `validate_landing_regularity()` depends on.
+
+*Labels, diffed against the Google Sheets tables they replace*
+
+The check PLAN §4 asks for — "a mapping that silently drops a gear will look
+like a clean run":
+
+| | codes used by the live forms | resolved from the frame | agreement with the Sheets |
+|---|---|---|---|
+| gear | 9 | **9** | same code → same gear, Title Case (`MC` = "Gleaning" vs "manual collection") |
+| vessel | 2 | **2** | same mapping ("Canoes"/"Motorized Boat" vs "unmotorised"/"motorised") |
+| habitat | 7 | **7** | identical — habitat has no frame table and still comes from the Sheets |
+| landing sites | 41 | **38** | 27 names identical, 11 spelling variants, 1 genuinely different (`28`) |
+
+The 3 unresolved site codes (`12`, `14`, `17`, 31 submissions) are **absent from
+the Sheets `stations` too** — they are what `validate_sites()` already flags as
+alert 16, not a frame regression. 40 submissions of 97,328 (0.04%) end with no
+`gaul_1_name`. One frame site name carries an embedded newline, so
+`survey_labels()` uses `str_squish()` on it: these are labels and they go into
+the Phase 6 API export.
+
+*Validation still runs, and its output is where it was*
+
+`validate_landings()` itself was **not** run — it writes to the live
+`VALID_SHEET_ID`, which has no dev twin (Phase 5's sink decision). Its body was
+replayed locally up to and including the validated-landings upload, skipping the
+Sheets sync.
+
+| | golden `90ede9a` | Phase 4 |
+|---|---|---|
+| validated landings | 97,151 × 19 | **97,328 × 19**, identical column set |
+| flagged | 12,805 (13.18%) | 13,388 (13.76%) |
+| distinct alert combinations | 37 | **37** |
+
+**35 of the 37 combinations are identical, count for count.** All movement is in
+three alerts: `17` 2,849 → 3,420, `11` 2,033 → 2,013, `10` 3,943 → 3,950
+(plus `10-17` 133 → 159, `10-11` 93 → 92). Alerts 12–16 and 19–21 — the ones
+that would catch a broken label mapping — do not move at all.
+
+**That movement is not Phase 4's.** It is commit `a2c2881`, the weight rewrite
+that landed before this phase and has never been through validation. Measured on
+the 97,151 submissions the golden and the new artefact share: the weight
+artefact went **6,137,008 → 5,194,304 kg, −15.4%**, exactly the figure PLAN §4b
+records. Lower weights raise price per kg (median 3.26 → 3.39), and the
+submissions above `price_per_weight.max_limit` of 15 go **7,063 → 7,995** —
+which is what alert 17 counts. Phase 4 is weight-neutral to six decimal places,
+so it cannot move either alert; and the phantom rows it removes carry no
+individuals and no weight, so they are filtered out by `validate_price_weight()`
+and `get_bounds_table()` before any threshold is computed.
+
+Validated catch weight is 1,004,984 → 964,584 kg (−4.0%) for the same reason:
+more alert-17 submissions means more blanked weights. Recorded, not accepted as
+Phase 4's.
+
+*tinytest, against `timor-dev`* — the new validated artefact, and identical to
+the Phase 2 and Phase 3 baselines:
+
+| suite | result |
+|---|---|
+| `test_merged_trips.R` | all ok, 2/2 |
+| `test_validated_pds_trips.R` | all ok, 7/7 |
+| `test_public_data.R` | all ok, 1/1 |
+| `test_validated_landings.R` | 2 fails / 8 passes — the same two pre-existing assertions (`<33--36>` landing dates prior to 2017, `<49--53>` `catch_purpose` is NULL), the same four "Unknown or uninitialised column" warnings |
+
+**No assertion was touched.** The one that matters here passed: `catch_taxon`
+validated against `catch_types$interagency_code`, i.e. the frame-derived taxa
+are all valid interagency codes.
+
+*`devtools::check()`* — **0 errors, 0 WARNINGs, 4 NOTEs** against a baseline of
+0/0/4, and **testthat is green for the first time in the migration**.
+`tests/testthat/test-pre-process-landings.R` tested `pt_nest_attachments()` and
+`pt_nest_species()`, both deleted; the long-standing
+`FAIL 1 | WARN 9 | PASS 9` goes with them. Replaced by
+`test-survey-reshaping.R`, 8 assertions over `reshape_species_groups()` and
+`expand_length_frequency()` including the over-60 bin and the kept empty bins.
+The 4 NOTEs are unchanged (33 Imports, install size, file timestamps,
+`sd`/`rnorm`/`if_all`/`Estimated revenue` globals).
+
+**Deferred, with reasons**
+
+- **`metadata.google_sheets.tables` went 15 → 14, not 15 → 6.** See "Done" §5.
+  The brief's target is right but it is Phase 5's to reach: the seven tables it
+  would remove are read by the validators, which still do their own Sheets
+  joins because they also emit alert codes 12–16. Every entry is annotated with
+  the phase that removes it.
+- **The `join_weights()` bridge stays.** Deleting it means rewriting the 19
+  validators against the long table, which is Phase 5, and doing it here would
+  have put the 12,805-flag alert-parity gate at risk in a phase whose gate is
+  catch weight.
+- **The production freeze has still not been run**, and now it must be re-run
+  with the *new* script: `R_CONFIG_ACTIVE=production Rscript
+  data-raw/freeze-landings-v1.R` writes the long parquet `merge_landings()`
+  reads. The `.rds` snapshot in `timor-dev` is superseded.
+- `preprocess_metadata_tables()`, `R/preprocess-metadata-tables.R` and
+  `R/ingest-metadata-tables.R` were not restructured. PLAN's file map folds
+  them into `preprocessing-surveys.R`; they are metadata, not surveys, and
+  moving them would have added noise to a diff that already deletes five files.
+- The `_geolocation*` columns, `deviceid`, `_submitted_by` and the other KoBo
+  bookkeeping fields ride along in the long table. They are legacy passthrough
+  and go with the rest in Phase 11.
+- `ANTHROPIC_API_KEY` rotation and the Phase 3 secrets rotation are still open
+  user actions.
+
+**Findings that change later phases**
+
+1. **Phase 5's first job is the `join_weights()` bridge, and the merged parquet
+   already has everything it needs.** `standard_survey_cols()` in
+   `R/preprocessing-surveys.R` is the exact list of columns the validators
+   should move onto; `join_weights()` drops precisely that list. Delete both
+   halves together.
+2. **Validation is the slow step and it is not Phase 4's fault.** The local
+   replay took ~50 minutes on 1.65 M catch rows, almost all of it in
+   `validate_catch_params()`'s per-(gear × taxon) `univOutl::LocScaleB()` calls
+   and the `purrr::map` over 97,328 nested tibbles in the final assembly. Both
+   disappear with the nesting. Do not add grouping columns to the weight
+   artefact — carrying the 18 standard columns through measurably slowed the
+   `unnest()`/`nest()` cycles, which is why `join_weights()` drops them.
+3. **Nutrients: `coasts::enrich_taxa()` does not replace
+   `R/calculate-nutrients.R`.** Measured, not inferred: coasts emits six
+   nutrients (Calcium, Iron, Omega3, Protein, VitaminA, Zinc) against Timor's
+   seven, has no **Selenium**, does no unit conversion to grams, has no FAO
+   food-composition override for the six invertebrate codes FishBase cannot
+   estimate (`OCZ`, `IAX`, `COZ`, `PEZ`, `CRA`, `SLV`), and no hardcoded `FLY`
+   row. The portal publishes `nutrients_aggregated` off the seven `*_mu`
+   columns, and `Selenium_mu` is the left edge of the
+   `mean_length:Vitamin_A_mu` range three validators select on. PLAN §4b's
+   "delete Timor's if they agree" test **fails**; the file stays and is renamed
+   to `R/nutrients.R` in Phase 8 as planned.
+4. **`_pkgdown.yml` needed fixing again** — `matches("nest")`, `matches("clean")`
+   and `coalist` all selected nothing after the deletions. Fourth phase running,
+   fourth dangling entry. **Check `_pkgdown.yml` after every deletion.**
+5. 272 v3 submissions record `no_men_fishers` as `"_10"` (an "other" choice
+   code), so `as.numeric()` warns and yields `NA`. Pre-existing —
+   `validate_n_fishers()` has always coerced the same values the same way — but
+   the warning is newly visible in the preprocessing log. Whoever rewrites
+   `n_fishers` should decide whether `"_10"` means 10.
+6. `preprocess_landings()` runs both live forms in **1.1 minutes** in one
+   process. The v2 half-and-half split existed only because 65k submissions with
+   nested list-columns did not fit one container.
+
+**Files added / removed / renamed**
+
+- added: `R/preprocessing-surveys.R`, `R/survey-reshaping.R`,
+  `tests/testthat/test-survey-reshaping.R`,
+  `man/{preprocess_landings,reshape_landings,reshape_species_groups,expand_length_frequency,survey_labels,get_weighted_landings}.Rd`
+- renamed: `R/calculate-weights.R` → `R/model-taxa.R`
+- removed: `R/clean-raw-data.R`, `R/preprocess-landings.R`,
+  `R/pt_nest_species.R`, `R/pt_nest_attachments.R`, `R/merge-landings.R`,
+  `tests/testthat/test-pre-process-landings.R`; `get_raw_landings()` from
+  `R/ingestion.R`; `pt_validate_fao_catch()` and the `fao_catch` entry from
+  `R/preprocess-metadata-tables.R`;
+  `man/{clean_catches,clean_updated_landings,coalist,preprocess_landings_step_1,preprocess_landings_step_2,preprocess_updated_landings,pt_nest_species,pt_nest_attachments,pt_validate_fao_catch}.Rd`
+- modified: `R/model-taxa.R` (`join_weights()` rewritten against the long table),
+  `R/get-cloud-files.R` (`get_merged_landings()` moved here and split from
+  `get_weighted_landings()`), `R/ingestion.R`, `R/validate-landings.R`,
+  `R/validation-functions.R` (roxygen examples only), `NAMESPACE`, `DESCRIPTION`
+  (−`textclean`), `inst/config.yml` (metadata tables), `_pkgdown.yml`,
+  `.github/workflows/data-pipeline.yaml` (three preprocessing jobs → one),
+  `data-raw/freeze-landings-v1.R` (flatten to long parquet),
+  `inst/report/{unanswered_summary,enumerators_summary}.Rmd`, `CLAUDE.md`,
+  `.claude/migration/PLAN.md`, `.claude/migration/STATE.md`
+- **unchanged: `inst/tinytest/`, the export path, `format-public-data.R`,
+  `merge-trips.R`, and every `portal-*.json` object name.**
+
+**Cloud objects written (all `-dev`)**
+
+- `timor-dev/timor-landings-v1-frozen__20260810153814_0e8ab28__.parquet`
+- `timor-dev/timor-landings-v2_preprocessed__20260810171248_0e8ab28__.parquet`
+- `timor-dev/timor-landings-v3_preprocessed__20260810171324_0e8ab28__.parquet`
+- `timor-dev/timor-landings-merged__20260810171351_0e8ab28__.parquet`
+- `timor-dev/timor-landings-merged_weight__20260810161646_0e8ab28__.rds`
+- `timor-dev/timor-landings-merged_validated__20260810170839_0e8ab28__.rds`
+
+**Open questions for the next session**
+
+1. None blocking. Phase 5 can start from the merged long parquet.
+2. The validation flags sink (Google Sheets vs MongoDB) is still the open
+   sub-decision, unchanged since Phase 2. Recommendation remains **MongoDB**.
+3. Whether `"_10"` in v3's `no_men_fishers` should parse as 10 (finding 5).

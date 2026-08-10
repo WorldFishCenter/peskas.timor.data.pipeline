@@ -29,3 +29,4 @@ a vector of the same lenght as x
 \description{
 Generate an alert vector based on the \code{univOutl::LocScaleB()} function
 }
+\keyword{internal}

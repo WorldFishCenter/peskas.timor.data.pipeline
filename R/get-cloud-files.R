@@ -45,6 +45,45 @@ download_versioned_rds <- function(prefix,
   readr::read_rds(file = object_name)
 }
 
+#' Download the merged landings
+#'
+#' The merged table is the flat long catch table produced by
+#' [merge_landings()]: one row per (submission, catch, length bin), parquet
+#' since migration Phase 4.
+#'
+#' @param conf The configuration file.
+#' @return A tibble of merged landings.
+#' @keywords storage
+#' @export
+get_merged_landings <- function(conf) {
+  coasts::download_parquet_from_cloud(
+    prefix = conf$surveys$landings$merged$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$surveys$landings$merged$version
+  )
+}
+
+#' Download the merged landings with catch weights
+#'
+#' Still `.rds`: [join_weights()] re-nests the catch columns into
+#' `species_group` / `length_individuals` for validation, which parquet cannot
+#' round-trip cleanly. Flattened in migration Phase 5.
+#'
+#' @param conf The configuration file.
+#' @return A tibble of weighted landings, one row per submission.
+#' @keywords storage
+#' @export
+get_weighted_landings <- function(conf) {
+  download_versioned_rds(
+    prefix = conf$surveys$landings$weight$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$surveys$landings$weight$version,
+    exact_match = TRUE
+  )
+}
+
 #' Download Peskas validated landings
 #'
 #' Download validated Peskas data from Google Cloud.
