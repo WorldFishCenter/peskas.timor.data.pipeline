@@ -1858,8 +1858,8 @@ that landed before this phase and has never been through validation. Measured on
 the 97,151 submissions the golden and the new artefact share: the weight
 artefact went **6,137,008 → 5,194,304 kg, −15.4%**, exactly the figure PLAN §4b
 records. Lower weights raise price per kg (median 3.26 → 3.39), and the
-submissions above `price_per_weight.max_limit` of 15 go **7,063 → 7,995** —
-which is what alert 17 counts. Phase 4 is weight-neutral to six decimal places,
+submissions outside the configured `price_per_weight` band of `[0.25, 30]` go
+**5,018 → 5,702** — which is what alert 17 counts. Phase 4 is weight-neutral to six decimal places,
 so it cannot move either alert; and the phantom rows it removes carry no
 individuals and no weight, so they are filtered out by `validate_price_weight()`
 and `get_bounds_table()` before any threshold is computed.
