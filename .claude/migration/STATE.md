@@ -6,29 +6,35 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 5 **complete** (2026-08-10). Phase 6 not started.
+- **Phase:** 6 **complete** (2026-08-11). Phase 7 (PDS) not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
-  Phase 5 = **`75985a8`** on `feat/align-coasts-phase5`, **not pushed** — no dev pipeline run
-  has exercised Phases 3-5 end to end yet. All verification is local, against the
-  dev buckets and `validation-dev`. Pushing the branch is the next integration
-  gate.
-- **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`;
-  `timor/{raw,validated}` markers exist in both `peskas-api-dev` and
-  `peskas-api-prod`. `coasts` is unpinned; locally installed release is **4.6.0**.
-- **Read before Phase 6:** the Phase 5 entry's "Findings that change later
-  phases". Phase 6's input is
-  `timor-landings-merged_validated_long__*.parquet`, written in Phase 5 and read
-  by nothing yet: one row per (submission, catch, length bin) under standard
-  names, with `catch_kg` in kilos. Also note that `devtools::load_all()` reaches
+  Phase 5 = `75985a8` (+ `992bc6d` docs).
+  Phase 6 = **`ec0b7e5`** on `feat/align-coasts-phase6`, **pushed**. Run
+  **31436031588** (on the Phase 5 code) went green end to end in 32 minutes —
+  the first CI run to exercise Phases 3, 4 and 5, including the MongoDB flags
+  sink and all four tinytest suites.
+- **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`. Timor now
+  **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
+  written to `peskas-api-prod`, though the service account can. `coasts` is
+  unpinned; locally installed release is **4.6.0**.
+- **Read before Phase 7:** the Phase 6 entry's "Findings that change later
+  phases", and COASTS-TODO **C17** — `summarize_data()` reads `asfis` and the
+  PDS grid summaries from the country bucket, where Timor has neither, which is
+  what stops it running end to end. Also note that `devtools::load_all()` reaches
   neither `coasts::read_config(package = )` nor `furrr`/`future` workers — test
-  either with `devtools::install()` + `library()`.
-- **Action for the user, to close Phase 5:** create the
-  `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret. It is set in `.env`, so
-  the flags sink is fully verified locally, but CI will warn and write only the
-  cloud-storage snapshot until the secret exists. `KOBO_TOKEN` is **no longer
-  needed** — the KoBo client uses basic auth, whose secrets already exist.
+  either with `devtools::install()` + `library()`; and that the four tinytest
+  suites need `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call,
+  because tinytest runs them from inside the installed library.
+- ~~**Action for the user, to close Phase 5:** the
+  `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret~~ — **done 2026-08-10**,
+  and exercised in CI by run 31436031588. `KOBO_TOKEN` is **not** needed — the
+  KoBo client uses basic auth, whose secrets already exist.
+- ~~**Open since Phase 0 (AUDIT §6): can the ingestion service account write to
+  `peskas-api-prod`?**~~ — **yes**, verified 2026-08-11 through the bucket
+  `testIamPermissions` endpoint, without writing anything:
+  `storage.objects.{create,delete,get,list}` on both API buckets.
 - **Action for the user, security:** `read_config()` was printing the full GCP
   service-account private key, the Airtable PAT, the Dataverse token and the
   blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
@@ -2342,7 +2348,8 @@ and every unvalidated submission is recorded as a fetch failure. Timor's
 
 ## Phase 6 — API contract + merge_trips — 2026-08-11
 
-Branch: `feat/align-coasts-phase6` (off `feat/align-coasts-phase5` at `992bc6d`)
+Branch: `feat/align-coasts-phase6` (off `feat/align-coasts-phase5` at `992bc6d`),
+committed as `ec0b7e5`
 
 **Done**
 

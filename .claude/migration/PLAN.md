@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–5 complete** (2026-08-10). Phase 6 next.
+Status: **Phases 0–6 complete** (2026-08-11). Phase 7 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -184,7 +184,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 3 | Ingestion | `ingestion.R`, v2+v3 live, freeze v1, metadata | medium | 1 ✅ |
 | 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 ✅ (1 used) |
 | 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 ✅ |
-| 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 |
+| 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 ✅ |
 | 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 |
 | 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 |
 | 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 |
@@ -420,23 +420,33 @@ all four tinytest suites green for the first time in the migration.
 
 ---
 
-### Phase 6 — API contract + merge_trips
+### Phase 6 — API contract + merge_trips ✅ done 2026-08-11
 
-The interoperability payoff. Small, high value, low risk.
+Shipped, with three deviations recorded in the STATE Phase 6 entry. What
+Phase 7 inherits:
 
-- New `R/api.R`: `export_api_raw()` and `export_api_validated()` writing to
-  `conf$api$trips$*$cloud_path` (`timor/raw`, `timor/validated`) in the
-  `peskas-api-{dev,prod}` bucket, with **exactly** the Moz output schema
-  (`survey_id, trip_id, landing_date, gaul_1_*, gaul_2_*, landing_site, n_fishers,
-  trip_duration_hrs, gear, vessel_type, catch_habitat, catch_outcome, n_catch,
-  catch_taxon, scientific_name, length_cm, catch_kg, catch_price, tot_catch_kg,
-  tot_catch_price`). Do not improvise field names — diff against
-  `peskas.mozambique.data.pipeline/R/api.R` line by line.
-- Rewrite `merge_trips()` in the standard shape (or adopt `coasts::merge_survey_trips`).
-- Add `timor` to the `api.trips` block of `peskas.coasts/inst/conf.yml` (coasts PR).
-- Verify: `coasts::summarize_data(package = "peskas.timor.data.pipeline")` runs
-  end-to-end against dev without error. Not wired into the workflow yet — this is
-  purely a proof the contract holds.
+- **`R/api.R`** — `export_api_raw()` / `export_api_validated()`, publishing the
+  22-column schema to `peskas-api-dev/timor/{raw,validated}`. The schema was
+  read off the live prod objects and **asserted** against Mozambique's, not
+  diffed against its source. Raw reads the weight parquet, validated the long
+  validated parquet; both emit 144,291 rows over 97,347 trips, summing to
+  5,197,093.9 kg and 964,937.9 kg — their sources exactly.
+- **`long_validated_landings()` is now a superset of the nested artefact**, and
+  the API export is a projection of it. `nest_landing_catch()` selects its
+  columns before nesting so the portal's shape cannot drift with it.
+- **`merge_trips()` was not touched, deliberately.** `coasts::merge_survey_trips()`
+  does a different job (COASTS-TODO C10) and the 22-column contract has no slot
+  for a PDS trip id, so `trip_id` is `TRIP_<submission_id>` as in all three
+  other countries. `all_trips` is unchanged at 175,089 × 26, 84,741 matched.
+- ~~Add `timor` to the `api.trips` block of `peskas.coasts/inst/conf.yml`~~ —
+  landed in coasts 4.6.0 (C7). No coasts PR was needed.
+- **`coasts::summarize_data()` does not run end to end for Timor**, and the API
+  parquet is not why: it also reads `asfis` and the PDS grid summaries from the
+  *country* bucket, where Timor has neither (COASTS-TODO **C17**). What was
+  verified instead: the API read, the trip and taxon collapses, and
+  `coasts::calculate_fishery_metrics()` run for real on Timor's parquet.
+- Not wired into `data-pipeline.yaml`, as scoped. Nothing written to
+  `peskas-api-prod`.
 
 ---
 

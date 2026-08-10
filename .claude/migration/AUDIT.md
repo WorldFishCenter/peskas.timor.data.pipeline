@@ -360,11 +360,13 @@ This is *better* for Phase 6 than the original reading:
   there. Publish to `peskas-api-dev` first and confirm the shape before anything
   reaches prod.
 
-Still to verify in Phase 6: that
+~~Still to verify in Phase 6: that
 `data-ingestion@peskas.iam.gserviceaccount.com` can **write** to
-`peskas-api-prod`. It can read (this listing proves that), but it is not
-necessarily the SA behind the existing objects, and it lacks
-`storage.buckets.list` project-wide.
+`peskas-api-prod`.~~ **Verified 2026-08-11: it can.** Answered without writing
+anything, through the bucket `testIamPermissions` endpoint — the SA holds
+`storage.objects.create`, `.delete`, `.get` and `.list` on **both**
+`peskas-api-dev` and `peskas-api-prod`. Timor published to `-dev` in Phase 6;
+the first prod write is a decision, not a permission.
 
 `gs://peskas-coasts` contains no `timor*` objects, confirming Timor has never
 participated in the shared hub.
