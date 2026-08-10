@@ -9,8 +9,8 @@ Append one entry per completed phase, newest at the bottom.
 - **Phase:** 4 **complete** (2026-08-10). Phase 5 not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
-  docs). Phase 4 on `feat/align-coasts-phase4`, committed 2026-08-10, **not
-  pushed** — no dev pipeline run has exercised Phase 3 or Phase 4 end to end
+  docs). Phase 4 = **`ad58a87`** on `feat/align-coasts-phase4`, committed
+  2026-08-10, **not pushed** — no dev pipeline run has exercised Phase 3 or Phase 4 end to end
   yet. All verification below is local, against the dev buckets. Pushing the
   branch is the next integration gate and will run the whole pipeline against
   `-dev`.
