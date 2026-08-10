@@ -8,10 +8,11 @@ Append one entry per completed phase, newest at the bottom.
 
 - **Phase:** 3 **complete** (2026-08-09). Phase 4 not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
-  (+ `a2c2881` weight rewrite, `7902012` docs). Phase 3 work is on
-  `feat/align-coasts-phase3`, **uncommitted**, held for review as the earlier
-  phases were. Nothing has been pushed, so no dev pipeline run has exercised it
-  end to end — the verification below is local, against the dev buckets.
+  (+ `a2c2881` weight rewrite, `7902012` docs). Phase 3 = **`a89f96e`** on
+  `feat/align-coasts-phase3`, committed 2026-08-10, **not pushed** — so no dev
+  pipeline run has exercised it end to end yet. All verification below is
+  local, against the dev buckets. Pushing the branch is the next integration
+  gate and will run the whole pipeline against `-dev`.
 - **Environment:** `gs://timor-dev` seeded from prod run `90ede9a` (21
   prefixes, re-verified 2026-07-31); `timor/{raw,validated}` markers exist in
   both `peskas-api-dev` and `peskas-api-prod`. `coasts` is **unpinned** since
