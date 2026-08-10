@@ -14,9 +14,9 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4** — so config, secrets, the container, the **storage layer**,
-> **ingestion** and **preprocessing** are already on the standard; validation,
-> PDS and export are not.
+> **0, 1, 2, 3, 4, 5** — so config, secrets, the container, the **storage
+> layer**, **ingestion**, **preprocessing** and **validation** are already on
+> the standard; the API export, PDS and the portal are not.
 
 ---
 
@@ -58,12 +58,12 @@ Ingestion
 Preprocessing
 - [preprocessing-surveys.R](R/preprocessing-surveys.R) — `preprocess_landings(versions = c("v2","v3"))` (raw parquet → **flat long catch parquet**), `merge_landings()`, the per-version `harmonise_*()` reconciliation, and the assets-snapshot label joins (`survey_labels()`). Added in Phase 4, replacing `clean-raw-data.R`, `preprocess-landings.R` (`step_1`/`step_2`) and `merge-landings.R`
 - [survey-reshaping.R](R/survey-reshaping.R) — `reshape_species_groups()`, `expand_length_frequency()`, the bin-midpoint and free-text-trim helpers. Replaces `pt_nest_species.R` / `pt_nest_attachments.R`
-- [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot. Renamed from `calculate-weights.R` in Phase 4
+- [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot. Renamed from `calculate-weights.R` in Phase 4. Phase 5 deleted the re-nesting from `join_weights()`, so the weight artefact is **flat long parquet** like every stage before it
 - [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R) — the Google Sheets `pt_validate_*` parsers
 
 Validation
-- [validate-landings.R](R/validate-landings.R) — orchestrator, writes flags to Google Sheets
-- [validation-functions.R](R/validation-functions.R) — 19 validators (IMEI deployment, landing regularity, mesh, gleaners, fuel, conservation, happiness, …). **This is deeper than any other country pipeline — preserve it.**
+- [validation.R](R/validation.R) — `validate_landings()` orchestrator, the MongoDB flags sink (`push_validation_flags()`), and `sync_validation_status()` (the KoBo write-back, deliberately not wired into the pipeline). Renamed from `validate-landings.R` in Phase 5
+- [validation-functions.R](R/validation-functions.R) — 16 validators over the long table plus the KoBo `get_validation_status()` / `update_validation_status()` pair ported from Mozambique. **This is deeper than any other country pipeline — preserve it.** The alert codes are the contract; the file opens with the code → validator table and `inst/config.yml`'s `validation.alerts` block carries the descriptions
 - [validate-pds-trips.R](R/validate-pds-trips.R) — consecutive-trip merging, distance/outlier logic; no `coasts` equivalent exists
 
 Merge / model / export
@@ -105,7 +105,8 @@ Legacy keys are marked `# [legacy]` and are deleted in Phase 11. Do not remove
 one before the phase that removes its last reader.
 
 `storage.mongodb` is **declared and inert** since Phase 2. It has no reader yet
-— the validation flags sink decision is Phase 5. It was safe to declare only
+— ~~the validation flags sink decision is Phase 5~~; `validation.*` is live
+since Phase 5, `pipeline.*` still has no reader. It was safe to declare only
 because Phase 2 narrowed the six call sites that used to do
 `purrr::map(conf$storage, ~ upload_cloud_file(files, .$key, .$options))`, which
 treated every child of `storage` as a storage *provider*. **Nothing walks the
@@ -125,7 +126,8 @@ entries must be minified onto one line — dotenv parses line by line.
 | `KOBO_PESKAS1/2/3` | same | legacy names, read by `surveys.landings_{1,2,3}`; secrets renamed in Phase 9 |
 | `GCP_SA_KEY` | `PESKAS_DATAINGESTION_GCS_KEY` | full service-account JSON, minified |
 | `GOOGLE_SHEET_ID` | same | metadata tables |
-| `VALID_SHEET_ID` | same | validation flags sheet |
+| `VALID_SHEET_ID` | same | ~~validation flags sheet~~ — no reader since Phase 5, dropped in Phase 11 |
+| `MONGODB_CONNECTION_STRING_VALIDATION` | *not set in CI yet* | the flags sink. Absent → `validate_landings()` warns and only the GCS snapshot is written |
 | `PDS_TOKEN` / `PDS_SECRET` | `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` | |
 | `DATAVERSE_TOKEN` | `PESKAS_DATAVERSE_TOKEN` | |
 | `PESKAS_GMAIL_KEY` | same | the serialized blastula credentials JSON, **not** a bare app password |
@@ -253,12 +255,13 @@ nothing is ever deleted; `gs://timor` holds ~33k objects and `gs://pds-timor`
 ~98k. See [.claude/migration/AUDIT.md](.claude/migration/AUDIT.md) for the full
 prefix inventory including orphaned prefixes.
 
-Interchange format is **flat long parquet** from raw through merged (Phases 3
-and 4): one row per (submission, catch, length bin). `join_weights()` then
-re-nests the catch columns into `species_group` / `length_individuals` and the
-weight and validated artefacts stay `.rds` — that nesting is the last thing
-holding the old format up and it exists only because the 19 validators read it.
-It goes in Phase 5.
+Interchange format is **flat long parquet** from raw through validated
+(Phases 3, 4 and 5): one row per (submission, catch, length bin). The only
+remaining `.rds` artefact on the survey path is
+`timor-landings-merged_validated__*.rds`, the **nested** shape the portal reads,
+and Phase 5 writes the long parquet `timor-landings-merged_validated_long__*`
+beside it. Phase 6 consumes the long one; Phase 8 drops the nested one once
+`format_public_data()` reads the long shape.
 
 ## Portal contract (do not break)
 
@@ -294,7 +297,7 @@ build-container
         └── validate-pds-data           validate_pds_trips        [tinytest]
 
 merge-landings   merge_landings → calculate_weights
-└── validate-landings  validate_landings                          [tinytest]
+└── validate-landings  validate_landings         [flags → MongoDB, tinytest]
     └── merge-trips    merge_trips                                [tinytest]
         ├── model-indicators  estimate_fishery_indicators
         └── export-trips      format_public_data → export_files   [tinytest] → enumerators report
@@ -386,7 +389,9 @@ function is exercised just because a workflow references it.
   `vessel_type`, `habitat`, `catch_outcome`, `n_catch`, `catch_taxon`,
   `scientific_name`, `length`, `catch_price`, …) sit beside every raw KoBo
   column, reconciled per form version by `harmonise_v2()` / `harmonise_v3()`.
-  The raw columns are what the validators read; they go in Phase 5.
+  Nothing reads the raw columns since Phase 5 — validation moved onto the
+  standard names — and they go with the rest of the legacy passthrough in
+  Phase 11.
 - **Length bins with no count are kept.** A catch expands to one row per 5 cm
   bin whether or not anybody was counted in it, because that is what the nested
   `length_frequency` has always held and it reaches the portal —
@@ -423,20 +428,22 @@ function is exercised just because a workflow references it.
   reproduce now happens deliberately in `trim_free_text()`, which also strips
   the stray leading and trailing newlines ~60 free-text answers carry.
 - `conf$...$version$preprocess: latest` is read on `landings_1/2/3`,
-  `pds.trips`, `pds.tracks`, `metadata` and `validation`. The unified template
-  dropped this field; it is kept on each of those legacy keys and deliberately
-  **not** re-added in the new tree, which uses the per-stage `version:` field.
-  Every reader is a legacy-key reader and moves across in Phases 3–7.
+  `pds.trips`, `pds.tracks` and `metadata` — `validation` lost its reader in
+  Phase 5. The unified template dropped this field; it is kept on each of those
+  legacy keys and deliberately **not** re-added in the new tree, which uses the
+  per-stage `version:` field. Every reader is a legacy-key reader and moves
+  across in Phases 3–7.
 - Timezone handling was fixed in commit `15f6b18` — re-verify it after any
   rewrite of the export path.
 - **Known live bugs** (AUDIT.md §8). Fixed in Phase 1: the duplicate
   `get_preprocessed_metadata()` in `validate-landings.R` that shadowed the
   correct definition at [get-cloud-files.R:110](R/get-cloud-files.R#L110), and
-  the `local:` config env inheriting a non-existent `development` env. Still
-  open: two dead helpers in
-  [validate-landings.R](R/validate-landings.R) (`get_validation_tables()`,
-  `get_preprocessed_landings()`) read config keys that no longer exist — they
-  are uncalled, and are deleted in Phase 11;
+  the `local:` config env inheriting a non-existent `development` env. Fixed in
+  Phase 5: `validate_catch_params()`'s positional assignment of
+  `length_individuals` into a separately-derived frame, and the `isTRUE()` on a
+  vector that made alerts 12–15 unreachable (both rewrites are alert-identical
+  on the current data — see the STATE Phase 5 entry). ~~Still open: two dead
+  helpers in `validate-landings.R`~~ — removed with the file in Phase 5;
   ~~`ingest_rfish_table()` is `continue-on-error`~~ — moot, the function and
   its workflow step are gone. **AUDIT §8.5 is stale**: `export_files()` already
   passes basenames as `name` and normalises correctly — verified in Phase 2. The

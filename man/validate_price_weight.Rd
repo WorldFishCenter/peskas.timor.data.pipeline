@@ -2,10 +2,10 @@
 % Please edit documentation in R/validation-functions.R
 \name{validate_price_weight}
 \alias{validate_price_weight}
-\title{Outlier identification based on Cook's distance}
+\title{Outlier identification of the price-weight relation}
 \usage{
 validate_price_weight(
-  catch_alerts = NULL,
+  catch_params = NULL,
   price_alerts = NULL,
   non_regular_ids = NULL,
   cook_dist = NULL,
@@ -14,30 +14,36 @@ validate_price_weight(
 )
 }
 \arguments{
-\item{catch_alerts}{The dataframe of catch alerts.}
+\item{catch_params}{Output of \code{\link[=validate_catch_params]{validate_catch_params()}}: \code{alerts}
+(one row per submission) and \code{catch} (the long table).}
 
-\item{price_alerts}{The dataframe of price alerts.}
+\item{price_alerts}{The data frame of price alerts.}
 
-\item{non_regular_ids}{The dataframe of landings regularity alerts.}
+\item{non_regular_ids}{The data frame of landings regularity alerts.}
 
-\item{cook_dist}{A number that go in the formula cook_dist * (mean(cooksd)).}
+\item{cook_dist}{Unused. See above.}
 
 \item{price_weight_min}{Min price per weight value threshold.}
 
 \item{price_weight_max}{Max price per weight value threshold.}
 }
 \value{
-The price and catch alert' dataframes including outlier identification
-based on Cook's distance.
+A list with \code{alerts} (one row per submission, carrying the validated
+\code{catch_price}) and \code{catch} (the long table with blanked measurements).
 }
 \description{
-This function adds an additional alert to both price and catch alert dataframes
-when the relation between the price and weight assume abnormal values relatively
-to each species. The relationship between weight and price is mostly linear,
-this function identifies the survey IDs where the Cook's distance is higher than
-cook_dist * mean_cook, where cook_dist is a multiplicative coefficient and
-cook_dist is the average Cook's distance relatively to each species.
+Flags submissions whose revenue per kilo of estimated catch falls outside the
+configured band, and propagates the regularity, revenue and
+individuals-count alerts onto both the price and the catch frames so that a
+single alert number per submission survives the assembly.
 }
 \details{
-Currently, cook_dist is set to 21 as default value.
+The relationship between weight and price is mostly linear, and this function
+used to also compute a per-submission Cook's distance from a
+\code{log(price) ~ log(weight)} fit. That term has been commented out of the
+threshold for as long as the fixed band has existed, so the fit — a
+\code{stats::lm()} plus a \code{broom} augmentation over ~90k submissions, one of the two
+most expensive steps in validation — was deleted in migration Phase 5. The
+\code{cook_dist} parameter is retained because \code{config.yml} still supplies it.
 }
+\keyword{validation}

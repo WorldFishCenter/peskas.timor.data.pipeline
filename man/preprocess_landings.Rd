@@ -45,11 +45,17 @@ storage:
 The table is a \strong{superset}. Alongside the standard columns
 (\code{submission_id}, \code{landing_date}, \verb{gaul_*}, \code{landing_site}, \code{n_fishers},
 \code{trip_duration}, \code{gear}, \code{vessel_type}, \code{habitat}, \code{catch_outcome},
-\code{n_catch}, \code{catch_taxon}, \code{scientific_name}, \code{length}, \code{catch_price}) it
-carries every raw KoBo column, reconciled across form versions exactly as
-\code{merge_versions()} used to reconcile them after the merge. Validation still
-reads those raw columns; they are dropped when it moves onto the standard
-names in migration Phase 5.
+\code{n_catch}, \code{catch_taxon}, \code{scientific_name}, \code{length}, \code{catch_price},
+\code{mesh_size}, \code{n_gleaners}, \code{fuel}, \code{happiness}, …) it carries every raw KoBo
+column, reconciled across form versions exactly as \code{merge_versions()} used
+to reconcile them after the merge. Nothing reads the raw columns any more —
+\code{\link[=validate_landings]{validate_landings()}} moved onto the standard names in migration Phase 5 —
+and they are dropped with the other legacy passthrough in Phase 11.
+
+The raw form codes are kept beside their resolved labels
+(\code{landing_site_code}, \code{gear_code}, \code{vessel_code}, \code{habitat_code}) because
+validation needs both: an unrecognised code is exactly what alerts 12, 14,
+16 and 19 report.
 }
 
 \section{Labels}{

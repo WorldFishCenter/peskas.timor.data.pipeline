@@ -41,7 +41,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
     conf,
     expanded = morphometric_tables$expanded
   ) %>%
-    dplyr::rename(species = .data$interagency_code)
+    dplyr::rename(catch_taxon = .data$interagency_code)
 
   landings_with_weight <- join_weights(
     merged_landings,
@@ -49,19 +49,14 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
     nutrients_table
   )
 
-  landings_with_weight_filename <- conf$surveys$landings$weight$file_prefix %>%
-    add_version(extension = "rds")
-  readr::write_rds(
-    x = landings_with_weight,
-    file = landings_with_weight_filename,
-    compress = "gz"
+  logger::log_info(
+    "Uploading {nrow(landings_with_weight)} weighted catch rows to cloud storage"
   )
-
-  logger::log_info("Uploading {landings_with_weight_filename} to cloud sorage")
-  coasts::upload_cloud_file(
-    file = landings_with_weight_filename,
+  coasts::upload_parquet_to_cloud(
+    data = landings_with_weight,
+    prefix = conf$surveys$landings$weight$file_prefix,
     provider = conf$storage$google$key,
-    options = conf$storage$google$options
+    options = coasts::resolve_storage_opts(conf, "country")
   )
 }
 
@@ -93,61 +88,31 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' `SRX` → disk-width rule that was never implemented. Both were wrong.
 #'
 #' @section Input and output shape:
-#' The input is the **flat long** merged table produced by
-#' [merge_landings()] — one row per (submission, catch, length bin), with the
-#' taxon already resolved from the assets snapshot by
-#' [preprocess_landings()]. The output re-nests the catch columns into
-#' `species_group` / `length_individuals`, which is what validation still
-#' reads. That nesting is the last thing holding the old interchange format up;
-#' it goes when validation moves onto the long table in migration Phase 5.
+#' Both are the **flat long** table — one row per (submission, catch, length
+#' bin) — with the taxon already resolved from the assets snapshot by
+#' [preprocess_landings()]. The output adds `weight` (grams) and the seven
+#' per-catch nutrient columns and changes nothing else.
+#'
+#' Until migration Phase 5 this function also re-nested the catch columns into
+#' `species_group` / `length_individuals` and dropped the standard submission
+#' columns, purely so the validators could keep reading raw KoBo names off a
+#' legacy-shaped artefact. [validate_landings()] reads the long table now, so
+#' the bridge is gone and the artefact is parquet like every stage before it.
 #'
 #' @param data The merged long landings table
 #' @param rfish_tab Table with length weight parameters
 #' @param nutrients_table Table with nutritional parameters
 #'
-#' @return A new landings data frame including length-weights info
+#' @return The long landings table with `weight` and nutrients added
 #' @export
 #'
 join_weights <- function(data, rfish_tab, nutrients_table) {
   data %>%
-    dplyr::rename(species = "catch_taxon", mean_length = "length") %>%
     estimate_weight(rfish_tab$length_weight) %>%
-    dplyr::left_join(nutrients_table, by = "species") %>%
+    dplyr::left_join(nutrients_table, by = "catch_taxon") %>%
     dplyr::mutate(
       weight = abs(.data$weight),
-      dplyr::across(
-        c(.data$Selenium_mu:.data$Vitamin_A_mu),
-        ~ .x * .data$weight
-      ),
-      # The catch index is 1-based in the long table and 0-based in the nest.
-      n = as.character(.data$n_catch - 1L)
-    ) %>%
-    dplyr::rename(food_or_sale = "catch_use") %>%
-    # Catch-level columns that are not part of the nest would leave the outer
-    # frame with more than one row per submission. The standard columns go too:
-    # this artefact is the legacy-shaped input to validation, which reads the
-    # raw KoBo columns and re-nests on every grouping column it is handed.
-    dplyr::select(-dplyr::any_of(c(
-      standard_survey_cols(), "submission_id", "n_catch", "scientific_name"
-    ))) %>%
-    tidyr::nest(
-      length_individuals = c(
-        .data$mean_length,
-        .data$n_individuals,
-        .data$weight,
-        tidyselect::ends_with("_mu")
-      )
-    ) %>%
-    tidyr::nest(
-      species_group = c(
-        .data$n,
-        .data$species,
-        .data$food_or_sale,
-        .data$other_species_name,
-        .data$photo,
-        .data$length_individuals,
-        .data$length_type
-      )
+      dplyr::across(tidyselect::ends_with("_mu"), ~ .x * .data$weight)
     )
 }
 
@@ -348,7 +313,7 @@ summarise_lw_coeffs <- function(lw) {
 #' **Units are grams.** FishBase publishes `a` for a result in grams, and the
 #' portal export divides by 1000 downstream. Do not convert here.
 #'
-#' @param data Catch rows carrying `species`, `mean_length` and `n_individuals`.
+#' @param data Catch rows carrying `catch_taxon`, `length` and `n_individuals`.
 #' @param lw Output of [summarise_lw_coeffs()].
 #' @return `data` with `weight` added, in grams.
 #' @keywords helper
@@ -356,16 +321,16 @@ summarise_lw_coeffs <- function(lw) {
 estimate_weight <- function(data, lw) {
   data %>%
     dplyr::left_join(
-      dplyr::select(lw, species = "alpha3_code", "lw_a", "lw_b"),
-      by = "species"
+      dplyr::select(lw, catch_taxon = "alpha3_code", "lw_a", "lw_b"),
+      by = "catch_taxon"
     ) %>%
     dplyr::mutate(
       weight = dplyr::if_else(
-        !is.na(.data$mean_length) &
+        !is.na(.data$length) &
           !is.na(.data$lw_a) &
           !is.na(.data$lw_b) &
           !is.na(.data$n_individuals),
-        .data$lw_a * .data$mean_length^.data$lw_b * .data$n_individuals,
+        .data$lw_a * .data$length^.data$lw_b * .data$n_individuals,
         NA_real_
       ),
       weight = dplyr::if_else(.data$n_individuals == 0, 0, .data$weight)

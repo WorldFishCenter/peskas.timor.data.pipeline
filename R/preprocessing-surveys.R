@@ -26,11 +26,17 @@
 #' The table is a **superset**. Alongside the standard columns
 #' (`submission_id`, `landing_date`, `gaul_*`, `landing_site`, `n_fishers`,
 #' `trip_duration`, `gear`, `vessel_type`, `habitat`, `catch_outcome`,
-#' `n_catch`, `catch_taxon`, `scientific_name`, `length`, `catch_price`) it
-#' carries every raw KoBo column, reconciled across form versions exactly as
-#' `merge_versions()` used to reconcile them after the merge. Validation still
-#' reads those raw columns; they are dropped when it moves onto the standard
-#' names in migration Phase 5.
+#' `n_catch`, `catch_taxon`, `scientific_name`, `length`, `catch_price`,
+#' `mesh_size`, `n_gleaners`, `fuel`, `happiness`, …) it carries every raw KoBo
+#' column, reconciled across form versions exactly as `merge_versions()` used
+#' to reconcile them after the merge. Nothing reads the raw columns any more —
+#' [validate_landings()] moved onto the standard names in migration Phase 5 —
+#' and they are dropped with the other legacy passthrough in Phase 11.
+#'
+#' The raw form codes are kept beside their resolved labels
+#' (`landing_site_code`, `gear_code`, `vessel_code`, `habitat_code`) because
+#' validation needs both: an unrecognised code is exactly what alerts 12, 14,
+#' 16 and 19 report.
 #'
 #' @section Labels:
 #' Taxa, gear, vessels and landing sites are resolved from the PESKAS | FRAME
@@ -220,13 +226,7 @@ reshape_landings <- function(raw, version, labels) {
       "vessel_type", "habitat", "catch_outcome", "tracker_imei", "catch_price",
       "n_catch", "catch_taxon", "scientific_name", "catch_use", "length_type",
       "length", "n_individuals"
-    ) %>%
-    # The raw form codes are still carried under their KoBo names, which is
-    # what validation reads; keeping a second copy would collide with the
-    # `gear_code` / `habitat_code` columns the validators build themselves.
-    dplyr::select(-dplyr::any_of(c(
-      "landing_site_code", "habitat_code", "gear_code", "vessel_code"
-    )))
+    )
 }
 
 #' Reconcile one form version's submission-level columns
@@ -256,6 +256,15 @@ harmonise_submissions <- function(raw, version) {
     stop("Unsupported landings version: ", version)
   )
 
+  # Not every form asks every question, and validation reads the standard
+  # columns below off both. Absent answers used to become NA when the versions
+  # were bound together; now they become NA one version earlier.
+  x <- add_missing_cols(x, c(
+    "trip_group/has_boat", "trip_group/mesh_size", "trip_group/mesh_size_other",
+    "how_many_gleaners_today", "group_conservation_trading/conservation",
+    "happiness_rating"
+  ))
+
   x %>%
     dplyr::mutate(
       survey_version = version,
@@ -281,8 +290,44 @@ harmonise_submissions <- function(raw, version) {
       ),
       n_fishers = sum_fishers(
         .data$no_men_fishers, .data$no_women_fishers, .data$no_child_fishers
-      )
+      ),
+      # The remaining survey answers validation reads. They have no equivalent
+      # in the PESKAS | FRAME frame and no standard name in the cross-country
+      # template either, so preprocessing is simply where their coercion
+      # belongs — the validators used to do it themselves off the raw KoBo
+      # names.
+      submitted_by = as.character(.data$`_submitted_by`),
+      has_boat = as.character(.data$`trip_group/has_boat`),
+      mesh_size = mesh_size_mm(
+        .data$`trip_group/mesh_size`,
+        .data$`trip_group/mesh_size_other`
+      ),
+      n_gleaners = abs(as.numeric(.data$how_many_gleaners_today)),
+      fuel = as.numeric(.data$fuel_L),
+      conservation_code = as.character(
+        .data$`group_conservation_trading/conservation`
+      ),
+      happiness = as.integer(.data$happiness_rating)
     )
+}
+
+# Every KoBo answer arrives as character, so an absent question is an absent
+# character column.
+add_missing_cols <- function(x, cols) {
+  missing <- setdiff(cols, names(x))
+  if (length(missing) == 0) {
+    return(x)
+  }
+  x[missing] <- NA_character_
+  x
+}
+
+# The form offers a pick-list of imperial mesh sizes plus a free-text "other"
+# ("seluk" is Tetum for "other", recorded in the pick-list as well). Result is
+# millimetres, which is the unit the validated artefact has always published.
+mesh_size_mm <- function(picked, other) {
+  picked <- dplyr::if_else(picked == "seluk", NA_character_, picked)
+  as.numeric(dplyr::coalesce(picked, other)) * 25.4
 }
 
 harmonise_v2 <- function(x) {
@@ -365,20 +410,10 @@ harmonise_v3 <- function(x) {
     )
 }
 
-# The standard submission-level columns preprocessing derives. They live in the
-# preprocessed and merged parquet; `join_weights()` drops them again, because
-# validation still runs on the raw KoBo columns and dragging 18 extra grouping
-# columns through its unnest/nest cycles costs real time for nothing. Phase 5
-# reads them off the merged table instead.
-standard_survey_cols <- function() {
-  c(
-    "survey_id", "landing_date", "submission_date",
-    "gaul_1_code", "gaul_1_name", "gaul_2_code", "gaul_2_name", "landing_site",
-    "n_fishers", "no_men_fishers", "no_women_fishers", "no_child_fishers",
-    "trip_duration", "gear", "vessel_type", "habitat", "tracker_imei",
-    "catch_price"
-  )
-}
+# NOTE: `standard_survey_cols()` lived here until migration Phase 5. It listed
+# the standard submission columns `join_weights()` dropped so that validation
+# could keep reading the raw KoBo names off a re-nested artefact. Validation
+# reads the standard columns off the long table now, so both halves are gone.
 
 # "seluk__hakerek" means "other, written in"; the reason is then in the free
 # text field.

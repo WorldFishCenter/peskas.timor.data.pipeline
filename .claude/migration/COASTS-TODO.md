@@ -249,3 +249,33 @@ pools all axes.
 seen before 2023 — and harmless for the WIO fleets, which have no trips before
 2023. Should be config keys, in the same pattern as
 `metadata.fishbase.fao_areas`.
+
+### C15. `get_validation_status()` / `update_validation_status()` are not in coasts
+
+Both live in `peskas.mozambique.data.pipeline/R/validation-functions.R` only, so
+Timor had to port them in migration Phase 5. Every country that writes flags to
+the shared validation database needs the same pair — reading KoBoToolbox's
+current status is the only way a pipeline avoids overwriting an approval an
+enumerator entered by hand.
+
+Upstream them, with three corrections Timor made in the process:
+
+1. **Add a bulk read.** Moz issues one request per submission. The data endpoint
+   returns `_validation_status` alongside `_id` for up to 1,000 submissions per
+   request, so `list_validation_statuses(asset_id)` costs `ceiling(n / 1000)`
+   requests instead of `n`. Measured on Timor's v2 form: **65 requests and ~70
+   seconds against more than twenty minutes** for 7,776 submissions across ten
+   `furrr` workers. It also covers every submission rather than only those a
+   previous run flagged, so an approval on a never-flagged submission is seen.
+2. **Do not let `httr2` throw on 4xx.** KoBoToolbox answers **404** for a
+   submission that has never been validated — the normal case. `req_perform()`
+   throws by default, so Moz's `resp_status(response) != 200 → "not_validated"`
+   branch is unreachable and every unvalidated submission is recorded as
+   `fetch_error = TRUE`. Setting `req_error(is_error = function(resp) FALSE)`
+   makes the branch work and keeps `fetch_error` meaning a real transport
+   failure.
+3. **Accept basic auth as well as a token.** Timor's `KOBO_TOKEN` belongs to a
+   user with no data access to its assets (200 on `/assets/<id>/`, 404 on
+   `/assets/<id>/data/`), while the `KOBO_USERNAME` / `KOBO_PASSWORD` pair
+   ingestion already uses works on both. A country should not need a second
+   credential for this.

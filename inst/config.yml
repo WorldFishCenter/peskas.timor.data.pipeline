@@ -243,21 +243,26 @@ default:
       tables:
         # Airtable is authoritative wherever the two overlap (PLAN §2.5), so
         # this list shrinks as each join moves onto the frame. `fao_catch` went
-        # in Phase 4 — Phase 3 moved `get_taxa_list()` onto the assets snapshot
-        # and left it with no reader at all. The tables marked `[phase 5]` are
-        # read only by the validators, which keep their own Sheets joins for one
-        # more phase; the frame equivalents are already resolved in
-        # `preprocess_landings()`.
+        # in Phase 4; `vessel_types` and `gear_types` went in Phase 5, when
+        # `validate_vessel_type()` and `validate_gear_type()` moved onto the
+        # labels `preprocess_landings()` resolves from the frame.
+        #
+        # Three tables the Phase 5 brief expected to remove are still here, each
+        # for a measured reason recorded in the STATE Phase 5 entry:
         - boats               # [phase 11] read only by inst/report/data_report.Rmd
-        - devices             # [phase 5]  IMEI validation
-        - vms_installs        # [phase 11] device_installs, read by a dead helper
+        - devices             # keep until P7: 595 IMEIs against the frame's 442.
+                              # Switching moves alert 3 from 824 to 1,475
+                              # submissions and unmatches 651 trackers.
+        - vms_installs        # [phase 11] device_installs, read by nothing since P5
         - catch_types         # keep: the per-taxon length_type (COASTS-TODO C14)
         - morphometric_table  # keep: Timor-curated coefficients
         - centro_pescas       # keep: the only source of landing-site lat/lon
-        - vessel_types        # [phase 5]
-        - gear_types          # [phase 5]
-        - stations            # [phase 5]
-        - reporting_units     # [phase 5]
+        - stations            # [phase 8] the published `landing_site` label.
+                              # 11 of 40 names differ from the frame and
+                              # format_public_data() hardcodes 5 of them.
+        - reporting_units     # [phase 8] the published `municipality`, i.e.
+                              # Timor's reporting unit — Atauro is its own,
+                              # while GAUL puts it inside Dili.
         - habitat             # keep: no frame equivalent
         - fishing_vessel_statistics
         - registered_boats
@@ -366,6 +371,40 @@ default:
         k: 1.5
       fuel:
         k: 3
+    # [new] The alert dictionary, carried over verbatim from the `alerts` tab of
+    # the retired validation Google Sheet in Phase 5 — it is static reference
+    # data and belongs with the thresholds, not in a spreadsheet. Read by
+    # `send_validation_mail()`; the codes themselves are the contract, see
+    # `R/validation-functions.R`.
+    #
+    # Codes 7, 8, 9 and 13/15/18 have no live producer: 7 and 9 were retired
+    # thresholds, 8 is covered by taking the absolute value, and 13/15/18 are
+    # reachable but have never fired on Timor's data.
+    alerts:
+      "0": No alert
+      "1": Not enough digits recorded to match IMEI
+      "2": More than one valid IMEI can be matched to the record
+      "3": None of the deployed devices has an IMEI matching the record
+      "4": Submission date is prior to landing date
+      "5": Trip duration is too long
+      "6": Total catch value is too large
+      "7": Recorded length is too large for the catch type
+      "8": Total catch value is negative
+      "9": Total catch value is too small
+      "10": Survey submitted more than 28 days after landing date
+      "11": Number of individuals is too large
+      "12": Boat type specified doesn't match previous records
+      "13": No boat type recorded for a trip that declared a boat
+      "14": Gear type specified doesn't match previous records
+      "15": No gear type recorded for a trip that declared a boat
+      "16": Site not valid
+      "17": Abnormal price-weight relation
+      "18": Anomalous number of fishers
+      "19": Habitat not valid
+      "20": Anomalous mesh size
+      "21": Anomalous gleaners number
+      "22": No catch associated to non-null revenue / invdividuals or viceversa
+      "23": Anomalous fuel value or associated to unmotorized boat
     pds_trips:
       max_trip_hours: 96
       min_trip_hours: 0.5

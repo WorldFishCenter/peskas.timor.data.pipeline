@@ -46,6 +46,7 @@ Imports:
     googleCloudStorageR,
     googlesheets4,
     httr,
+    httr2,
     jsonlite,
     logger,
     lubridate,

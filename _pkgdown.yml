@@ -46,6 +46,7 @@ reference:
 - subtitle: Data validation
   desc: Functions dedicated to data validation
   contents:
+  - has_keyword("validation")
   - matches("validate")
   - send_validation_mail
 

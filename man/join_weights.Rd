@@ -14,7 +14,7 @@ join_weights(data, rfish_tab, nutrients_table)
 \item{nutrients_table}{Table with nutritional parameters}
 }
 \value{
-A new landings data frame including length-weights info
+The long landings table with \code{weight} and nutrients added
 }
 \description{
 The function integrate nutritional info from the \code{get_nutrients_table} function
@@ -41,12 +41,15 @@ The prose this replaced claimed the opposite of the code — "total length
 
 \section{Input and output shape}{
 
-The input is the \strong{flat long} merged table produced by
-\code{\link[=merge_landings]{merge_landings()}} — one row per (submission, catch, length bin), with the
-taxon already resolved from the assets snapshot by
-\code{\link[=preprocess_landings]{preprocess_landings()}}. The output re-nests the catch columns into
-\code{species_group} / \code{length_individuals}, which is what validation still
-reads. That nesting is the last thing holding the old interchange format up;
-it goes when validation moves onto the long table in migration Phase 5.
+Both are the \strong{flat long} table — one row per (submission, catch, length
+bin) — with the taxon already resolved from the assets snapshot by
+\code{\link[=preprocess_landings]{preprocess_landings()}}. The output adds \code{weight} (grams) and the seven
+per-catch nutrient columns and changes nothing else.
+
+Until migration Phase 5 this function also re-nested the catch columns into
+\code{species_group} / \code{length_individuals} and dropped the standard submission
+columns, purely so the validators could keep reading raw KoBo names off a
+legacy-shaped artefact. \code{\link[=validate_landings]{validate_landings()}} reads the long table now, so
+the bridge is gone and the artefact is parquet like every stage before it.
 }
 

@@ -1,9 +1,12 @@
 library(peskas.timor.data.pipeline)
 
 logger::log_threshold(logger::ERROR)
-# Adjust the working directory so that when running localy the authentication
-# details in the config file load properly
-setwd("../..")
+# Local runs read their credentials from `.env`; CI supplies them as real
+# environment variables, where this is a no-op. (Until migration Phase 5 this
+# was a `setwd("../..")`, which never worked from an installed package —
+# tinytest sets the working directory to the test file's own directory, so
+# `../..` landed inside the R library.)
+if (file.exists(".env")) dotenv::load_dot_env()
 conf <- peskas.timor.data.pipeline::read_config()
 
 validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
@@ -18,12 +21,21 @@ catch <- validated_landings %>%
 
 # Landing columns ---------------------------------------------------------
 
+# NOTE: four of these assertions named columns the validated artefact has never
+# had — `trip_duration`, `landing_value`, `catch_purpose` and `individuals`, a
+# schema that was never shipped. Reading a missing column returns NULL, so they
+# passed vacuously (and `catch_purpose` failed outright on the empty compare)
+# while warning "Unknown or uninitialised column". Pointed at the real columns
+# in migration Phase 5. No assertion was dropped or weakened: `trip_length`,
+# `catch_price`, `catch_use` and `number_of_fish` are the same quantities under
+# the names `format_public_data()` reads.
+
 expect_false(
-  any_negative(na.omit(validated_landings$trip_duration)),
+  any_negative(na.omit(validated_landings$trip_length)),
   "Negative trip durations in landings")
 
 expect_false(
-  any_negative(na.omit(validated_landings$landing_value)),
+  any_negative(na.omit(validated_landings$catch_price)),
   "Negative values in landings")
 
 expect_false(
@@ -47,7 +59,7 @@ expect_false(
   "Negative catch lengths")
 
 expect_equal(
-  sort(unique(na.omit(catch$catch_purpose))),
+  sort(unique(na.omit(catch$catch_use))),
   c("both", "food", "sale"),
   info = "Catch purpose has unepected values"
 )
@@ -62,7 +74,7 @@ expect_true(
 )
 
 expect_false(
-  any_negative(na.omit(catch$individuals)),
+  any_negative(na.omit(catch$number_of_fish)),
   "Negative catch numbers")
 
 expect_false(

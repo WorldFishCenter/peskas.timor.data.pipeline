@@ -186,6 +186,15 @@ long <- frozen %>%
     submission_id = as.character(.data$`_id`),
     survey_id = .data$`_uuid`,
     landing_date = lubridate::as_date(.data$date),
+    # Submission 16182387 was submitted 2017-12-14 recording a landing on
+    # 2015-07-07, two years before the form existed. It is the only pre-2017
+    # landing date in the whole pipeline, it has no catch, no individuals and no
+    # revenue, and alert 10 already flags it. The date is not recoverable, so
+    # drop it rather than publish it (decided 2026-08-10). Correcting it here
+    # rather than in validation keeps it with v1's other frozen corrections.
+    landing_date = dplyr::if_else(
+      .data$submission_id == "16182387", as.Date(NA), .data$landing_date
+    ),
     submission_date = lubridate::with_tz(
       lubridate::ymd_hms(.data$`_submission_time`), "Asia/Dili"
     ),
@@ -205,13 +214,28 @@ long <- frozen %>%
     ),
     n_fishers = peskas.timor.data.pipeline:::sum_fishers(
       .data$no_men_fishers, .data$no_women_fishers, .data$no_child_fishers
-    )
+    ),
+    # The remaining standard columns validation reads, added in migration
+    # Phase 5. Without them v1's 10,117 submissions arrive at
+    # `validate_landings()` with no landing-site code and are all flagged 16,
+    # and its gleaner and fuel values drop out of the outlier bounds the
+    # thresholds are computed from.
+    submitted_by = as.character(.data$`_submitted_by`),
+    mesh_size = peskas.timor.data.pipeline:::mesh_size_mm(
+      .data$`trip_group/mesh_size`,
+      .data$`trip_group/mesh_size_other`
+    ),
+    n_gleaners = abs(as.numeric(.data$how_many_gleaners_today)),
+    happiness = as.integer(.data$happiness_rating),
+    # v1 asked about neither a boat flag, fuel, nor catch preservation. `fuel_L`
+    # is NA above; the other two never existed on the form, and were NA for
+    # every v1 row of the merged table before this too.
+    has_boat = NA_character_,
+    fuel = as.numeric(.data$fuel_L),
+    conservation_code = NA_character_
   ) %>%
   peskas.timor.data.pipeline:::resolve_catch_taxa(labels) %>%
-  peskas.timor.data.pipeline:::resolve_survey_labels(labels) %>%
-  select(-dplyr::any_of(c(
-    "landing_site_code", "habitat_code", "gear_code", "vessel_code"
-  )))
+  peskas.timor.data.pipeline:::resolve_survey_labels(labels)
 
 stopifnot(
   dplyr::n_distinct(long$submission_id) == nrow(v1),

@@ -6,48 +6,46 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 4 **complete** (2026-08-10). Phase 5 not started.
+- **Phase:** 5 **complete** (2026-08-10). Phase 6 not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
-  docs). Phase 4 = **`ad58a87`** on `feat/align-coasts-phase4`, committed
-  2026-08-10, **not pushed** — no dev pipeline run has exercised Phase 3 or Phase 4 end to end
-  yet. All verification below is local, against the dev buckets. Pushing the
-  branch is the next integration gate and will run the whole pipeline against
-  `-dev`.
-- **Environment:** `gs://timor-dev` seeded from prod run `90ede9a` (21
-  prefixes, re-verified 2026-07-31); `timor/{raw,validated}` markers exist in
-  both `peskas-api-dev` and `peskas-api-prod`. `coasts` is **unpinned** since
-  Addendum 4 — `DESCRIPTION` and both Dockerfiles resolve the latest release at
-  build time; locally installed release is **4.6.0**.
-- **Read before Phase 5:** the Phase 4 entry's "Findings that change later
-  phases". Phase 5's first job is deleting the `join_weights()` bridge: it is
-  the only thing still producing the nested `species_group` /
-  `length_individuals` shape, and it exists solely because the 19 validators
-  read raw KoBo column names. The merged long parquet already carries the
-  standard columns they should move onto. Also note COASTS-TODO C13 (the assets
-  snapshot has no `country` column, so every country-specific read needs the
-  brittle `metadata.airtable.form_ids` filter) and that `devtools::load_all()`
-  cannot be used to test a delegated `coasts::` workflow function.
+  docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
+  Phase 5 is on `feat/align-coasts-phase5`, **not pushed** — no dev pipeline run
+  has exercised Phases 3-5 end to end yet. All verification is local, against the
+  dev buckets and `validation-dev`. Pushing the branch is the next integration
+  gate.
+- **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`;
+  `timor/{raw,validated}` markers exist in both `peskas-api-dev` and
+  `peskas-api-prod`. `coasts` is unpinned; locally installed release is **4.6.0**.
+- **Read before Phase 6:** the Phase 5 entry's "Findings that change later
+  phases". Phase 6's input is
+  `timor-landings-merged_validated_long__*.parquet`, written in Phase 5 and read
+  by nothing yet: one row per (submission, catch, length bin) under standard
+  names, with `catch_kg` in kilos. Also note that `devtools::load_all()` reaches
+  neither `coasts::read_config(package = )` nor `furrr`/`future` workers — test
+  either with `devtools::install()` + `library()`.
+- **Action for the user, to close Phase 5:** create the
+  `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret. It is set in `.env`, so
+  the flags sink is fully verified locally, but CI will warn and write only the
+  cloud-storage snapshot until the secret exists. `KOBO_TOKEN` is **no longer
+  needed** — the KoBo client uses basic auth, whose secrets already exist.
 - **Action for the user, security:** `read_config()` was printing the full GCP
   service-account private key, the Airtable PAT, the Dataverse token and the
   blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
   values are in the logs of every past `data-pipeline.yaml` run. Rotating them
   and purging old run logs is recommended and has **not** been done.
 - **Action for the user, before Phase 11 cutover:** run
-  `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The
-  frozen v1 snapshot `merge_landings()` now depends on exists in `timor-dev`
-  only.
+  `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The frozen
+  v1 snapshot `merge_landings()` depends on exists in `timor-dev` only, and it
+  now also carries the Phase 5 correction to submission `16182387`'s
+  landing date.
 - ~~Phase 3 prerequisite: `KOBO_ASSET_ID_V1/2/3` in the workflow `env:`
   block~~ — done in Phase 3.
-- ~~**Blocking sub-decision:** validation flags sink~~ — **resolved 2026-08-10,
-  MongoDB** (user). Google Sheets is retired at Phase 5. Timor follows the WIO
-  layout, which `config.yml` has declared and left inert since Phase 2: the
-  **shared** `validation-dev` / `validation-prod` database, **one collection per
-  live form** (`surveys_flags-<asset_id>`, so v1 gets none), and the dedicated
-  `timor-dev` / `timor-prod` databases the user is provisioning for the
-  pipeline/export collections. See PLAN §2.6. Enabling it is a code change plus
-  one new secret — `MONGODB_CONNECTION_STRING_VALIDATION`, which does not exist
-  in `.env` or in CI yet, so it is a **new user action**.
+- ~~**Blocking sub-decision:** validation flags sink~~ — resolved 2026-08-10,
+  **MongoDB**, and **shipped in Phase 5**: the shared `validation-dev` /
+  `validation-prod` database, one `surveys_flags-<asset_id>` and one
+  `enumerators_stats-<asset_id>` per live form, none for the frozen v1. Verified
+  live against `validation-dev`. See PLAN §2.6 and the Phase 5 entry.
 
 ## Open hygiene items
 
@@ -1999,3 +1997,344 @@ The 4 NOTEs are unchanged (33 Imports, install size, file timestamps,
    database, one `surveys_flags-<asset_id>` collection per live form. See the
    "Current position" bullet and PLAN §2.6.
 3. Whether `"_10"` in v3's `no_men_fishers` should parse as 10 (finding 5).
+
+---
+
+## Phase 5 — Validation — 2026-08-10
+
+Branch: `feat/align-coasts-phase5` (off `feat/align-coasts-phase4` at `2814dff`)
+
+**Done**
+
+*1. `R/validate-landings.R` → `R/validation.R`*
+
+`validate_landings()` plus the MongoDB sink (`push_validation_flags()`), the
+KoBo status reconciliation, and `sync_validation_status()` — the write-back,
+exported and documented but **deliberately not wired into the pipeline** (see
+Deferred). `R/validation-functions.R` keeps its name; every validator is tagged
+`@keywords validation` and the file opens with the alert-code → validator table.
+
+*2. The `join_weights()` bridge is gone*
+
+`join_weights()` now adds `weight` and the seven nutrient columns to the long
+table and changes nothing else. `standard_survey_cols()` went with it, and
+`timor-landings-merged_weight__*` is **parquet** — 1,647,692 rows × 106 columns,
+where the `.rds` was 97,347 × 60. `get_weighted_landings()` is a
+`download_parquet_from_cloud()` call.
+
+Sixteen validators (the 19 count included three helpers) read the long table or
+the one-row-per-submission view `validation_submissions()` derives from it, all
+by standard column name. Nothing in `R/` reads a raw KoBo column any more.
+
+*3. Preprocessing gained the seven columns validation needed*
+
+`harmonise_submissions()` derives `submitted_by`, `has_boat`, `mesh_size` (mm —
+the ×25.4 conversion and the `seluk` handling moved out of `validate_mesh()`),
+`n_gleaners`, `fuel`, `conservation_code` and `happiness`; `add_missing_cols()`
+NAs out the questions a given form never asked. `reshape_landings()` stops
+dropping `landing_site_code` / `gear_code` / `vessel_code` / `habitat_code` —
+validation needs the code beside the label, because an unresolved code is
+exactly what alerts 12, 14, 16 and 19 report. Merged went 87 → 98 columns.
+
+`data-raw/freeze-landings-v1.R` emits the same set. Without it v1's 10,117
+submissions arrive with no site code and are all flagged 16 — which is how the
+gate caught it.
+
+*4. Flags sink: MongoDB, WIO layout, verified live against `validation-dev`*
+
+No config change was needed; the block declared in Phase 2 was correct.
+
+| collection | documents |
+|---|---|
+| `surveys_flags-aaztUDtRzb9SpSV7i9iptb` (v2) | 64,997 + 1 metadata |
+| `surveys_flags-aEoWV7aprG47Q4uTpaopgD` (v3) | 22,233 + 1 metadata |
+| `enumerators_stats-<v2 asset>` | 7,975 (one row per raised alert) |
+| `enumerators_stats-<v3 asset>` | 2,920 |
+
+v1 is frozen and gets neither. The document schema was read off the four
+non-empty WIO collections rather than inferred, and matches them field for
+field: `submission_id, survey_version, submitted_by, submission_date,
+alert_flag, validation_status, validated_at, validated_by, fetch_error`.
+`alert_flag` is comma-separated and **`NA` when clean**, which is what the shared
+UI reads as "nothing to review"; Timor's internal `-`-joined string is unchanged.
+
+`coasts::mdb_collection_push()` replaces a collection wholesale, so
+`validate_landings()` also writes `validation_alerts__*.parquet` to the country
+bucket — the only history of what was flagged when. `get_validation_sheet()` →
+`get_validation_flags()`, reading that.
+
+*5. `send_validation_mail()` reads Mongo*
+
+Flags from both live collections, descriptions from a new
+`validation.alerts` block in `inst/config.yml` — the `alerts` tab of the retired
+sheet, carried over verbatim plus the four codes it never documented. Nothing in
+`R/` reads `VALID_SHEET_ID` any more.
+
+*6. Two deletions worth the space they free*
+
+- **`get_bounds_table()`** — assigned at the old line 68 and never read, with no
+  other caller anywhere. `split()` over ~600 (taxon × gear) groups of 1.65M rows
+  with a `univOutl::LocScaleB()` each.
+- **The Cook's-distance fit in `validate_price_weight()`** — a `stats::lm()` plus
+  `broom::augment()` per submission whose `cooksd` has been commented out of the
+  threshold for years. `single_catches` went too, same reason. `cook_dist` is
+  kept as a parameter because `config.yml` still supplies it.
+
+Together with the nesting, **validation went from ~50 minutes to 8.0**, of which
+~5 is the Mongo push and ~1.5 the KoBo status read.
+
+**Verified**
+
+Method: a `git worktree` of `2814dff` replayed the **old** validation path on the
+**same** dev weight artefact, skipping only the Sheets sync and
+`get_bounds_table()` — both provably irrelevant to the alerts. Same-data
+baseline, so every delta below is this phase's.
+
+*Flags — the gate*
+
+| | baseline (`2814dff` replay) | Phase 5 |
+|---|---|---|
+| submissions | 97,347 | 97,347 |
+| flagged | 13,388 (13.75%) | **13,387** |
+| distinct alert combinations | 37 | **37** |
+| non-zero codes produced | 1, 3, 4, 5, 6, 10, 11, 16, 17, 20, 21, 22 | **identical** |
+
+**Exactly one submission of 97,347 has a different flag string**, and it is the
+deliberate data correction below. Before that correction the diff was **0 rows** —
+byte-identical flag strings across the whole table, every code count equal.
+
+*Validated artefact*
+
+97,347 × 19, identical column set, `landing_id` identical. Sixteen of the
+eighteen submission-level columns are byte-identical; catch rows 1,647,692 both,
+with `catch_taxon`, `catch_use`, `length_type`, `length`, `number_of_fish` and
+`catch` all differing in **0** cells. **Validated catch weight 964,937.9 kg in
+both.** Total catch weight 5,197,093.9 kg, unchanged.
+
+The two columns that do differ are the intended frame relabels (PLAN §2.5), a
+clean 1:1 remap losing no rows:
+
+| | Sheets (was) | frame (now) | submissions |
+|---|---|---|---|
+| `gear` | `gill net`, `hand line`, `long line`, `spear gun`, `seine net`, `beach seine`, `cast net`, `trap`, `manual collection` | `Gill Net`, `Hand Line`, `Long Line`, `Spear Gun`, `Seine`, `Beach Seine`, `Cast Net`, `Trap`, **`Gleaning`** | 91,217 |
+| `propulsion_gear` | `motorised` / `unmotorised` | `Motorized Boat` / `Canoes` | 89,566 |
+
+**Phase 8 must check the portal front-end for hardcoded gear or propulsion
+labels** — `peskas.timor.portal.v2` is outside this repo and was not inspected.
+Nothing in `R/` keys off either value: `jsonify_indicators()`'s `habitat_gear`
+groups are data-derived, and the modelling code never touches gear.
+
+*tinytest, against `timor-dev`* — **all four suites green, for the first time in
+the migration:**
+
+| suite | result |
+|---|---|
+| `test_validated_landings.R` | **all ok, 10/10** (was 2 fails / 8 passes) |
+| `test_validated_pds_trips.R` | all ok, 7/7 |
+| `test_merged_trips.R` | all ok, 2/2 |
+| `test_public_data.R` | all ok, 1/1 |
+
+Both long-standing failures are closed, and **no assertion was deleted or
+weakened**:
+
+- `<49--53>` `catch_purpose` — the suite named four columns the artefact has
+  never had (`trip_duration`, `landing_value`, `catch_purpose`, `individuals`), a
+  schema that never shipped. Reading a missing column returns NULL, so three of
+  them passed vacuously while warning "Unknown or uninitialised column" and the
+  fourth failed on an empty compare. Pointed at the real columns
+  (`trip_length`, `catch_price`, `catch_use`, `number_of_fish`) — same
+  quantities, and the names `format_public_data()` reads. The four warnings are
+  gone with them.
+- `<33--36>` landing dates prior to 2017 — **one** submission of 97,347:
+  `16182387`, v1, submitted 2017-12-14 recording a landing on 2015-07-07, two
+  years before the form existed. No catch, no individuals, no revenue.
+  **Decision (user, 2026-08-10): null the date in the freeze script**, with the
+  reasoning in a comment. Consequence, and the only flag that moves in this
+  phase: its alert 10 (submitted >28 days after landing) can no longer fire, so
+  10 goes 4,321 → 4,320 and the submission reads `0`. It contributes nothing to
+  any aggregate.
+
+The `setwd("../..")` in `test_validated_landings.R` — dead since the `local:`
+config era, and the reason `.env` was never found on a local run — is replaced by
+a guarded `dotenv::load_dot_env()`. The other three suites still carry it; they
+are Phase 9's when the harness is tidied.
+
+*`devtools::check()`* — **0 errors, 0 WARNINGs, 4 NOTEs** against a Phase 4
+baseline of 0/0/4, and **testthat OK**. `pkgdown::check_pkgdown()` clean. The
+NOTEs are unchanged in kind (34 Imports — `httr2` is back, the KoBo client needs
+it; install size; file timestamps; the `sd`/`rnorm`/`if_all`/`Estimated revenue`
+globals). Two WARNINGs appeared mid-phase and were fixed rather than accepted:
+the undeclared `httr2`, and a dangling `[validation-functions]` Rd link left by
+converting that block to a comment.
+
+**Two live bugs fixed, both alert-identical on the current data**
+
+1. **`validate_catch_params()`'s positional assignment.** It assigned
+   `validated_length_nested$length_individuals` into a separately-derived frame
+   and worked only if both sides were built from the same rows in the same order.
+   The rewrite mutates in place, so the question does not arise. Verified no
+   alert or value moves.
+2. **`isTRUE()` on a vector made alerts 12–15 unreachable.**
+   `if_else(isTRUE(<vector>), 12, NA)` collapses to a length-1 `FALSE`, so those
+   four codes could never fire. The rewrites are properly vectorised. Measured
+   before changing anything: with the bug fixed, **all four still produce zero**
+   — every gear and vessel code the live forms use resolves from the frame, and
+   no submission declares a boat without a type. So the fix is free and the alert
+   distribution is untouched. That is why 12–15 remain in the "never observed"
+   set.
+
+**Deviations from the brief, all measured**
+
+*`metadata.google_sheets.tables` went 14 → 12, not 14 → 9.* `vessel_types` and
+`gear_types` are gone with their parsers. The other three the brief assigned to
+this phase must stay, and the config now records why:
+
+- **`devices`** — the frame's `pds_devices` carries 442 Timor devices against the
+  Sheets' 595. Replayed both through `validate_this_imei()`: alert 3 goes
+  **824 → 1,475** and 651 submissions lose their resolved `tracker_imei`, which
+  is `merge_trips()`'s join key. Reconsider with the PDS switch in Phase 7,
+  where the device list is the subject anyway.
+- **`stations` / `reporting_units`** — these are the *published* labels, not just
+  a validation lookup. `municipality` is Timor's reporting unit, which is not
+  `gaul_1_name`: only 22 of 40 sites agree, Atauro is its own reporting unit
+  while GAUL puts it inside Dili, and `format_public_data()` hardcodes five
+  reporting-unit names. `landing_site` is worse — 11 of 40 site names differ
+  between the sources, and `get_summary_data()` hardcodes five Sheets spellings
+  to classify the north coast, two of which the frame writes differently
+  (`Tutuala` → `Tutuala/Valu/Savirara`, `Comando` → `Comando/Obrato/Behau`).
+  Swapping either would silently reclassify a published object. `validate_sites()`
+  therefore keeps its Sheets join and gains only the standard code column.
+  **This is Phase 8's**, with the portal parity gate.
+
+*The alert-11 blanking scope, and the one number that could have moved.* Alert 11
+blanks **every** catch of the affected landing, not only the outlying row — an
+artefact of `validate_catch_params()` having returned one nested row per
+submission, so un-nesting spread the alert over every row. Writing the row-level
+version first recovered **13,857 kg across 845 submissions, +1.44% of validated
+catch weight**. Reverted: **decision (user, 2026-08-10) is to keep the
+whole-landing scope**, so Phase 5 stays weight-neutral and Phase 8's portal diff
+compares like with like. The narrowing is a one-line change and is documented at
+the call site.
+
+*The KoBo status read is a bulk query, not a loop.* Mozambique's pattern is one
+request per previously-flagged submission through `furrr`. Measured: 7,776 v2
+submissions took **over twenty minutes** even across ten workers. The data
+endpoint returns `_validation_status` alongside `_id` for 1,000 submissions per
+request, so `list_validation_statuses()` pages through it — **65 requests and
+~70 seconds** for v2's 64,997, and it covers *every* submission rather than only
+those a previous run flagged, so an approval entered by hand on a submission the
+pipeline never flagged is seen too. That also removed the `mdb_collection_pull()`
+round-trip the loop needed to pick its ids.
+
+*`KOBO_TOKEN` is the wrong credential and is no longer needed.* The token in
+`.env` authenticates as user **`peskas`**, which has no data access to either
+Timor asset: 200 on `/assets/<id>/`, **404 on `/assets/<id>/data/`**. Every
+status read failed silently as `fetch_error = TRUE` until this was traced. The
+KoBo client now takes basic auth, which `KOBO_USERNAME` / `KOBO_PASSWORD`
+already provide and which are **already GitHub secrets** — so the write-back has
+no missing-secret blocker at all, and `KOBO_TOKEN` is optional passthrough. It
+is still mapped in the workflow for the `ingestion` block.
+
+Related, and kept deliberately: KoBo answers **404** for a submission that has
+never been validated, which is the normal case. `httr2` throws on 4xx by
+default, so Mozambique's `!= 200 → "not_validated"` branch is unreachable there
+and every unvalidated submission is recorded as a fetch failure. Timor's
+`kobo_request()` sets `req_error(is_error = ~ FALSE)` so the branch works:
+`not_validated` means no status, `fetch_error` means a real transport failure.
+
+**Deferred, with reasons**
+
+- **`sync_validation_status()` is not wired into any workflow.** It PATCHes
+  KoBoToolbox, there is no development KoBo instance, and the two assets are
+  live in both environments — so running it from a migration branch would change
+  production review state whatever `R_CONFIG_ACTIVE` says. It also skips
+  submissions already carrying the target status, so the first real run is
+  cheap. Wiring it up is a deliberate operational decision, not a phase task.
+- **`MONGODB_CONNECTION_STRING_VALIDATION` is not a GitHub secret.** Verified
+  against `gh api .../actions/secrets`. Locally it is set and the sink is fully
+  verified against `validation-dev`; in CI `validate_landings()` will log a
+  warning and write only the GCS snapshot. **User action.**
+- **The alert-code vocabulary may collide in the shared UI.** Timor's codes run
+  1–23 with its own meanings; Mozambique uses 4/5/6 for taxa/total-catch/price.
+  If the validation app holds one dictionary rather than one per country, Timor's
+  flags will render with the wrong descriptions. Not something this repo can fix
+  — the `surveys` / `countries` / `districts` collections are shared metadata.
+  Raise with whoever owns the app.
+- **The production freeze still has not been run**, and now it carries the
+  16182387 date correction as well: `R_CONFIG_ACTIVE=production Rscript
+  data-raw/freeze-landings-v1.R` before Phase 11 merges to `main`.
+- `validation.google_sheets` and `validation.version.preprocess` are left in
+  `config.yml` with no reader — Phase 11 owns legacy keys. `googlesheets4` stays
+  in Imports; `ingest_metadata_tables()` still uses it.
+- The three other tinytest suites keep their dead `setwd("../..")`.
+- `ANTHROPIC_API_KEY` rotation and the Phase 3 secrets rotation are still open
+  user actions.
+
+**Findings that change later phases**
+
+1. **Phase 6 has its input already.**
+   `timor-landings-merged_validated_long__*.parquet` is written beside the nested
+   artefact — the same content, one row per (submission, catch, length bin),
+   under standard names (`trip_duration`, `vessel_type`, `catch_habitat`,
+   `n_individuals`, `catch_kg` in kilos). Nothing reads it yet. Phase 8 drops the
+   nested artefact when `format_public_data()` moves onto this one.
+2. **`devtools::load_all()` does not reach `furrr`/`future` workers.** A worker
+   loads the *installed* namespace, so a new unexported helper is "could not find
+   function" inside the parallel map while working perfectly in the parent. Same
+   class of trap as the `coasts::read_config()` one in the Phase 3 entry, and the
+   same fix: `devtools::install()` + `library()` to test anything parallel. Cost
+   half an hour of misdiagnosis here.
+3. **The Mongo push is now the slowest step of validation** — ~4.5 minutes for
+   64,997 v2 documents through `mongolite`'s row-wise insert, against ~1 minute
+   for all the validators together. `coasts::mdb_collection_push()` is the place
+   to look if that matters; it also `remove("{}")`s first, so a failed push
+   between the clear and the insert would leave the collection empty. The GCS
+   snapshot is the mitigation.
+4. **Phase 8 owns three label reconciliations**, all documented at their call
+   sites: `landing_site` and `municipality` (Sheets vs frame, above), and
+   checking the portal front-end for hardcoded gear/propulsion labels.
+5. `inst/report/data_report.Rmd` hardcodes the nine **Sheets** gear names as
+   factor levels (lines ~1187–1195). It now receives Title Case from the frame,
+   so those levels resolve to `NA`. `data-report.yaml` has been disabled since
+   2026-06-01 and reports move to `R/reports.R` in Phase 8 — fix it there.
+
+**Files added / removed / renamed**
+
+- renamed: `R/validate-landings.R` → `R/validation.R` (body rewritten)
+- added: `man/{list_validation_statuses,get_validation_status,update_validation_status,push_validation_flags,sync_validation_status,validation_submissions,validate_imeis,validate_landing_regularity,validate_vessel_type,validate_gear_type,validate_sites,validate_n_fishers,validate_habitat,validate_mesh,validate_gleaners,validate_fuel,validate_conservation,validate_happiness,get_validation_flags}.Rd`
+- removed: `get_bounds_table()`, `get_deployed_imeis()`, the Cook's-distance fit
+  and `single_catches` from `validate_price_weight()`, `standard_survey_cols()`,
+  `pt_validate_gear_types()`, `pt_validate_vessel_types()`,
+  `get_validation_sheet()`; `man/get_validation_sheet.Rd`
+- modified: `R/validation-functions.R` (rewritten), `R/model-taxa.R`
+  (`join_weights()`, `estimate_weight()`, `calculate_weights()` → parquet),
+  `R/preprocessing-surveys.R`, `R/get-cloud-files.R`,
+  `R/preprocess-metadata-tables.R`, `R/send-email.R`,
+  `data-raw/freeze-landings-v1.R`, `inst/config.yml` (`validation.alerts`, the
+  metadata-table list), `inst/tinytest/test_validated_landings.R`, `DESCRIPTION`
+  (+`httr2`), `NAMESPACE`, `_pkgdown.yml` (keyword-driven validation section),
+  `.github/workflows/data-pipeline.yaml` (two env vars), `CLAUDE.md`,
+  `.claude/migration/STATE.md`
+- **unchanged: `R/format-public-data.R`, `R/export.R`, `R/merge-trips.R`, the
+  other three tinytest suites, and every `portal-*.json` object name.**
+
+**Cloud objects written (all `-dev`)**
+
+- `timor-dev/timor-landings-v1-frozen__20260810231255_2814dff__.parquet`
+- `timor-dev/timor-landings-v{2,3}_preprocessed__20260810212*_2814dff__.parquet`
+- `timor-dev/timor-landings-merged__20260810231*_2814dff__.parquet`
+- `timor-dev/timor-landings-merged_weight__20260810231559_2814dff__.parquet`
+- `timor-dev/timor-landings-merged_validated__20260810231*_2814dff__.rds`
+- `timor-dev/timor-landings-merged_validated_long__20260810231*_2814dff__.parquet`
+- `timor-dev/validation_alerts__20260810231729_2814dff__.parquet`
+- `validation-dev`: `surveys_flags-<v2 asset>`, `surveys_flags-<v3 asset>`,
+  `enumerators_stats-<v2 asset>`, `enumerators_stats-<v3 asset>`
+
+**Open questions for the next session**
+
+1. None blocking. Phase 6 can start from
+   `timor-landings-merged_validated_long__*.parquet`.
+2. The `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret, so a branch push
+   exercises the sink end to end. Until it exists, CI writes flags only to the
+   GCS snapshot — a warning, not a failure.
+3. Whether the shared validation app can hold a per-country alert dictionary.

@@ -66,21 +66,21 @@ get_merged_landings <- function(conf) {
 
 #' Download the merged landings with catch weights
 #'
-#' Still `.rds`: [join_weights()] re-nests the catch columns into
-#' `species_group` / `length_individuals` for validation, which parquet cannot
-#' round-trip cleanly. Flattened in migration Phase 5.
+#' The flat long catch table of [merge_landings()] with `weight` (grams) and the
+#' seven per-catch nutrient columns added by [calculate_weights()]. Parquet
+#' since migration Phase 5, when the re-nesting that validation used to need
+#' was deleted.
 #'
 #' @param conf The configuration file.
-#' @return A tibble of weighted landings, one row per submission.
+#' @return A tibble, one row per (submission, catch, length bin).
 #' @keywords storage
 #' @export
 get_weighted_landings <- function(conf) {
-  download_versioned_rds(
+  coasts::download_parquet_from_cloud(
     prefix = conf$surveys$landings$weight$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country"),
-    version = conf$surveys$landings$weight$version,
-    exact_match = TRUE
+    version = conf$surveys$landings$weight$version
   )
 }
 
@@ -385,20 +385,24 @@ get_tracks_ids <- function(conf) {
   )
 }
 
-#' Get peskas validation sheet
+#' Get the validation flags snapshot
 #'
-#' Get the peskas validation backup sheet from google cloud
+#' The versioned snapshot [validate_landings()] writes alongside the MongoDB
+#' push. Since migration Phase 5 that push replaces the collection wholesale, so
+#' this is the only history of what was flagged when.
 #'
 #' @param conf the configuration file.
+#' @return A tibble: `submission_id`, `submission_date`, `flag_date`, `alert`,
+#'   `validated`, `validated_when_ymd`, `comments`.
 #'
 #' @keywords storage
 #' @export
 #'
-get_validation_sheet <- function(conf) {
-  download_versioned_rds(
-    prefix = conf$validation$google_sheets$file_prefix,
+get_validation_flags <- function(conf) {
+  coasts::download_parquet_from_cloud(
+    prefix = conf$surveys$landings$validation$flags$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country"),
-    extension = ""
+    version = conf$surveys$landings$validation$flags$version
   )
 }

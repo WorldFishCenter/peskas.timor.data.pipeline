@@ -18,3 +18,10 @@ Nothing, this function is useful for its side effects.
 This function takes advantage of the package \code{blastula} to send an email
 containing a summary of the latest submissions with problems.
 }
+\details{
+Reads the flags out of the shared validation database — the sink since
+migration Phase 5 — and the alert descriptions out of \code{config.yml}'s
+\code{validation.alerts} block, which replaced the \code{alerts} tab of the retired
+Google Sheet. Note that the underlying workflow,
+\code{validation-email-sender.yaml}, has been disabled since ≥2025-09 (AUDIT §5).
+}

@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–4 complete** (2026-08-10). Phase 5 next.
+Status: **Phases 0–5 complete** (2026-08-10). Phase 6 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -183,7 +183,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 2 | Storage delegation | delete `cloud-storage.R`/`get-cloud-files.R`, call `coasts::*` | medium | 1 ✅ |
 | 3 | Ingestion | `ingestion.R`, v2+v3 live, freeze v1, metadata | medium | 1 ✅ |
 | 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 ✅ (1 used) |
-| 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 |
+| 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 ✅ |
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 |
 | 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 |
 | 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 |
@@ -382,7 +382,17 @@ Numerically inert where it matters: 97,328 submissions, **5,196,740 kg**,
 rows fell 1,751,969 → 1,647,260 by removing 104,709 phantom no-catch rows — see
 the STATE entry.
 
-### Phase 5 — Validation
+### Phase 5 — Validation ✅ done 2026-08-10
+
+Shipped as scoped, with three measured deviations recorded in the STATE Phase 5
+entry: only two of the five `[phase 5]` metadata tables could leave the Sheets
+(`devices` is worth 651 unmatched trackers, `stations`/`reporting_units` are the
+*published* site and municipality labels and belong to Phase 8's portal gate);
+the KoBo status read is a single bulk query rather than Mozambique's per-submission
+loop; and `KOBO_TOKEN` turned out to be the wrong credential, so the client uses
+basic auth and needs no new secret. Byte-identical flags across 97,347
+submissions bar one deliberate data correction, validated catch weight unchanged,
+all four tinytest suites green for the first time in the migration.
 
 - `R/validate-landings.R` → `R/validation.R`; keep and rename `R/validation-functions.R`.
 - Preserve every Timor validator. Tag them `@keywords validation`.

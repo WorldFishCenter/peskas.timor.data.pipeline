@@ -88,6 +88,12 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
 #' This function takes advantage of the package `blastula` to send an email
 #' containing a summary of the latest submissions with problems.
 #'
+#' Reads the flags out of the shared validation database — the sink since
+#' migration Phase 5 — and the alert descriptions out of `config.yml`'s
+#' `validation.alerts` block, which replaced the `alerts` tab of the retired
+#' Google Sheet. Note that the underlying workflow,
+#' `validation-email-sender.yaml`, has been disabled since ≥2025-09 (AUDIT §5).
+#'
 #' @param log_threshold The (standard Apache logj4) log level used as a
 #' threshold for the logging infrastructure. See [logger::log_levels] for more
 #' details
@@ -99,44 +105,46 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   conf <- read_config()
+  mdb <- conf$storage$mongodb
 
   logger::log_info("Filtering validation flags from {Sys.Date() - 7}")
 
-  googlesheets4::gs4_auth(
-    path = conf$storage$google$options$service_account_key,
-    use_oob = TRUE
+  peskas_alerts <-
+    purrr::map_dfr(c("v2", "v3"), function(version) {
+      coasts::mdb_collection_pull(
+        connection_string = mdb$connection_strings$validation,
+        db_name = mdb$databases$validation$database_name,
+        collection_name = paste(
+          mdb$databases$validation$collections$flags,
+          conf$ingestion$landings[[version]]$asset_id,
+          sep = "-"
+        )
+      )
+    }) %>%
+    dplyr::mutate(submission_date = lubridate::as_date(.data$submission_date)) %>%
+    dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
+    dplyr::select("submission_id", "submission_date", "alert_flag")
+
+  peskas_alerts_week <- dplyr::filter(peskas_alerts, !is.na(.data$alert_flag))
+
+  alert_description <- tibble::tibble(
+    alert_flag = names(conf$validation$alerts),
+    alert_description = unlist(conf$validation$alerts, use.names = FALSE)
   )
 
-  peskas_alerts <-
-    googlesheets4::range_read(
-      ss = conf$validation$google_sheets$sheet_id,
-      sheet = conf$validation$google_sheets$flags_table,
-      col_types = "iDDclDc"
-    ) %>%
-    dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
-    dplyr::select(.data$submission_id, .data$submission_date, .data$alert)
-
-  peskas_alerts_week <- peskas_alerts %>% dplyr::filter(!.data$alert == "0")
-
-  alert_description <-
-    googlesheets4::range_read(
-      ss = conf$validation$google_sheets$sheet_id,
-      sheet = "alerts",
-      col_types = "ccc"
-    ) %>%
-    dplyr::select(-.data$alert_category)
-
   alerts_week <-
-    dplyr::left_join(peskas_alerts_week, alert_description, by = "alert") %>%
-    dplyr::rename(
-      "submission id" = .data$submission_id,
-      "submission date" = .data$submission_date,
-      description = .data$alert_description,
-      "alert code" = .data$alert
+    dplyr::left_join(peskas_alerts_week, alert_description, by = "alert_flag") %>%
+    dplyr::mutate(
+      alert_description = dplyr::if_else(
+        grepl(",", .data$alert_flag), "Multiple alerts", .data$alert_description
+      )
     ) %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(description = ifelse(nchar(.data$`alert code`) >= 3, "Multiple alerts", .data$description)) %>%
-    dplyr::ungroup()
+    dplyr::rename(
+      "submission id" = "submission_id",
+      "submission date" = "submission_date",
+      description = "alert_description",
+      "alert code" = "alert_flag"
+    )
 
   n_submissions_alert <- nrow(alerts_week)
   n_submission_tot <- nrow(peskas_alerts)
@@ -151,11 +159,9 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
 
           In the last week there have been {n_submissions_alert} new landing
           surveys that may have some problems with the data entered on a total
-          of {n_submission_tot} submissions. Please, open the link below and
-          check the submissions on KoBoToolBox to make corrections.
+          of {n_submission_tot} submissions. Please open the Peskas validation
+          app and check the submissions on KoBoToolBox to make corrections.
           If you don't think the flag is an error please let us know.
-
-          https://docs.google.com/spreadsheets/d/1MjpEE-5oOqQgpf8M8h_IysQlLdZroouOkGjy6UP95UM/edit?usp=sharing
           "
           ),
           alerts_week %>%

@@ -65,8 +65,6 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
       metadata_tables$morphometric_table
     ),
     centro_pescas = pt_validate_centro_pescas(metadata_tables$centro_pescas),
-    vessel_types = pt_validate_vessel_types(metadata_tables$vessel_types),
-    gear_types = pt_validate_gear_types(metadata_tables$gear_types),
     stations = pt_validate_stations(metadata_tables$stations),
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
     habitat = pt_validate_habitat(metadata_tables$habitat),
@@ -261,14 +259,10 @@ pt_validate_centro_pescas <- function(centro_pescas_table) {
   centro_pescas_table
 }
 
-pt_validate_gear_types <- function(gear_types_table) {
-  gear_types_table
-}
-
-pt_validate_vessel_types <- function(vessel_types_table) {
-  vessel_types_table %>%
-    dplyr::mutate(boat_code = as.integer(.data$boat_code))
-}
+# NOTE: `pt_validate_gear_types()` and `pt_validate_vessel_types()` went with
+# their tables in migration Phase 5 — `validate_gear_type()` and
+# `validate_vessel_type()` read the labels `preprocess_landings()` resolves from
+# the PESKAS | FRAME frame, which is authoritative for both (PLAN §2.5).
 
 pt_validate_stations <- function(stations_table) {
   stations_table

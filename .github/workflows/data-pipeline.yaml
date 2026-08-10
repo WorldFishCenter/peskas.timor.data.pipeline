@@ -23,6 +23,15 @@ env:
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
   VALID_SHEET_ID: ${{ secrets.VALID_SHEET_ID }}
   GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+  # The validation flags sink, since migration Phase 5. NOTE: this secret does
+  # not exist yet — until it is created, `validate_landings()` logs a warning
+  # and the versioned flags snapshot in cloud storage is the only record of a
+  # run. The secret is a *user* action, deliberately not worked around here.
+  MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
+  # Optional. Present: manual approvals entered in KoBoToolbox survive a run.
+  # Absent: they are overwritten by the pipeline's own flags. Also has no
+  # secret yet.
+  KOBO_TOKEN: ${{ secrets.KOBO_TOKEN }}
 
 jobs:
   build-container:
