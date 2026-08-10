@@ -67,8 +67,8 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
+#' conf <- read_config()
+#' landings <- get_merged_landings(conf)
 #' validate_surveys_time(landings, hrs = 18)
 #' }
 validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
@@ -199,8 +199,8 @@ validate_landing_regularity <- function(landings) {
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
+#' conf <- read_config()
+#' landings <- get_merged_landings(conf)
 #' validate_catch_value(landings, method = "MAD", k = 13)
 #' }
 #'
@@ -295,8 +295,8 @@ alert_outlier <- function(x,
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
+#' conf <- read_config()
+#' landings <- get_merged_landings(conf)
 #' validate_catch_params(landings, k = 3)
 #' }
 #'

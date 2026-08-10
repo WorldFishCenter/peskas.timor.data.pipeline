@@ -1,12 +1,18 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **plan approved, not started**
+Status: **Phases 0–3 complete** (2026-08-10). Phase 4 next.
+Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
 cross-country "PESKAS UNIFIED CONFIGURATION TEMPLATE". Derive Timor's config from
 **this**, not from Moz's `config.yml`.
 Shared hub: `coasts` (`WorldFishCenter/peskas.coasts`, local checkout at `~/Desktop/work/wf_projects/peskas.coasts`)
 Also cross-check: `peskas.kenya.data.pipeline`, `peskas.zanzibar.data.pipeline`
+
+Companion documents, read in this order: `STRUCTURAL-DIFF.md` (file-by-file
+diff), `AUDIT.md` (Phase 0 measurements), `STATE.md` (per-phase handoff log,
+**including the addenda at the end**), `COASTS-4.6.0.md` and `COASTS-TODO.md`
+(what the shared hub does and still owes us).
 
 **Exhaustive file-by-file diff, dotfiles included: `.claude/migration/STRUCTURAL-DIFF.md`.**
 Read it alongside this plan — it carries the `auth/` → `.env` credential map, the
@@ -157,10 +163,10 @@ Each phase is **one fresh Claude session**. Do not combine.
 
 | # | Phase | Scope | Risk | Est. sessions |
 |---|---|---|---|---|
-| 0 | Groundwork & audit | docs, `CLAUDE.md`, bucket/asset inventory, immediate hygiene fixes | none | 1 |
-| 1 | Foundations | `config.yml` superset, `read_config()`, DESCRIPTION, Docker, `.env` | low | 1 |
-| 2 | Storage delegation | delete `cloud-storage.R`/`get-cloud-files.R`, call `coasts::*` | medium | 1 |
-| 3 | Ingestion | `ingestion.R`, v2+v3 live, freeze v1, metadata | medium | 1 |
+| 0 | Groundwork & audit | docs, `CLAUDE.md`, bucket/asset inventory, immediate hygiene fixes | none | 1 ✅ |
+| 1 | Foundations | `config.yml` superset, `read_config()`, DESCRIPTION, Docker, `.env` | low | 1 ✅ |
+| 2 | Storage delegation | delete `cloud-storage.R`/`get-cloud-files.R`, call `coasts::*` | medium | 1 ✅ |
+| 3 | Ingestion | `ingestion.R`, v2+v3 live, freeze v1, metadata | medium | 1 ✅ |
 | 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 |
 | 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 |
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 |
@@ -277,66 +283,43 @@ running while new code uses new keys. Legacy keys are deleted in Phase 11.
 
 ---
 
-### Phase 3 — Ingestion
+### Phase 3 — Ingestion ✅ done 2026-08-09/10
 
-Rescoped 2026-07-31 by decision §2 and AUDIT §7.1. Smaller than originally
-budgeted: the freeze shrinks to v1 only, and the JSON→flat conversion is already
-done in the current code.
+Shipped as scoped, with three deviations recorded in the STATE Phase 3 entry
+and its follow-up. What Phase 4 inherits:
 
-- New `R/ingestion.R`: one `ingest_landings()` looping over the **live** sources
-  (`v2`, `v3`) — `coasts::get_kobo_data()` →
-  `coasts::upload_parquet_to_cloud(prefix = conf$surveys$landings$<v>$raw$file_prefix)`.
-  Both sources run every pipeline run; v2's low rate is not a reason to
-  special-case it.
-  - **Not a semantic change.** `get_kobo_data()` already flattens via
-    `flatten_row()`/`flatten_field()`/`rename_child()` and writes one flat table
-    ([retrieve-survey-data.R:225-231](../../R/retrieve-survey-data.R#L225-L231));
-    the per-batch JSON objects stopped 2024-09-17. The only change is CSV →
-    parquet plus delegating the retrieval to `coasts`.
-- **Freeze v1 only** (last submission 2020-08-28, nothing in six years): a one-off
-  script in `data-raw/` (provenance, not exported) that reads the current v1
-  preprocessed output and writes `timor-landings-v1-frozen__<ts>__.parquet`.
-  Assert the frozen row count matches the live v1 output before deleting
-  anything. Baseline: 12,017 KoBo submissions (AUDIT §1).
-- Delete `ingest_landings_v1v3()`, `ingest_landings_v2()`, `preprocess_legacy_landings()`,
-  `preprocess_updated_landings()`, `merge_landings()`, `merge_versions()`,
-  `R/retrieve-survey-data.R`, and the corresponding workflow jobs.
-- Harmonize `ingest_metadata_tables()` toward the `get_metadata()` pattern.
-- **Add `ingest_assets()`** (decision §2.5), modelled on `coasts::ingest_assets()`
-  or delegating to it with `package = "peskas.timor.data.pipeline"`: pull taxa /
-  gears / vessels / landing_sites / forms for Timor-Leste from the frame base and
-  write one versioned `assets__*.rds` snapshot. Run it in the same workflow job as
-  the metadata tables.
-  - Resolve the token blocker first — see §2.5. Nothing here works until the PAT
-    can read `appMMEJYlJdfSJEjm`.
-  - **A coasts inconsistency to resolve here, sharper since 4.6.0.**
-    `ingest_assets()` still writes the snapshot to
-    `conf$storage$google$options` (the **country** bucket), while
-    `ingestion-pds.R` and — as of 4.6.0 — `enrich_taxa()` both read it through
-    `resolve_storage_opts(conf, "coasts")` (the **hub**). The writer and the
-    readers now actively disagree. The hub holds 118 prod / 22 dev copies, so
-    the hub is the de-facto home; fix `ingest_assets()` upstream (see
-    COASTS-TODO C11) rather than working around it in Timor.
-  - Do **not** delete the five Google Sheets tables Airtable does not cover
-    (`morphometric_table`, `habitat`, `conservation`,
-    `fishing_vessel_statistics`, `registered_boats`).
-- **Freeze v1 with lengths normalised to total length.** New requirement, added
-  2026-08-09. v1 records **fork length**; v2/v3 record TL. The weight path
-  carries `summarise_ll_coeffs()` + `normalise_length_to_tl()` purely to convert
-  it, for 10.4% of merged landings from a source frozen since 2020-08-28.
-  Converting once at the freeze deletes both functions and removes a
-  per-run FishBase round-trip.
-- Verify: v2 + v3 raw parquet row counts ≥ their current submission counts
-  (64,997 and 22,037 as of 2026-07-31); schema recorded in STATE. Assets
-  snapshot for Timor-Leste contains **60 taxa rows over 56 distinct
-  `alpha3_code`s, 9 gears, 2 vessels, 40 landing sites** (re-measured
-  2026-08-09 — the earlier "57 taxa / 7 gears" is stale), every `alpha3_code`
-  is present in `models.all_taxa` with zero difference either way, and
-  `survey_label` is populated on every taxa, gear and vessel row.
-- Once the snapshot exists, point `get_taxa_list()`
-  ([calculate-weights.R](../../R/calculate-weights.R)) at it instead of the
-  Google Sheets `catch_types` + `fao_catch` join. One-line swap, flagged in the
-  weight-path commit.
+- **`R/ingestion.R`** — `ingest_landings(versions = c("v2","v3"))` writing raw
+  **parquet** (`coasts::get_kobo_data()` → `flatten_row()` →
+  `upload_parquet_to_cloud()`), `ingest_assets()`, the flatten helpers, and the
+  internal `get_raw_landings()` reader. `ingest-landings.R` and
+  `retrieve-survey-data.R` are gone.
+- **Raw is parquet, and provably the same table.** `get_raw_landings()` coerces
+  to all-character and reproduces readr's trim / `""`→`NA` rules, because
+  preprocessing was written against `read_csv(col_types = col_character())`.
+  Verified over every submission of both live forms: 13 differing cells out of
+  ~26M, all of them the parquet being closer to the source JSON. **Phase 4
+  deletes this shim** when it moves preprocessing to a typed long table.
+- **v1 is frozen.** Not ingested, not preprocessed. `merge_landings()` reads
+  `timor-landings-v1-frozen__*.rds`, produced by
+  `data-raw/freeze-landings-v1.R`. The freeze also converted v1's fork lengths
+  to total length, so `join_weights()` no longer branches on `survey_version`
+  and the length-length path is deleted. **Phase 4 does not have to port v1's
+  form shape** — one fewer legacy reshaper.
+- **Assets snapshot exists**, written to the coasts hub by `ingest_assets()`
+  and read by `get_assets()`. Verified: 60 taxa / 56 codes, 9 gears, 2 vessels,
+  40 sites, `survey_label` populated everywhere, codes matching
+  `models$all_taxa` exactly. `get_taxa_list()` already reads it.
+- **The snapshot is cross-country and has no `country` column.** Narrow every
+  read with `timor_assets(x, conf)`, which filters on
+  `metadata.airtable.form_ids`. See COASTS-TODO C13.
+- **`conf`, not `pars`**, throughout the package.
+- CI: `KOBO_ASSET_ID_V{1,2,3}` mapped; one `ingest-landings` job now feeds both
+  preprocessing branches; `ingest_assets()` runs with the metadata tables.
+- A live secrets leak was found and fixed in `read_config()` — see the STATE
+  entry. **Rotation is still a user action.**
+
+Numerically inert: 97,328 submissions compared against the previous dev run,
+**0.000000%** weight delta, 0 submissions differing by more than 1e-6 kg.
 
 ---
 
@@ -347,7 +330,17 @@ The largest genuinely Timor-specific rewrite. Split:
 **4a — reshaping to long format.** Replace `R/clean-raw-data.R`, `R/preprocess-landings.R`
 (`step_1`/`step_2`), `R/pt_nest_species.R`, `R/pt_nest_attachments.R` with
 `R/preprocessing-surveys.R` + `R/survey-reshaping.R` producing a flat long
-catch-level table. Target columns, matching the standard:
+catch-level table.
+
+**Only v2 and v3 need porting** — v1 is frozen (Phase 3), so its form shape can
+be ignored entirely. Input is the raw parquet, read directly rather than through
+`get_raw_landings()`; **delete that shim and the all-character coercion** once
+nothing downstream depends on character columns. Note what the shim was
+hiding: the CSV era trimmed spaces/tabs and mapped `""`→`NA`, and ~60 free-text
+answers carry stray leading/trailing newlines that both paths preserve. Strip
+them deliberately here, in the reshaping code.
+
+Target columns, matching the standard:
 
 ```
 submission_id, survey_id, landing_date, submission_date,
@@ -370,6 +363,17 @@ assets snapshot instead (decision §2.5) and emit the standard
 against the golden snapshot before accepting: a mapping that silently drops a
 gear will look like a clean run.
 
+Read it with `get_assets(conf)` and **always** narrow with
+`timor_assets(x, conf)` — the snapshot is cross-country and carries no
+`country` column, so an unfiltered join pulls in Kenya's, Mozambique's and
+Zanzibar's rows. `survey_label` is the join key to the raw form values and is
+populated on every Timor taxa, gear and vessel row (verified 2026-08-09);
+for taxa it holds `catch_types$catch_number`. Two caveats: the snapshot drops
+`landing_sites` lat/lon (still in the Sheets `centro_pescas`), and
+`metadata.google_sheets.tables` still lists all 15 tables — trim it here to the
+five Airtable does not cover, plus `catch_types`, whose `length_type` column
+has no frame equivalent (COASTS-TODO C14 explains why it should not get one).
+
 **4b — weights and taxa. ~~Pending~~ mostly DONE, pulled forward 2026-08-09**
 (commit `a2c2881`). The coefficient path already runs on
 `coasts::get_taxa_morphometrics()` with Mozambique's aggregation (geometric
@@ -385,9 +389,19 @@ What remains for 4b:
 
 - Rename `R/calculate-weights.R` → `R/model-taxa.R` with the rest of the
   Phase 4 file reorganisation.
-- Delete `summarise_ll_coeffs()` and `normalise_length_to_tl()` once Phase 3
-  freezes v1 in total length.
-- Point `get_taxa_list()` at the assets snapshot (Phase 3 dependency).
+- ~~Delete `summarise_ll_coeffs()` and `normalise_length_to_tl()`~~ — **done in
+  Phase 3.** The freeze made them unreachable; the length-length logic now
+  lives in `data-raw/freeze-landings-v1.R`, its only consumer. Proven a no-op:
+  0.000000% weight delta over all 97,328 submissions.
+- ~~Point `get_taxa_list()` at the assets snapshot~~ — **done in Phase 3.**
+  Measured identical to the Sheets join it replaced: 56 codes each, zero
+  differing `scientific_name`.
+- **Known wart, deliberately left:** `summarise_lw_coeffs()` pools
+  length-weight coefficients across every measurement axis (`SLV` = 34
+  carapace-length studies + 19 total-length). Harmless while all recorded
+  lengths are TL — confirmed 2026-08-10 — but filtering each declaring taxon to
+  its own `Type` would move national catch weight **+0.63%**. Revisit only if
+  the field protocol changes.
 - Compare `R/calculate-nutrients.R` against `enrich_taxa()`'s nutrient columns
   and delete Timor's if they agree — **not** upstream it, contrary to §10.
 - `metadata.fishbase.taxa_enriched.file_prefix` is still not in the config, and
@@ -397,6 +411,12 @@ What remains for 4b:
 Verify against the Phase 0 golden snapshot: row counts, column set, and per-column
 summary stats (mean/median/NA-rate) for `catch_kg`, `catch_price`, `length`.
 Investigate any delta over ~1%.
+
+Current dev baselines to diff against, all measured 2026-08-09/10 and all
+reproducible from `timor-dev`: merged **97,328 × 26**, weight artefact
+**97,328 × 61** over **1,751,969** catch rows and **5,196,740 kg**
+(v1 64,089.1 / v2 4,819,710.8 / v3 312,940.2 kg). Phase 3 changed none of these,
+so any Phase 4 movement is Phase 4's.
 
 ---
 
@@ -545,7 +565,7 @@ Then Timor depends on the new coasts release and deletes its local copies.
 | Risk | Mitigation |
 |---|---|
 | Portal JSON contract drift breaks the live site | Golden diffs are a hard gate in Phase 8; portal repo untouched |
-| v1 freeze silently drops historical rows | Assert frozen parquet row count == current v1 output before deleting anything. Risk much reduced since 2026-07-31: v2 is no longer frozen, and v2 was the only one still receiving submissions |
+| v1 freeze silently drops historical rows | ~~Assert frozen row count~~ **closed.** Asserted in the freeze script (10,117, the 12,017 KoBo submissions minus the 1,900 Kg-variant rows `clean_legacy_landings()` always dropped), and the frozen lengths were proven bit-identical to the old per-run conversion. Residual risk is operational, not numeric: the snapshot exists in `timor-dev` only — **run `data-raw/freeze-landings-v1.R` against `production` before Phase 11** |
 | `coasts` ships a breaking change mid-migration | Pin to a release tag in Phase 1; unpin only in Phase 11 |
 | `rfishbase 5.0.1` pin conflicts with coasts | Resolve in Phase 1; if unresolvable, keep Timor's taxa code off the shared helper |
 | Timezone regression | Commit `15f6b18` fixed this; re-verify explicitly in Phase 8 |
@@ -558,8 +578,14 @@ Then Timor depends on the new coasts release and deletes its local copies.
   phase, merged into it. `main` untouched until Phase 11.
 - **One phase per fresh session.** Never two.
 - Every session starts by reading, in order: `CLAUDE.md`, this file,
-  `.claude/migration/STRUCTURAL-DIFF.md`, `.claude/migration/STATE.md`,
-  `.claude/migration/AUDIT.md`.
+  `.claude/migration/STRUCTURAL-DIFF.md`, `.claude/migration/STATE.md`
+  (**including the addenda and follow-ups at the end**),
+  `.claude/migration/AUDIT.md`, `.claude/migration/COASTS-4.6.0.md`,
+  `.claude/migration/COASTS-TODO.md`.
+- **Naming:** the resolved configuration is `conf`, never `pars` (renamed
+  throughout in Phase 3). Storage functions are always written `coasts::`.
+- **Never log the resolved config.** It carries the service-account key and
+  every token, and workflow functions default to `log_threshold = DEBUG`.
 - **The reference repo has bugs — do not replicate them.** Catalogued in
   STRUCTURAL-DIFF: unedited DESCRIPTION boilerplate, `_pkgdown.yml` pointing at
   Malawi, `.Rbuildignore` naming the Kenya `.Rproj`, `R_CONFIG_ACTIVE=dev` with no

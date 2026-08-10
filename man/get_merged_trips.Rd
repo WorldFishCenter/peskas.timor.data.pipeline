@@ -4,10 +4,10 @@
 \alias{get_merged_trips}
 \title{Download Peskas surveys and PDS data}
 \usage{
-get_merged_trips(pars, ...)
+get_merged_trips(conf, ...)
 }
 \arguments{
-\item{pars}{The configuration file}
+\item{conf}{The configuration file}
 
 \item{...}{Any additional parameters, passed on to
 \code{\link[coasts:cloud_object_name]{coasts::cloud_object_name()}} — for example \code{version} or \code{exact_match}.}

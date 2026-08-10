@@ -1,20 +1,25 @@
 #' Merge recent and legacy pre-processed landings
 #'
-#' Downloads pre-processed versions of recent and legacy landings from cloud and
-#' merge in a rds-format file using the function [dplyr::full_join].
+#' Binds the pre-processed v2 and v3 landings with the frozen v1 snapshot and
+#' reconciles the columns that differ between form versions.
 #'
 #' The merged file is then uploaded to the cloud. The parameters needed are:
 #'
 #' ```
 #' surveys:
+#'   landings_2:
+#'     file_prefix:
+#'     version:
+#'       preprocess:
+#'   landings_3:
+#'     file_prefix:
+#'     version:
+#'       preprocess:
 #'   landings:
-#'     file_prefix:
-#'     version:
-#'       preprocess:
-#'   landings_legacy:
-#'     file_prefix:
-#'     version:
-#'       preprocess:
+#'     v1:
+#'       frozen:
+#'         file_prefix:
+#'         version:
 #'   merged_landings:
 #'     file_prefix:
 #'     version:
@@ -35,55 +40,42 @@
 #' @export
 merge_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
   preprocessed_updated_landings <-
     coasts::cloud_object_name(
-      prefix = paste(pars$surveys$landings_3$file_prefix,
+      prefix = paste(conf$surveys$landings_3$file_prefix,
         "preprocessed",
         sep = "_"
       ),
-      provider = pars$storage$google$key,
+      provider = conf$storage$google$key,
       extension = "rds",
-      version = pars$surveys$landings_3$version$preprocess,
-      options = pars$storage$google$options
+      version = conf$surveys$landings_3$version$preprocess,
+      options = conf$storage$google$options
     )
 
 
   preprocessed_landings <-
     coasts::cloud_object_name(
-      prefix = paste(pars$surveys$landings_2$file_prefix,
+      prefix = paste(conf$surveys$landings_2$file_prefix,
         "preprocessed",
         sep = "_"
       ),
-      provider = pars$storage$google$key,
+      provider = conf$storage$google$key,
       extension = "rds",
-      version = pars$surveys$landings_2$version$preprocess,
-      options = pars$storage$google$options
-    )
-
-  preprocessed_legacy_landings <-
-    coasts::cloud_object_name(
-      prefix = paste(pars$surveys$landings_1$file_prefix,
-        "preprocessed",
-        sep = "_"
-      ),
-      provider = pars$storage$google$key,
-      extension = "rds",
-      version = pars$surveys$landings_1$version$preprocess,
-      options = pars$storage$google$options
+      version = conf$surveys$landings_2$version$preprocess,
+      options = conf$storage$google$options
     )
 
   logger::log_info("Retrieving preprocessed data")
   purrr::map(
     c(
       preprocessed_updated_landings,
-      preprocessed_landings,
-      preprocessed_legacy_landings
+      preprocessed_landings
     ),
     coasts::download_cloud_file,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 
   # adding a column "survey_version"
@@ -95,8 +87,16 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     readr::read_rds(preprocessed_landings) %>%
     dplyr::mutate(survey_version = rep("v2", nrow(.)))
 
+  # v1 is frozen: one snapshot of the last preprocessed output, with lengths
+  # already converted from fork length to total length. See
+  # `data-raw/freeze-landings-v1.R`.
   prep_legacy_landings <-
-    readr::read_rds(preprocessed_legacy_landings) %>%
+    download_versioned_rds(
+      prefix = conf$surveys$landings$v1$frozen$file_prefix,
+      provider = conf$storage$google$key,
+      options = coasts::resolve_storage_opts(conf, "country"),
+      version = conf$surveys$landings$v1$frozen$version
+    ) %>%
     dplyr::mutate(survey_version = rep("v1", nrow(.)))
 
   merged_landings <-
@@ -104,7 +104,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     dplyr::bind_rows(prep_updated_landings) %>%
     merge_versions()
 
-  merged_filename <- pars$surveys$merged_landings$file_prefix %>%
+  merged_filename <- conf$surveys$merged_landings$file_prefix %>%
     add_version(extension = "rds")
 
   readr::write_rds(
@@ -116,8 +116,8 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {merged_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = merged_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 

@@ -15,11 +15,11 @@
 #' @export
 #'
 merge_trips <- function() {
-  pars <- read_config()
+  conf <- read_config()
   logger::log_info("Retrieving validated landings...")
-  validated_landings <- get_validated_landings(pars)
+  validated_landings <- get_validated_landings(conf)
   logger::log_info("Retrieving validated pds trips...")
-  validated_pds_trips <- get_validated_pds_trips(pars)
+  validated_pds_trips <- get_validated_pds_trips(conf)
 
   logger::log_info("Preparing datasets...")
   landings <- validated_landings %>%
@@ -48,7 +48,7 @@ merge_trips <- function() {
     dplyr::bind_rows(pds$`FALSE`) %>%
     dplyr::select(-.data$unique_trip_per_day)
 
-  merged_trips_filename <- pars$merged_trips$file_prefix %>%
+  merged_trips_filename <- conf$merged_trips$file_prefix %>%
     add_version(extension = "rds")
 
   readr::write_rds(
@@ -59,8 +59,8 @@ merge_trips <- function() {
   logger::log_info("Uploading {merged_trips_filename} to cloud storage")
   coasts::upload_cloud_file(
     file = merged_trips_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 
@@ -84,8 +84,8 @@ merge_trips <- function() {
 ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   logger::log_info("Downloading all trips")
-  pars <- read_config()
-  trips <- get_merged_trips(pars)
+  conf <- read_config()
+  trips <- get_merged_trips(conf)
 
   # prepare and clean data
   trips_unnested <-
@@ -116,7 +116,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   matched_pds_landings <- dplyr::bind_rows(trips_catches, trips_no_catches)
 
   tracks_list <-
-    googleCloudStorageR::gcs_list_objects(pars$pds_storage$google$options$bucket) %>%
+    googleCloudStorageR::gcs_list_objects(conf$pds_storage$google$options$bucket) %>%
     dplyr::mutate(trip = stringr::str_extract_all(.data$name, "(?<=pds-track-).+(?=__20)", simplify = T)) %>%
     dplyr::filter(.data$trip %in% matched_pds_landings$tracker_trip_id) %>%
     magrittr::extract2("name")
@@ -126,8 +126,8 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
     purrr::map(
       tracks_list,
       coasts::download_cloud_file,
-      pars$pds_storage$google$key,
-      pars$pds_storage$google$options
+      conf$pds_storage$google$key,
+      conf$pds_storage$google$options
     ) %>%
     readr::read_csv() %>%
     dplyr::bind_rows()
@@ -171,7 +171,7 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading zip folder to cloud storage")
   coasts::upload_cloud_file(
     file = "matched_tracks_landings.zip",
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }

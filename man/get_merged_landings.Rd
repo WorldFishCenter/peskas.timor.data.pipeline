@@ -4,10 +4,10 @@
 \alias{get_merged_landings}
 \title{Download merged landings}
 \usage{
-get_merged_landings(pars, suffix = "")
+get_merged_landings(conf, suffix = "")
 }
 \arguments{
-\item{pars}{Configuration file.}
+\item{conf}{Configuration file.}
 
 \item{suffix}{A character indicating dataframe version. Use "_weight" to download
 version with calculated catch weight.}

@@ -4,10 +4,10 @@ logger::log_threshold(logger::ERROR)
 # Adjust the working directory so that when running localy the authentication
 # details in the config file load properly
 setwd("../..")
-pars <- peskas.timor.data.pipeline::read_config()
+conf <- peskas.timor.data.pipeline::read_config()
 
-validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(pars)
-metadata <- peskas.timor.data.pipeline:::get_preprocessed_sheets(pars)
+validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
+metadata <- peskas.timor.data.pipeline:::get_preprocessed_sheets(conf)
 
 # Function to check if there are negative values in a vector
 any_negative <- . %>% magrittr::is_less_than(0) %>% any() %>% isTRUE()

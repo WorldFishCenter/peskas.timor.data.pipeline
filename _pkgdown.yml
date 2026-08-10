@@ -47,7 +47,6 @@ reference:
   desc: Functions dedicated to data validation
   contents:
   - matches("validate")
-  - alert_outlier
   - send_validation_mail
 
 - title: Helper functions
@@ -60,7 +59,6 @@ reference:
   - coalist
   - merge_consecutive_trips
   - join_weights
-  - retrieve_lengths
   - fill_missing_regions
 - subtitle: Taxonomy
   contents:

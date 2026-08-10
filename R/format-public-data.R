@@ -26,18 +26,18 @@
 #'
 format_public_data <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
   logger::log_info("Retrieving merged trips...")
-  merged_trips <- get_merged_trips(pars) %>%
+  merged_trips <- get_merged_trips(conf) %>%
     dplyr::filter(.data$landing_date >= "2018-01-01") %>%
     fill_missing_regions()
   # dplyr::filter(.data$landing_date < lubridate::floor_date(Sys.Date(), unit = "month"))
 
   logger::log_info("Retrieving modelled data...")
-  models <- get_models(pars)
+  models <- get_models(conf)
   logger::log_info("Retrieving nutrient properties info...")
-  nutrients_table <- get_nutrients_table(pars) %>%
+  nutrients_table <- get_nutrients_table(conf) %>%
     dplyr::rename(grouped_taxa = .data$interagency_code)
 
   logger::log_info("Calculating summary fields")
@@ -173,8 +173,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
       nutrients_proportions,
       taxa = "MZZ"
     ) %>%
-    purrr::map(aggregate_nutrients, pars) %>%
-    purrr::map2(.x = ., .y = c(1, 7, 30.5, 365), get_period_rdi, pars)
+    purrr::map(aggregate_nutrients, conf) %>%
+    purrr::map2(.x = ., .y = c(1, 7, 30.5, 365), get_period_rdi, conf)
 
   aggregated <-
     purrr::map2(aggregated_trips, aggregated_estimations, dplyr::full_join) %>%
@@ -192,13 +192,13 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   tsv_filenames <- periods %>%
     paste0("aggregated-", .) %>%
     c("trips", "catch", .) %>%
-    paste0(pars$export$file_prefix, "_", .) %>%
+    paste0(conf$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "tsv")
 
   tsv_filenames_municipal <-
     c("aggregated", "taxa") %>%
     paste0("municipal-", .) %>%
-    paste0(pars$export$file_prefix, "_", .) %>%
+    paste0(conf$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "tsv")
 
   tsv_filenames <- c(tsv_filenames, tsv_filenames_municipal)
@@ -214,8 +214,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     ) %>%
     purrr::walk(
       coasts::upload_cloud_file,
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
+      provider = conf$public_storage$google$key,
+      options = conf$public_storage$google$options
     )
 
   logger::log_info("Saving and exporting public data as rds")
@@ -228,7 +228,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     "municipal_aggregated",
     "municipal_taxa"
   ) %>%
-    paste0(pars$export$file_prefix, "_", .) %>%
+    paste0(conf$export$file_prefix, "_", .) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
     purrr::walk2(
       list(
@@ -244,17 +244,17 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
     ) %>%
     purrr::walk(
       coasts::upload_cloud_file,
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
+      provider = conf$public_storage$google$key,
+      options = conf$public_storage$google$options
     )
 
   summary_dat <- get_summary_data(
     data = merged_trips,
     catch_table = catch_table,
-    pars
+    conf
   )
   normalized_params <- get_normalized_params(merged_trips)
-  normalized_nutrients <- get_normalized_nutrients(merged_trips, pars)
+  normalized_nutrients <- get_normalized_nutrients(merged_trips, conf)
   summary_dat$catch_norm <- jsonify_indicators(
     normalized_params,
     .data$catch_stand_kg
@@ -266,7 +266,7 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   summary_dat$nutrients_norm <- jsonify_nutrients(normalized_nutrients)
 
   summary_data_filename <-
-    pars$report$summary_data %>%
+    conf$report$summary_data %>%
     add_version(extension = "rds")
 
   readr::write_rds(
@@ -278,8 +278,8 @@ format_public_data <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {summary_data_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = summary_data_filename,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 }
 
@@ -678,7 +678,7 @@ fill_missing_group <- function(
     )
 }
 
-aggregate_nutrients <- function(x, pars) {
+aggregate_nutrients <- function(x, conf) {
   x %>%
     dplyr::select(-c(.data$grouped_taxa, .data$catch)) %>%
     dplyr::group_by(.data$date_bin_start) %>%
@@ -730,7 +730,7 @@ get_municipal_nutrients <- function(
   nutrients_table = NULL,
   municipal_estimates = NULL,
   region = NULL,
-  pars
+  conf
 ) {
   municipal_estimates[[region]]$taxa %>%
     dplyr::left_join(nutrients_table, by = "grouped_taxa") %>%
@@ -757,25 +757,25 @@ get_municipal_nutrients <- function(
     dplyr::mutate(
       nut_rdi = dplyr::case_when(
         nutrient == "selenium" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$selenium,
+          conf$metadata$nutrients$RDI$name$selenium,
         nutrient == "zinc" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$zinc,
+          conf$metadata$nutrients$RDI$name$zinc,
         nutrient == "protein" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$protein,
+          conf$metadata$nutrients$RDI$name$protein,
         nutrient == "omega3" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$omega3,
+          conf$metadata$nutrients$RDI$name$omega3,
         nutrient == "calcium" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$calcium,
+          conf$metadata$nutrients$RDI$name$calcium,
         nutrient == "iron" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$iron,
+          conf$metadata$nutrients$RDI$name$iron,
         nutrient == "vitaminA" ~ (.data$nut_supply * 1000) /
-          pars$metadata$nutrients$RDI$name$vitaminA,
+          conf$metadata$nutrients$RDI$name$vitaminA,
         TRUE ~ NA_real_
       )
     )
 }
 
-get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
+get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
   data_area <-
     data %>%
     fill_missing_regions() %>%
@@ -807,14 +807,14 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
     dplyr::filter(!.data$Zinc_mu == 0) %>%
     dplyr::summarise(dplyr::across(is.numeric, ~ mean(.x, na.rm = T))) %>%
     dplyr::mutate(
-      Selenium = .data$Selenium_mu / pars$metadata$nutrients$RDI$name$selenium,
-      Zinc = .data$Zinc_mu / pars$metadata$nutrients$RDI$name$zinc,
-      Protein = .data$Protein_mu / pars$metadata$nutrients$RDI$name$protein,
-      "Omega-3" = .data$Omega_3_mu / pars$metadata$nutrients$RDI$name$omega3,
-      Calcium = .data$Calcium_mu / pars$metadata$nutrients$RDI$name$calcium,
-      Iron = .data$Iron_mu / pars$metadata$nutrients$RDI$name$iron,
+      Selenium = .data$Selenium_mu / conf$metadata$nutrients$RDI$name$selenium,
+      Zinc = .data$Zinc_mu / conf$metadata$nutrients$RDI$name$zinc,
+      Protein = .data$Protein_mu / conf$metadata$nutrients$RDI$name$protein,
+      "Omega-3" = .data$Omega_3_mu / conf$metadata$nutrients$RDI$name$omega3,
+      Calcium = .data$Calcium_mu / conf$metadata$nutrients$RDI$name$calcium,
+      Iron = .data$Iron_mu / conf$metadata$nutrients$RDI$name$iron,
       "Vitamin A" = .data$Vitamin_A_mu /
-        pars$metadata$nutrients$RDI$name$vitaminA
+        conf$metadata$nutrients$RDI$name$vitaminA
     ) %>%
     tidyr::pivot_longer(
       dplyr::everything(),
@@ -924,7 +924,7 @@ get_summary_data <- function(data = NULL, catch_table = NULL, pars) {
       tidyr::unnest(.data$length_frequency) %>%
       dplyr::filter(.data$number_of_fish > 0) %>%
       dplyr::select(.data$catch_taxon, .data$catch) %>%
-      convert_taxa_names(pars) %>%
+      convert_taxa_names(conf) %>%
       dplyr::filter(!is.na(.data$fish_group)) %>%
       dplyr::mutate(tot_catch = sum(.data$catch, na.rm = T)) %>%
       dplyr::group_by(.data$fish_group) %>%
@@ -1009,9 +1009,9 @@ get_normalized_params <- function(x) {
     dplyr::mutate(gear = stringr::str_to_title(.data$gear))
 }
 
-get_normalized_nutrients <- function(x, pars) {
+get_normalized_nutrients <- function(x, conf) {
   nut_rdi <-
-    as.data.frame(pars$metadata$nutrients$RDI$name) %>%
+    as.data.frame(conf$metadata$nutrients$RDI$name) %>%
     tidyr::pivot_longer(
       dplyr::everything(),
       names_to = "nutrient",
@@ -1169,31 +1169,31 @@ jsonify_nutrients <- function(data) {
   dat
 }
 
-get_period_rdi <- function(x, unit_days = NULL, pars) {
+get_period_rdi <- function(x, unit_days = NULL, conf) {
   x %>%
     dplyr::mutate(
       nut_rdi = dplyr::case_when(
         nutrient == "selenium" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$selenium,
+          conf$metadata$nutrients$RDI$name$selenium,
         nutrient == "zinc" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$zinc,
+          conf$metadata$nutrients$RDI$name$zinc,
         nutrient == "protein" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$protein,
+          conf$metadata$nutrients$RDI$name$protein,
         nutrient == "omega3" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$omega3,
+          conf$metadata$nutrients$RDI$name$omega3,
         nutrient == "calcium" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$calcium,
+          conf$metadata$nutrients$RDI$name$calcium,
         nutrient == "iron" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$iron,
+          conf$metadata$nutrients$RDI$name$iron,
         nutrient == "vitaminA" ~ (.data$nut_supply * 1000) /
           unit_days /
-          pars$metadata$nutrients$RDI$name$vitaminA,
+          conf$metadata$nutrients$RDI$name$vitaminA,
         TRUE ~ NA_real_
       )
     )

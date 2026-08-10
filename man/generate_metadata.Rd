@@ -4,10 +4,10 @@
 \alias{generate_metadata}
 \title{Generate a list of metadata}
 \usage{
-generate_metadata(pars, temp_coverage = NULL)
+generate_metadata(conf, temp_coverage = NULL)
 }
 \arguments{
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 
 \item{temp_coverage}{Temporal coverage of the data to upload.}
 }
@@ -20,7 +20,7 @@ files to upload to a Dataverse repository.
 }
 \examples{
 \dontrun{
-pars <- read_config()
-generate_metadata(pars, temp_coverage = "2018-2024")
+conf <- read_config()
+generate_metadata(conf, temp_coverage = "2018-2024")
 }
 }

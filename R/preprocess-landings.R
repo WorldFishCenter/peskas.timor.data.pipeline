@@ -10,19 +10,14 @@
 #' ```
 #' surveys:
 #'   landings:
-#'     api:
-#'     survey_id:
-#'     token:
-#'     file_prefix:
-#'   version:
-#'     preprocess:
+#'     <version>:
+#'       raw:
+#'         file_prefix:
+#'         version:
 #' storage:
-#'   storage_name:
+#'   google:
 #'     key:
 #'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
 #' ```
 #'
 #' Progress through the function is tracked using the package *logger*.
@@ -35,27 +30,9 @@
 preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
-  landings_csv <- coasts::cloud_object_name(
-    prefix = pars$surveys$landings_3$file_prefix,
-    provider = pars$storage$google$key,
-    extension = "csv",
-    version = pars$surveys$landings_3$version$preprocess,
-    options = pars$storage$google$options
-  )
-
-  logger::log_info("Retrieving {landings_csv}")
-  coasts::download_cloud_file(
-    name = landings_csv,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  ) %>%
+  landings_raw <- get_raw_landings(conf, "v3") %>%
     clean_updated_landings() %>%
     dplyr::select(-c(dplyr::contains("stock_photo")))
 
@@ -80,7 +57,7 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 
 
 
-  preprocessed_filename <- paste(pars$surveys$landings_3$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(conf$surveys$landings_3$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landngs_nested_species,
@@ -91,8 +68,8 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 
@@ -114,19 +91,14 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 #' ```
 #' surveys:
 #'   landings:
-#'     api:
-#'     survey_id:
-#'     token:
-#'     file_prefix:
-#'   version:
-#'     preprocess:
+#'     <version>:
+#'       raw:
+#'         file_prefix:
+#'         version:
 #' storage:
-#'   storage_name:
+#'   google:
 #'     key:
 #'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
 #' ```
 #'
 #' Progress through the function is tracked using the package *logger*.
@@ -139,27 +111,9 @@ preprocess_updated_landings <- function(log_threshold = logger::DEBUG) {
 preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
-  landings_csv <- coasts::cloud_object_name(
-    prefix = pars$surveys$landings_2$file_prefix,
-    provider = pars$storage$google$key,
-    extension = "csv",
-    version = pars$surveys$landings_2$version$preprocess,
-    options = pars$storage$google$options
-  )
-
-  logger::log_info("Retrieving {landings_csv}")
-  coasts::download_cloud_file(
-    name = landings_csv,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
-
+  landings_raw <- get_raw_landings(conf, "v2")
 
   # split data
   half_data <- round(nrow(landings_raw) / 2, 0)
@@ -171,7 +125,7 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Nesting landings species fields")
   landngs_nested_species <- pt_nest_species(landings_nested_attachments)
 
-  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(conf$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = landngs_nested_species,
@@ -182,8 +136,8 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 
@@ -205,19 +159,14 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 #' ```
 #' surveys:
 #'   landings:
-#'     api:
-#'     survey_id:
-#'     token:
-#'     file_prefix:
-#'   version:
-#'     preprocess:
+#'     <version>:
+#'       raw:
+#'         file_prefix:
+#'         version:
 #' storage:
-#'   storage_name:
+#'   google:
 #'     key:
 #'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
 #' ```
 #'
 #' Progress through the function is tracked using the package *logger*.
@@ -230,38 +179,16 @@ preprocess_landings_step_1 <- function(log_threshold = logger::DEBUG) {
 preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
-  landings_csv <- coasts::cloud_object_name(
-    prefix = pars$surveys$landings_2$file_prefix,
-    provider = pars$storage$google$key,
-    extension = "csv",
-    version = pars$surveys$landings_2$version$preprocess,
-    options = pars$storage$google$options
+  landings_raw <- get_raw_landings(conf, "v2")
+
+  preprocessed_step_1 <- download_versioned_rds(
+    prefix = paste(conf$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_"),
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$surveys$landings_2$version$preprocess
   )
-
-  preprocessed_step_1 <- coasts::cloud_object_name(
-    prefix = paste(pars$surveys$landings_2$file_prefix, "step_1", "preprocessed", sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$surveys$landings_2$version$preprocess,
-    options = pars$storage$google$options
-  )
-
-  logger::log_info("Retrieving {landings_csv} and {preprocessed_step_1}")
-
-  c(landings_csv, preprocessed_step_1) %>%
-    purrr::map(coasts::download_cloud_file,
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
-    )
-
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
-
-  preprocessed_step_1 <- readr::read_rds(preprocessed_step_1)
 
   # get ids of batch 2 to download and process
   batch_2_ids <- setdiff(landings_raw$`_id`, preprocessed_step_1$`_id`)
@@ -283,7 +210,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
       landings_nested_species
     )
 
-  preprocessed_filename <- paste(pars$surveys$landings_2$file_prefix, "preprocessed", sep = "_") %>%
+  preprocessed_filename <- paste(conf$surveys$landings_2$file_prefix, "preprocessed", sep = "_") %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = preprocessed,
@@ -294,91 +221,7 @@ preprocess_landings_step_2 <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-}
-
-
-#' Preprocess Timor legacy Landings Survey data
-#'
-#' Downloads raw structured legacy data from cloud storage services and pre-process
-#' into a binary format that is easier to deal with in R.
-#'
-#' This function downloads the landings data from a given version (specified in
-#' the config file `conf.yml`. The parameters needed are:
-#'
-#' ```
-#' surveys:
-#'   landings_1:
-#'    api:
-#'    survey_id:
-#'    token:
-#'    file_prefix:
-#'  version:
-#'   preprocess:
-#'
-#' storage:
-#'   storage_name:
-#'     key:
-#'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
-#' ```
-#'
-#' Progress through the function is tracked using the package *logger*.
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
-#' @keywords workflow
-#' @return no outputs. This funcrion is used for it's side effects
-#' @export
-#'
-preprocess_legacy_landings <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-
-  pars <- read_config()
-
-  landings_csv <- coasts::cloud_object_name(
-    prefix = pars$surveys$landings_1$file_prefix,
-    provider = pars$storage$google$key,
-    extension = "csv",
-    version = pars$surveys$landings_1$version$preprocess,
-    options = pars$storage$google$options
-  )
-
-  logger::log_info("Retrieving {landings_csv}")
-  coasts::download_cloud_file(
-    name = landings_csv,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  landings_raw <- readr::read_csv(
-    file = landings_csv,
-    col_types = readr::cols(.default = readr::col_character())
-  )
-
-  logger::log_info("Cleaning and recoding data")
-  cleaned_landings_raw <- clean_legacy_landings(landings_raw)
-
-  logger::log_info("Nesting landings attachment fields")
-  landings_nested_attachments <- pt_nest_attachments(cleaned_landings_raw)
-
-  logger::log_info("Nesting landings species fields")
-  landngs_nested_species <- pt_nest_species(landings_nested_attachments)
-
-  preprocessed_filename <- paste(pars$surveys$landings_1$file_prefix, "preprocessed", sep = "_") %>%
-    add_version(extension = "rds")
-  readr::write_rds(
-    x = landngs_nested_species,
-    file = preprocessed_filename,
-    compress = "gz"
-  )
-
-  logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
-  coasts::upload_cloud_file(
-    file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }

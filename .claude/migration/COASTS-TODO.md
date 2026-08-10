@@ -194,6 +194,54 @@ nothing reads. Timor hits this in migration Phase 3.
 
 Fix: resolve through `resolve_storage_opts(conf, "coasts")`, matching C4.
 
+**Status after Timor's migration Phase 3: still open, worked around.** Timor's
+`ingest_assets()` calls the coasts function and then re-uploads the snapshot it
+left on disk to the hub, so the object exists in both buckets. Two uploads of a
+583 Kb file per run. Delete the second one once this lands.
+
+### C13. The assets snapshot has no `country` column
+
+`ingest_assets()` selects `form_id, survey_label, alpha3_code, scientific_name,
+english_name` from `taxa`, and the equivalent short lists from `gears`,
+`vessels` and `landing_sites`. The frame carries `country` on all four tables
+and it is dropped.
+
+Downstream that leaves no way to answer "which of these rows are mine". The
+snapshot is cross-country — measured 2026-08-09: **1,609 taxa rows, 96 gears,
+49 vessels, 736 sites** across four countries. Timor's 56 `alpha3_code`s are
+*all* also used by Kenya, Mozambique or Zanzibar, two of them (`MZZ`, `PWT`)
+against a different `scientific_name`, so filtering by code alone silently
+mixes another country's taxonomy into a coefficient fetch.
+
+Timor works around it with `metadata.airtable.form_ids` — the record ids of its
+two forms — which works because `form_id` is the one selected column that
+differs per country. It is a brittle key: hardcoded Airtable record ids in a
+config file.
+
+Fix: add `country` to every `select_cols` in `ingest_assets()`. It is additive
+and no existing reader would notice.
+
+Related: `landing_sites` also loses `Latitude` / `Longitude`, which are
+populated for all 40 Timor sites. Timor does not need them yet (it has
+`centro_pescas` in Sheets) but Phase 4's site harmonization would.
+
+### C14. `taxa.length_type` — withdrawn, do not add it
+
+Filed as "add a `length_type` field to the frame `taxa` table", then
+**withdrawn the same day.** Timor's Sheets `catch_types` carries a per-taxon
+`length_type` for five invertebrates (`SLV` CL, `OCZ` ML, `IAX` ML, `CRA` CW,
+`COZ` ShL), but the user confirmed 2026-08-10 that enumerators measure those on
+**total length** in the field. The metadata column describes an intent that
+field practice does not follow, and Timor's weight code has silently overridden
+it to `TL` for years.
+
+So there is nothing to harmonize: propagating the column upstream would
+propagate a wrong assertion to every country. If a country ever does record a
+non-TL axis, the right shape is not a per-taxon label but a **per-taxon
+coefficient filter** on `Type` in the length-weight table — see
+`summarise_lw_coeffs()` in Timor's `R/calculate-weights.R`, which currently
+pools all axes.
+
 ### C12. Trip-fetch window literals (was C9, still open)
 
 `ingest_pds_trips()`'s `dateFrom` and `predict_pds_tracks()`'s `date_from` are

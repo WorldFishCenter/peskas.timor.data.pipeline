@@ -2,20 +2,20 @@
 % Please edit documentation in R/calculate-weights.R
 \name{get_morphometric_tables}
 \alias{get_morphometric_tables}
-\title{Build per-taxon length-weight and length-length coefficients}
+\title{Build per-taxon length-weight coefficients}
 \usage{
-get_morphometric_tables(pars, manual_table = NULL)
+get_morphometric_tables(conf, manual_table = NULL)
 }
 \arguments{
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 
 \item{manual_table}{Timor's curated morphometric rows
 (\code{metadata$morphometric_table}), pooled with the fetched coefficients
 before aggregation.}
 }
 \value{
-A list with \code{length_weight} (\code{alpha3_code}, \code{lw_a}, \code{lw_b}) and
-\code{length_length} (\code{alpha3_code}, \code{Length1}, \code{Length2}, \code{aL}, \code{bL}).
+A list with \code{expanded} (the taxon-to-species expansion) and
+\code{length_weight} (\code{alpha3_code}, \code{n_studies}, \code{lw_a}, \code{lw_b}).
 }
 \description{
 Fetches coefficients from FishBase and SeaLifeBase via

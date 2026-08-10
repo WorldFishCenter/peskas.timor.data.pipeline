@@ -23,5 +23,6 @@
 ^CLAUDE\.md$
 ^\.venv$
 ^reference$
+^data-raw$
 ^.*\.parquet$
 ^.*\.rds$

@@ -28,19 +28,14 @@ the config file \code{conf.yml}.The parameters needed are:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
   landings:
-    api:
-    survey_id:
-    token:
-    file_prefix:
-  version:
-    preprocess:
+    <version>:
+      raw:
+        file_prefix:
+        version:
 storage:
-  storage_name:
+  google:
     key:
     options:
-      project:
-      bucket:
-      service_account_key:
 }\if{html}{\out{</div>}}
 
 Progress through the function is tracked using the package \emph{logger}.

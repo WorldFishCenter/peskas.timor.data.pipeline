@@ -23,20 +23,20 @@
 #'
 model_indicators <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
   trips <-
-    get_merged_trips(pars) %>%
+    get_merged_trips(conf) %>%
     fill_missing_regions()
 
-  vessels_stats <- get_preprocessed_sheets(pars)$registered_boats
+  vessels_stats <- get_preprocessed_sheets(conf)$registered_boats
 
   municipal_models <-
     unique(na.omit(trips$reporting_region)) %>%
     purrr::set_names() %>%
     purrr::map(
       run_models,
-      pars = pars,
+      conf = conf,
       trips = trips,
       modelled_taxa = "selected",
       vessels_metadata = vessels_stats
@@ -48,7 +48,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 
   # national_models <-
   #  run_models(
-  #    pars = pars,
+  #    conf = conf,
   #    trips = trips,
   #    modelled_taxa = "selected",
   #    vessels_metadata = vessels_stats,
@@ -62,12 +62,12 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
       municipal = municipal_models
     )
 
-  models_filename <- add_version(pars$models$file_prefix, "rds")
+  models_filename <- add_version(conf$models$file_prefix, "rds")
   readr::write_rds(results, models_filename, compress = "gz")
   coasts::upload_cloud_file(
     models_filename,
-    pars$storage$google$key,
-    pars$storage$google$options
+    conf$storage$google$key,
+    conf$storage$google$options
   )
 }
 
@@ -188,11 +188,11 @@ model_catch <- function(trips) {
   )
 }
 
-model_catch_per_taxa <- function(trips, modelled_taxa, pars) {
+model_catch_per_taxa <- function(trips, modelled_taxa, conf) {
   if (isTRUE(modelled_taxa == "selected")) {
-    taxa_list <- pars$models$modelled_taxa
+    taxa_list <- conf$models$modelled_taxa
   } else {
-    taxa_list <- pars$models$all_taxa
+    taxa_list <- conf$models$all_taxa
   }
 
   catch_df <- trips %>%
@@ -305,7 +305,7 @@ model_value <- function(trips) {
 }
 
 run_models <- function(
-  pars,
+  conf,
   trips,
   region,
   vessels_metadata,
@@ -363,7 +363,7 @@ run_models <- function(
   catch_taxa_models <- model_catch_per_taxa(
     trips_region,
     modelled_taxa,
-    pars = pars
+    conf = conf
   )
   taxa_estimates <- estimates_per_taxa(
     catch_taxa_models,

@@ -11,6 +11,11 @@ env:
   KOBO_PESKAS1: ${{ secrets.KOBO_PESKAS1 }}
   KOBO_PESKAS2: ${{ secrets.KOBO_PESKAS2 }}
   KOBO_PESKAS3: ${{ secrets.KOBO_PESKAS3 }}
+  # Read by the harmonized `ingestion.landings.<v>` block. Same values as the
+  # legacy names above; the secrets themselves are renamed in migration Phase 9.
+  KOBO_ASSET_ID_V1: ${{ secrets.KOBO_PESKAS1 }}
+  KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}
+  KOBO_ASSET_ID_V3: ${{ secrets.KOBO_PESKAS3 }}
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
   AIRTABLE_BASE_ID_FRAME: ${{ secrets.AIRTABLE_BASE_ID_FRAME }}
@@ -75,9 +80,11 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
       - name: Call preprocess_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
+      - name: Call ingest_assets()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_assets()'
 
-  ingest-preprocess-landings-v1-v3:
-    name: Ingest and preprocess legacy and ongoing landings
+  ingest-landings:
+    name: Ingest landings
     needs: build-container
     runs-on: ubuntu-22.04
     container:
@@ -90,15 +97,11 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings_v1v3()'
-      - name: Call preprocess_legacy_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
-      - name: Call preprocess_updated_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
-  ingest-preprocess-v2-landings-step1:
-    name: "Ingest-process landings 1/2"
-    needs: build-container
+  preprocess-v3-landings:
+    name: Preprocess v3 landings
+    needs: ingest-landings
     runs-on: ubuntu-22.04
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
@@ -109,13 +112,27 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_landings_v2()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings_v2()'
+      - name: Call preprocess_updated_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
+
+  ingest-preprocess-v2-landings-step1:
+    name: "Preprocess v2 landings 1/2"
+    needs: ingest-landings
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call preprocess_landings_step_1()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_1()'
 
   ingest-preprocess-v2-landings-step2:
-    name: "Ingest-process landings 2/2"
+    name: "Preprocess v2 landings 2/2"
     needs: ingest-preprocess-v2-landings-step1
     runs-on: ubuntu-22.04
     container:
@@ -132,7 +149,7 @@ jobs:
 
   merge-landings:
     name: Merge landings
-    needs: [ingest-preprocess-v2-landings-step2, ingest-preprocess-landings-v1-v3, ingest-preprocess-metadata-tables]
+    needs: [ingest-preprocess-v2-landings-step2, preprocess-v3-landings, ingest-preprocess-metadata-tables]
     runs-on: ubuntu-22.04
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest

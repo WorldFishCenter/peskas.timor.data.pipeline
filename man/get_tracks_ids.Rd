@@ -4,10 +4,10 @@
 \alias{get_tracks_ids}
 \title{Get pds IDs}
 \usage{
-get_tracks_ids(pars)
+get_tracks_ids(conf)
 }
 \arguments{
-\item{pars}{the configuration file.}
+\item{conf}{the configuration file.}
 }
 \description{
 Get the list of pds-tracks IDs stored in the pds bucket

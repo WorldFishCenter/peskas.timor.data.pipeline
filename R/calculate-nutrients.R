@@ -11,7 +11,7 @@
 #'  - g/100g: Omega 3 and Protein.
 #'
 #'
-#' @param pars The configuration file.
+#' @param conf The configuration file.
 #' @param expanded Optional pre-computed taxon-to-species expansion from
 #'   [get_morphometric_tables()], to avoid a second FishBase round-trip.
 #' @param summarise Whether you want to summarise the nutritional values for each
@@ -23,12 +23,12 @@
 #' @return A data frame with nutritional values for each taxa group.
 #' @export
 #'
-get_nutrients_table <- function(pars,
+get_nutrients_table <- function(conf,
                                 expanded = NULL,
                                 summarise = TRUE,
                                 convert = TRUE) {
   logger::log_info("Retrieving nutritional values for each taxa group.")
-  rfish_tab <- get_taxa_expansion(pars, expanded)
+  rfish_tab <- get_taxa_expansion(conf, expanded)
   # get invertebrates nutrients
   fao_groups <- get_fao_composition()
 

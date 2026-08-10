@@ -34,22 +34,22 @@
 #'
 preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
   metadata_filename <- coasts::cloud_object_name(
-    prefix = pars$metadata$google_sheets$name,
-    provider = pars$storage$google$key,
+    prefix = conf$metadata$google_sheets$name,
+    provider = conf$storage$google$key,
     extension = "rds",
-    version = pars$metadata$version$preprocess,
+    version = conf$metadata$version$preprocess,
     exact_match = TRUE,
-    options = pars$storage$google$options
+    options = conf$storage$google$options
   )
 
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
   coasts::download_cloud_file(
     name = metadata_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 
   logger::log_info("Reading {metadata_filename}...")
@@ -79,7 +79,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
   )
 
   preprocessed_filename <- paste(
-    pars$metadata$google_sheets$name,
+    conf$metadata$google_sheets$name,
     "preprocessed",
     sep = "_"
   ) %>%
@@ -93,8 +93,8 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {preprocessed_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = preprocessed_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 

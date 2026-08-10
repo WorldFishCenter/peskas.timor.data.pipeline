@@ -11,20 +11,20 @@
 #'
 upload_dataverse <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
-  dataverse <- pars$export_dataverse$dataverse_id
-  key <- pars$export_dataverse$token
-  server <- pars$export_dataverse$server
+  dataverse <- conf$export_dataverse$dataverse_id
+  key <- conf$export_dataverse$token
+  server <- conf$export_dataverse$server
 
   prefixes <- c("trips", "catch", "aggregated-month")
   files_names <-
     purrr::map(prefixes, ~ coasts::cloud_object_name(
-      prefix = paste(pars$export$file_prefix, .x, sep = "_"),
+      prefix = paste(conf$export$file_prefix, .x, sep = "_"),
       version = "latest",
       extension = "tsv",
-      provider = pars$public_storage$google$key,
-      options = pars$public_storage$google$options
+      provider = conf$public_storage$google$key,
+      options = conf$public_storage$google$options
     )) %>%
     do.call("rbind", .) %>%
     as.character() %>%
@@ -33,8 +33,8 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Retrieving public data to release...")
   purrr::map(files_names,
     coasts::download_cloud_file,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 
   data_description <- generate_description()
@@ -46,7 +46,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Generating metadata...")
-  # metadat <- generate_metadata(pars, temp_coverage = data_description$time_range)
+  # metadat <- generate_metadata(conf, temp_coverage = data_description$time_range)
 
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
@@ -121,7 +121,7 @@ publish_dataverse <- function(key, dataverse, server) {
 #' The function generate a list of metadata information to append to the
 #' files to upload to a Dataverse repository.
 #'
-#' @param pars The configuration file.
+#' @param conf The configuration file.
 #' @param temp_coverage Temporal coverage of the data to upload.
 #'
 #' @return A list with metadata information
@@ -129,19 +129,19 @@ publish_dataverse <- function(key, dataverse, server) {
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' generate_metadata(pars, temp_coverage = "2018-2024")
+#' conf <- read_config()
+#' generate_metadata(conf, temp_coverage = "2018-2024")
 #' }
-generate_metadata <- function(pars, temp_coverage = NULL) {
+generate_metadata <- function(conf, temp_coverage = NULL) {
   metadat <- list(
-    title = as.character(pars$export_dataverse$metadata$title),
-    subject = as.character(pars$export_dataverse$metadata$subject),
-    language = as.character(pars$export_dataverse$metadata$language),
+    title = as.character(conf$export_dataverse$metadata$title),
+    subject = as.character(conf$export_dataverse$metadata$subject),
+    language = as.character(conf$export_dataverse$metadata$language),
     description = paste(
-      as.character(pars$export_dataverse$metadata$description),
+      as.character(conf$export_dataverse$metadata$description),
       "Period covered:", temp_coverage
     ),
-    creator = as.character(pars$export_dataverse$metadata$creator),
+    creator = as.character(conf$export_dataverse$metadata$creator),
     created = as.character(Sys.Date())
   )
 

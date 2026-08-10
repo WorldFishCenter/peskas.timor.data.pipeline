@@ -4,10 +4,10 @@
 \alias{ingest_complete_tracks}
 \title{Ingest tracks data as a single file}
 \usage{
-ingest_complete_tracks(pars, data = NULL, trips = NULL)
+ingest_complete_tracks(conf, data = NULL, trips = NULL)
 }
 \arguments{
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 
 \item{data}{An rds file containing tracks data.}
 

@@ -27,18 +27,18 @@
 #' attr(x, "data_last_updated")
 #' }
 get_file <- function(prefix) {
-  pars <- read_config()
+  conf <- read_config()
   filename <- coasts::cloud_object_name(
     prefix = prefix,
-    provider = pars$public_storage$google$key,
+    provider = conf$public_storage$google$key,
     extension = "rds",
-    options = pars$public_storage$google$options,
+    options = conf$public_storage$google$options,
     exact_match = TRUE
   )
   coasts::download_cloud_file(
     name = filename,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 
   x <- readRDS(filename)
@@ -235,7 +235,7 @@ rename_ontology <- function(x) {
 #' `nutrients_norm`, `conservation`, `cpue_df`, and `timor_shape`.
 #'
 #' Assumes a configured public Google cloud storage provider in
-#' `pars$public_storage$google` and relies on helper functions such as
+#' `conf$public_storage$google` and relies on helper functions such as
 #' `add_version()`, `coasts::upload_cloud_file()`, and JSON serialization via `toJSON()`.
 #'
 #' @seealso get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
@@ -248,7 +248,7 @@ rename_ontology <- function(x) {
 #' export_files()
 #' }
 export_files <- function() {
-  pars <- read_config()
+  conf <- read_config()
   aggregated <- get_file("timor_aggregated")
   data_last_updated <- attr(aggregated, "data_last_updated")
   aggregated <- aggregated %>% purrr::map(rename_ontology)
@@ -430,7 +430,7 @@ export_files <- function() {
     files,
     filenames,
     coasts::upload_cloud_file,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 }

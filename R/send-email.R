@@ -13,7 +13,7 @@
 send_sites_report <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
   month <- lubridate::month(Sys.Date(), label = T)
   year <- lubridate::year(Sys.Date())
@@ -68,7 +68,7 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generate credentials file")
 
   file_cred <- file("creds.txt")
-  writeLines(pars$peskas_mail$key, file_cred)
+  writeLines(conf$peskas_mail$key, file_cred)
   close(file_cred)
 
   logger::log_info("Send mail")
@@ -98,19 +98,19 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
 send_validation_mail <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
   logger::log_info("Filtering validation flags from {Sys.Date() - 7}")
 
   googlesheets4::gs4_auth(
-    path = pars$storage$google$options$service_account_key,
+    path = conf$storage$google$options$service_account_key,
     use_oob = TRUE
   )
 
   peskas_alerts <-
     googlesheets4::range_read(
-      ss = pars$validation$google_sheets$sheet_id,
-      sheet = pars$validation$google_sheets$flags_table,
+      ss = conf$validation$google_sheets$sheet_id,
+      sheet = conf$validation$google_sheets$flags_table,
       col_types = "iDDclDc"
     ) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
@@ -120,7 +120,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
 
   alert_description <-
     googlesheets4::range_read(
-      ss = pars$validation$google_sheets$sheet_id,
+      ss = conf$validation$google_sheets$sheet_id,
       sheet = "alerts",
       col_types = "ccc"
     ) %>%
@@ -169,7 +169,7 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Generate credentials file")
 
   file_cred <- file("creds.txt")
-  writeLines(pars$peskas_mail$key, file_cred)
+  writeLines(conf$peskas_mail$key, file_cred)
   close(file_cred)
 
   logger::log_info("Send mail")

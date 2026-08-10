@@ -23,19 +23,19 @@
 #'
 estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
   trips <-
-    get_merged_trips(pars) %>%
+    get_merged_trips(conf) %>%
     fill_missing_regions()
 
-  vessels_metadata <- get_preprocessed_sheets(pars)$registered_boats
+  vessels_metadata <- get_preprocessed_sheets(conf)$registered_boats
 
   municipal_estimations <-
     unique(na.omit(trips$municipality)) %>%
     purrr::set_names() %>%
     purrr::map(run_estimations,
-      pars = pars,
+      conf = conf,
       trips = trips,
       modelled_taxa = "selected",
       vessels_metadata = vessels_metadata,
@@ -50,12 +50,12 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
       municipal = municipal_estimations
     )
 
-  models_filename <- add_version(pars$models$file_prefix, "rds")
+  models_filename <- add_version(conf$models$file_prefix, "rds")
   readr::write_rds(results, models_filename, compress = "gz")
   coasts::upload_cloud_file(
     models_filename,
-    pars$storage$google$key,
-    pars$storage$google$options
+    conf$storage$google$key,
+    conf$storage$google$options
   )
 }
 
@@ -105,11 +105,11 @@ estimate_catch <- function(trips) {
   catch_df
 }
 
-estimate_catch_taxa <- function(trips, modelled_taxa, pars) {
+estimate_catch_taxa <- function(trips, modelled_taxa, conf) {
   if (isTRUE(modelled_taxa == "selected")) {
-    taxa_list <- pars$models$modelled_taxa
+    taxa_list <- conf$models$modelled_taxa
   } else {
-    taxa_list <- pars$models$all_taxa
+    taxa_list <- conf$models$all_taxa
   }
 
   catch_df <-
@@ -433,7 +433,7 @@ estimate_indicators <- function(value_estimate, landings_estimate, catch_estimat
   estimations_total
 }
 
-run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
+run_estimations <- function(conf, trips, region, vessels_metadata, modelled_taxa, national_level = FALSE) {
   # region <- "Lautem"
   # vessels_metadata <- vessels_stats
   if (isTRUE(national_level)) {
@@ -459,7 +459,7 @@ run_estimations <- function(pars, trips, region, vessels_metadata, modelled_taxa
   results <- estimate_indicators(value_estimate, landings_estimate, catch_estimate, n_boats = region_boats)
 
   message("Modelling ", region, " taxa")
-  catch_taxa_estimates <- estimate_catch_taxa(trips_region, modelled_taxa = modelled_taxa, pars = pars)
+  catch_taxa_estimates <- estimate_catch_taxa(trips_region, modelled_taxa = modelled_taxa, conf = conf)
   taxa_estimates <- estimates_taxa(catch_taxa_estimates, results, n_boats = region_boats)
   message("Estimate taxa catch by relative composition")
   results_per_taxa <- model_taxa_porportion(results, taxa_estimates) %>% dplyr::mutate(catch = ifelse(is.na(.data$catch), 0, .data$catch))

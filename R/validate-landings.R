@@ -21,15 +21,15 @@
 validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
-  metadata <- get_preprocessed_sheets(pars)
-  landings <- get_merged_landings(pars, "_weight")
+  conf <- read_config()
+  metadata <- get_preprocessed_sheets(conf)
+  landings <- get_merged_landings(conf, "_weight")
 
   # read arguments for outliers identification
-  default_max_limit <- pars$validation$landings$default$max
-  default_method <- pars$validation$landings$default$method
-  default_k <- pars$validation$landings$default$k
-  cook_dist <- pars$validation$landings$cook_dist
+  default_max_limit <- conf$validation$landings$default$max
+  default_method <- conf$validation$landings$default$method
+  default_k <- conf$validation$landings$default$k
+  cook_dist <- conf$validation$landings$cook_dist
 
   # deployed_imeis <- get_deployed_imeis(metadata)
   # for now using all the deployed imeis
@@ -47,8 +47,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Validating surveys trips...")
   surveys_time_alerts <- validate_surveys_time(
     data = landings,
-    hrs = pars$validation$landings$survey_time$max_duration %||% default_max_limit,
-    submission_delay = pars$validation$landings$survey_time$submission_delay
+    hrs = conf$validation$landings$survey_time$max_duration %||% default_max_limit,
+    submission_delay = conf$validation$landings$survey_time$submission_delay
   )
   logger::log_info("Validating catches values...")
   regular_landings <- validate_landing_regularity(landings)
@@ -56,27 +56,27 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   regularity_alerts <- regular_landings$regularity_alerts
   surveys_price_alerts <- validate_catch_price(
     data = regular_landings_data,
-    method = pars$validation$landings$prices$method %||% default_method,
-    k = pars$validation$landings$prices$k %||% default_k
+    method = conf$validation$landings$prices$method %||% default_method,
+    k = conf$validation$landings$prices$k %||% default_k
   )
   logger::log_info("Validating catches parameters...")
   surveys_catch_alerts <- validate_catch_params(
     regular_landings_data,
-    k_ind = pars$validation$landings$catch$n_individuals$k
+    k_ind = conf$validation$landings$catch$n_individuals$k
   )
   logger::log_info("Generating catches parameters bounds table...")
   bounds_table <- get_bounds_table(
     data = regular_landings_data,
     metadata_table = metadata,
-    k_ind = pars$validation$landings$catch$n_individuals$k
+    k_ind = conf$validation$landings$catch$n_individuals$k
   )
   price_weight_alerts <- validate_price_weight(
     catch_alerts = surveys_catch_alerts,
     price_alerts = surveys_price_alerts,
     non_regular_ids = regularity_alerts,
     cook_dist = cook_dist,
-    price_weight_min = pars$validation$landings$price_per_weight$min_limit,
-    price_weight_max = pars$validation$landings$price_per_weight$max_limit
+    price_weight_min = conf$validation$landings$price_per_weight$min_limit,
+    price_weight_max = conf$validation$landings$price_per_weight$max_limit
   )
   vessel_type_alerts <- validate_vessel_type(
     landings,
@@ -92,25 +92,25 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   )
   n_fishers_alerts <- validate_n_fishers(
     landings,
-    method = pars$validation$landings$n_fishers$method %||% default_method,
-    k = pars$validation$landings$n_fishers$k %||% default_k
+    method = conf$validation$landings$n_fishers$method %||% default_method,
+    k = conf$validation$landings$n_fishers$k %||% default_k
   )
   habitat_alerts <- validate_habitat(
     landings,
     metadata$habitat
   )
   mesh_alerts <- validate_mesh(landings,
-    mesh_limit = pars$validation$landings$mesh
+    mesh_limit = conf$validation$landings$mesh
   )
   gleaners_alerts <- validate_gleaners(
     landings,
     method = default_method,
-    k_gleaners = pars$validation$landings$gleaners$k
+    k_gleaners = conf$validation$landings$gleaners$k
   )
   fuel_alerts <- validate_fuel(
     landings,
     method = default_method,
-    k_fuel = pars$validation$landings$fuel$k
+    k_fuel = conf$validation$landings$fuel$k
   )
   conservation_alerts <- validate_conservation(
     landings,
@@ -190,7 +190,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       .data$happiness
     )
 
-  validated_landings_filename <- paste(pars$surveys$merged_landings$file_prefix,
+  validated_landings_filename <- paste(conf$surveys$merged_landings$file_prefix,
     "validated",
     sep = "_"
   ) %>%
@@ -203,8 +203,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {validated_landings_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = validated_landings_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
   # HANDLE FLAGS ------------------------------------------------------------
 
@@ -263,7 +263,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Authenticating for google drive")
   googlesheets4::gs4_auth(
-    path = pars$storage$google$options$service_account_key,
+    path = conf$storage$google$options$service_account_key,
     use_oob = TRUE
   )
 
@@ -271,14 +271,14 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   peskas_alerts <-
     googlesheets4::range_read(
-      ss = pars$validation$google_sheets$sheet_id,
-      sheet = pars$validation$google_sheets$flags_table,
+      ss = conf$validation$google_sheets$sheet_id,
+      sheet = conf$validation$google_sheets$flags_table,
       col_types = "iDDclDc"
     )
 
   logger::log_info("Upload backup validation sheet to GC")
   alerts_filename <-
-    pars$validation$google_sheets$file_prefix %>%
+    conf$validation$google_sheets$file_prefix %>%
     add_version(extension = "rds")
   readr::write_rds(
     x = peskas_alerts,
@@ -287,8 +287,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   )
   coasts::upload_cloud_file(
     file = alerts_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 
   new_flags_ids <- setdiff(alerts_df$submission_id, peskas_alerts$submission_id)
@@ -329,8 +329,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
     googlesheets4::sheet_write(
       data = sync_table,
-      ss = pars$validation$google_sheets$sheet_id,
-      sheet = pars$validation$google_sheets$flags_table
+      ss = conf$validation$google_sheets$sheet_id,
+      sheet = conf$validation$google_sheets$flags_table
     )
   } else {
     logger::log_info("No new flags to append")
@@ -340,14 +340,14 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 # (AUDIT.md §8.1 and §8.2):
 #
 #   get_preprocessed_metadata()  a second, broken definition reading the
-#                                long-removed `pars$metadata$airtable$name`.
+#                                long-removed `conf$metadata$airtable$name`.
 #                                Collation put this file after
 #                                get-cloud-files.R, so it *shadowed* the
 #                                correct exported definition at
 #                                get-cloud-files.R:110. That one now wins.
-#   get_validation_tables()      read `pars$validation$airtable$*`, removed
+#   get_validation_tables()      read `conf$validation$airtable$*`, removed
 #                                with the orphaned air_* Airtable client.
-#   get_preprocessed_landings()  read `pars$surveys$landings$file_prefix`,
+#   get_preprocessed_landings()  read `conf$surveys$landings$file_prefix`,
 #                                a key that has never existed.
 #
 # None were exported and none were called.
@@ -356,26 +356,26 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #'
 #' Download validated surveys landings and PDS trips.
 #'
-#' @param pars Configuration file.
+#' @param conf Configuration file.
 #' @param suffix A character indicating dataframe version. Use "_weight" to download
 #' version with calculated catch weight.
 #'
 #' @return A dataframe.
 #' @export
-get_merged_landings <- function(pars, suffix = "") {
+get_merged_landings <- function(conf, suffix = "") {
   landings_rds <- coasts::cloud_object_name(
-    prefix = paste0(pars$surveys$merged_landings$file_prefix, suffix),
-    provider = pars$storage$google$key,
+    prefix = paste0(conf$surveys$merged_landings$file_prefix, suffix),
+    provider = conf$storage$google$key,
     extension = "rds",
-    version = pars$surveys$merged_landings$version,
-    options = pars$storage$google$options,
+    version = conf$surveys$merged_landings$version,
+    options = conf$storage$google$options,
     exact_match = TRUE
   )
   logger::log_info("Downloading {landings_rds}...")
   coasts::download_cloud_file(
     name = landings_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
   readr::read_rds(file = landings_rds)
 }

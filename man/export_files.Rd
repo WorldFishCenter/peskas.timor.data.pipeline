@@ -35,7 +35,7 @@ The function expects \code{summary_data} (downloaded) to contain fields such as
 \code{nutrients_norm}, \code{conservation}, \code{cpue_df}, and \code{timor_shape}.
 
 Assumes a configured public Google cloud storage provider in
-\code{pars$public_storage$google} and relies on helper functions such as
+\code{conf$public_storage$google} and relies on helper functions such as
 \code{add_version()}, \code{coasts::upload_cloud_file()}, and JSON serialization via \code{toJSON()}.
 }
 \examples{

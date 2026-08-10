@@ -4,10 +4,10 @@
 \alias{get_preprocessed_metadata}
 \title{Download Peskas metadata}
 \usage{
-get_preprocessed_metadata(pars)
+get_preprocessed_metadata(conf)
 }
 \arguments{
-\item{pars}{The configuration file}
+\item{conf}{The configuration file}
 }
 \description{
 Download preprocessed Peskas metadata from Google Cloud

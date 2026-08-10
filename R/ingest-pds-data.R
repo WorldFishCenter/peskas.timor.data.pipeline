@@ -41,19 +41,19 @@
 ingest_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
   file_list <- retrieve_pds_trips(
-    prefix = pars$pds$trips$file_prefix,
-    secret = pars$pds$trips$secret,
-    token = pars$pds$trips$token
+    prefix = conf$pds$trips$file_prefix,
+    secret = conf$pds$trips$secret,
+    token = conf$pds$trips$token
   )
 
   logger::log_info("Uploading files to cloud...")
   coasts::upload_cloud_file(
     file = file_list,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 
   logger::log_success("File upload succeded")
@@ -100,21 +100,21 @@ ingest_pds_trips <- function(log_threshold = logger::DEBUG) {
 ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
   pds_trips_csv <-
     coasts::cloud_object_name(
-      prefix = pars$pds$trips$file_prefix,
-      provider = pars$storage$google$key,
+      prefix = conf$pds$trips$file_prefix,
+      provider = conf$storage$google$key,
       extension = "csv",
-      options = pars$storage$google$options
+      options = conf$storage$google$options
     )
   logger::log_info("Retrieving {pds_trips_csv}")
   # get trips data frame
   pds_trips_mat <- coasts::download_cloud_file(
     name = pds_trips_csv,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 
   # extract unique trip identifiers
@@ -125,7 +125,7 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
     magrittr::extract2("Trip") %>%
     unique()
 
-  if (isTRUE(pars$pds$tracks$compress)) {
+  if (isTRUE(conf$pds$tracks$compress)) {
     ext <- "csv.gz"
   } else {
     ext <- "csv"
@@ -141,32 +141,32 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   # directly, exactly as the tail of this same function already does for
   # `tracks_names`.
   coasts::cloud_storage_authenticate(
-    provider = pars$pds_storage$google$key,
-    options = pars$pds_storage$google$options
+    provider = conf$pds_storage$google$key,
+    options = conf$pds_storage$google$options
   )
   file_list_id <-
     googleCloudStorageR::gcs_list_objects(
-      bucket = pars$pds_storage$google$options$bucket,
-      prefix = pars$pds$tracks$file_prefix
+      bucket = conf$pds_storage$google$options$bucket,
+      prefix = conf$pds$tracks$file_prefix
     ) %>%
     dplyr::filter(stringr::str_detect(.data$name, paste0("\\.", ext, "$"))) %>%
     dplyr::pull(.data$name) %>%
     stringr::str_extract("[[:digit:]]+") %>%
     as.character()
 
-  process_track <- function(id, pars) {
-    path <- paste0(pars$pds$tracks$file_prefix, "-", id) %>%
+  process_track <- function(id, conf) {
+    path <- paste0(conf$pds$tracks$file_prefix, "-", id) %>%
       add_version(extension = "csv")
     on.exit(file.remove(path))
 
     retrieve_pds_tracks_data(
       path,
-      secret = pars$pds$trips$secret,
-      token = pars$pds$trips$token,
+      secret = conf$pds$trips$secret,
+      token = conf$pds$trips$token,
       id = id
     )
 
-    if (isTRUE(pars$pds$tracks$compress)) {
+    if (isTRUE(conf$pds$tracks$compress)) {
       logger::log_info("Compressing file...")
       csv_path <- path
       path <- paste0(path, ".gz")
@@ -184,29 +184,29 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
       .x = path,
       .f = ~ coasts::insistent_upload_cloud_file(
         file = .,
-        provider = pars$pds_storage$google$key,
-        options = pars$pds_storage$google$options
+        provider = conf$pds_storage$google$key,
+        options = conf$pds_storage$google$options
       )
     )
     logger::log_success("File upload succeded")
   }
 
   tracks_to_download <- trips_ID[!(trips_ID %in% file_list_id)]
-  if (isTRUE(pars$pds$tracks$multisession$parallel)) {
+  if (isTRUE(conf$pds$tracks$multisession$parallel)) {
     future::plan(future::multisession)
   }
-  furrr::future_walk(tracks_to_download, process_track, pars, .progress = TRUE)
+  furrr::future_walk(tracks_to_download, process_track, conf, .progress = TRUE)
 
   # Store names of pds-tracks (useful for map generation)
   tracks_names <-
     googleCloudStorageR::gcs_list_objects(
-      pars$pds_storage$google$options$bucket
+      conf$pds_storage$google$options$bucket
     ) %>%
     dplyr::select(.data$name) %>%
     dplyr::mutate(Trip = stringr::str_extract(.data$name, "[[:digit:]]+"))
 
   tracks_names_filename <-
-    pars$pds$tracks$bucket_content$file_prefix %>%
+    conf$pds$tracks$bucket_content$file_prefix %>%
     add_version(extension = "rds")
 
   readr::write_rds(
@@ -217,8 +217,8 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {tracks_names_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = tracks_names_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
 }
 
@@ -230,17 +230,17 @@ ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
 #' file and `trips`, a vector containing unique the trips from `data` useful to
 #' take track of the synchronization status of `data`.
 #'
-#' @param pars The configuration file.
+#' @param conf The configuration file.
 #' @param data An rds file containing tracks data.
 #' @param trips A vector of unique Trips from the argument `data`.
 #'
 #' @return No output. This function is used for it's side effects
 #' @export
 #'
-ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
+ingest_complete_tracks <- function(conf, data = NULL, trips = NULL) {
   c(
-    pars$pds$tracks$complete$file_prefix,
-    paste(pars$pds$tracks$complete$file_prefix, "trips", sep = "_")
+    conf$pds$tracks$complete$file_prefix,
+    paste(conf$pds$tracks$complete$file_prefix, "trips", sep = "_")
   ) %>%
     purrr::map_chr(add_version, extension = "rds") %T>%
     purrr::walk2(
@@ -249,8 +249,8 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
     ) %>%
     purrr::walk(
       coasts::upload_cloud_file,
-      provider = pars$storage$google$key,
-      options = pars$storage$google$options
+      provider = conf$storage$google$key,
+      options = conf$storage$google$options
     )
 }
 
@@ -271,11 +271,11 @@ ingest_complete_tracks <- function(pars, data = NULL, trips = NULL) {
 ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
-  pars <- read_config()
+  conf <- read_config()
 
   logger::log_info("Retrieving PDS tracks")
 
-  tracks <- get_sync_tracks(pars) %>%
+  tracks <- get_sync_tracks(conf) %>%
     dplyr::filter(
       .data$Lng > 124.03 &
         .data$Lng < 127.29 &
@@ -286,7 +286,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Retrieving merged trips")
 
   merged_trips <-
-    get_merged_trips(pars) %>%
+    get_merged_trips(conf) %>%
     dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$tracker_trip_id)) %>%
     dplyr::mutate(
       n_fishermen = .data$fisher_number_child +
@@ -435,8 +435,8 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 
   map_filename <-
     paste(
-      pars$pds$tracks$map$png$file_prefix,
-      pars$pds$tracks$map$png$extension,
+      conf$pds$tracks$map$png$file_prefix,
+      conf$pds$tracks$map$png$extension,
       sep = "."
     )
 
@@ -446,13 +446,13 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
     width = 7,
     height = 4,
     bg = NULL,
-    dpi = pars$pds$tracks$map$png$dpi_resolution
+    dpi = conf$pds$tracks$map$png$dpi_resolution
   )
   logger::log_info("Uploading {map_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = map_filename,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 
   ### produce indicators map grid
@@ -532,21 +532,21 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
       CPE_log = round(mean(log(.data$CPE + 1), na.rm = TRUE), 2),
       RPE_log = round(mean(log(.data$RPE + 1), na.rm = TRUE), 2)
     ) %>%
-    convert_taxa_names(pars) %>%
+    convert_taxa_names(conf) %>%
     dplyr::filter(!is.na(.data$catch_taxon)) %>%
     dplyr::ungroup()
 
   map_grid_name <-
-    paste(pars$pds$tracks$map$map_grid$file_prefix) %>%
-    add_version(extension = pars$pds$tracks$map$map_grid$extension)
+    paste(conf$pds$tracks$map$map_grid$file_prefix) %>%
+    add_version(extension = conf$pds$tracks$map$map_grid$extension)
 
   readr::write_rds(tracks_grid, map_grid_name)
 
   logger::log_info("Uploading {map_grid_name} to cloud sorage")
   coasts::upload_cloud_file(
     file = map_grid_name,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 }
 
@@ -554,14 +554,14 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 #' Convert taxa codes to common names
 #'
 #' @param data A dataframe with taxa codes under a column named "catch_taxon"
-#' @param pars The config file
+#' @param conf The config file
 #'
 #' @return A dataframe with taxa common names
 #' @export
 #'
-convert_taxa_names <- function(data, pars) {
+convert_taxa_names <- function(data, conf) {
   catch_types <-
-    peskas.timor.data.pipeline::get_preprocessed_sheets(pars)$catch_types %>%
+    peskas.timor.data.pipeline::get_preprocessed_sheets(conf)$catch_types %>%
     dplyr::filter(
       !.data$catch_name_en %in%
         c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")
@@ -675,8 +675,8 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
 
   logger::log_info("Getting PDS tracks...")
 
-  pars <- read_config()
-  tracks <- get_full_tracks(pars)
+  conf <- read_config()
+  tracks <- get_full_tracks(conf)
 
   counts <-
     tracks %>%
@@ -726,8 +726,8 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading kepler_pds_map.html to cloud sorage")
   coasts::upload_cloud_file(
     file = "kepler_pds_map.html",
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 }
 

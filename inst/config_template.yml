@@ -204,9 +204,9 @@ default:
     # MongoDB
     # -------------------------------------------------------------------------
     # Declared in Timor's `config.yml` since migration Phase 2, which narrowed
-    # the six call sites that used to iterate `purrr::map(pars$storage, ...)`
+    # the six call sites that used to iterate `purrr::map(conf$storage, ...)`
     # — treating every child of `storage` as a storage provider — down to
-    # `pars$storage$google`. Until that landed, a `mongodb` sibling made those
+    # `conf$storage$google`. Until that landed, a `mongodb` sibling made those
     # calls fire a second time with NULL provider/options.
     #
     # The block is inert until a reader exists: the validation flags sink

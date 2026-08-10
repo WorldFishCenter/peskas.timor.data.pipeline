@@ -45,7 +45,7 @@ trip duration and distance.
 }
 \examples{
 \dontrun{
-pars <- read_config()
+conf <- read_config()
 pds_trips <- get_preprocessed_trips()
 validate_pds(pds_trips)
 }

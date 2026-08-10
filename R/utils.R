@@ -121,13 +121,18 @@ read_config <- function() {
     )
   }
 
-  pars <- config::get(
+  conf <- config::get(
     config = Sys.getenv("R_CONFIG_ACTIVE", "default"),
     file = conf_file
   )
 
-  logger::log_info("Using configutation: {attr(pars, 'config')}")
-  logger::log_debug("Running with parameters {pars}")
+  logger::log_info("Using configutation: {attr(conf, 'config')}")
+  # Deliberately not dumping `conf`. Workflow functions default to
+  # `log_threshold = logger::DEBUG`, and the resolved config carries the
+  # service-account private key, the Airtable PAT, the Dataverse token and the
+  # blastula credentials. GitHub Actions only masks byte-exact matches of a
+  # registered secret, which the re-serialised JSON is not.
+  logger::log_debug("Configuration keys: {paste(names(conf), collapse = ', ')}")
 
-  pars
+  conf
 }

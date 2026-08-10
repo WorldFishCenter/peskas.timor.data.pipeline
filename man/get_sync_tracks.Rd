@@ -4,10 +4,10 @@
 \alias{get_sync_tracks}
 \title{Download and synchronize tracks data in a single file}
 \usage{
-get_sync_tracks(pars)
+get_sync_tracks(conf)
 }
 \arguments{
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 }
 \value{
 The tabulated tracks collected in Timor..

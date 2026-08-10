@@ -4,10 +4,10 @@
 \alias{get_tracks_map}
 \title{Get map of Timor pds tracks.}
 \usage{
-get_tracks_map(pars)
+get_tracks_map(conf)
 }
 \arguments{
-\item{pars}{the configuration file.}
+\item{conf}{the configuration file.}
 }
 \description{
 Download the static map of Timor pds tracks.

@@ -16,20 +16,20 @@
 #'
 validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
-  pds_trips <- get_preprocessed_trips(pars)
-  pds_tracks <- get_preprocessed_tracks(pars)
+  conf <- read_config()
+  pds_trips <- get_preprocessed_trips(conf)
+  pds_tracks <- get_preprocessed_tracks(conf)
 
 
   # call validation coefficients
-  max_hrs <- pars$validation$pds_trips$max_trip_hours
-  min_hrs <- pars$validation$pds_trips$min_trip_hours
-  km <- pars$validation$pds_trips$trip_km
-  se_km <- pars$validation$pds_trips$start_end_km
-  outl <- pars$validation$pds_trips$outliers
-  timet <- pars$validation$pds_trips$timetrace
-  consecutive_time <- pars$validation$pds_trips$consecutive_time
-  consecutive_distance <- pars$validation$pds_trips$consecutive_distance
+  max_hrs <- conf$validation$pds_trips$max_trip_hours
+  min_hrs <- conf$validation$pds_trips$min_trip_hours
+  km <- conf$validation$pds_trips$trip_km
+  se_km <- conf$validation$pds_trips$start_end_km
+  outl <- conf$validation$pds_trips$outliers
+  timet <- conf$validation$pds_trips$timetrace
+  consecutive_time <- conf$validation$pds_trips$consecutive_time
+  consecutive_distance <- conf$validation$pds_trips$consecutive_distance
 
 
   # remove duplicated trips, join trips with tracks diagnostics and merge consecutive trips
@@ -93,7 +93,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
       tracker_trip_distance = .data$`Distance (Meters)`
     )
 
-  validated_trips_filename <- paste(pars$pds$trips$file_prefix,
+  validated_trips_filename <- paste(conf$pds$trips$file_prefix,
     "validated",
     sep = "_"
   ) %>%
@@ -107,8 +107,8 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading {validated_trips_filename} to cloud sorage")
   coasts::upload_cloud_file(
     file = validated_trips_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
   logger::log_success("File upload succeded")
 }
@@ -141,7 +141,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
+#' conf <- read_config()
 #' pds_trips <- get_preprocessed_trips()
 #' validate_pds(pds_trips)
 #' }
@@ -203,19 +203,19 @@ validate_pds_data <- function(data,
   validated_pds_list
 }
 
-get_preprocessed_trips <- function(pars) {
+get_preprocessed_trips <- function(conf) {
   pds_trips_rds <- coasts::cloud_object_name(
-    prefix = paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_"),
-    provider = pars$storage$google$key,
+    prefix = paste(conf$pds$trips$file_prefix, "preprocessed", sep = "_"),
+    provider = conf$storage$google$key,
     extension = "rds",
-    version = pars$pds$trips$version$preprocess,
-    options = pars$storage$google$options
+    version = conf$pds$trips$version$preprocess,
+    options = conf$storage$google$options
   )
   logger::log_info("Downloading {pds_trips_rds}...")
   coasts::download_cloud_file(
     name = pds_trips_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
   readr::read_rds(file = pds_trips_rds)
 }

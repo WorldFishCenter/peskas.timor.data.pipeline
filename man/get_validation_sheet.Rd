@@ -4,10 +4,10 @@
 \alias{get_validation_sheet}
 \title{Get peskas validation sheet}
 \usage{
-get_validation_sheet(pars)
+get_validation_sheet(conf)
 }
 \arguments{
-\item{pars}{the configuration file.}
+\item{conf}{the configuration file.}
 }
 \description{
 Get the peskas validation backup sheet from google cloud

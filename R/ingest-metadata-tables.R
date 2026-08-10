@@ -35,21 +35,21 @@
 #' }
 ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
+  conf <- read_config()
 
-  metadata_filename <- add_version(pars$metadata$google_sheets$name, "rds")
+  metadata_filename <- add_version(conf$metadata$google_sheets$name, "rds")
 
   logger::log_info("Authenticating for google drive")
   googlesheets4::gs4_auth(
-    path = pars$storage$google$options$service_account_key,
+    path = conf$storage$google$options$service_account_key,
     use_oob = TRUE
   )
   logger::log_info("Downloading metadata tables as {metadata_filename}...")
 
-  pars$metadata$google_sheets$tables %>%
+  conf$metadata$google_sheets$tables %>%
     rlang::set_names() %>%
     purrr::map(~ googlesheets4::range_read(
-      ss = pars$metadata$google_sheets$sheet_id,
+      ss = conf$metadata$google_sheets$sheet_id,
       sheet = .x,
       col_types = "c"
     )) %>%
@@ -58,6 +58,6 @@ ingest_metadata_tables <- function(log_threshold = logger::DEBUG) {
     )
 
   logger::log_success("Uploading to the cloud...")
-  coasts::upload_cloud_file(metadata_filename, pars$storage$google$key, pars$storage$google$options)
+  coasts::upload_cloud_file(metadata_filename, conf$storage$google$key, conf$storage$google$options)
   logger::log_success("File upload succeded")
 }

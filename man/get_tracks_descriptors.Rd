@@ -4,12 +4,12 @@
 \alias{get_tracks_descriptors}
 \title{Extract summaries from pds tracks}
 \usage{
-get_tracks_descriptors(Trip, pars, tracks_list)
+get_tracks_descriptors(Trip, conf, tracks_list)
 }
 \arguments{
 \item{Trip}{A vector of pds trips to process.}
 
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 
 \item{tracks_list}{The list of pds tracks files.}
 }

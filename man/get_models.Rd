@@ -4,10 +4,10 @@
 \alias{get_models}
 \title{Download models estimates}
 \usage{
-get_models(pars)
+get_models(conf)
 }
 \arguments{
-\item{pars}{Configuration file}
+\item{conf}{Configuration file}
 }
 \value{
 A list of dataframes with national and municipal estimations

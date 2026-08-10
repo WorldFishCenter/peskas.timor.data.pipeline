@@ -4,10 +4,10 @@
 \alias{get_full_trips}
 \title{Get trips from single-file tracks data.}
 \usage{
-get_full_trips(pars)
+get_full_trips(conf)
 }
 \arguments{
-\item{pars}{the configuration file.}
+\item{conf}{the configuration file.}
 }
 \value{
 A vector of unique trips.

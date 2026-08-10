@@ -4,10 +4,10 @@
 \alias{get_full_tracks}
 \title{Download tracks data in a single file}
 \usage{
-get_full_tracks(pars)
+get_full_tracks(conf)
 }
 \arguments{
-\item{pars}{The configuration file.}
+\item{conf}{The configuration file.}
 }
 \value{
 A dataframes with tracks coordinates for each trip

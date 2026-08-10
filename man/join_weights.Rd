@@ -24,11 +24,20 @@ and length-weight info from FIshBase databse to preprocessed surveys data and
 convert catch  labels according to the FAO nomenclature
 (\url{http://www.fao.org/fishery/statistics/global-production/3/en}).
 }
-\details{
-The length types used to calculate weight in fish catches include total length
-(TL) in survey version 1 and fork length (FL) in survey version 2 with the
-exception of the group SRX (Myliobatiformes), which uses disk width (WD).
-Weights of Non-fish groups are calculated according to carapace width (CW) in
-crabs, mantel length (ML) in Cephalopoda and shell length (ShL) in Bivalvia,
-carapace length (CL) in lobsters.
+\section{Length types}{
+
+\strong{Every length reaching this function is a total length.} v2 and v3 record
+TL; v1 recorded fork length and was converted once, at the freeze
+(\code{data-raw/freeze-landings-v1.R}, migration Phase 3).
+
+\code{length_type} is carried through from \code{catch_types} and is \strong{descriptive
+only} — it selects nothing and converts nothing. It is non-\code{NA} for five
+invertebrate taxa (\code{SLV} CL, \code{OCZ} ML, \code{IAX} ML, \code{CRA} CW, \code{COZ} ShL), but
+enumerators measure those on total length in the field, which is what the
+\code{OCZ}/\code{SLV}/\code{IAX}/\code{MOO} overrides below encode. Confirmed 2026-08-10.
+
+The prose this replaced claimed the opposite of the code — "total length
+(TL) in survey version 1 and fork length (FL) in survey version 2" — and an
+\code{SRX} → disk-width rule that was never implemented. Both were wrong.
 }
+

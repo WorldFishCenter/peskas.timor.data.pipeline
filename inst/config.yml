@@ -134,6 +134,11 @@ default:
         validated:
           file_prefix: timor-landings-v2_validated
           version: latest
+      # v1 is frozen. `ingest_landings()` no longer fetches it and
+      # `preprocess_legacy_landings()` is gone; `merge_landings()` reads the
+      # one-off snapshot below, written by `data-raw/freeze-landings-v1.R`.
+      # `raw`/`preprocessed` are kept because the objects they name are the
+      # provenance of the snapshot; nothing writes them any more.
       v1:
         raw:
           file_prefix: timor-landings-v1_raw
@@ -141,8 +146,8 @@ default:
         preprocessed:
           file_prefix: timor-landings-v1_preprocessed
           version: latest
-        validated:
-          file_prefix: timor-landings-v1_validated
+        frozen:
+          file_prefix: timor-landings-v1-frozen
           version: latest
       # Cross-version products.
       merged:
@@ -280,15 +285,25 @@ default:
     airtable:
       name: assets
       assets: assets
+      # The snapshot is cross-country and carries no `country` column (coasts'
+      # `ingest_assets()` does not select one). These are the record ids of
+      # Timor's two forms in the frame `forms` table — `PeskAAS 2` (v3) and
+      # `peskAAS` (v2) — and they are the only key that isolates Timor's taxa,
+      # gear, vessel and site rows. Every other country's rows carry different
+      # ids. Drop this when `country` is added upstream.
+      form_ids:
+        - recY5MD03ZDwJUBB3
+        - rechg17V73uqnVu2T
 
   # ===========================================================================
   # [new] AIRTABLE — the cross-country frame
   # ===========================================================================
   # The PESKAS | FRAME base is the harmonization layer: it maps each country's
   # raw form labels to `standard_name` / `alpha3_code` / FAO codes. Timor's
-  # rows were populated 2026-07-30/31 — taxa (57, tagged `PeskAAS 2`), gears
-  # (7), vessels (2), 40 landing sites, 457 pds_devices, and `Current Form`
-  # pointing at the live v3 asset.
+  # rows, re-measured 2026-08-09: 60 taxa over 56 distinct `alpha3_code`s
+  # (matching `models.all_taxa` exactly), 9 gears, 2 vessels, 40 landing sites
+  # all carrying lat/lon, 457 pds_devices. `survey_label` is populated on every
+  # taxa, gear and vessel row.
   #
   # `coasts::ingest_assets()` snapshots taxa/gears/vessels/landing_sites/forms
   # to `<metadata.airtable.name>__<version>__.rds`; the rest of the coasts
@@ -415,8 +430,8 @@ default:
     # MongoDB — [new] enabled in Phase 2.
     # -------------------------------------------------------------------------
     # Safe to declare only because Phase 2 narrowed every call site that used to
-    # iterate `purrr::map(pars$storage, ...)` — treating each child of `storage`
-    # as a storage *provider* — down to `pars$storage$google`. Nothing walks
+    # iterate `purrr::map(conf$storage, ...)` — treating each child of `storage`
+    # as a storage *provider* — down to `conf$storage$google`. Nothing walks
     # `storage`'s children any more, so a `mongodb` sibling is inert until a
     # reader is written. The flags sink itself is decided in Phase 5.
     #

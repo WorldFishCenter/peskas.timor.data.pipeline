@@ -13,21 +13,26 @@ merge_landings(log_threshold = logger::DEBUG)
 No outputs. This function is used for it's side effects
 }
 \description{
-Downloads pre-processed versions of recent and legacy landings from cloud and
-merge in a rds-format file using the function \link[dplyr:mutate-joins]{dplyr::full_join}.
+Binds the pre-processed v2 and v3 landings with the frozen v1 snapshot and
+reconciles the columns that differ between form versions.
 }
 \details{
 The merged file is then uploaded to the cloud. The parameters needed are:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{surveys:
+  landings_2:
+    file_prefix:
+    version:
+      preprocess:
+  landings_3:
+    file_prefix:
+    version:
+      preprocess:
   landings:
-    file_prefix:
-    version:
-      preprocess:
-  landings_legacy:
-    file_prefix:
-    version:
-      preprocess:
+    v1:
+      frozen:
+        file_prefix:
+        version:
   merged_landings:
     file_prefix:
     version:

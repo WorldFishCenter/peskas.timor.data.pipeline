@@ -4,12 +4,12 @@
 \alias{convert_taxa_names}
 \title{Convert taxa codes to common names}
 \usage{
-convert_taxa_names(data, pars)
+convert_taxa_names(data, conf)
 }
 \arguments{
 \item{data}{A dataframe with taxa codes under a column named "catch_taxon"}
 
-\item{pars}{The config file}
+\item{conf}{The config file}
 }
 \value{
 A dataframe with taxa common names
