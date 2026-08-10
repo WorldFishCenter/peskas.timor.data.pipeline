@@ -124,12 +124,27 @@ checks, landing regularity, mesh, gleaners, fuel, conservation, happiness).
      credentials inherited from `auth/` carry a stale `Bearer ` prefix. The
      `AIRTABLE_KEY` GitHub secret still carries it.
 
-### Sub-decision still open (raise at Phase 5)
+### Sub-decision — resolved 2026-08-10
 
-Validation flags sink: stay on Google Sheets, or move to MongoDB like the others?
-Moving matches the standard and unlocks the shared validation UI, but needs a new
-`MONGODB_CONNECTION_STRING_VALIDATION` secret and a rewrite of the weekly
-`send_validation_mail()` reader. Recommendation: move.
+6. **Validation flags sink — MongoDB.** Decided by the user; Google Sheets is
+   retired at Phase 5. Timor follows the Mozambique/Kenya/Zanzibar layout
+   exactly, which is what `inst/config.yml` has already declared since Phase 2:
+
+   - Flags go to the **shared** validation database,
+     `validation-dev` / `validation-prod`, not to a Timor-only database. That is
+     what puts Timor into the cross-country validation UI the other three use.
+   - **One collection per live form**, `surveys_flags-<asset_id>`, as
+     `coasts::mdb_collection_push()` is called elsewhere. v1 is frozen and gets
+     no collection and no write-back.
+   - The dedicated `timor-dev` / `timor-prod` databases the user is provisioning
+     serve the pipeline/export collections, exactly as `mozambique-*` does.
+
+   Consequences: a new `MONGODB_CONNECTION_STRING_VALIDATION` secret (`.env` +
+   GitHub), the `get_validation_status()` / `update_validation_status()` KoBo
+   write-back ported from Mozambique — they are **not** in coasts — and a
+   rewrite of `send_validation_mail()` to read from Mongo. AUDIT §5 shows that
+   mail has not run successfully since ≥2025-09, so there is no working Sheets
+   reader to preserve.
 
 ---
 
@@ -371,14 +386,27 @@ the STATE entry.
 
 - `R/validate-landings.R` → `R/validation.R`; keep and rename `R/validation-functions.R`.
 - Preserve every Timor validator. Tag them `@keywords validation`.
-- Resolve the flags-sink sub-decision. If MongoDB: add
-  `MONGODB_CONNECTION_STRING_VALIDATION`, push via `coasts::mdb_collection_push()`
-  to `flags-<asset_id>`, adopt `get_validation_status()` / `update_validation_status()`
-  Kobo write-back, and rewrite `send_validation_mail()` to read from Mongo.
+- **Move the validators onto the merged long parquet.** Phase 4 left
+  `join_weights()` re-nesting `species_group` / `length_individuals` purely so
+  the validators could keep reading raw KoBo column names.
+  `standard_survey_cols()` is the exact list they should move onto and the exact
+  list `join_weights()` drops; delete both halves together.
+- **Flags sink: MongoDB** (decided, §2.6). Add
+  `MONGODB_CONNECTION_STRING_VALIDATION`, push via
+  `coasts::mdb_collection_push()` to `surveys_flags-<asset_id>` in the shared
+  `validation-{dev,prod}` database — one collection per live form, none for the
+  frozen v1 — port `get_validation_status()` / `update_validation_status()` from
+  Mozambique (they are not in coasts), and rewrite `send_validation_mail()` to
+  read from Mongo.
+- Move the gear / vessel / site / habitat alerts (codes 12–16, 19) onto the
+  labels `preprocess_landings()` already resolves, which is what lets the seven
+  `# [phase 5]`-annotated tables leave `metadata.google_sheets.tables`.
 - Keep `inst/tinytest/test_validated_landings.R` passing — update expectations for
   the new schema rather than deleting assertions.
-- Verify: flagged-submission count within a few % of the golden snapshot; every flag
-  code still produced.
+- Verify against the **Phase 4** baseline, not the Phase 0 golden: the golden
+  predates commit `a2c2881`'s −15.4% weight rewrite, which moves alerts 17 and 11.
+  Flagged count within a few % of 13,388 / 97,328, all 37 alert combinations, all
+  12 observed codes still produced.
 
 ---
 

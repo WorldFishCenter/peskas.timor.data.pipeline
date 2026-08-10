@@ -39,11 +39,15 @@ Append one entry per completed phase, newest at the bottom.
   only.
 - ~~Phase 3 prerequisite: `KOBO_ASSET_ID_V1/2/3` in the workflow `env:`
   block~~ — done in Phase 3.
-- **Blocking sub-decision:** validation flags sink — Google Sheets vs MongoDB.
-  Raise at Phase 5. Recommendation: **MongoDB**, now stronger — AUDIT §5 shows
-  `send_validation_mail()` has not run successfully since ≥2025-09, so there is
-  no working Sheets reader to preserve. `storage.mongodb` is now declared in
-  `config.yml` (Phase 2) and inert, so enabling it is a code change only.
+- ~~**Blocking sub-decision:** validation flags sink~~ — **resolved 2026-08-10,
+  MongoDB** (user). Google Sheets is retired at Phase 5. Timor follows the WIO
+  layout, which `config.yml` has declared and left inert since Phase 2: the
+  **shared** `validation-dev` / `validation-prod` database, **one collection per
+  live form** (`surveys_flags-<asset_id>`, so v1 gets none), and the dedicated
+  `timor-dev` / `timor-prod` databases the user is provisioning for the
+  pipeline/export collections. See PLAN §2.6. Enabling it is a code change plus
+  one new secret — `MONGODB_CONNECTION_STRING_VALIDATION`, which does not exist
+  in `.env` or in CI yet, so it is a **new user action**.
 
 ## Open hygiene items
 
@@ -1990,6 +1994,8 @@ The 4 NOTEs are unchanged (33 Imports, install size, file timestamps,
 **Open questions for the next session**
 
 1. None blocking. Phase 5 can start from the merged long parquet.
-2. The validation flags sink (Google Sheets vs MongoDB) is still the open
-   sub-decision, unchanged since Phase 2. Recommendation remains **MongoDB**.
+2. ~~The validation flags sink is still the open sub-decision~~ — **resolved
+   after this entry was written, 2026-08-10: MongoDB**, shared `validation-*`
+   database, one `surveys_flags-<asset_id>` collection per live form. See the
+   "Current position" bullet and PLAN §2.6.
 3. Whether `"_10"` in v3's `no_men_fishers` should parse as 10 (finding 5).
