@@ -2339,3 +2339,278 @@ and every unvalidated submission is recorded as a fetch failure. Timor's
    exercises the sink end to end. Until it exists, CI writes flags only to the
    GCS snapshot — a warning, not a failure.
 3. Whether the shared validation app can hold a per-country alert dictionary.
+
+## Phase 6 — API contract + merge_trips — 2026-08-11
+
+Branch: `feat/align-coasts-phase6` (off `feat/align-coasts-phase5` at `992bc6d`)
+
+**Done**
+
+*1. `R/api.R` — `export_api_raw()` / `export_api_validated()`*
+
+Both project a long catch table onto the 22-column cross-country schema and
+upload versioned parquet to `conf$api$trips$*$cloud_path` in the `options_api`
+bucket. They differ only in their input: raw reads
+`timor-landings-merged_weight__*.parquet` (the pre-validation table — the first
+stage that has a weight at all, so Mozambique's "preprocessed" has no exact
+Timor counterpart), validated reads
+`timor-landings-merged_validated_long__*.parquet`. Neither is wired into
+`data-pipeline.yaml`; PLAN is explicit that this phase proves the contract, not
+that it schedules it.
+
+*2. The schema was read off the live objects, not off Mozambique's `R/api.R`*
+
+`peskas-api-prod` holds the same 22 columns in the same order for Kenya,
+Mozambique and Zanzibar, raw and validated alike. Timor's emitted parquet was
+asserted — not eyeballed — column-name-for-column-name, order and type, against
+`mozambique/validated/trips-validated__20260809013209_037cf84__.parquet`.
+
+The two upstream type inconsistencies were resolved toward **Mozambique**, the
+reference implementation: `landing_date` **Date** (Kenya and Zanzibar write
+POSIXct) and `n_catch` **integer** (Kenya writes numeric). Both come out of
+Timor's own tables in those types already, so this cost nothing.
+
+*3. `long_validated_landings()` widened, so the export is a projection*
+
+The long validated artefact gained the eight columns the API needs and the
+*nested* artefact never had: `survey_version`, `gaul_1_code`, `gaul_1_name`,
+`gaul_2_code`, `gaul_2_name`, `n_fishers`, `catch_outcome`, `scientific_name`.
+It is 1,647,692 × 40, was × 32.
+
+- `rename_validated_catch()` carries `catch_outcome` and `scientific_name`.
+- `nest_landing_catch()` gained a leading `select()`. This is the load-bearing
+  part: `tidyr::nest()` groups on every column it is not nesting, so a new
+  column in `validated_catch` would silently re-group the portal's artefact.
+  A unit test pins it, using a `catch_outcome` that **varies within** the group
+  — the case that would have split a row.
+- `n_fishers` is `sum_fishers()` over the *validated* `fisher_number_*` trio,
+  reusing preprocessing's helper rather than re-deriving the rule.
+- `api_submission_extras()` takes the rest off the weight table by
+  `distinct()` — verified to be exactly 97,347 rows, one per submission.
+
+*4. New config key and accessor*
+
+`surveys.landings.validated_long.file_prefix`, replacing the
+`paste(..., "long", sep = "_")` composed in `validate_landings()`, plus
+`get_validated_landings_long()` beside the other storage accessors.
+
+*5. `merge_trips()` — deliberately untouched*
+
+PLAN offered "rewrite in the standard shape (or adopt
+`coasts::merge_survey_trips()`)". Neither, and the export needs neither:
+
+- `coasts::merge_survey_trips()` does a different job (COASTS-TODO C10): it
+  assembles a cross-country table from matches each country already made,
+  joining `submission_id` ↔ `trip` out of `peskas-api-*`. Timor's
+  `merge_trips()` does the matching itself on `(landing_date, tracker_imei)`.
+- The 22-column contract has no slot for a PDS trip id, so nothing in Phase 6
+  reads `all_trips` at all.
+
+`all_trips` is therefore byte-for-byte the artefact it was — confirmed against
+the CI run below, 175,089 × 26 with 84,741 tracker matches, the Phase 5
+baseline exactly.
+
+**The three decisions worth arguing about**
+
+*`trip_id` is `TRIP_<submission_id>`, not `tracker_trip_id`.* The brief
+mapped it to `all_trips$tracker_trip_id`. The observable contract says
+otherwise and so does the consumer:
+
+- All three countries write `TRIP_<id>` derived from the submission —
+  `TRIP_715693918` (Moz), `TRIP_645323011` (Zanzibar), `TRIP_8464` (Kenya).
+- `coasts::summarize_data()` does `group_by(trip_id) |> slice(1)` on the
+  assumption that trip-level columns are constant within a `trip_id`. Only
+  84,741 of 175,089 Timor trips carry a `tracker_trip_id`; every unmatched
+  landing would carry `NA`, and `group_by()` would collapse ~90k landings into
+  a single "trip". That is not a drift risk, it is a wrong answer.
+
+So the PDS trip id is not published. If it should be, the place for it is a
+23rd column agreed across all four countries, not a redefinition of `trip_id`.
+
+*The length-bin collapse.* The API grain is (trip, catch); Timor's is
+(submission, catch, length bin). Grouping is on
+`(submission_id, n_catch, catch_taxon)` — 144,291 groups, 244 more than the
+144,047 distinct `(submission, n_catch)` pairs, because a handful of catch
+slots carry two taxa. Grouping on the pair alone would have silently dropped
+one of each.
+
+- `catch_kg` is the sum over bins; **this is lossless**, and measured so: the
+  raw export sums to **5,197,093.9 kg** and the validated to **964,937.9 kg**,
+  both equal to their source artefacts to the last published decimal.
+- `length_cm` is the bin midpoint weighted by the individuals counted in each
+  bin. It is not lossless and cannot be — one number replaces a distribution.
+- **Empty bins are kept.** Dropping them first was measured: it loses 13,219
+  of 144,291 catch records and 26 kg. Keeping them costs nothing because a bin
+  with no count contributes 0 to both sums.
+- A catch with no weighable bin is `NA`, not `0`. Under Mozambique's plain
+  `sum()` the whole landing's `tot_catch_kg` would go `NA` when any one catch
+  is unweighable: 15,419 of 97,347 landings, against 14,179 under `na.rm`.
+  `na.rm` is also what makes the totals identity above hold.
+
+*`catch_price` is `NA` and `tot_catch_price` is the landing's revenue.* Timor
+prices the landing, not the catch item, so there is nothing to put in
+`catch_price` — exactly Mozambique's situation and exactly what Mozambique
+publishes (all 1,995 rows `NA`). Kenya, which does collect per-catch prices,
+fills it. Also `catch_taxon == "0"` (Timor's no-catch sentinel) is written as
+`NA`, which is how the other three represent the same thing.
+
+**Verified**
+
+*The emitted objects*, both in `peskas-api-dev`:
+
+| | rows × cols | trips | Σ `catch_kg` | Σ per-trip `tot_catch_kg` |
+|---|---|---|---|---|
+| `timor/raw/trips-raw__20260811003451_992bc6d__.parquet` | 144,291 × 22 | 97,347 | 5,197,093.9 kg | 5,197,093.9 kg |
+| `timor/validated/trips-validated__20260811003526_992bc6d__.parquet` | 144,291 × 22 | 97,347 | **964,937.9 kg** | 964,937.9 kg |
+
+Both match the Phase 5 baselines exactly. Asserted, not eyeballed:
+`identical(names(timor), names(moz))` and `identical(types, types)` for both
+stages; `trip_id` unique per landing; **0** trips whose trip-level columns are
+not constant, which is the precondition `summarize_data()` relies on.
+
+*The nested artefact did not move.* `all.equal()` over the whole 97,347 × 19
+frame is `TRUE`, column names identical, `landing_id` identical, 144,291 catch
+rows both. The only inequality `identical()` finds is last-bit floating point
+(1e-16 relative) in the weight-derived nutrient columns, inherited from a
+different upstream weight run — not from the `select()`, which changes no
+values and which the new unit test pins directly.
+
+*`coasts::summarize_data(package = "peskas.timor.data.pipeline")` does **not**
+run end to end, and Phase 6 is not what stops it.* Its three inputs:
+
+| input | resolves to | present? |
+|---|---|---|
+| `api.trips.validated` | `peskas-api-dev` | ✅ read fine, 144,291 × 22 |
+| `asfis` | `conf$storage$google$options` → `timor-dev` | ❌ 0 objects |
+| `<pds_tracks>-grid_summaries` | `conf$storage$google$options` → `timor-dev` | ❌ 0 objects |
+
+Both missing ones live in the **hub** (`peskas-coasts-dev` holds 204
+`pds-tracks-grid_summaries__*`), where they resolve correctly for coasts itself
+because coasts' `storage.google.options` *is* the hub. Called with
+`package = "<country>"` the same line reads the country bucket. Filed as
+**COASTS-TODO C17**, the same class as C4 and C11. `conf$surveys$summaries$file_prefix`
+is also absent from Timor's config; it is a PDS-shaped product, so it belongs
+with Phase 7.
+
+What could be verified was: the API read itself, the `group_by(trip_id) |>
+slice(1)` collapse (97,347 rows, one per trip), the taxon collapse (137,919
+rows), the monthly summary (979 rows over 21 GAUL-2 municipalities), and
+**`coasts::calculate_fishery_metrics()` run for real on Timor's parquet** —
+11,726 metric rows, clean. The contract holds; the function around it is not
+ready for Timor.
+
+*Write access to `peskas-api-prod` — AUDIT §6's open question, closed.*
+Answered without writing anything, via the bucket `testIamPermissions`
+endpoint: `data-ingestion@peskas.iam.gserviceaccount.com` has
+`storage.objects.create`, `.delete`, `.get` and `.list` on **both**
+`peskas-api-dev` and `peskas-api-prod`. No user action needed before Phase 11.
+
+*The dev pipeline run — the real news.* The branch was pushed at the start of
+the session and run **31436031588** went green end to end in 32 minutes. This
+is the first time Phases 3, 4 and 5 have been exercised in CI at all:
+
+- every job green, including the four tinytest suites (10 / 7 / 2 / 1);
+- `13387 of 97347 submissions flagged` in CI, identical to the local number;
+- the MongoDB sink ran in CI for the first time —
+  `MONGODB_CONNECTION_STRING_VALIDATION` now exists as a secret, and both
+  `surveys_flags-*` collections were pushed (64,997 and 22,233 documents).
+
+Everything measured locally afterwards was measured against the artefacts that
+run produced (`*_992bc6d__*`), not against the Phase 5 leftovers.
+
+*Local gates*: `devtools::load_all()`, `devtools::document()`,
+`devtools::check()` — 0 errors, 0 WARNINGs, 4 NOTEs, unchanged in kind from the
+Phase 5 baseline; `pkgdown::check_pkgdown()` clean; testthat 27 passing (19 new
+in `tests/testthat/test-api.R`); the four tinytest suites re-run locally
+against `timor-dev`, all green.
+
+**Deviations from the brief**
+
+- **`trip_id`**, above. The brief's mapping table would have broken
+  `summarize_data()`; the three-country contract won.
+- **`_pkgdown.yml` was not edited.** Its Workflow section is
+  `has_keyword("workflow")` and the Cloud section is `matches("get")`, so the
+  two new exports and the new accessor are already indexed;
+  `pkgdown::check_pkgdown()` is clean. Adding them by name would have created
+  duplicate index entries for no gain.
+- **`merge_trips()` was not rewritten**, above.
+
+**Operational note, for honesty**
+
+Two `validate_landings()` runs were started concurrently by mistake during this
+session. `coasts::mdb_collection_push()` clears a collection and then inserts,
+so the two interleaved and left `surveys_flags-<v2>` with 126,995 documents
+instead of 64,998. A single clean re-run restored **64,998 / 22,234 /
+7,975 / 2,920**, matching the Phase 5 entry exactly. Worth recording because it
+is the failure mode the Phase 5 entry predicted (finding 3): the push has no
+locking, and a clear-then-insert that is interrupted or raced leaves the shared
+collection wrong. The versioned `validation_alerts__*.parquet` snapshot is the
+only thing that makes that recoverable.
+
+**Deferred, with reasons**
+
+- **Nothing was published to `peskas-api-prod`.** `default` resolves
+  `peskas-api-dev` and the phase never ran with `R_CONFIG_ACTIVE=production`.
+  Live consumers pick up whatever lands in prod; the first prod write should be
+  a deliberate act on `main`.
+- **Not wired into `data-pipeline.yaml`.** PLAN §Phase 6. The natural place is
+  a step after `validate-landings` (validated) and after `merge-landings`
+  (raw), in Phase 9 when the workflow is rewritten.
+- **`summarize_data()`** — blocked on C17 and on PDS grid summaries, i.e.
+  Phase 7.
+- The 651 submissions whose `tracker_imei` resolves only through the Google
+  Sheets `devices` table are still the `merge_trips()` match key. Phase 7 moves
+  the device list to the frame and the 84,741 match count moves with it.
+- `sync_validation_status()` still not wired; the production v1 freeze still
+  un-run; `ANTHROPIC_API_KEY` and the Phase 3 secrets rotation still open.
+
+**Findings that change later phases**
+
+1. **Phase 8 inherits a long validated table that is now a superset of the
+   nested one.** Everything `format_public_data()` reads by name is in it under
+   a standard name, plus the eight API columns. The nested artefact is now pure
+   legacy shape.
+2. **`n_catch` is not a unique catch index.** 244 `(submission, n_catch)` pairs
+   carry two taxa. Any future collapse to catch level must include
+   `catch_taxon` in the key, as `api_trips()` does. Mozambique has the same
+   property (13 rows per trip against `n_catch` max 8).
+3. **Timor will be the largest table in the API bucket by an order of
+   magnitude** — 144,291 rows against Kenya's 339,588 *including* its legacy
+   form, Mozambique's 1,995 and Zanzibar's 16,241. Anything downstream that
+   loads all four countries into memory should be told.
+4. **COASTS-TODO gained C16 and C17**: `resolve_storage_opts()` has no `"api"`
+   type, and `summarize_data()` reads two hub artefacts from the country
+   bucket.
+
+**Files added / removed / renamed**
+
+- added: `R/api.R`, `tests/testthat/test-api.R`,
+  `man/{export_api_raw,export_api_validated,get_validated_landings_long}.Rd`
+- modified: `R/validation.R` (`rename_validated_catch()`,
+  `nest_landing_catch()`, `long_validated_landings()`, new
+  `api_submission_extras()`), `R/get-cloud-files.R`, `inst/config.yml`
+  (`surveys.landings.validated_long`), `NAMESPACE`, `CLAUDE.md`,
+  `.claude/migration/COASTS-TODO.md` (C16, C17),
+  `.claude/migration/STATE.md`
+- **unchanged: `R/merge-trips.R`, `R/format-public-data.R`, `R/export.R`,
+  `_pkgdown.yml`, the four tinytest suites, and every `portal-*.json` object
+  name.**
+
+**Cloud objects written**
+
+- `peskas-api-dev/timor/raw/trips-raw__20260811003451_992bc6d__.parquet`
+- `peskas-api-dev/timor/validated/trips-validated__20260811003526_992bc6d__.parquet`
+- `timor-dev/timor-landings-merged_validated_long__2026081100*_992bc6d__.parquet`
+  (the widened, 40-column shape) plus the nested `.rds` and
+  `validation_alerts__*` of the same runs
+- `validation-dev`: both `surveys_flags-*` and both `enumerators_stats-*`
+  re-pushed clean
+
+**Open questions for the next session**
+
+1. None blocking. Phase 7 (PDS) can start.
+2. Should Phase 9 wire the two exports into `data-pipeline.yaml`, and should
+   the first `peskas-api-prod` write happen before the Phase 11 merge or as
+   part of it?
+3. Whether the shared validation app can hold a per-country alert dictionary
+   (carried over from Phase 5).

@@ -28,6 +28,7 @@ BugReports:
 Depends:
     R (>= 2.10)
 Imports:
+    arrow,
     blastula,
     coasts,
     config,

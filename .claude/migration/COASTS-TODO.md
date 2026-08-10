@@ -279,3 +279,42 @@ Upstream them, with three corrections Timor made in the process:
    `/assets/<id>/data/`), while the `KOBO_USERNAME` / `KOBO_PASSWORD` pair
    ingestion already uses works on both. A country should not need a second
    credential for this.
+
+---
+
+## Added in Timor's migration Phase 6 (2026-08-11)
+
+### C16. `resolve_storage_opts()` has no `"api"` type
+
+It knows `"coasts"`, `"country"`, `"pds"` and `"public"`. The cross-country API
+bucket is `storage.google.options_api`, so `export_api_raw()` /
+`export_api_validated()` have to reach into the config by hand — the one thing
+CLAUDE.md tells every Timor call site not to do. Mozambique does the same.
+One more `switch()` arm, exactly like C6.
+
+### C17. `summarize_data()` reads two hub artefacts from the country bucket
+
+Measured while verifying Phase 6. `summarize_data()` takes both
+
+```r
+asfis        <- download_parquet_from_cloud("asfis", options = conf$storage$google$options)
+grid_summaries <- download_parquet_from_cloud(paste0(conf$pds$pds_tracks$file_prefix,
+                                                     "-grid_summaries"),
+                                              options = conf$storage$google$options)
+```
+
+from `storage.google.options`. Inside coasts that **is** the hub
+(`peskas-coasts-dev`), where both live — 204 `pds-tracks-grid_summaries__*`
+objects, and the `asfis` table. Called with `package = "<country>"` it resolves
+the country bucket instead, where neither exists: `timor-dev` has 0 of each.
+Same class of bug as C4 and C11, and it is what stops
+`summarize_data(package = "peskas.timor.data.pipeline")` running end to end.
+
+Fix: read both through `resolve_storage_opts(conf, "coasts")`. The third read,
+the API parquet, already resolves `options_api` correctly and works for Timor
+today.
+
+Related, not a bug: `conf$surveys$summaries$file_prefix` has no default and is
+absent from coasts' own `inst/conf.yml`; every downstream package must declare
+it (Mozambique has `mozambique-summaries`). Timor adds it when it adopts the
+function — Phase 7 at the earliest, since `grid_summaries` is a PDS product.

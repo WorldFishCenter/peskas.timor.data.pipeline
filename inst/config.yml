@@ -159,6 +159,12 @@ default:
       validated:
         file_prefix: timor-landings-merged_validated
         version: latest
+      # The flat long counterpart of `validated`, written beside it since
+      # Phase 5 and read by the Phase 6 API export. Phase 8 retires the nested
+      # artefact once `format_public_data()` reads this one too.
+      validated_long:
+        file_prefix: timor-landings-merged_validated_long
+        version: latest
       # Validation flags. `validation_alerts` is the object family the current
       # Google Sheets sink also mirrors to cloud storage; the sink itself is
       # decided in migration Phase 5.

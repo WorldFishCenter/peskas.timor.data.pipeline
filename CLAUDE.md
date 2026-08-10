@@ -14,9 +14,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4, 5** — so config, secrets, the container, the **storage
-> layer**, **ingestion**, **preprocessing** and **validation** are already on
-> the standard; the API export, PDS and the portal are not.
+> **0, 1, 2, 3, 4, 5, 6** — so config, secrets, the container, the **storage
+> layer**, **ingestion**, **preprocessing**, **validation** and the
+> **cross-country API export** are already on the standard; PDS and the portal
+> are not.
 
 ---
 
@@ -67,7 +68,8 @@ Validation
 - [validate-pds-trips.R](R/validate-pds-trips.R) — consecutive-trip merging, distance/outlier logic; no `coasts` equivalent exists
 
 Merge / model / export
-- [merge-trips.R](R/merge-trips.R), [estimate-catch.R](R/estimate-catch.R), [model-catch.R](R/model-catch.R) (glmmTMB), [calculate-nutrients.R](R/calculate-nutrients.R) (nutrients + RDI)
+- [api.R](R/api.R) — `export_api_raw()` / `export_api_validated()`, the 22-column cross-country trips table written to `peskas-api-{dev,prod}/timor/{raw,validated}`. Added in Phase 6. **Not wired into any workflow** — run by hand. The schema is the contract Kenya, Mozambique and Zanzibar already publish; do not add, drop or reorder a column without agreeing it across all four
+- [merge-trips.R](R/merge-trips.R), [estimate-catch.R](R/estimate-catch.R), [model-catch.R](R/model-catch.R) (glmmTMB), [calculate-nutrients.R](R/calculate-nutrients.R) (nutrients + RDI). `merge_trips()` matches a landing to a tracked trip on `(landing_date, tracker_imei)` and is **not** `coasts::merge_survey_trips()`, which does a different job (COASTS-TODO C10). Its output `all_trips__*.rds` (175,089 × 26, 84,741 matched) feeds `format_public_data()`, `estimate-catch.R` and `model-catch.R` — changing its schema breaks the export path
 - [format-public-data.R](R/format-public-data.R) — 1200 lines, the largest file; builds every portal object
 - [export.R](R/export.R) — `export_files()` serializes and uploads the `portal-*.json` set
 - [export-dataverse.R](R/export-dataverse.R), [send-email.R](R/send-email.R)
@@ -244,11 +246,11 @@ Prefer `coasts::resolve_storage_opts(pars, type)` over reaching into
 
 | bucket | contents |
 |---|---|
-| `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight and validated artefacts are still `.rds` because they carry nested list-columns |
+| `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight artefact is parquet since Phase 5, and the validated artefact is written twice — nested `.rds` for the portal and `timor-landings-merged_validated_long__*.parquet` for everything else |
 | `pds-timor` / `pds-timor-dev` | one gzipped CSV per GPS trip: `pds-track-<trip_id>__*__.csv.gz` |
 | `public-timor` / `public-timor-dev` | `portal-*.json` — the live portal contract |
 | `peskas-coasts` / `peskas-coasts-dev` | the shared cross-country hub (`options_coasts`). **Read *and* written** by coasts: `assets__*`, `taxa-fishbase-enriched`, H3 effort/CPUE grids, and per-country `*_fishery_metrics` / `*_monthly_summaries_map`. Both are live — `default` must stay on `-dev` |
-| `peskas-api-prod` / `peskas-api-dev` | cross-country API parquet (`options_api`), live for Kenya/Moz/Zanzibar; Timor lands in Phase 6 |
+| `peskas-api-prod` / `peskas-api-dev` | cross-country API parquet (`options_api`), live for Kenya/Moz/Zanzibar. Timor joined in Phase 6 and publishes to **`-dev` only** so far: `timor/{raw,validated}/trips-{raw,validated}__*.parquet`. The service account has object create/delete on **both** buckets (verified 2026-08-11 via `testIamPermissions`), so the first prod write is a decision, not a permission |
 
 **No lifecycle policy is set.** Every pipeline run appends new versions and
 nothing is ever deleted; `gs://timor` holds ~33k objects and `gs://pds-timor`
@@ -260,8 +262,9 @@ Interchange format is **flat long parquet** from raw through validated
 remaining `.rds` artefact on the survey path is
 `timor-landings-merged_validated__*.rds`, the **nested** shape the portal reads,
 and Phase 5 writes the long parquet `timor-landings-merged_validated_long__*`
-beside it. Phase 6 consumes the long one; Phase 8 drops the nested one once
-`format_public_data()` reads the long shape.
+beside it — widened in Phase 6 to 40 columns, a superset of the nested shape.
+The API export projects that one; Phase 8 drops the nested artefact once
+`format_public_data()` reads the long shape too.
 
 ## Portal contract (do not break)
 

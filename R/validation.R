@@ -187,8 +187,10 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   # artefact above once the portal reads it too.
   logger::log_info("Uploading the long validated catch table")
   coasts::upload_parquet_to_cloud(
-    data = long_validated_landings(validated_catch, validated_landings),
-    prefix = paste(conf$surveys$landings$validated$file_prefix, "long", sep = "_"),
+    data = long_validated_landings(
+      validated_catch, validated_landings, api_submission_extras(landings)
+    ),
+    prefix = conf$surveys$landings$validated_long$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country")
   )
@@ -481,7 +483,8 @@ sync_validation_status <- function(versions = c("v2", "v3"),
 }
 
 # The validated catch columns, under the names the nested artefact and the
-# portal have always used.
+# portal have always used. `catch_outcome` and `scientific_name` ride along for
+# the long table and the API export; `nest_landing_catch()` drops them.
 rename_validated_catch <- function(catch) {
   catch %>%
     dplyr::transmute(
@@ -489,6 +492,8 @@ rename_validated_catch <- function(catch) {
       .data$n_catch,
       .data$catch_taxon,
       .data$catch_use,
+      .data$catch_outcome,
+      .data$scientific_name,
       .data$length_type,
       .data$length,
       number_of_fish = .data$n_individuals,
@@ -501,8 +506,16 @@ rename_validated_catch <- function(catch) {
 # list-columns the portal path consumes. `nest(landing_catch = -submission_id)`
 # groups on the submission alone, so two catches of one submission that happen
 # to share a taxon, use and length type stay two rows — 4,873 submissions do.
+#
+# The leading select() is load-bearing: `nest()` groups on every column it is
+# not nesting, so an extra column in `validated_catch` would silently change the
+# grouping and with it the artefact the portal reads.
 nest_landing_catch <- function(validated_catch) {
   validated_catch %>%
+    dplyr::select(
+      "submission_id", "n_catch", "catch_taxon", "catch_use", "length_type",
+      "length", "number_of_fish", "catch", tidyselect::ends_with("_mu")
+    ) %>%
     tidyr::nest(
       length_frequency = c(
         "length", "number_of_fish", "catch",
@@ -520,7 +533,14 @@ nest_landing_catch <- function(validated_catch) {
 # columns joined back onto the validated catch rows, under standard names.
 # `catch_kg` rather than grams, because that is what the cross-country API
 # schema migration Phase 6 conforms to publishes.
-long_validated_landings <- function(validated_catch, validated_landings) {
+#
+# `submission_extras` carries the columns the *nested* artefact never had — the
+# form version and the GAUL administrative codes — so that
+# `export_api_validated()` is a projection of this table rather than a second
+# reconstruction of it.
+long_validated_landings <- function(validated_catch,
+                                    validated_landings,
+                                    submission_extras) {
   validated_landings %>%
     dplyr::select(-"landing_catch") %>%
     dplyr::rename(
@@ -529,13 +549,23 @@ long_validated_landings <- function(validated_catch, validated_landings) {
       vessel_type = "propulsion_gear",
       catch_habitat = "habitat"
     ) %>%
+    dplyr::mutate(
+      n_fishers = sum_fishers(
+        .data$fisher_number_man,
+        .data$fisher_number_woman,
+        .data$fisher_number_child
+      )
+    ) %>%
+    dplyr::left_join(submission_extras, by = "submission_id") %>%
     dplyr::left_join(
       validated_catch %>%
         dplyr::transmute(
           .data$submission_id,
           .data$n_catch,
           .data$catch_taxon,
+          .data$scientific_name,
           .data$catch_use,
+          .data$catch_outcome,
           .data$length_type,
           .data$length,
           n_individuals = .data$number_of_fish,
@@ -544,6 +574,18 @@ long_validated_landings <- function(validated_catch, validated_landings) {
         ),
       by = "submission_id"
     )
+}
+
+# The submission-level columns the validators never touch and the nested
+# artefact therefore never carried.
+api_submission_extras <- function(landings) {
+  landings %>%
+    dplyr::distinct(
+      .data$submission_id, .data$survey_version,
+      .data$gaul_1_code, .data$gaul_1_name,
+      .data$gaul_2_code, .data$gaul_2_name
+    ) %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
 }
 
 # NOTE: three dead helpers used to live here, all removed in migration Phase 1

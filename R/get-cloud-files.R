@@ -84,6 +84,26 @@ get_weighted_landings <- function(conf) {
   )
 }
 
+#' Download the validated landings in the flat long shape
+#'
+#' The same content as [get_validated_landings()], one row per (submission,
+#' catch, length bin) under the standard column names and with `catch_kg` in
+#' kilograms. Written beside the nested artefact since migration Phase 5 and
+#' read by [export_api_validated()].
+#'
+#' @param conf The configuration file.
+#' @return A tibble, one row per (submission, catch, length bin).
+#' @keywords storage
+#' @export
+get_validated_landings_long <- function(conf) {
+  coasts::download_parquet_from_cloud(
+    prefix = conf$surveys$landings$validated_long$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$surveys$landings$validated_long$version
+  )
+}
+
 #' Download Peskas validated landings
 #'
 #' Download validated Peskas data from Google Cloud.
