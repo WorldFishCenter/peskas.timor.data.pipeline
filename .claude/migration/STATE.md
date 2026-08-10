@@ -10,7 +10,7 @@ Append one entry per completed phase, newest at the bottom.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
-  Phase 5 is on `feat/align-coasts-phase5`, **not pushed** — no dev pipeline run
+  Phase 5 = **`75985a8`** on `feat/align-coasts-phase5`, **not pushed** — no dev pipeline run
   has exercised Phases 3-5 end to end yet. All verification is local, against the
   dev buckets and `validation-dev`. Pushing the branch is the next integration
   gate.
@@ -2002,7 +2002,8 @@ The 4 NOTEs are unchanged (33 Imports, install size, file timestamps,
 
 ## Phase 5 — Validation — 2026-08-10
 
-Branch: `feat/align-coasts-phase5` (off `feat/align-coasts-phase4` at `2814dff`)
+Branch: `feat/align-coasts-phase5` (off `feat/align-coasts-phase4` at `2814dff`),
+committed as `75985a8`
 
 **Done**
 
