@@ -2414,9 +2414,16 @@ PLAN offered "rewrite in the standard shape (or adopt
 - The 22-column contract has no slot for a PDS trip id, so nothing in Phase 6
   reads `all_trips` at all.
 
-`all_trips` is therefore byte-for-byte the artefact it was — confirmed against
-the CI run below, 175,089 × 26 with 84,741 tracker matches, the Phase 5
-baseline exactly.
+`all_trips` is therefore the artefact it was — confirmed against the CI runs
+below at 175,089 × 26, the Phase 5 baseline exactly.
+
+**Read the 84,741 correctly.** It is the number of rows carrying a
+`tracker_trip_id`, which equals the whole validated PDS trip count — not the
+number of landings matched to a trip. `merge_trips()` is a full join, so
+175,089 = 97,347 landings + 84,741 trips − **6,999 real landing↔trip matches**
+(measured directly: rows with both ids non-`NA`). Phase 7's `devices` decision
+moves the 6,999, and 651 of Timor's submissions get their `tracker_imei` — the
+join key — only from the Google Sheets `devices` table.
 
 **The three decisions worth arguing about**
 
@@ -2574,8 +2581,9 @@ only thing that makes that recoverable.
 - **`summarize_data()`** — blocked on C17 and on PDS grid summaries, i.e.
   Phase 7.
 - The 651 submissions whose `tracker_imei` resolves only through the Google
-  Sheets `devices` table are still the `merge_trips()` match key. Phase 7 moves
-  the device list to the frame and the 84,741 match count moves with it.
+  Sheets `devices` table are still the `merge_trips()` join key. Phase 7 moves
+  the device list to the frame and the **6,999** landing↔trip match count moves
+  with it.
 - `sync_validation_status()` still not wired; the production v1 freeze still
   un-run; `ANTHROPIC_API_KEY` and the Phase 3 secrets rotation still open.
 
