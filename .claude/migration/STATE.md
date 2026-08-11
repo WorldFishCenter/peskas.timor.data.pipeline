@@ -11,10 +11,11 @@ Append one entry per completed phase, newest at the bottom.
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
   Phase 5 = `75985a8` (+ `992bc6d` docs).
-  Phase 6 = **`ec0b7e5`** on `feat/align-coasts-phase6`, **pushed**. Run
-  **31436031588** (on the Phase 5 code) went green end to end in 32 minutes —
-  the first CI run to exercise Phases 3, 4 and 5, including the MongoDB flags
-  sink and all four tinytest suites.
+  Phase 6 = **`ec0b7e5`** (+ `a16d60e` docs) on `feat/align-coasts-phase6`,
+  **pushed**. Two green end-to-end CI runs: **31436031588** on the Phase 5 code
+  — the first to exercise Phases 3, 4 and 5 at all, including the MongoDB flags
+  sink and all four tinytest suites — and **31439673841** on the Phase 6 code,
+  which produced the widened 40-column long artefact from CI.
 - **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`. Timor now
   **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
   written to `peskas-api-prod`, though the service account can. `coasts` is
@@ -2524,6 +2525,13 @@ is the first time Phases 3, 4 and 5 have been exercised in CI at all:
 
 Everything measured locally afterwards was measured against the artefacts that
 run produced (`*_992bc6d__*`), not against the Phase 5 leftovers.
+
+A second run, **31439673841**, then went green on the Phase 6 code itself —
+all twelve jobs, the same `13387 of 97347 submissions flagged`, the same four
+tinytest suites (10 / 7 / 2 / 1). The widened artefact it produced is
+**1,647,692 × 40** carrying all eight new columns and the same 964,937.9 kg,
+and both `surveys_flags-*` collections came out at 64,998 / 22,234. So the
+widening survives CI, not only a local run.
 
 *Local gates*: `devtools::load_all()`, `devtools::document()`,
 `devtools::check()` — 0 errors, 0 WARNINGs, 4 NOTEs, unchanged in kind from the
