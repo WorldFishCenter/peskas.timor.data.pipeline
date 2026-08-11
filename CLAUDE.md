@@ -221,15 +221,18 @@ download_cloud_file, cloud_object_name}`. **Always write the `coasts::` prefix**
 — Timor no longer exports these names, so an unqualified call would resolve off
 the search path or not at all.
 
-Two things Timor keeps, deliberately:
+One thing Timor keeps, deliberately:
 
-- **`insistent_upload_cloud_file()` / `insistent_download_cloud_file()`** —
-  `purrr::insistently()` retry wrappers used on the PDS paths. `coasts` has no
-  retry logic anywhere; these are an upstream candidate for Phase 10.
 - **`add_version()`** — a naming helper, not a storage function. `coasts` exports
   a body-identical copy, but delegating would mean editing ~40 call sites plus
   three `inst/report/` drivers to remove an exported name for no behavioural
   gain. Dedupe when it is upstreamed, not before.
+
+The retry wrappers are **not** one of them any more: `coasts` 4.6.0 shipped
+`insistent_upload_cloud_file()` / `insistent_download_cloud_file()` (COASTS-TODO
+C5) and Timor's local copies are gone. The two remaining call sites, both on the
+PDS path, are written `coasts::insistent_upload_cloud_file()` — keep the
+prefix.
 
 **`coasts::cloud_object_name()` is not a drop-in for Timor's deleted version.**
 The signatures match, but coasts returns `selected_rows$name[1]` where Timor
