@@ -44,7 +44,6 @@ Imports:
     git2r,
     glmmTMB,
     glue,
-    googleCloudStorageR,
     googlesheets4,
     httr,
     httr2,

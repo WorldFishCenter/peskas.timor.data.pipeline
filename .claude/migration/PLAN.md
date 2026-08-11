@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–6 complete** (2026-08-11). Phase 7 next.
+Status: **Phases 0–7 complete** (2026-08-11). Phase 8 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -185,7 +185,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 4 | Preprocessing | `preprocessing-surveys.R` + `survey-reshaping.R` + `model-taxa.R` | **high** | 2 ✅ (1 used) |
 | 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 ✅ |
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 ✅ |
-| 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 |
+| 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 ✅ (1 used) |
 | 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 |
 | 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 |
 | 10 | Upstream to coasts | separate PRs in the `peskas.coasts` repo | medium | 1–2 |
@@ -450,20 +450,32 @@ Phase 7 inherits:
 
 ---
 
-### Phase 7 — PDS switch
+### Phase 7 — PDS switch ✅ done 2026-08-11
 
-- Replace `R/ingest-pds-data.R`, `R/retrieve-pds-data.R`, `R/preprocess-pds-trips.R`
-  with `coasts::ingest_pds_trips/ingest_pds_tracks/preprocess_pds_tracks`
-  (`package = "peskas.timor.data.pipeline"`), driven by `conf$pds`.
-- Add the Timor PDS customer name to the coasts customer list (coasts PR).
-- **Keep `validate_pds_trips()`** — consecutive-trip merging, distance/outlier logic.
-  coasts has no equivalent; upstream candidate.
-- **Compatibility shim (the risk):** `format_public_data()`/`export_files()` consume
-  `indicators_gridded` and `tracks-map` from the old track products. Either
-  regenerate them from the coasts H3 output or retain `ingest_pds_map()` /
-  `ingest_kepler_tracks()` as Timor-only. Decide with the Phase 0 inventory in hand.
-- Verify: trip count and total tracked hours parity, old vs new, over a fixed date
-  window. Investigate any delta over ~1%.
+Shipped as scoped. Timor now carries **no PDS ingestion or preprocessing code**,
+exactly like Mozambique, Kenya and Zanzibar — all three call
+`coasts::ingest_pds_trips/ingest_pds_tracks/preprocess_pds_tracks(package = ...)`
+from their workflow YAML and none has a line of PDS R code. What Phase 8
+inherits:
+
+- `R/ingest-pds-data.R`, `R/retrieve-pds-data.R` and `preprocess_pds_trips()`
+  are gone. `R/pds-tracks.R` keeps `describe_pds_tracks()` — the per-trip track
+  descriptors `validate_pds_trips()` joins on, which coasts has no equivalent
+  for (`coasts::preprocess_pds_tracks()` emits spatial grid summaries instead).
+  `R/pds-maps.R` keeps the map products.
+- **The track object family was renamed and converted in place**, not re-fetched:
+  103,373 `pds-track-<id>__*__.csv.gz` → `pds-tracks_<id>.parquet` by
+  `data-raw/convert-pds-tracks.R`. Straight delegation would have re-fetched
+  98,472 tracks from the PDS API (COASTS-TODO C18). Run it against
+  `production` before Phase 11, like the v1 freeze.
+- **The frame is now authoritative for PDS devices**, via `conf$pds$customers`.
+  It costs 2,791 trips and 59 of the 6,999 matches until 27 missing IMEIs are
+  added to PESKAS | FRAME — listed in the STATE entry. The **survey**-side
+  `devices` table stays on Google Sheets for the same reason.
+- **The shim was not needed.** `ingest_pds_map()` / `ingest_kepler_tracks()` are
+  retained Timor-only and untouched; `indicators_gridded` and `tracks-map` still
+  resolve and still feed `export_files()`. Neither is in a workflow, so neither
+  regenerates — the decision is Phase 8's portal gate, unchanged by this phase.
 
 ---
 

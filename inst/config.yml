@@ -181,17 +181,55 @@ default:
     # [new] credentials at the source level, as the template and coasts expect.
     token: !expr Sys.getenv('PDS_TOKEN')
     secret: !expr Sys.getenv('PDS_SECRET')
-    # [new] stage artefacts. Prefixes match the existing object families
-    # (`pds-trips__*`, `pds-track_preprocessed__*`); note Timor's track prefix
-    # is singular `pds-track`, not the template's `pds-tracks`.
+    #
+    # How a country claims its devices out of the shared PDS account:
+    # `coasts::ingest_pds_trips()` narrows the API response to the frame's
+    # `pds_devices` rows whose `customer_name` is listed here. Mozambique lists
+    # two, Kenya three; Timor's devices sit under three.
+    #
+    # `Traders` and `FSSP2: Traders` are excluded from *coasts'* own list
+    # because they carry `Asia/Kuala_Lumpur` devices that would widen the
+    # filter for every country. Listed here they are safe — Timor's token only
+    # ever returns Timor's devices — and they are worth 12 IMEIs.
+    #
+    # Measured 2026-08-11 against the 449 IMEIs the token returns: this list
+    # covers 422 of them, 95,681 of 98,472 trips (97.2%) and 546,963 of
+    # 561,482 tracked hours (97.4%). The 27 it misses are in **no** frame
+    # customer at all — real gaps in PESKAS | FRAME, worth 2,791 trips and 59
+    # of the 6,999 landing-to-trip matches. Adding those rows to Airtable
+    # recovers them; the list is in the Phase 7 STATE entry.
+    customers:
+      - "MAF / WorldFish"
+      - "Traders"
+      - "FSSP2: Traders"
+    # [new] stage artefacts, read by `coasts::ingest_pds_trips()`,
+    # `coasts::ingest_pds_tracks()` and `coasts::preprocess_pds_tracks()`.
+    # The track prefix is the standard's plural `pds-tracks` since Phase 7,
+    # which renamed the object family:
+    # `pds-track-<id>__<version>__.csv.gz` -> `pds-tracks_<id>.parquet`. The
+    # 99,219 historical objects were converted in place by
+    # `data-raw/convert-pds-tracks.R` rather than re-fetched.
     pds_trips:
       file_prefix: pds-trips
       version: latest
     pds_tracks:
-      file_prefix: pds-track
+      file_prefix: pds-tracks
       version: latest
+      # Timor-only, and the one PDS product coasts has no equivalent for:
+      # the per-trip track descriptors `validate_pds_trips()` joins on.
+      # `coasts::preprocess_pds_tracks()` emits spatial grid summaries
+      # instead, and Phase 7 wires that in beside this one.
+      descriptors:
+        file_prefix: pds-tracks-descriptors
+        version: latest
 
-    # [legacy]
+    # [legacy] no reader since Phase 7, which deleted Timor's PDS ingestion and
+    # preprocessing in favour of `coasts::*`. That includes
+    # `tracks.bucket_content`: `get_tracks_ids()` enumerates the bucket now
+    # rather than reading a cached copy of the listing. `tracks.complete` and
+    # `tracks.map` are still live and Timor-only — they drive `ingest_pds_map()`
+    # / `ingest_kepler_tracks()` and the two portal objects the export path
+    # reads (`indicators_gridded`, `tracks-map`).
     trips:
       token: !expr Sys.getenv('PDS_TOKEN')
       secret: !expr Sys.getenv('PDS_SECRET')
@@ -208,11 +246,11 @@ default:
       multisession:
         parallel: true
         n_sessions: 32
+      bucket_content:
+        file_prefix: pds-track-list
       complete:
         file_prefix: pds-track-complete
         new_trips: 1000
-      bucket_content:
-        file_prefix: pds-track-list
       map:
         png:
           file_prefix: tracks-map

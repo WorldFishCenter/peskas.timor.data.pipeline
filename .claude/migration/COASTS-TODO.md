@@ -318,3 +318,63 @@ Related, not a bug: `conf$surveys$summaries$file_prefix` has no default and is
 absent from coasts' own `inst/conf.yml`; every downstream package must declare
 it (Mozambique has `mozambique-summaries`). Timor adds it when it adopts the
 function — Phase 7 at the earliest, since `grid_summaries` is a PDS product.
+
+---
+
+## Added in Timor's migration Phase 7 (2026-08-11)
+
+### C18. `ingest_pds_tracks()` reads "no tracks stored" instead of failing
+
+`extract_trip_ids_from_filenames()` is
+
+```r
+gsub(".*_([0-9]+)\\.parquet$", "\\1", filenames)
+```
+
+so a name that does not already match `<something>_<digits>.parquet` is returned
+**unchanged** — a full object name where a trip id was expected. The
+`setdiff(trips_data, existing_trip_ids)` above it then reports every trip as
+new. Measured against `pds-timor-dev` before Timor's conversion: 0 of 99,219
+stored tracks recognised, and the first run would have re-fetched **98,472**
+tracks from the PDS API. The failure is silent, expensive and looks exactly like
+a fresh bucket.
+
+Two cheap fixes, worth both:
+
+1. Derive the id from the configured prefix
+   (`sub(paste0("^", prefix, "_"), "", basename(x))`) rather than a generic
+   regex, so an unexpected layout yields the whole name and cannot be mistaken
+   for an id.
+2. `if (length(existing_tracks) > 0 && all(existing_trip_ids == existing_tracks))
+   stop(...)` — every listed object failing to yield an id is never a legitimate
+   state.
+
+Timor hit this in Phase 7 and worked around it by converting its object family
+in place (`data-raw/convert-pds-tracks.R`), not by patching coasts.
+
+### C19. Track objects are the only unversioned Peskas artefact
+
+`ingest_pds_tracks()` writes `sprintf("%s_%s.parquet", prefix, trip_id)` with no
+`add_version()`, so a re-ingest of a trip overwrites in place and there is no
+history. Defensible — a finished GPS trip is immutable — but it is the one
+exception to the `<prefix>__<timestamp>_<sha>__.<ext>` convention every other
+object follows, and it means `cloud_object_name(version = "latest")` cannot be
+used on the tracks bucket at all. Worth one line of roxygen.
+
+### C20. `preprocess_pds_tracks()`'s first run reads the whole history at once
+
+`furrr::future_map_dfr()` over every track object in the bucket, bound into one
+in-memory frame before the first write. Incremental afterwards, but the first
+run for a country with a long history is unbounded: Timor has 102k tracks
+against Mozambique's much shorter deployment. A `batch_size` argument like
+`ingest_pds_tracks()` already has — process, write, repeat — would make the
+first run survivable on a 7 GB CI runner.
+
+### Not a bug: `Traders` is claimable per country
+
+coasts' own `pds.customers` deliberately excludes `Traders` and
+`FSSP2: Traders` because they carry `Asia/Kuala_Lumpur` devices that would widen
+the filter for every country (COASTS-4.6.0, C7). A **country** config can list
+them safely — its own API token only returns its own devices — and for Timor
+they are worth 12 IMEIs, 1,412 trips and 20,777 tracked hours. Timor lists all
+three.

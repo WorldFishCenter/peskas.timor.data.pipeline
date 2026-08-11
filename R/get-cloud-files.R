@@ -129,7 +129,7 @@ get_validated_landings <- function(log_threshold = logger::DEBUG) {
 # Download validated PDS trips.
 get_validated_pds_trips <- function(conf) {
   download_versioned_rds(
-    prefix = paste(conf$pds$trips$file_prefix, "validated", sep = "_"),
+    prefix = paste(conf$pds$pds_trips$file_prefix, "validated", sep = "_"),
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country"),
     extension = ""
@@ -277,11 +277,11 @@ get_sync_tracks <- function(conf) {
 
   logger::log_info("Checking sync status...")
   updated_trips <-
-    get_preprocessed_trips(conf) %>%
+    get_pds_trips(conf) %>%
     magrittr::extract2("Trip") %>%
     unique()
   # remove after loading to save memory
-  file.remove(list.files(pattern = "pds-trips-preprocessed__"))
+  file.remove(list.files(pattern = "pds-trips__"))
 
 
   check_trips <-
@@ -298,13 +298,12 @@ get_sync_tracks <- function(conf) {
       dplyr::filter(.data$Trip %in% new_trips)
 
     get_track <- function(x) {
-      track <-
-        coasts::download_cloud_file(
-          name = x,
-          provider = conf$pds_storage$google$key,
-          options = coasts::resolve_storage_opts(conf, "pds")
-        )
-      readr::read_csv(track, show_col_types = FALSE)[+c(3:5)]
+      coasts::download_cloud_file(
+        name = x,
+        provider = conf$pds_storage$google$key,
+        options = coasts::resolve_storage_opts(conf, "pds")
+      ) %>%
+        arrow::read_parquet(col_select = c("Trip", "Lat", "Lng"))
     }
 
     logger::log_info("Donwloading and binding the new tracks...")
@@ -389,20 +388,33 @@ get_tracks_map <- function(conf) {
 
 #' Get pds IDs
 #'
-#' Get the list of pds-tracks IDs stored in the pds bucket
+#' Enumerates the PDS bucket and returns each track object name with the trip id
+#' it belongs to.
+#'
+#' Until migration Phase 7 this read a cached `pds-track-list__*.rds` written by
+#' Timor's own `ingest_pds_tracks()`. `coasts::ingest_pds_tracks()` writes no
+#' such cache, and a cache of a bucket listing is a staleness trap for no gain —
+#' this is the listing the cache was a copy of.
 #'
 #' @param conf the configuration file.
 #'
+#' @return A tibble: `name`, `Trip`.
 #' @keywords storage
 #' @export
 #'
 get_tracks_ids <- function(conf) {
-  download_versioned_rds(
-    prefix = conf$pds$tracks$bucket_content$file_prefix,
-    provider = conf$storage$google$key,
-    options = coasts::resolve_storage_opts(conf, "country"),
-    extension = ""
-  )
+  tibble::tibble(
+    name = coasts::cloud_object_names(
+      prefix = conf$pds$pds_tracks$file_prefix,
+      provider = conf$pds_storage$google$key,
+      options = coasts::resolve_storage_opts(conf, "pds"),
+      extension = "parquet"
+    )
+  ) %>%
+    dplyr::mutate(Trip = as.integer(stringr::str_extract(
+      .data$name,
+      "[[:digit:]]+"
+    )))
 }
 
 #' Get the validation flags snapshot

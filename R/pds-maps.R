@@ -1,226 +1,25 @@
-#' Ingest Pelagic Data System trips data
+#' PDS-derived map products
 #'
-#' Downloads Pelagic Data System (pds) trips information and uploads it to cloud
-#' storage services.
+#' Everything in this file is Timor-only and downstream of PDS, not PDS
+#' ingestion: migration Phase 7 deleted `ingest_pds_trips()`,
+#' `ingest_pds_tracks()` and `preprocess_pds_trips()` in favour of
+#' `coasts::ingest_pds_trips()`, `coasts::ingest_pds_tracks()` and
+#' `coasts::preprocess_pds_tracks()`, which is how Mozambique, Kenya and
+#' Zanzibar have always done it — none of them carries any PDS code.
 #'
-#' This function downloads trips information from Pelagic Data System devices.
-#' Afterwards it uploads this information to cloud services. File names used
-#' contain a versioning string that includes the date-time and, if available,
-#' the first 7 digits of the git commit sha. This is acomplished
-#' using [add_version()]
+#' What is left are the two map products the portal path reads
+#' (`indicators_gridded`, `tracks-map`) plus the Kepler map and the taxa-name
+#' lookup they share with `format_public_data()`. Neither map function is wired
+#' into a workflow: `indicators_gridded.rds` was last written 2024-07-27 and
+#' `tracks-map.png` 2021-12-11, and `portal-indicators_grid.json` — regenerated
+#' from that stale rds on every run — is one of the objects the portal
+#' excludes. They are retained rather than ported to coasts' H3 output because
+#' `export_files()` still reads both; the decision belongs to Phase 8's portal
+#' gate.
 #'
-#' The parameters needed in `conf.yml` are:
-#'
-#' ```
-#' pds:
-#'   trips:
-#'     token:
-#'     secret:
-#'     file_prefix:
-#' pds_storage:
-#'   storage_name:
-#'     key:
-#'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
-#' ```
-#'
-#' Progress through the function is tracked using the package *logger*.
-#'
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @keywords workflow
-#'
-#' @return No output. This funcrion is used for it's side effects
-#' @export
-#'
-ingest_pds_trips <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
+#' @name pds-maps
+NULL
 
-  conf <- read_config()
-
-  file_list <- retrieve_pds_trips(
-    prefix = conf$pds$trips$file_prefix,
-    secret = conf$pds$trips$secret,
-    token = conf$pds$trips$token
-  )
-
-  logger::log_info("Uploading files to cloud...")
-  coasts::upload_cloud_file(
-    file = file_list,
-    provider = conf$storage$google$key,
-    options = conf$storage$google$options
-  )
-
-  logger::log_success("File upload succeded")
-}
-
-#' Ingest Pelagic Data System tracks data
-#'
-#' Downloads Pelagic Data System (pds) trips information and uploads it to cloud
-#' storage services.
-#'
-#' The function  downloads and uploads only tracks data that are not yet
-#' stored in the bucket.
-#'
-#' The parameters needed in `conf.yml` are:
-#'
-#' ```
-#' pds:
-#'   tracks:
-#'     token:
-#'     secret:
-#'     file_prefix:
-#' pds_storage:
-#'   storage_name:
-#'     key:
-#'     options:
-#'       project:
-#'       bucket:
-#'       service_account_key:
-#' ```
-#'
-#' Progress through the function is tracked using the package *logger*.
-#'
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels] for more
-#'   details
-#'
-#' @keywords workflow
-#'
-#' @return No output. This funcrion is used for it's side effects
-#' @export
-#' @importFrom rlang .data
-#'
-ingest_pds_tracks <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-
-  conf <- read_config()
-
-  pds_trips_csv <-
-    coasts::cloud_object_name(
-      prefix = conf$pds$trips$file_prefix,
-      provider = conf$storage$google$key,
-      extension = "csv",
-      options = conf$storage$google$options
-    )
-  logger::log_info("Retrieving {pds_trips_csv}")
-  # get trips data frame
-  pds_trips_mat <- coasts::download_cloud_file(
-    name = pds_trips_csv,
-    provider = conf$storage$google$key,
-    options = conf$storage$google$options
-  )
-
-  # extract unique trip identifiers
-  trips_ID <- readr::read_csv(
-    pds_trips_mat,
-    col_types = readr::cols_only(Trip = readr::col_character())
-  ) %>%
-    magrittr::extract2("Trip") %>%
-    unique()
-
-  if (isTRUE(conf$pds$tracks$compress)) {
-    ext <- "csv.gz"
-  } else {
-    ext <- "csv"
-  }
-
-  # List the track ids already in the bucket. This is a *bucket enumeration*,
-  # not a versioned-object lookup: every track lives under its own base name
-  # (`pds-track-<trip_id>`), so ~96k names have to come back. Timor's deleted
-  # `cloud_object_name()` returned the whole vector, but
-  # `coasts::cloud_object_name()` returns only the first match, so it cannot be
-  # used here — a single name would make `tracks_to_download` the entire trip
-  # list and re-fetch every track from the PDS API. Enumerate the bucket
-  # directly, exactly as the tail of this same function already does for
-  # `tracks_names`.
-  coasts::cloud_storage_authenticate(
-    provider = conf$pds_storage$google$key,
-    options = conf$pds_storage$google$options
-  )
-  file_list_id <-
-    googleCloudStorageR::gcs_list_objects(
-      bucket = conf$pds_storage$google$options$bucket,
-      prefix = conf$pds$tracks$file_prefix
-    ) %>%
-    dplyr::filter(stringr::str_detect(.data$name, paste0("\\.", ext, "$"))) %>%
-    dplyr::pull(.data$name) %>%
-    stringr::str_extract("[[:digit:]]+") %>%
-    as.character()
-
-  process_track <- function(id, conf) {
-    path <- paste0(conf$pds$tracks$file_prefix, "-", id) %>%
-      add_version(extension = "csv")
-    on.exit(file.remove(path))
-
-    retrieve_pds_tracks_data(
-      path,
-      secret = conf$pds$trips$secret,
-      token = conf$pds$trips$token,
-      id = id
-    )
-
-    if (isTRUE(conf$pds$tracks$compress)) {
-      logger::log_info("Compressing file...")
-      csv_path <- path
-      path <- paste0(path, ".gz")
-      readr::read_csv(
-        csv_path,
-        col_types = readr::cols(.default = readr::col_character())
-      ) %>%
-        readr::write_csv(path)
-      on.exit(file.remove(csv_path, path))
-    }
-
-    logger::log_info("Uploading {path} to cloud...")
-    # Retry each file individually rather than the batch as a whole
-    purrr::walk(
-      .x = path,
-      .f = ~ coasts::insistent_upload_cloud_file(
-        file = .,
-        provider = conf$pds_storage$google$key,
-        options = conf$pds_storage$google$options
-      )
-    )
-    logger::log_success("File upload succeded")
-  }
-
-  tracks_to_download <- trips_ID[!(trips_ID %in% file_list_id)]
-  if (isTRUE(conf$pds$tracks$multisession$parallel)) {
-    future::plan(future::multisession)
-  }
-  furrr::future_walk(tracks_to_download, process_track, conf, .progress = TRUE)
-
-  # Store names of pds-tracks (useful for map generation)
-  tracks_names <-
-    googleCloudStorageR::gcs_list_objects(
-      conf$pds_storage$google$options$bucket
-    ) %>%
-    dplyr::select(.data$name) %>%
-    dplyr::mutate(Trip = stringr::str_extract(.data$name, "[[:digit:]]+"))
-
-  tracks_names_filename <-
-    conf$pds$tracks$bucket_content$file_prefix %>%
-    add_version(extension = "rds")
-
-  readr::write_rds(
-    x = tracks_names,
-    file = tracks_names_filename
-  )
-
-  logger::log_info("Uploading {tracks_names_filename} to cloud sorage")
-  coasts::upload_cloud_file(
-    file = tracks_names_filename,
-    provider = conf$storage$google$key,
-    options = conf$storage$google$options
-  )
-}
 
 
 

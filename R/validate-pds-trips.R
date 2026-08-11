@@ -1,12 +1,15 @@
 #' Validate Pelagic Data System trips
 #'
-#' Downloads the preprocessed version of pds trips and pds tracks disgnostics
-#' from cloud storage services and validates a range of information so that it
-#' can be safely used for analysis.
+#' Reads the trips parquet written by `coasts::ingest_pds_trips()` and the
+#' per-trip descriptors written by [describe_pds_tracks()], merges trips that
+#' are really one, and flags anomalous duration, distance and signal quality.
 #'
-#' The parameters needed in the config file are those required for
-#' `preprocess_pds_trips()`, as well as parameters needed to identify anomalous
-#' trips.
+#' Kept as a Timor function in migration Phase 7 — `coasts` has no
+#' consecutive-trip merging and no distance or outlier logic — and listed as an
+#' upstream candidate for Phase 10.
+#'
+#' The parameters needed in the config file are `pds.pds_trips.*`,
+#' `pds.pds_tracks.descriptors.*` and the `validation.pds_trips` coefficients.
 #'
 #' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
@@ -17,8 +20,8 @@
 validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
   conf <- read_config()
-  pds_trips <- get_preprocessed_trips(conf)
-  pds_tracks <- get_preprocessed_tracks(conf)
+  pds_trips <- get_pds_trips(conf)
+  pds_tracks <- get_track_descriptors(conf)
 
 
   # call validation coefficients
@@ -93,7 +96,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
       tracker_trip_distance = .data$`Distance (Meters)`
     )
 
-  validated_trips_filename <- paste(conf$pds$trips$file_prefix,
+  validated_trips_filename <- paste(conf$pds$pds_trips$file_prefix,
     "validated",
     sep = "_"
   ) %>%
@@ -142,7 +145,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' @examples
 #' \dontrun{
 #' conf <- read_config()
-#' pds_trips <- get_preprocessed_trips()
+#' pds_trips <- get_pds_trips(conf)
 #' validate_pds(pds_trips)
 #' }
 #'
@@ -203,21 +206,36 @@ validate_pds_data <- function(data,
   validated_pds_list
 }
 
-get_preprocessed_trips <- function(conf) {
-  pds_trips_rds <- coasts::cloud_object_name(
-    prefix = paste(conf$pds$trips$file_prefix, "preprocessed", sep = "_"),
+# The typed, Dili-local view of the trips parquet `coasts::ingest_pds_trips()`
+# writes. There is no preprocessed trips artefact any more — Phase 7 deleted
+# `preprocess_pds_trips()`, which existed only to apply exactly this — and the
+# WIO pipelines have never had one.
+#
+# The coercions are not cosmetic. `coasts::get_trips()` leaves the API's CSV to
+# readr's guesser, which returns `IMEI` as a double, and `tracker_imei` is the
+# character key `merge_trips()` joins landings to trips on. `Trip` and `Boat`
+# come back as doubles for the same reason. This is what the
+# `col_types = "iTTicccdddccc"` spec used to pin.
+get_pds_trips <- function(conf) {
+  coasts::download_parquet_from_cloud(
+    prefix = conf$pds$pds_trips$file_prefix,
     provider = conf$storage$google$key,
-    extension = "rds",
-    version = conf$pds$trips$version$preprocess,
-    options = conf$storage$google$options
-  )
-  logger::log_info("Downloading {pds_trips_rds}...")
-  coasts::download_cloud_file(
-    name = pds_trips_rds,
-    provider = conf$storage$google$key,
-    options = conf$storage$google$options
-  )
-  readr::read_rds(file = pds_trips_rds)
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$pds$pds_trips$version
+  ) %>%
+    dplyr::mutate(
+      Trip = as.integer(.data$Trip),
+      Boat = as.integer(.data$Boat),
+      IMEI = as.character(.data$IMEI),
+      `Boat Gear` = as.character(.data$`Boat Gear`),
+      Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
+      Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
+      `Last Seen` = lubridate::as_datetime(
+        .data$`Last Seen`,
+        format = "%a %b %d %X UTC %Y",
+        tz = "UTC"
+      )
+    )
 }
 
 

@@ -116,9 +116,8 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
   matched_pds_landings <- dplyr::bind_rows(trips_catches, trips_no_catches)
 
   tracks_list <-
-    googleCloudStorageR::gcs_list_objects(conf$pds_storage$google$options$bucket) %>%
-    dplyr::mutate(trip = stringr::str_extract_all(.data$name, "(?<=pds-track-).+(?=__20)", simplify = T)) %>%
-    dplyr::filter(.data$trip %in% matched_pds_landings$tracker_trip_id) %>%
+    get_tracks_ids(conf) %>%
+    dplyr::filter(.data$Trip %in% matched_pds_landings$tracker_trip_id) %>%
     magrittr::extract2("name")
 
   logger::log_info("Downloading matched pds tracks")
@@ -127,9 +126,9 @@ ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {
       tracks_list,
       coasts::download_cloud_file,
       conf$pds_storage$google$key,
-      conf$pds_storage$google$options
+      coasts::resolve_storage_opts(conf, "pds")
     ) %>%
-    readr::read_csv() %>%
+    purrr::map(arrow::read_parquet) %>%
     dplyr::bind_rows()
 
   logger::log_info("Generating low resolution tracks")

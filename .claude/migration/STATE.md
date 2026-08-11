@@ -6,7 +6,8 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 6 **complete** (2026-08-11). Phase 7 (PDS) not started.
+- **Phase:** 7 **complete** (2026-08-11). Phase 8 (country modules + portal
+  parity) not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
@@ -20,14 +21,17 @@ Append one entry per completed phase, newest at the bottom.
   **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
   written to `peskas-api-prod`, though the service account can. `coasts` is
   unpinned; locally installed release is **4.6.0**.
-- **Read before Phase 7:** the Phase 6 entry's "Findings that change later
-  phases", and COASTS-TODO **C17** — `summarize_data()` reads `asfis` and the
-  PDS grid summaries from the country bucket, where Timor has neither, which is
-  what stops it running end to end. Also note that `devtools::load_all()` reaches
-  neither `coasts::read_config(package = )` nor `furrr`/`future` workers — test
-  either with `devtools::install()` + `library()`; and that the four tinytest
-  suites need `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call,
-  because tinytest runs them from inside the installed library.
+- **Read before Phase 8:** the Phase 7 entry's "Findings that change later
+  phases" — in particular that the PDS path now has **no Timor ingestion code**,
+  that `coasts::preprocess_pds_tracks()` is deliberately not wired in yet
+  (COASTS-TODO **C20**), and that running it is what would close half of **C17**
+  for Timor. Also note that `devtools::load_all()` reaches neither
+  `coasts::read_config(package = )` nor `furrr`/`future` workers — test either
+  with `devtools::install()` + `library()`; that the four tinytest suites need
+  `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call, because
+  tinytest runs them from inside the installed library; and that
+  `add_version()` only stamps a git sha when the working directory is inside the
+  repo, so scripts run from `/tmp` produce `<prefix>__<timestamp>__.<ext>`.
 - ~~**Action for the user, to close Phase 5:** the
   `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret~~ — **done 2026-08-10**,
   and exercised in CI by run 31436031588. `KOBO_TOKEN` is **not** needed — the
@@ -41,11 +45,20 @@ Append one entry per completed phase, newest at the bottom.
   blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
   values are in the logs of every past `data-pipeline.yaml` run. Rotating them
   and purging old run logs is recommended and has **not** been done.
-- **Action for the user, before Phase 11 cutover:** run
-  `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The frozen
-  v1 snapshot `merge_landings()` depends on exists in `timor-dev` only, and it
-  now also carries the Phase 5 correction to submission `16182387`'s
-  landing date.
+- **Action for the user, before Phase 11 cutover — now two one-off scripts:**
+  1. `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The
+     frozen v1 snapshot `merge_landings()` depends on exists in `timor-dev`
+     only, and it now also carries the Phase 5 correction to submission
+     `16182387`'s landing date.
+  2. `R_CONFIG_ACTIVE=production Rscript data-raw/convert-pds-tracks.R`.
+     Converts `pds-timor`'s ~98k `pds-track-<id>__*__.csv.gz` to the
+     cross-country `pds-tracks_<id>.parquet`. **Until it runs, the first
+     production run of the Phase 7 code re-fetches every track from the PDS
+     API.** Takes ~2 h at 56 workers; resumable; no PDS API traffic.
+- **Action for the user, data:** 27 IMEIs that produce trips are in no
+  `pds_devices` row of PESKAS | FRAME, so `coasts::ingest_pds_trips()` drops
+  2,791 trips and 59 landing↔trip matches. The list is in the Phase 7 entry.
+  Adding them to Airtable recovers the data with no code change.
 - ~~Phase 3 prerequisite: `KOBO_ASSET_ID_V1/2/3` in the workflow `env:`
   block~~ — done in Phase 3.
 - ~~**Blocking sub-decision:** validation flags sink~~ — resolved 2026-08-10,
@@ -2637,3 +2650,267 @@ only thing that makes that recoverable.
    part of it?
 3. Whether the shared validation app can hold a per-country alert dictionary
    (carried over from Phase 5).
+
+---
+
+## Phase 7 — PDS switch — 2026-08-11
+
+Branch: `feat/align-coasts-phase7` (off `feat/align-coasts-phase6` at `8729ad2`)
+
+**Done**
+
+*1. Timor carries no PDS ingestion or preprocessing code any more*
+
+The phase was started on a narrower reading — keep Timor's functions, move only
+the HTTP client to `coasts::get_trips()` / `coasts::get_trip_points()` — and the
+user corrected it: Mozambique, Kenya and Zanzibar have **no `R/*pds*` files at
+all**. All three call
+
+```
+coasts::ingest_pds_trips(package = "<pkg>")
+coasts::ingest_pds_tracks(package = "<pkg>")
+coasts::preprocess_pds_tracks(package = "<pkg>")
+```
+
+from their workflow YAML, and everything else is config. Timor now does the same
+for the first two. Deleted: `R/ingest-pds-data.R`'s `ingest_pds_trips()` /
+`ingest_pds_tracks()`, all of `R/retrieve-pds-data.R`, and
+`preprocess_pds_trips()`.
+
+*2. What could not be delegated, because coasts has no equivalent*
+
+`coasts::preprocess_pds_tracks()` and Timor's `preprocess_pds_tracks()` share a
+name and nothing else. coasts aggregates track points into 500 m and 1 km
+**spatial grid cells** for the shared effort products. `validate_pds_trips()`
+needs **per-trip descriptors** — `start_end_distance` (alert 12),
+`outliers_proportion` + `timetrace_dispersion` (alert 13) and the four start/end
+coordinates `merge_consecutive_trips()` compares. So Timor's version was renamed
+`describe_pds_tracks()` in `R/pds-tracks.R`, writing
+`pds-tracks-descriptors__*.parquet`, and the two run side by side rather than one
+replacing the other. `validate_pds_trips()`, `merge_consecutive_trips()` and
+`get_distance()` are unchanged bar their inputs; they remain the Phase 10
+upstream candidate.
+
+*3. The track object family was renamed and converted in place, not re-fetched*
+
+This is the load-bearing decision of the phase. coasts writes a track as
+`pds-tracks_<trip_id>.parquet` and recovers what it already has with
+
+```r
+gsub(".*_([0-9]+)\\.parquet$", "\\1", filenames)
+```
+
+Measured against `pds-timor-dev`: **0 of 99,219** objects recognised, so a
+straight delegation would have read the bucket as empty and re-fetched
+**98,472** tracks from the PDS API — then done it again in production. Filed as
+COASTS-TODO **C18**, with the two-line fix.
+
+`data-raw/convert-pds-tracks.R` converts instead: one GCS read and one GCS write
+per object, **no PDS API traffic**, `.csv.gz` → parquet with readr's guessed
+types so a converted track is indistinguishable from a freshly ingested one. It
+is resumable (skips targets that exist) and it also seeds
+`pds-tracks-descriptors` from the old `pds-track_preprocessed__*.rds`, so the
+descriptors step stays incremental instead of re-reading 100k tracks.
+
+*4. `preprocess_pds_trips()` deleted, not ported*
+
+It existed only to apply `col_types = "iTTicccdddccc"` and move `Started` /
+`Ended` to `Asia/Dili`. The WIO pipelines have no such stage, so that logic is
+now `get_pds_trips()`, an internal reader over the raw parquet used by
+`validate_pds_trips()`, `describe_pds_tracks()` and `get_sync_tracks()`. One
+fewer artefact, one fewer workflow step. The coercions are **not** cosmetic:
+`coasts::get_trips()` leaves the API's CSV to readr's guesser, which returns
+`IMEI` as a double, and `tracker_imei` is the character key `merge_trips()`
+joins landings to trips on.
+
+*5. `conf$pds$customers` — the frame is now authoritative for PDS devices*
+
+`MAF / WorldFish`, `Traders`, `FSSP2: Traders`. coasts' own list excludes the
+two `Traders` customers because they carry `Asia/Kuala_Lumpur` devices that
+would widen the filter for every country; a **country** config can list them
+safely, since its token only returns its own devices, and for Timor they are
+worth 12 IMEIs.
+
+*6. The compatibility shim PLAN called the main risk was not needed*
+
+`ingest_pds_map()` and `ingest_kepler_tracks()` are retained Timor-only and
+untouched, now in `R/pds-maps.R` (what was left of `ingest-pds-data.R`).
+Verified against `public-timor-dev`: `get_file("indicators_gridded")` still
+resolves — 65 versions, latest 2023-05-21, 1,450 × 15 — and
+`label_taxa_groups()` still yields the seven portal groups;
+`get_tracks_map()` still returns `tracks-map.png` (572 Kb). Neither function is
+in a workflow, so neither regenerates, which is exactly why AUDIT §7.3 predicted
+the shim was unnecessary. Phase 8's portal gate is unaffected by this phase.
+
+**The device filter — measured from both sides, and it costs something**
+
+`coasts::ingest_pds_trips()` narrows the API response to the frame's
+`pds_devices`. There is no way to opt out, and adopting it is the point: the
+frame becomes authoritative for devices the way it already is for taxa, gears,
+vessels and sites. Measured 2026-08-11 against the 449 IMEIs Timor's token
+returns over 2018-01-01 → today (98,472 trips, 561,482 tracked hours):
+
+| `pds.customers` | IMEIs covered | trips kept | hours kept |
+|---|---|---|---|
+| `MAF / WorldFish` only (coasts' own list) | 410 | 94,269 (95.73%) | 526,186 (93.71%) |
+| **+ `Traders` + `FSSP2: Traders`** | **422** | **95,681 (97.17%)** | **546,963 (97.41%)** |
+
+The 27 IMEIs the full list still misses are in **no** frame customer at all —
+they are gaps in PESKAS | FRAME, not a filtering decision — and they carry 2,791
+trips, 14,519 tracked hours and **59 of the 6,999 landing↔trip matches**:
+
+```
+861508039417373 861508039407614 861508039409198 861508039394036 861508039419718
+861508039422654 861508039404132 861508039326459 861508039407671 861508039403019
+861508039416433 861508039388988 861508039396809 861508039410105 861508039411970
+861508039400395 861508039415948 861508039416276 861508039416201 861508039410238
+861508039402961 861508039399522 861508039399498 861508039394440 861508039390158
+861508039376082 861508039376983
+```
+
+They are ordinary Timorese vessels — `Baucau-T04`, `Mario Fernandes`, boats out
+of Com, Beacou, Beto Tasi, Vemasse, Ililai. Adding them to Airtable recovers the
+data on the next run, with no code change. **User action.**
+
+The **survey**-side `devices` table stays on Google Sheets, and this is the same
+gap seen from the other end. Re-measured this session rather than taken from
+Phase 5: the frame's 442 Timor devices are a **strict subset** of the Sheets' 595
+(0 frame IMEIs are absent from the Sheets), so switching `validate_imeis()` to
+the frame takes alert 3 from **824 to 1,475** submissions, strips the resolved
+`tracker_imei` from **651** of them, and loses the same **59** matches. Nothing
+is gained. `metadata.google_sheets.tables.devices` therefore keeps its `[phase 5]`
+annotation and its reason, now with a second measurement behind it.
+
+**The wider fetch window comes with the standard, and it is additive**
+
+coasts fetches from `"2018-01-01"`; Timor's own client used `"2018-07-01"`
+(COASTS-TODO C12). Proven equivalent before switching: over the *old* window the
+two paths return **94,318 identical trips** — 0 mismatches on duration, start,
+end or IMEI — and coasts' extra **4,154 trips are all 2018 H1**, worth 14,917
+tracked hours. So the trip-count change is the window, not the client. The
+config key `pds.pds_trips.date_from` that an earlier draft of this phase added
+was dropped again: coasts owns the window, and inventing a key it does not read
+would be worse than the literal.
+
+**Verified**
+
+*The conversion is lossless where it matters.* 25 trips sampled at random from
+the 97,052 rows of the old `pds-track_preprocessed__*.rds` — descriptors computed
+from the `.csv.gz` — and recomputed by the new `get_tracks_descriptors()` from
+the converted parquet:
+
+| column | `all.equal` | max abs diff |
+|---|---|---|
+| `Boat`, `outliers_proportion`, `start_lat`, `start_lng`, `end_lat`, `end_lng` | TRUE | **0** |
+| `start_end_distance` | TRUE | 3.5e-10 m |
+| `timetrace_dispersion` | TRUE | 1.1e-13 s |
+
+The two non-zero rows are the floating-point floor of `geosphere::distGeo()` and
+`stats::sd()` over doubles that round-tripped through parquet rather than CSV
+text. Nothing an alert threshold can see.
+
+*The client is the same client.* Before switching, `coasts::get_trips()` was run
+against Timor's token over Timor's own window and diffed against the stored
+`pds-trips__20260811051528_8729ad2__.csv`: **94,318 shared trips, 0 mismatches**
+on `Duration (Seconds)`, `Started`, `Ended` or `IMEI`. Same endpoint, same
+`deviceInfo`/`withLastSeen` parameters; coasts adds `httr2::req_retry()` and
+splits an over-long `imeis` filter, neither of which Timor exercises.
+
+*The already-present logic, before any push.* This is the check the phase
+turned on. Against `pds-timor-dev`:
+
+| | tracks the code considers present | tracks it would fetch |
+|---|---|---|
+| `coasts::ingest_pds_tracks()` on the old family | **0** of 99,219 | **98,472** |
+| after `data-raw/convert-pds-tracks.R` | 101,960 | see below |
+
+**Deviations from the brief**
+
+- **The brief's scope was widened after review.** It asked to keep
+  `validate_pds_trips()` and replace the other three files with `coasts::*`
+  "driven by `conf$pds`", which the session first read conservatively — keep
+  Timor's ingestion functions, delegate only the HTTP client, keep the object
+  family. The user pointed out that Mozambique, Kenya and Zanzibar carry **no
+  PDS code at all**, which is the actual standard, and the phase was redone
+  against that shape.
+- **`coasts::preprocess_pds_tracks()` is not wired into the workflow**, unlike
+  the other three countries. Not an oversight and not a coasts bug: it reads
+  *every* track in the bucket on its first pass, with
+  `parallel::detectCores() - 1` workers — **one** on a 2-core GitHub runner.
+  Measured this session: 40 sampled tracks average 941 points and 13.9 grid
+  rows, so Timor's full pass is ~1.4 M rows and ~0.8 GB, comfortably inside a
+  runner's memory but ~4 h of downloads at 13 workers locally and far beyond a
+  job's budget at one. Filed as COASTS-TODO **C20** (`batch_size`, as
+  `ingest_pds_tracks()` already has). Its output has no reader in Timor yet
+  anyway — `summarize_data()` is still blocked on C17 — so it belongs with
+  Phase 8, which is where the grid summaries first get one. Note that running it
+  *would* close half of C17: coasts writes `pds-tracks-grid_summaries` to the
+  country bucket, which is exactly where `summarize_data(package = ...)` looks.
+- **`pds-trips_validated__*` stays `.rds`.** `merge_trips()` and
+  `test_validated_pds_trips.R` read it and its format flips with the merge path
+  in Phase 8; converting it here would have added a variable to a phase that
+  already renames an object family.
+- **`ingest_complete_tracks()`, `get_full_tracks()`, `get_full_trips()` and
+  `get_sync_tracks()` were repointed rather than deleted.** They serve
+  `ingest_pds_map()` only, which no workflow calls, and `pds-track-complete__*`
+  was last written 2024-07-01. Dead-code removal is Phase 11; leaving them
+  reading a file format that no longer exists was not an option, so they read
+  parquet now.
+
+**Deferred, with reasons**
+
+- **`data-raw/convert-pds-tracks.R` has not been run against `production`.**
+  `pds-timor` holds ~98k objects of the old family and the prod pipeline will
+  re-fetch every one of them from the PDS API on its first Phase 7 run unless
+  the script runs first. This now joins the v1 freeze on the pre-cutover list —
+  **both are user actions, both are one-off, both are per-environment.**
+- The 27 frame IMEIs, above. Until they are added, prod loses the same 2,791
+  trips dev does.
+- `coasts::preprocess_pds_tracks()` and the grid summaries, above.
+- COASTS-TODO C18/C19/C20 are worked around Timor-side, not fixed upstream.
+  They join the Phase 10 candidates.
+- `sync_validation_status()` still not wired; the production v1 freeze still
+  un-run; `ANTHROPIC_API_KEY` and the Phase 3 secrets rotation still open.
+
+**Findings that change later phases**
+
+1. **Phase 8 inherits a PDS path with no Timor ingestion code**, so the portal
+   decision is now purely about products: `indicators_gridded` and `tracks-map`
+   come from `ingest_pds_map()`, which nothing schedules, while coasts' H3
+   effort products are one wired-in workflow step away. That is the choice, and
+   it is cleaner than it was.
+2. **Listing the PDS bucket costs minutes, not seconds** — ~100k objects at
+   1,000 per request, 3–35 min depending on the API. Three functions do it
+   (`describe_pds_tracks()`, `get_tracks_ids()`, and coasts'
+   `ingest_pds_tracks()`), so a full PDS job now spends a noticeable share of
+   its wall clock listing.
+3. **Track objects are unversioned** (COASTS-TODO C19) — the only Peskas
+   artefact that is. Anything that assumes `<prefix>__<ts>_<sha>__` parsing on
+   the PDS bucket will break.
+4. **The frame's device list is the weakest link in the harmonization.** It is
+   simultaneously too small for the PDS filter (27 missing IMEIs) and too small
+   for the survey-side IMEI resolution (153 missing against the Sheets). Every
+   other frame table has been authoritative since Phase 3 or 4; this one is not
+   ready, and two separate measurements now say so.
+
+**Files added / removed / renamed**
+
+- added: `data-raw/convert-pds-tracks.R`, `man/describe_pds_tracks.Rd`,
+  `man/pds-maps.Rd`
+- removed: `R/retrieve-pds-data.R` and its four `man/retrieve_pds_*.Rd`;
+  `man/{ingest_pds_trips,ingest_pds_tracks,preprocess_pds_trips,preprocess_pds_tracks}.Rd`
+- renamed: `R/ingest-pds-data.R` → **`R/pds-maps.R`** (ingestion deleted, maps
+  kept), `R/preprocess-pds-trips.R` → **`R/pds-tracks.R`**
+  (`preprocess_pds_tracks()` → `describe_pds_tracks()`,
+  `get_preprocessed_tracks()` → `get_track_descriptors()`)
+- modified: `R/validate-pds-trips.R` (`get_preprocessed_trips()` →
+  `get_pds_trips()`), `R/get-cloud-files.R` (`get_tracks_ids()` enumerates,
+  `get_sync_tracks()` reads parquet), `R/merge-trips.R`
+  (`ingest_pds_matched_trips()` reads parquet), `inst/config.yml`
+  (`pds.customers`, `pds.pds_tracks.{file_prefix,descriptors}`, legacy
+  annotations), `.github/workflows/data-pipeline.yaml`, `DESCRIPTION`
+  (`googleCloudStorageR` dropped — no direct caller left), `NAMESPACE`,
+  `CLAUDE.md`, `.claude/migration/{PLAN,COASTS-TODO,STATE}.md`
+- **unchanged: `R/api.R`, `R/format-public-data.R`, `R/export.R`,
+  `R/estimate-catch.R`, `R/model-catch.R`, `_pkgdown.yml`, and all four tinytest
+  suites.**

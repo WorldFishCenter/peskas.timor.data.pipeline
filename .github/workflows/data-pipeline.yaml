@@ -174,9 +174,9 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
+        run: Rscript -e 'coasts::ingest_pds_trips(package = "peskas.timor.data.pipeline")'
       - name: Call ingest_pds_tracks()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
+        run: Rscript -e 'coasts::ingest_pds_tracks(package = "peskas.timor.data.pipeline")'
 
   preprocess-pds-data:
     name: Preprocess pds data
@@ -191,10 +191,17 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
-      - name: Call preprocess_pds_tracks()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_tracks()'
+      # `coasts::preprocess_pds_tracks()` — the spatial grid summaries the other
+      # three countries also run here — is deliberately not wired in yet. It
+      # reads *every* track in the bucket on its first pass with
+      # `parallel::detectCores() - 1` workers, which is **one** on a 2-core
+      # runner; measured 2026-08-11, Timor's 102k tracks would take ~4 h at 13
+      # workers locally, so a CI job cannot complete the first pass. Memory is
+      # not the problem (1.4 M grid rows, ~0.8 GB). See COASTS-TODO C20; the
+      # first pass belongs with Phase 8's portal decision, which is also where
+      # the grid summaries first get a reader.
+      - name: Call describe_pds_tracks()
+        run: Rscript -e 'peskas.timor.data.pipeline::describe_pds_tracks()'
 
   validate-pds-data:
     name: Validate pds data
