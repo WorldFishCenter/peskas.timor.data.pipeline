@@ -504,5 +504,8 @@ function is exercised just because a workflow references it.
   passes basenames as `name` and normalises correctly — verified in Phase 2. The
   45 leaked absolute-path objects in `public-timor` date from January 2026 and
   are historical residue, not a live bug. Deleting them is Phase 11.
+  **Found in Phase 7, open upstream:** `coasts::read_config()` logs the whole
+  resolved config at DEBUG (COASTS-TODO C21) — worked around at every
+  `coasts::` call site in the workflow with `log_threshold = logger::INFO`.
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.

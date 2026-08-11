@@ -12,15 +12,21 @@ Append one entry per completed phase, newest at the bottom.
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
   Phase 5 = `75985a8` (+ `992bc6d` docs).
-  Phase 6 = **`ec0b7e5`** (+ `a16d60e` docs) on `feat/align-coasts-phase6`,
-  **pushed**. Two green end-to-end CI runs: **31436031588** on the Phase 5 code
+  Phase 6 = `ec0b7e5` (+ `a16d60e` docs) on `feat/align-coasts-phase6`.
+  Phase 7 = **`76b7f71`** (+ `03a1d0f` the C21 leak fix) on
+  `feat/align-coasts-phase7`. Two green end-to-end CI runs: **31436031588** on the Phase 5 code
   — the first to exercise Phases 3, 4 and 5 at all, including the MongoDB flags
   sink and all four tinytest suites — and **31439673841** on the Phase 6 code,
   which produced the widened 40-column long artefact from CI.
 - **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`. Timor now
   **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
   written to `peskas-api-prod`, though the service account can. `coasts` is
-  unpinned; locally installed release is **4.6.0**.
+  unpinned and the workflow resolves the latest release; **4.6.0 is now a hard
+  floor** (Phase 7 needs `cloud_object_names()`, `get_trip_points()`,
+  `resolve_storage_opts(conf, "pds")` and the `MAF / WorldFish` customer).
+  `gs://pds-timor-dev` now holds **both** track families: 101,959
+  `pds-tracks_<id>.parquet` (live) and 103,373 `pds-track-<id>__*__.csv.gz`
+  (dead, deleted in Phase 11). `gs://pds-timor` still holds only the old one.
 - **Read before Phase 8:** the Phase 7 entry's "Findings that change later
   phases" — in particular that the PDS path now has **no Timor ingestion code**,
   that `coasts::preprocess_pds_tracks()` is deliberately not wired in yet
@@ -2822,7 +2828,7 @@ turned on. Against `pds-timor-dev`:
 | | tracks the code considers present | tracks it would fetch |
 |---|---|---|
 | `coasts::ingest_pds_tracks()` on the old family | **0** of 99,219 | **98,472** |
-| after `data-raw/convert-pds-tracks.R` | 101,960 | see below |
+| after `data-raw/convert-pds-tracks.R` | 101,959 | **1** |
 
 **Deviations from the brief**
 
@@ -2944,3 +2950,72 @@ Two consequences:
 
 Nothing was pushed with the leaking call; it was caught before the first CI run
 of this phase.
+
+**Verified — the end-to-end dev run**
+
+`coasts::ingest_pds_trips()` → `coasts::ingest_pds_tracks()` →
+`describe_pds_tracks()` → `validate_pds_trips()` → `merge_trips()`, against
+`timor-dev` / `pds-timor-dev`, after the conversion:
+
+| stage | result |
+|---|---|
+| conversion | **101,959 of 101,960** trip ids converted; the one failure (trip `2401840`) was re-fetched by `ingest_pds_tracks()` on the next step, which is the intended self-healing |
+| `coasts::ingest_pds_tracks()` | **1 track to download.** The whole point of the phase: it recognised 101,959 as already present |
+| `coasts::ingest_pds_trips()` | 95,681 trips × 15, 422 IMEIs, 546,963 tracked hours; `Trip`/`Boat` integer, `IMEI` character, `Started`/`Ended` POSIXct `Asia/Dili` |
+| `describe_pds_tracks()` | 97,052 already described + **2,670** new = **99,722 × 9**, 34.9 min |
+| `pds-trips_validated` | **85,882 × 8**, 422 IMEIs, 418,945 h, ends 2018-02-08 → 2026-07-21 (was 84,741 × 8, 438 IMEIs, 418,077 h) |
+| `all_trips` | **176,290 × 26**, **6,940** matches, column names identical to baseline (was 175,090 × 26, 6,999) |
+| tinytest | **10 / 7 / 2 / 1**, all green — the same counts as Phase 6, no assertion touched |
+
+*The validated trips are otherwise bit-identical.* Over the **83,513** trips
+present in both runs:
+
+| column | rows differing | max abs diff |
+|---|---|---|
+| `tracker_trip_duration` | **0** | — |
+| `tracker_trip_start` | **0** | — |
+| `tracker_trip_end` | **0** | — |
+| `tracker_trip_distance` | **3** (0.004%) | 11,404 m |
+| `tracker_imei` | **0** | — |
+
+plus one trip whose values flipped to `NA`. Four rows out of 83,513. They are
+`merge_consecutive_trips()` doing its job: which trips get merged depends on a
+boat's *neighbouring* trips, and the trip population moved at both ends, so a
+handful of merge groups changed shape. `tzone` is `Asia/Dili` on both.
+
+*The row-count delta decomposes exactly.* 84,741 → 85,882 is
+
+- **+2,369 trips / +8,901 h** present only in the new run, **every one of them
+  2018** — coasts' `dateFrom = "2018-01-01"` against Timor's old
+  `"2018-07-01"`;
+- **−1,228 trips / −8,063 h** present only in the old run, over **19 IMEIs the
+  frame filter drops**.
+
+Net **+1,141 trips, +868 tracked hours (+0.21%)**, which is why the trip count
+moved *up* despite the filter removing 4,203 raw trips.
+
+*And the match delta is exactly the frame gap.* 6,999 → **6,940**: **59 matches
+lost, 0 gained**, and **all 59** carry one of the 27 IMEIs that are missing from
+PESKAS | FRAME. Not one match was lost for any other reason. Add those 27 rows
+to Airtable and the count returns to 6,999.
+
+*Local gates*: `devtools::check()` — 0 errors, 0 WARNINGs, **4 NOTEs**, the
+Phase 4 baseline (`googleCloudStorageR` left `Imports` when its last direct
+caller did, which kept the count at 4 rather than 5); `pkgdown::check_pkgdown()`
+clean; testthat **27 passing**; all four tinytest suites re-run against
+`timor-dev`.
+
+**Open questions for the next session**
+
+1. None blocking. Phase 8 (country modules + portal parity) can start.
+2. The 27 frame IMEIs and the production `convert-pds-tracks.R` run are user
+   actions, and the second is a **prerequisite for the Phase 11 cutover** —
+   without it the first production run re-fetches ~98k tracks from the PDS API.
+3. Should Phase 8 wire `coasts::preprocess_pds_tracks()` in and run its first
+   pass outside CI, as this phase did for the conversion? Doing so gives Timor
+   the grid summaries in the country bucket, which is half of what
+   `summarize_data()` needs (C17), and the H3 effort products the other three
+   countries publish.
+4. Carried over: whether the shared validation app can hold a per-country alert
+   dictionary (Phase 5), and whether Phase 9 wires the API exports into the
+   workflow (Phase 6).
