@@ -115,6 +115,23 @@ describe_pds_tracks <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 get_tracks_descriptors <- function(Trip, conf, tracks_list) {
+  # Nothing may escape this function as a bare condition. `furrr` maps it with
+  # `conf` as an argument, and R deparses the call when it prints a deferred
+  # warning or an unhandled error — which puts the **whole resolved config**,
+  # service-account private key and all, into the job log. That is the leak
+  # Phase 3 fixed in `read_config()`, arriving through a different door: the
+  # `Community` column of a PDS track carries an unquoted comma blob, so
+  # `read_csv()` warned on essentially every one of them. Muffle at the source.
+  withCallingHandlers(
+    describe_one_track(Trip, conf, tracks_list),
+    warning = function(w) {
+      logger::log_debug("Trip {Trip}: {conditionMessage(w)}")
+      invokeRestart("muffleWarning")
+    }
+  )
+}
+
+describe_one_track <- function(Trip, conf, tracks_list) {
   # Since Phase 7 the track object name is exactly `<prefix>_<trip>.parquet`,
   # with no version string, so this is an equality test rather than the
   # substring match the versioned `pds-track-<trip>__<version>__.csv.gz` names
@@ -134,13 +151,22 @@ get_tracks_descriptors <- function(Trip, conf, tracks_list) {
     return(tibble::tibble())
   }
 
-  track <-
+  track <- tryCatch(
     coasts::download_cloud_file(
       name = track_file,
       provider = conf$pds_storage$google$key,
       options = coasts::resolve_storage_opts(conf, "pds")
     ) %>%
-    arrow::read_parquet()
+      arrow::read_parquet(),
+    error = function(e) {
+      logger::log_warn("Trip {Trip}: {conditionMessage(e)}")
+      NULL
+    }
+  )
+
+  if (is.null(track) || nrow(track) == 0) {
+    return(tibble::tibble())
+  }
 
   file.remove(track_file)
 

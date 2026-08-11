@@ -173,10 +173,18 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      # `log_threshold = logger::INFO` is **not optional**, and not a matter of
+      # taste. `coasts::read_config()` ends with
+      # `logger::log_debug("Running with parameters {conf}")`, and every coasts
+      # workflow function defaults to `logger::DEBUG` — so calling one with the
+      # default prints the full service-account private key, the MongoDB
+      # connection string, the KoBo password and the PDS and Dataverse tokens
+      # into this job's log. That is the leak Phase 3 removed from Timor's own
+      # `read_config()`, arriving through the delegation. COASTS-TODO C21.
       - name: Call ingest_pds_trips()
-        run: Rscript -e 'coasts::ingest_pds_trips(package = "peskas.timor.data.pipeline")'
+        run: Rscript -e 'coasts::ingest_pds_trips(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
       - name: Call ingest_pds_tracks()
-        run: Rscript -e 'coasts::ingest_pds_tracks(package = "peskas.timor.data.pipeline")'
+        run: Rscript -e 'coasts::ingest_pds_tracks(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
 
   preprocess-pds-data:
     name: Preprocess pds data

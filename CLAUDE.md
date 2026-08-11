@@ -151,6 +151,13 @@ blastula credentials into its log. GitHub Actions only masks byte-exact matches
 of a registered secret, which the re-serialised JSON is not. Removed in
 Phase 3; it logs the key names only.
 
+**`coasts::read_config()` still has that line**, and every coasts workflow
+function still defaults to `logger::DEBUG` — so calling one with the default
+threshold leaks everything Timor stopped leaking in Phase 3. **Every
+`coasts::` workflow call in `data-pipeline.yaml` must pass
+`log_threshold = logger::INFO`**; the two PDS ingestion steps do. Filed as
+COASTS-TODO C21, and live in Mozambique, Kenya and Zanzibar today.
+
 ### Reference data — two sources, one of them authoritative
 
 There are **two unrelated Airtables** in this repo's history; do not conflate

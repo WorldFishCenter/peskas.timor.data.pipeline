@@ -2914,3 +2914,33 @@ turned on. Against `pds-timor-dev`:
 - **unchanged: `R/api.R`, `R/format-public-data.R`, `R/export.R`,
   `R/estimate-catch.R`, `R/model-catch.R`, `_pkgdown.yml`, and all four tinytest
   suites.**
+
+**A secrets leak came back with the delegation — COASTS-TODO C21**
+
+Found while reading the first `coasts::ingest_pds_trips(package = ...)` run's
+log. `coasts::read_config()` still ends with
+
+```r
+logger::log_debug("Running with parameters {conf}")
+```
+
+— the exact line Timor removed from its own `read_config()` in Phase 3 — and
+every coasts workflow function still defaults to `log_threshold = logger::DEBUG`.
+So the first delegated call printed the **full GCP service-account private key,
+the MongoDB connection string with its password, the KoBo password, and the PDS
+and Dataverse tokens** into the log.
+
+Two consequences:
+
+1. **Every `coasts::` workflow call in `data-pipeline.yaml` now passes
+   `log_threshold = logger::INFO`.** It works because `log_threshold()` is set
+   before `read_config()` runs. It is a workaround: it depends on every future
+   call site remembering, which is why C21 asks for the line to be fixed
+   upstream.
+2. **Mozambique, Kenya and Zanzibar call these same functions with the default
+   threshold**, so this is live in three production pipelines today. Worth
+   telling whoever owns them, and it widens the Phase 3 rotation action rather
+   than replacing it.
+
+Nothing was pushed with the leaking call; it was caught before the first CI run
+of this phase.

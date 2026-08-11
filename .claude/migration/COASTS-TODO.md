@@ -378,3 +378,39 @@ the filter for every country (COASTS-4.6.0, C7). A **country** config can list
 them safely — its own API token only returns its own devices — and for Timor
 they are worth 12 IMEIs, 1,412 trips and 20,777 tracked hours. Timor lists all
 three.
+
+### C21. `read_config()` logs the whole resolved config — **live secrets leak**
+
+`R/utils.R:99`:
+
+```r
+logger::log_info("Using configutation: {attr(conf, 'config')}")
+logger::log_debug("Running with parameters {conf}")
+```
+
+Every workflow function in coasts defaults to `log_threshold = logger::DEBUG`,
+so any of them called without an explicit threshold prints the **entire**
+resolved configuration into the job log: the GCP service-account private key,
+the MongoDB connection string with its password, the KoBo password, and the PDS
+and Dataverse tokens. GitHub Actions masks only byte-exact matches of a
+registered secret, which a re-serialised JSON key is not.
+
+This is the same line Timor removed from its own `read_config()` in migration
+Phase 3, for the same reason. It arrived back through the delegation: the first
+`coasts::ingest_pds_trips(package = "peskas.timor.data.pipeline")` run of Phase
+7 printed the key to a local log.
+
+**Mozambique, Kenya and Zanzibar all call the coasts PDS functions with the
+default threshold**, so this is live in three production pipelines today, not a
+Timor-only concern.
+
+Fix: log the key *names* only, as Timor does —
+
+```r
+logger::log_debug("Configuration keys: {paste(names(conf), collapse = ', ')}")
+```
+
+Timor's workaround until then is to pass `log_threshold = logger::INFO` at every
+`coasts::` workflow call site in `data-pipeline.yaml`. That suppresses the line,
+because `log_threshold()` is set before `read_config()` runs — but it depends on
+every caller remembering, which is exactly what makes it a workaround.
