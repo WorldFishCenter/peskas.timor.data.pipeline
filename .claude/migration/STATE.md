@@ -3019,3 +3019,23 @@ clean; testthat **27 passing**; all four tinytest suites re-run against
 4. Carried over: whether the shared validation app can hold a per-country alert
    dictionary (Phase 5), and whether Phase 9 wires the API exports into the
    workflow (Phase 6).
+
+**Verified — the CI run, 31486298126, green end to end**
+
+All twelve jobs, ~35 minutes, on `0898052`. The three lines that mattered:
+
+- `coasts::ingest_pds_tracks()` → **"No new tracks to download."** coasts' own
+  code, not Timor's, recognising the converted family. This is the cost check
+  passing in the place it counts.
+- `describe_pds_tracks()` → **"99722 trips already described, 0 to read"**, so
+  the incremental path and its early return both work from CI.
+- **Zero config leaks in the log.** `grep -Ei "BEGIN PRIVATE|Running with
+  parameters|mongodb\+srv"` over the whole run returns one hit, and it is the
+  commit message of `03a1d0f` quoted in the Docker build metadata. The
+  `log_threshold = logger::INFO` workaround holds in CI, which is the only place
+  it matters.
+
+The survey path is untouched, as expected: `13388 of 97348 submissions flagged`
+(13,387 of 97,347 in Phase 6, +1 submission), and the four tinytest suites came
+out **7 / 10 / 2 / 1** — the same counts as Phase 6 and the same as the local
+run.
