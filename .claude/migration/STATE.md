@@ -50,7 +50,13 @@ Append one entry per completed phase, newest at the bottom.
   service-account private key, the Airtable PAT, the Dataverse token and the
   blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
   values are in the logs of every past `data-pipeline.yaml` run. Rotating them
-  and purging old run logs is recommended and has **not** been done.
+  and purging old run logs is recommended and has **not** been done. Phase 7
+  found the same line still live in `coasts::read_config()` (COASTS-TODO C21),
+  which widened the exposure to Mozambique's and Zanzibar's logs as well —
+  **the user fixed all three packages on 2026-08-12**, so no new leakage; the
+  rotation is still outstanding and now covers more history. Timor keeps
+  `log_threshold = logger::INFO` at both `coasts::` call sites regardless, since
+  its container resolves whatever coasts release is latest at build time.
 - **Action for the user, before Phase 11 cutover — now two one-off scripts:**
   1. `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The
      frozen v1 snapshot `merge_landings()` depends on exists in `timor-dev`

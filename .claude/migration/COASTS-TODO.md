@@ -379,7 +379,7 @@ them safely — its own API token only returns its own devices — and for Timor
 they are worth 12 IMEIs, 1,412 trips and 20,777 tracked hours. Timor lists all
 three.
 
-### C21. `read_config()` logs the whole resolved config — **live secrets leak**
+### C21. `read_config()` logs the whole resolved config — **live secrets leak** ✅ fixed 2026-08-12
 
 `R/utils.R:99`:
 
@@ -414,3 +414,11 @@ Timor's workaround until then is to pass `log_threshold = logger::INFO` at every
 `coasts::` workflow call site in `data-pipeline.yaml`. That suppresses the line,
 because `log_threshold()` is set before `read_config()` runs — but it depends on
 every caller remembering, which is exactly what makes it a workaround.
+
+**Fixed by the user on 2026-08-12** in `peskas.coasts`,
+`peskas.mozambique.data.pipeline` and `peskas.zanzibar.data.pipeline` (Kenya and
+Timor had already fixed their own copies). Timor keeps the `logger::INFO`
+argument anyway: its container resolves the latest coasts *release* at build
+time, so the fix reaches Timor only once it is tagged, and the argument costs
+nothing. **Rotation of the exposed credentials is still outstanding** — the fix
+stops new leakage, not what is already in the run history of four repos.

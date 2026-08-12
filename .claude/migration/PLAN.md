@@ -490,12 +490,41 @@ inherits:
   Phase 1 STATE entry. Nothing Airtable-related is left for this phase except
   dropping the `AIRTABLE_KEY` secret from the workflows (Phase 9), which is
   where the other secret renames live.
-- Point `format_public_data()` at the new validated/merged parquet.
-- **Hard gate:** the emitted `portal-*.json` files must match the Phase 0 golden
-  snapshot structurally (same keys, same nesting, same types) and numerically within
-  rounding. The portal is live and pinned to this shape.
-- Carry forward the timezone fix from commit `15f6b18` explicitly — verify it is
-  still applied after the rewrite.
+- Point `format_public_data()` at the new validated/merged parquet. It reads only
+  two things today — `get_merged_trips()` and `get_models()` — so this is a
+  smaller change than the file's 1,200 lines suggest. The long validated table
+  has been a **superset** of the nested one since Phase 6, so everything it
+  reads by name exists there under a standard name.
+- **Hard gate, restated 2026-08-12.** The original wording — match the Phase 0
+  golden "structurally and numerically within rounding" — is no longer
+  achievable and must not be treated as the bar:
+  - **Structural, against the Phase 0 golden** (`reference/2026-07-31_90ede9a/`,
+    still on disk, 100 MB): the same **nine** object *names*, same keys, same
+    nesting, same types. This is the frozen contract and it is discovery-based —
+    a renamed object silently vanishes from the live site (AUDIT §3).
+  - **Numeric, against the latest dev run, not the golden.** The golden predates
+    commit `a2c2881`'s deliberate −15.4% weight rewrite, Phase 4's removal of
+    104,709 phantom no-catch rows and Phase 7's trip-population change, so it
+    *should* differ. The baseline is the newest `portal-*` set in
+    `public-timor-dev`, written by the green Phase 7 CI runs (`0898052` and
+    `f041d7e`). Use the golden only as an order-of-magnitude sanity band.
+- Carry forward the timezone fix from commit `15f6b18` explicitly — it lives in
+  `summarise_estimations()` in `format-public-data.R`, deriving `today` from
+  `attr(aggregated_predictions$landing_period, "tzone")` and using
+  `lubridate::floor_date()` / `days_in_month()` rather than `lead()` arithmetic.
+  Verify it survives the move to the parquet inputs, whose `tzone` may differ.
+- **Inherited from Phase 7, decide here:**
+  - `indicators_gridded` and `tracks-map` still come from `ingest_pds_map()`,
+    which no workflow calls; `export_files()` reads both, and
+    `portal-indicators_grid.json` / `portal-label_groups_list.json` are the two
+    objects the portal excludes. Either schedule the function, regenerate the
+    products from coasts' H3 output, or drop the dependency — but do not leave
+    the export path reading a two-year-old object by accident.
+  - Whether to wire `coasts::preprocess_pds_tracks()` in and run its first pass
+    outside CI, as Phase 7 did for the track conversion. That is what gives
+    Timor the grid summaries in the country bucket, i.e. half of what
+    `summarize_data()` needs (COASTS-TODO C17), plus the H3 effort products the
+    other three countries publish. See C20 for why it cannot run in CI today.
 
 ---
 
