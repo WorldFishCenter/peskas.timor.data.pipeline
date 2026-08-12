@@ -3568,6 +3568,13 @@ a non-standard top-level file. Deleted, and ignored in both `.Rbuildignore` and
 `.gitignore` — the same class of local-run detritus Phase 8 handled for `.tsv` /
 `.csv`. Re-checked at 4 NOTEs.
 
+*The whole site, not just the index.* `pkgdown::build_site()` run locally:
+finishes clean, and `docs/reference/index.html` carries exactly the seven
+keyword sections — Workflow, Cloud storage, Ingestion, Preprocessing,
+Validation, Export, Helper functions. That is as close as a phase branch can get
+to exercising the `pkgdown` workflow; what remains untested there is dependency
+resolution, not the site.
+
 *The release parser.* Run against the new NEWS locally: extracts `4.0.0` and an
 83-line changelog body from the top block.
 
@@ -3614,8 +3621,6 @@ the follow-up below.
   plus arrow / sf / glmmTMB from RSPM binaries. Opening a **draft PR** to `main`
   from a phase branch would exercise all three without merging anything — worth
   doing before Phase 11 if someone wants the answer early.
-- `pkgdown::build_site()` was not run locally; `check_pkgdown()` covers the
-  index, which is what changed.
 - `sync_validation_status()` still not wired. `preprocess_pds_tracks()` still
   unwired, still on C17.
 

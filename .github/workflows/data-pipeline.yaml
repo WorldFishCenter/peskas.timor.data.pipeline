@@ -146,22 +146,6 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::merge_landings()'
       - name: Call calculate_weights()
         run: Rscript -e 'peskas.timor.data.pipeline::calculate_weights()'
-      # The cross-country API export, wired in migration Phase 9. It reads the
-      # weight artefact this job just wrote, so it belongs here rather than in a
-      # job of its own — the schema is the 22-column contract Kenya, Mozambique
-      # and Zanzibar already publish (see R/api.R).
-      #
-      # The `if:` is the **prod go-live switch**, and it is deliberate. The
-      # bucket comes from `storage.google.options_api`, which is
-      # `peskas-api-dev` in the `default` environment and `peskas-api-prod` in
-      # `production` — i.e. on `main`. Wiring the export in and Timor's first
-      # write to `peskas-api-prod` are two separate decisions (PLAN Phase 9);
-      # this phase takes the first only. Deleting the two `if:` lines is how the
-      # second one is taken, once someone owns telling the API's consumers that
-      # a fourth country is arriving.
-      - name: Call export_api_raw()
-        if: ${{ !endsWith(github.ref, '/main') }}
-        run: Rscript -e 'peskas.timor.data.pipeline::export_api_raw()'
 
   validate-landings:
     name: Validate landings
@@ -180,9 +164,38 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
       - name: Test validated landings
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
-      # Same reasoning as `export_api_raw()` in the merge-landings job above,
-      # including the `if:` — this one reads the validated long parquet, and it
-      # runs *after* the tinytest step so a failed assertion stops the export.
+
+  # The cross-country API export, wired in migration Phase 9. Its own job, and
+  # deliberately a **leaf**: nothing needs it. Putting these two calls inside
+  # merge-landings and validate-landings — where their inputs are written — would
+  # have made the portal path, the live product, depend on a two-phase-old export
+  # succeeding. It reads the weight artefact and the validated long parquet, so it
+  # waits for both jobs; `merge-trips` and everything after it run in parallel
+  # with it and are unaffected if it fails.
+  #
+  # The `if:` is the **prod go-live switch**, and it is deliberate. The bucket
+  # comes from `storage.google.options_api`, which is `peskas-api-dev` in the
+  # `default` environment and `peskas-api-prod` in `production` — i.e. on `main`.
+  # Wiring the export in and Timor's first write to `peskas-api-prod` are two
+  # separate decisions (PLAN Phase 9); this phase takes the first only. Deleting
+  # the two `if:` lines is how the second one is taken, once someone owns telling
+  # the API's consumers that a fourth country is arriving.
+  export-api:
+    name: Export cross-country API
+    needs: [merge-landings, validate-landings]
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call export_api_raw()
+        if: ${{ !endsWith(github.ref, '/main') }}
+        run: Rscript -e 'peskas.timor.data.pipeline::export_api_raw()'
       - name: Call export_api_validated()
         if: ${{ !endsWith(github.ref, '/main') }}
         run: Rscript -e 'peskas.timor.data.pipeline::export_api_validated()'
