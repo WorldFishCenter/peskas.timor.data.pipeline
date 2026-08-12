@@ -14,11 +14,12 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4, 5, 6, 7, 8** — so config, secrets, the container, the
+> **0, 1, 2, 3, 4, 5, 6, 7, 8, 9** — so config, secrets, the container, the
 > **storage layer**, **ingestion**, **preprocessing**, **validation**, the
-> **cross-country API export**, **PDS** and the **country modules + portal
-> parity** are already on the standard; **CI is not** (Phase 9), nor is the
-> upstreaming to coasts (Phase 10) or the legacy cleanup (Phase 11).
+> **cross-country API export**, **PDS**, the **country modules + portal
+> parity** and now **CI, repo metadata and docs** are on the standard. What is
+> left is the upstreaming to coasts (Phase 10) and the legacy cleanup
+> (Phase 11).
 
 ---
 
@@ -433,28 +434,44 @@ Two things moved in Phase 3 and both are improvements, not drift:
   `describe_pds_tracks()` and `get_sync_tracks()`, which read the per-trip track
   parquet directly.
 
-## CI health — most workflows are dead
+## CI — nine workflows since Phase 9, from eleven
 
-Verified 2026-07-31 via `gh api .../actions/workflows`:
-
-| workflow | state | last green |
+| workflow | state | notes |
 |---|---|---|
-| `data-pipeline.yaml` | active | 2026-07-31 ✅ |
-| `data-report.yaml` | disabled (inactivity) | 2026-06-01 |
-| `check-standard.yaml` (R-CMD-check) | active | never in recent history — fails in <15 s |
-| `pkgdown.yaml` | active | fails |
-| `test-coverage.yaml` | active | fails in <10 s |
-| `dataverse-upload.yaml` | disabled (inactivity) | fails since ≥2026-04 |
-| `form-summary.yaml` | disabled (inactivity) | fails since ≥2025-08 |
-| `upload-matched-trips.yaml` | disabled (inactivity) | fails since ≥2025-08 |
-| `validation-email-sender.yaml` | disabled (inactivity) | fails since ≥2025-09 |
-| `keplergl-map.yaml` | disabled (manually) | fails since 2026-02 |
-| `pr-commands.yaml` | active | no runs |
+| `data-pipeline.yaml` | active | **the only one that produces data.** Green end to end |
+| `R-CMD-check.yaml` | active | replaced `check-standard.yaml` in Phase 9. **One runner** (`ubuntu-latest`, release), not the five-platform matrix — deliberate, see the file header |
+| `pkgdown.yaml` | active | r-lib v2 template; keyword-driven reference sections |
+| `test-coverage.yaml` | active | `tests/testthat/` only; `fail_ci_if_error: false`, no `CODECOV_TOKEN` exists |
+| `pr-commands.yaml` | active | `/document` and `/style`, now gated on `MEMBER`/`OWNER` |
+| `release.yaml` | active | new in Phase 9. Cuts a release from the top block of `NEWS.md` on a push to `main` |
+| `data-report.yaml` | disabled (inactivity) | rebuilt in Phase 9: no build job, runs in the pipeline's container |
+| `dataverse-upload.yaml` | disabled (inactivity) | same |
+| `validation-email-sender.yaml` | disabled (inactivity) | same, and repointed at the Mongo flags sink |
 
-The four monthly/weekly ones plus `keplergl-map` still build via the retired
-`docker.pkg.github.com` registry and `whoan/docker-build-with-cache-action@v5`.
-**In practice only `data-pipeline.yaml` produces data.** Do not assume a
-function is exercised just because a workflow references it.
+**Re-enabling the three disabled ones is a Phase 11 action, not a Phase 9 one.**
+A schedule fires from the **default branch**, so until the migration branch is
+merged those crons would run `main`'s pre-migration code against production.
+
+Deleted in Phase 9: `form-summary.yaml`, `keplergl-map.yaml`,
+`upload-matched-trips.yaml` — three of the four workflows that could only build
+through the retired `docker.pkg.github.com` registry with
+`whoan/docker-build-with-cache-action@v5`, none of which had succeeded since
+2025-08. The fourth, `validation-email-sender.yaml`, was rebuilt instead because
+Phase 5 gave `send_validation_mail()` a working reader.
+
+Two things the non-pipeline workflows must not do again: **build their own
+image** (they each carried a duplicate `build-container` job that has been
+unable to succeed since Phase 2 gave `Dockerfile.prod` an `ARG COASTS_REF` with
+no default, which none of them resolved), and **assume a referenced function is
+exercised** — three of these nine are disabled and one produces data.
+
+The three API-export steps aside, `data-pipeline.yaml` is unchanged in substance
+since Phase 8: `checkout@v5`, `build-push-action@v6`, `ubuntu-latest`,
+`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`, the COASTS_REF resolution, the four
+tinytest steps, and `log_threshold = logger::INFO` on both `coasts::` calls.
+`export_api_raw()` / `export_api_validated()` were wired in in Phase 9 and carry
+`if: ${{ !endsWith(github.ref, '/main') }}` — deleting those two lines is Timor's
+first write to `peskas-api-prod`, which is a separate, unmade decision.
 
 ## Conventions and gotchas
 

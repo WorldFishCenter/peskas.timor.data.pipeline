@@ -58,3 +58,6 @@ reference/
 
 ## Reference copy of the Mozambique pipeline (migration only)
 peskas.mozambique.data.pipeline/
+
+# Preview left behind by rendering README.Rmd
+README.html

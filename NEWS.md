@@ -1,3 +1,87 @@
+# peskas.timor.data.pipeline 4.0.0
+
+Alignment of the Timor pipeline to the harmonized Peskas standard shared with
+the Mozambique, Kenya and Zanzibar pipelines. Timor was the first Peskas
+pipeline and predates the conventions the others share, so most of this release
+is structural. The portal contract is deliberately unchanged.
+
+### Breaking changes
+
+- **Storage is delegated to the shared `peskas.coasts` hub.**
+  `R/cloud-storage.R` and `R/google-drive.R` are deleted; every call site is
+  `coasts::{cloud_storage_authenticate, upload_cloud_file, download_cloud_file,
+  cloud_object_name, cloud_object_names, upload_parquet_to_cloud,
+  download_parquet_from_cloud}`. `coasts` ≥ 4.6.0 is a hard floor.
+- **Secrets move from an `auth/` directory to `.env`.** The `local:` config
+  environment is gone, so a local run and CI resolve the same config branch and
+  differ only by `R_CONFIG_ACTIVE`. `.env.example` documents every variable.
+- **`inst/conf.yml` → `inst/config.yml`**, derived from the cross-country
+  configuration template: `country`, `ingestion`, `surveys.landings.{v1,v2,v3}`,
+  `api`, `pds`, `metadata`, `storage.google.options_{coasts,api}`,
+  `storage.mongodb`, `validation`. The file is a superset — legacy keys are
+  marked `# [legacy]` and retire with the dead code they feed.
+- **Interchange format is flat long parquet**, one row per
+  (submission, catch, length bin), from raw through validated. No `.rds`
+  artefact is left on the survey path; `get_validated_landings()` re-nests the
+  parquet on read for the portal path, which is why that path did not change.
+- **KoBo retrieval, PDS ingestion and the Airtable frame are delegated.**
+  `ingest-pds-data.R`, `retrieve-pds-data.R`, `retrieve-survey-data.R`,
+  `preprocess_pds_trips()` and Timor's own `air_*` client are deleted; the
+  pipeline calls `coasts::get_kobo_data()`, `coasts::ingest_pds_trips()`,
+  `coasts::ingest_pds_tracks()` and `coasts::ingest_assets()`.
+- **Validation flags go to MongoDB**, one `surveys_flags-<asset_id>` collection
+  per live form in the shared `validation-{dev,prod}` database, replacing the
+  Google Sheets sink. This is what puts Timor into the cross-country validation
+  UI.
+- **The v1 form is frozen** (last submission 2020-08-28). It is neither
+  ingested nor preprocessed; `merge_landings()` reads a snapshot produced once
+  per environment by `data-raw/freeze-landings-v1.R`, which also converted v1's
+  fork lengths to total length.
+- Reference data is now the shared **PESKAS | FRAME** Airtable base wherever it
+  overlaps the Google Sheets metadata tables — taxa, gears, vessels, landing
+  sites, districts and PDS devices. The Sheets shrink accordingly.
+- The resolved configuration is named `conf` throughout, not `pars`.
+
+### New features
+
+- **Timor publishes the cross-country API parquet.** `export_api_raw()` and
+  `export_api_validated()` write the 22-column trips table Kenya, Mozambique and
+  Zanzibar already publish, to `peskas-api-{dev,prod}/timor/{raw,validated}`.
+- `data-raw/compare-portal-json.R` — a gate over the seven `portal-*.json`
+  objects: object names, then keys, nesting, column sets and column types, then
+  per-column numeric summaries. Run it before touching the export path.
+
+### Improvements
+
+- `read_config()` no longer logs the resolved configuration. It was printing the
+  service-account private key and every token into each CI job log; it now logs
+  key names only, and every `coasts::` workflow call passes
+  `log_threshold = logger::INFO` for the same reason.
+- Reference sections in `_pkgdown.yml` are keyword-driven rather than
+  name-pattern driven, so a rename can no longer silently move a function
+  between sections.
+- CI is on current templates: `R-CMD-check.yaml` (replacing
+  `check-standard.yaml`), `pkgdown.yaml`, `test-coverage.yaml` and
+  `pr-commands.yaml` from the r-lib v2 examples, `checkout@v5`,
+  `build-push-action@v6`, `ubuntu-latest`, and a `release.yaml` that cuts a
+  GitHub release from this file. Four workflows that could only ever build
+  through the retired `docker.pkg.github.com` registry were retired or rebuilt.
+- The export emits the seven `portal-*.json` objects the portal actually
+  consumes. `portal-indicators_grid` and `portal-label_groups_list`, which the
+  portal excludes and which were rebuilt on every run from a 2024-07-27
+  artefact, are no longer written.
+
+### Bug fixes
+
+- `validate_catch_params()` assigned `length_individuals` positionally into a
+  separately-derived frame, and an `isTRUE()` on a vector made alerts 12–15
+  unreachable. Both are alert-identical to the intended behaviour on current
+  data.
+- A duplicate `get_preprocessed_metadata()` shadowed the correct definition.
+- The `local:` config environment inherited a non-existent `development`
+  environment.
+
+
 # peskas.timor.data.pipeline 3.3.0
 
 ### Breaking changes
