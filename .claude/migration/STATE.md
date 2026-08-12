@@ -7,7 +7,8 @@ Append one entry per completed phase, newest at the bottom.
 ## Current position
 
 - **Phase:** 9 **complete** (2026-08-12). Phase 10 (upstream to coasts, in the
-  `peskas.coasts` repo) not started.
+  `peskas.coasts` repo) not started — its session prompt is written, at
+  `.claude/migration/PROMPT-PHASE10.md`.
 - **CI is now nine workflows, not eleven.** Read the Phase 9 entry before
   touching any of them, and in particular: the three `disabled_inactivity` ones
   must not be re-enabled until after the Phase 11 merge, because a cron fires
@@ -27,7 +28,9 @@ Append one entry per completed phase, newest at the bottom.
   Phase 8 = **`c0207c3`** (renames) + **`c27c126`** (export path) on
   `feat/align-coasts-phase8`.
   Phase 9 = **`afff10c`** (workflows) + **`586db1d`** (pkgdown keywords) +
-  **`a1773cb`** (NEWS / README / CLAUDE.md) on `feat/align-coasts-phase9`.
+  **`a1773cb`** (NEWS / README / CLAUDE.md) + **`fc8bc2c`** (the API export as
+  its own job) on `feat/align-coasts-phase9`, green on runs **31602163472** and
+  **31635228716**.
   Green end-to-end CI runs: **31436031588** on the
   Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
   MongoDB flags sink and all four tinytest suites — **31439673841** on the
@@ -3580,8 +3583,31 @@ resolution, not the site.
 
 *Every workflow file parses* (`yaml::yaml.load_file()` over all nine).
 
-*The pipeline itself*: CI run **31602163472** on `a1773cb`. Result recorded in
-the follow-up below.
+*The pipeline itself*: **two green end-to-end runs**, which is the only test that
+matters for this phase.
+
+**Run 31602163472** on `a1773cb` — all **12** jobs green on the new stack
+(`ubuntu-latest`, `checkout@v5`, `build-push-action@v6`,
+`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`), the four tinytest suites among them. It
+also ran `export_api_raw()` and `export_api_validated()` **for the first time
+from CI** — both `success`, not `skipped`, writing
+`timor/raw/trips-raw__20260812135025_a1773cb__.parquet` and
+`timor/validated/trips-validated__20260812140104_a1773cb__.parquet` to
+`peskas-api-dev`. Until this run both functions had only ever been executed by
+hand in a local session.
+
+**Run 31635228716** on `fc8bc2c` — all **13** jobs green, the thirteenth being
+the new `Export cross-country API`. Same two objects,
+`…__20260812202347_fc8bc2c__` and `…__20260812202445_fc8bc2c__`, and
+`export_files()` uploaded **seven** objects, the portal contract intact.
+
+That second run exists because the first one showed the placement was wrong.
+With the API calls inside `merge-landings` and `validate-landings`, an export
+failure takes out the jobs feeding `merge-trips` → `model-indicators` →
+`export-trips` — the portal, the live product this phase exists not to disturb.
+`export-api` is now its own job: it needs both producers and **nothing needs
+it**, so the portal path runs in parallel with it and is indifferent to it. Five
+green end-to-end runs on migration code in total, two of them Phase 9's.
 
 **Deviations from the brief**
 
