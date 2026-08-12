@@ -138,9 +138,23 @@ get_validated_landings <- function(conf) {
       dplyr::across(tidyselect::ends_with("_mu"))
     )
 
-  long %>%
+  submissions <- long %>%
     dplyr::select(-dplyr::all_of(long_catch_cols())) %>%
-    dplyr::distinct() %>%
+    dplyr::distinct()
+
+  # The guard for `long_catch_cols()`: a catch-level column added to
+  # `long_validated_landings()` and not listed there survives the distinct() and
+  # silently turns one submission into several. Without this the damage first
+  # shows up two jobs later, in test_merged_trips.R.
+  if (anyDuplicated(submissions$submission_id) > 0) {
+    stop(
+      "The long validated table did not collapse to one row per submission: ",
+      sum(duplicated(submissions$submission_id)), " duplicates. A catch-level ",
+      "column is missing from long_catch_cols()."
+    )
+  }
+
+  submissions %>%
     dplyr::left_join(nest_landing_catch(catch), by = "submission_id") %>%
     dplyr::select(
       landing_id = "submission_id",

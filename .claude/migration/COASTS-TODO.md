@@ -119,6 +119,15 @@ already emits `Calcium`, `Iron`, `Omega3`, `Protein`, `VitaminA`, `Zinc`. So the
 Phase 8 task is to **compare Timor's `calculate-nutrients.R` against coasts'
 output and delete Timor's if they agree** — not to donate it.
 
+**Answered, and they do not agree.** Measured in Phase 4 and acted on in
+Phase 8: coasts emits **six** nutrients against Timor's seven, has **no
+selenium**, does **no unit conversion** (Timor normalises mg / μg / g per 100 g
+to grams), and has **no FAO food-composition override** for the six
+invertebrates FishBase cannot estimate (`OCZ`, `IAX`, `COZ`, `PEZ`, `CRA`,
+`SLV`) or the hardcoded `FLY` row. The file was renamed to `R/nutrients.R` and
+kept, with those four reasons in its header. It goes back to being a Phase 10
+**upstream** candidate — coasts' version is the subset.
+
 Likewise, PLAN sequences Phase 4b (adopt coasts helpers) *before* Phase 10
 (upstream to coasts). For weights the dependency runs the other way: **C1–C3
 must land before Phase 4b can do anything.**

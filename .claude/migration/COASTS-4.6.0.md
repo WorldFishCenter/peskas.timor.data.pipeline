@@ -232,6 +232,12 @@ Nutrients are **not** a Timor → coasts upstream candidate, contrary to PLAN §
 `vitamin_a`, `zinc`. Phase 8 should compare Timor's `calculate-nutrients.R`
 against coasts' output and **delete Timor's if they agree**.
 
+**Reversal reversed, 2026-08-12.** They do not agree, and the direction is back
+to Timor → coasts: six nutrients against seven, no selenium, no unit
+conversion, no FAO food-composition override for the six invertebrates
+FishBase cannot estimate. Phase 8 renamed the file to `R/nutrients.R` and kept
+every line. See COASTS-TODO, "Direction reversal to note".
+
 ---
 
 ## Suggested next steps, Timor side
