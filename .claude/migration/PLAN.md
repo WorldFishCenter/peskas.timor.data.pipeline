@@ -529,12 +529,38 @@ never the golden, which predates `a2c2881`'s −15.4% weight rewrite, Phase 4's
 
 ### Phase 9 — CI, repo, docs
 
+**State on entry, re-measured 2026-08-12** (after Phase 8): 11 workflows, of
+which `data-pipeline.yaml` and four generic ones are `active` and six are
+`disabled_inactivity` / `disabled_manually`. Only `data-pipeline.yaml` produces
+data, and it is green — three consecutive end-to-end runs on Phase 8 code.
+
 - Rewrite `.github/workflows/data-pipeline.yaml`: job naming and layout mirroring
-  Moz, `checkout@v5`, `build-push@v6`, `ubuntu-latest`, `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`,
-  COASTS_REF resolution, `Rscript -e 'coasts::...(package = "peskas.timor.data.pipeline")'`
-  for delegated steps. Keep the tinytest steps.
+  Moz, `checkout@v5`, `build-push@v6`, `ubuntu-latest`, `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
+  COASTS_REF resolution is **already there** since Phase 2, as are the
+  `Rscript -e 'coasts::...(package = "peskas.timor.data.pipeline")'` PDS steps
+  since Phase 7. Keep the tinytest steps.
+  - **Non-negotiable while rewriting:** every `coasts::` workflow call keeps
+    `log_threshold = logger::INFO`. The upstream fix for COASTS-TODO C21 landed
+    2026-08-12 but Timor's container resolves the latest coasts *release* at
+    build time, so the argument stays until that fix is tagged. Dropping it
+    reprints the service-account key into the job log.
+  - The `export-trips` job now emits **seven** `portal-*` objects. Anything that
+    changes it must pass `data-raw/compare-portal-json.R` — see Phase 8.
+- **Carried over, decide here:** whether `export_api_raw()` / `export_api_validated()`
+  join the workflow. They have been run only by hand since Phase 6 and publish to
+  `peskas-api-dev` only. Wiring them in and the first `peskas-api-prod` write are
+  two separate decisions; only the first is Phase 9's.
 - Audit the other 10 workflows against the Phase 0 secret inventory; retire dead ones.
-  Apply the GH secret renames from STRUCTURAL-DIFF §1.
+  Four of them (`form-summary`, `keplergl-map`, `validation-email-sender`,
+  `upload-matched-trips`) still build through the retired
+  `docker.pkg.github.com` registry with `whoan/docker-build-with-cache-action@v5`
+  and cannot work at all. `keplergl-map` has no live function behind it either:
+  Phase 8 left `ingest_kepler_tracks()` unreferenced.
+- Apply the GH secret renames from STRUCTURAL-DIFF §1. **Two are user actions,
+  not agent actions:** secret *values* are write-only, so `KOBO_PESKAS1/2/3` →
+  `KOBO_ASSET_ID_V1/2/3` needs the user to create the new secrets. Deleting the
+  stale `AIRTABLE_KEY` does not need a value and can be done with `gh`, but it is
+  outward-facing — confirm first. `AIRTABLE_TOKEN` already exists.
 - **The four generic workflows are on pre-2022 r-lib templates** (`checkout@v2`,
   `setup-pandoc@v1`, hand-rolled `.github/depends.Rds` caching, `macOS-latest`
   runners). Replace with the current r-lib templates; rename
@@ -548,11 +574,18 @@ never the golden, which predates `a2c2881`'s −15.4% weight rewrite, Phase 4's
   `tag_name=v$version` then uses `v${{ ...tag_name }}`, producing `vv2.8.0`.
 - `_pkgdown.yml`: keyword-driven reference sections (`workflow`, `ingestion`,
   `preprocessing`, `validation`, `export`, `helper`, `storage`) replacing Timor's
-  `matches("cloud")` / `matches("get")` name-pattern sections, which will mis-sort
+  `matches("cloud")` / `matches("get")` name-pattern sections, which mis-sort
   after the Phase 2–8 renames. Keep Timor's `url:` — Moz's points at Malawi.
-- `NEWS.md`: `# peskas.timor.data.pipeline 4.0.0` with the migration changelog;
-  bump DESCRIPTION to match (release.yaml parses NEWS.md).
+  `pkgdown::check_pkgdown()` passes today; it must still pass afterwards, and it
+  fails on any exported topic that no section claims.
+- `NEWS.md`: add `# peskas.timor.data.pipeline 4.0.0` with the migration
+  changelog. **DESCRIPTION is already at 4.0.0** (Phase 1); NEWS still tops out
+  at 3.3.0, so it is NEWS that has to catch up, not the other way round.
+  `release.yaml` parses NEWS.md, so write it before adding that workflow.
 - Refresh `README.Rmd`/`README.md`.
+- **Do not touch** the export path, `R/` layout or config keys. Phase 9 is CI and
+  docs; the legacy-key strip and dead-code removal are Phase 11, and the list of
+  what is now unreferenced is in the Phase 8 STATE entry.
 
 ---
 
