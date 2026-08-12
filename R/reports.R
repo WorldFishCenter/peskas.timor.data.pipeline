@@ -1,3 +1,17 @@
+#' Emailed reports
+#'
+#' Renamed from `R/send-email.R` in migration Phase 8, the drivers and Rmd
+#' templates these render live in `inst/report/`. Neither function is in a
+#' healthy workflow: `send_validation_mail()` is called by
+#' `validation-email-sender.yaml`, disabled for inactivity and failing since
+#' ≥2025-09, and `send_sites_report()` has no caller at all. Phase 5 rewrote
+#' the mail's source from the retired Google Sheets to the MongoDB flags sink;
+#' reviving the schedules belongs to Phase 9.
+#'
+#' @keywords internal
+#' @name reports
+NULL
+
 #' Send sites report email
 #'
 #' This function takes advantage of the package `blastula` to send an email

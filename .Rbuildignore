@@ -26,3 +26,9 @@
 ^data-raw$
 ^.*\.parquet$
 ^.*\.rds$
+# `format_public_data()` writes the tsv half of the public family into the
+# working directory before uploading it, so a local run leaves them at the repo
+# root exactly as it leaves the .rds above.
+^.*\.tsv$
+^.*\.csv$
+^.*\.csv\.gz$
