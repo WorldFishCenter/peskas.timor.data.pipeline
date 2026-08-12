@@ -1,3 +1,15 @@
+# Reference sections are keyword-driven since migration Phase 9. They used to be
+# name patterns — `matches("get")`, `matches("ingest")`, `matches("pds")` — which
+# mis-sorted after the Phase 2–8 renames: `matches("get")` swept every accessor
+# into "Cloud storage", `matches("pds")` claimed map functions that no longer
+# exist, and a renamed function silently changed section.
+#
+# `@keywords` is now the single source of truth, matching the other country
+# pipelines: workflow, storage, ingestion, preprocessing, validation, export,
+# helper. A topic may appear in more than one section (the pipeline entry points
+# are tagged `workflow <module>` and show up under both), but every exported
+# topic must appear in at least one — `pkgdown::check_pkgdown()` fails otherwise.
+# Run it after touching a keyword.
 url: https://worldfishcenter.github.io/peskas.timor.data.pipeline/
 
 template:
@@ -18,68 +30,47 @@ reference:
 - title: Workflow
   desc: >
     These are arguably the most important functions in the package. Each of
-    these functions executes a step in the data pipeline.
-- contents:
+    these functions executes a step in the data pipeline, and each is called
+    from `.github/workflows/data-pipeline.yaml` by name.
+  contents:
   - has_keyword("workflow")
 
-- title: Cloud
-- subtitle: Cloud storage
-  desc: Functions that interact with cloud storage providers.
+- title: Cloud storage
+  desc: >
+    Accessors over the versioned artefacts in Google Cloud Storage. The storage
+    layer itself is `coasts::*` since migration Phase 2; these resolve the
+    latest version of each artefact and give it back in the shape its readers
+    expect.
   contents:
-  - matches("get")
-  - matches("ingest")
-  - add_version
-- title: Data
-- subtitle: Survey
-  desc: Functions that help retrieving survey data
-- contents:
-  - matches("survey")
-- subtitle: PDS
-  desc: Functions that help retrieving Pelagic Data System data
-- contents:
-  - matches("pds")
-  - kepler_mapper
-- subtitle: Data modeling
-  desc: Functions dedicated to data modeling.
+  - has_keyword("storage")
+
+- title: Ingestion
+  desc: Functions dedicated to the ingestion module.
   contents:
-  - matches("model")
-- subtitle: Data validation
-  desc: Functions dedicated to data validation
+  - has_keyword("ingestion")
+
+- title: Preprocessing
+  desc: Functions dedicated to the preprocessing module.
+  contents:
+  - has_keyword("preprocessing")
+
+- title: Validation
+  desc: >
+    Functions dedicated to the validation module. Deeper than any other country
+    pipeline — the alert codes are a contract, documented in the header of
+    `R/validation-functions.R` and in the `validation.alerts` block of
+    `inst/config.yml`.
   contents:
   - has_keyword("validation")
-  - matches("validate")
-  - send_validation_mail
+
+- title: Export
+  desc: >
+    Publication of processed and analysed fisheries data — the portal JSON
+    contract, the cross-country API parquet, Dataverse and the emailed reports.
+  contents:
+  - has_keyword("export")
 
 - title: Helper functions
-- subtitle: Data preprocessing
-  desc: Functions dedicated to data processing.
+  desc: Reshaping, taxonomy, geometry and configuration helpers.
   contents:
-  - matches("pt_validate")
-  - reshape_landings
-  - reshape_species_groups
-  - expand_length_frequency
-  - merge_consecutive_trips
-  - join_weights
-  - fill_missing_regions
-- subtitle: Taxonomy
-  contents:
-  - convert_taxa_names
-- subtitle: Utils
-  contents:
-  - read_config
-  - load_dotenv
-  - timor_assets
-
-- title: Data sharing
-- subtitle: Publishing
-  desc: Functions deemed to share data and reports.
-  contents:
-  - matches("dataverse")
-  - matches("dataset")
-  - upload_files
-  - generate_metadata
-  - generate_description
-  - send_sites_report
-- subtitle: Utils
-  contents:
-  - read_config
+  - has_keyword("helper")

@@ -25,3 +25,4 @@ migration Phase 5 — and the alert descriptions out of \code{config.yml}'s
 Google Sheet. Note that the underlying workflow,
 \code{validation-email-sender.yaml}, has been disabled since ≥2025-09 (AUDIT §5).
 }
+\keyword{export}

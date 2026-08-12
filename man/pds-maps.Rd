@@ -30,3 +30,4 @@ unreferenced} and go in Phase 11, along with \code{inst/kepler_mapper.py}.
 \code{get_timor_boundaries()} and \code{convert_taxa_names()} stay —
 \code{format_public_data()} calls both.
 }
+\keyword{internal}

@@ -25,6 +25,7 @@
 #' `get_timor_boundaries()` and `convert_taxa_names()` stay —
 #' `format_public_data()` calls both.
 #'
+#' @keywords internal
 #' @name pds-maps
 NULL
 
@@ -42,6 +43,7 @@ NULL
 #' @param trips A vector of unique Trips from the argument `data`.
 #'
 #' @return No output. This function is used for it's side effects
+#' @keywords ingestion
 #' @export
 #'
 ingest_complete_tracks <- function(conf, data = NULL, trips = NULL) {
@@ -73,6 +75,7 @@ ingest_complete_tracks <- function(conf, data = NULL, trips = NULL) {
 #' threshold for the logging infrastructure. See [logger::log_levels] for more
 #' details
 #' @return No output. This function is used for it's side effects.
+#' @keywords ingestion
 #' @export
 #'
 ingest_pds_map <- function(log_threshold = logger::DEBUG) {
@@ -364,6 +367,7 @@ ingest_pds_map <- function(log_threshold = logger::DEBUG) {
 #' @param conf The config file
 #'
 #' @return A dataframe with taxa common names
+#' @keywords helper
 #' @export
 #'
 convert_taxa_names <- function(data, conf) {
@@ -475,6 +479,7 @@ convert_taxa_names <- function(data, conf) {
 #' details.
 #'
 #' @return Nothing. This function upload to GCS.
+#' @keywords ingestion
 #' @export
 #'
 ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
@@ -547,6 +552,7 @@ ingest_kepler_tracks <- function(log_threshold = logger::DEBUG) {
 #' @param data_path Data to add to map.
 #'
 #' @return A self-contained map in html.
+#' @keywords helper
 #' @export
 #'
 kepler_mapper <- function(data_path = NULL) {
@@ -573,6 +579,7 @@ kepler_mapper <- function(data_path = NULL) {
 #'         for specific areas like Atauro and Dili. The returned object includes region names and their
 #'         corresponding geometries.
 #'
+#' @keywords helper
 #' @export
 #'
 #' @examples

@@ -22,6 +22,7 @@ NULL
 #' details
 #'
 #' @return Nothing, this function is useful for its side effects.
+#' @keywords export
 #' @export
 #'
 send_sites_report <- function(log_threshold = logger::DEBUG) {
@@ -113,6 +114,7 @@ send_sites_report <- function(log_threshold = logger::DEBUG) {
 #' details
 #'
 #' @return Nothing, this function is useful for its side effects.
+#' @keywords export
 #' @export
 #'
 send_validation_mail <- function(log_threshold = logger::DEBUG) {

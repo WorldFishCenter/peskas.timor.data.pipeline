@@ -17,3 +17,4 @@ a data frame with columns flag_id, flag_category, and flag_message
 Checks the flags from the metadata tables. Specifically check that flags are
 unique and all flags have an id
 }
+\keyword{preprocessing}

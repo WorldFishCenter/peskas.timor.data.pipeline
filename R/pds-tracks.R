@@ -112,6 +112,7 @@ describe_pds_tracks <- function(log_threshold = logger::DEBUG) {
 #'
 #' @return A one-row tibble of descriptors, or a zero-row tibble if the trip has
 #'   no stored track.
+#' @keywords storage
 #' @export
 #'
 get_tracks_descriptors <- function(Trip, conf, tracks_list) {

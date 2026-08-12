@@ -7,6 +7,7 @@
 #'   threshold for the logging infrastructure. See [logger::log_levels] for more
 #'   details
 #'
+#' @keywords workflow export
 #' @export
 #'
 upload_dataverse <- function(log_threshold = logger::DEBUG) {
@@ -100,6 +101,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 #' @param dataverse A character string specifying the Dataverse ID.
 #' @param server A character string specifying a Dataverse server.
 #'
+#' @keywords export
 #' @export
 #'
 #' @examples
@@ -125,6 +127,7 @@ publish_dataverse <- function(key, dataverse, server) {
 #' @param temp_coverage Temporal coverage of the data to upload.
 #'
 #' @return A list with metadata information
+#' @keywords export
 #' @export
 #'
 #' @examples
@@ -157,6 +160,7 @@ generate_metadata <- function(conf, temp_coverage = NULL) {
 #' @param dataverse A character string specifying the Dataverse ID.
 #' @param server A character string specifying a Dataverse server.
 #'
+#' @keywords export
 #' @export
 #'
 #' @examples
@@ -204,6 +208,7 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
 #' @param dataverse A character string specifying the Dataverse ID.
 #' @param server A character string specifying a Dataverse server.
 #'
+#' @keywords export
 #' @export
 #'
 delete_dataverse <- function(key, dataverse, server) {
@@ -241,6 +246,7 @@ delete_dataverse <- function(key, dataverse, server) {
 #' @param id The dataset ID.
 #' @param server A character string specifying a Dataverse server.
 #'
+#' @keywords export
 #' @export
 #'
 delete_dataset <- function(key, id, server) {
@@ -260,6 +266,7 @@ delete_dataset <- function(key, id, server) {
 #'
 #' @inheritParams upload_files
 #'
+#' @keywords export
 #' @export
 #'
 #' @examples
@@ -292,6 +299,7 @@ publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
 #' @param ... unused; for backwards compatibility only
 #'
 #' @return A list with the description of each variable of each uploaded dataset.
+#' @keywords export
 #' @export
 #'
 generate_description <- function(...) {

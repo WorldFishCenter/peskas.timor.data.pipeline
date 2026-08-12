@@ -19,3 +19,4 @@ This function use the python library Kepler.gl \url{https://docs.kepler.gl/docs/
 map of PDS tracks around Timor. It uses \link[reticulate:import]{reticulate::import_from_path} to load
 and run the python script \code{kepler_mapper.py}.
 }
+\keyword{ingestion}

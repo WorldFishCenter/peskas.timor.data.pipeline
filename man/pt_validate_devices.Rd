@@ -16,3 +16,4 @@ a tibble
 Convert date and date-time columns and ensures that device_imei is stored as
 a character. Currently this table performs no validations.
 }
+\keyword{preprocessing}

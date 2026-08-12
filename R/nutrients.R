@@ -37,6 +37,7 @@ NULL
 #'
 #'
 #' @return A data frame with nutritional values for each taxa group.
+#' @keywords helper
 #' @export
 #'
 get_nutrients_table <- function(conf,
@@ -144,6 +145,7 @@ get_nutrients_table <- function(conf,
 #' @examples
 #' get_fao_composition()
 #'
+#' @keywords helper
 #' @export
 get_fao_composition <- function() {
   fao_comp <- readr::read_csv("https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv")

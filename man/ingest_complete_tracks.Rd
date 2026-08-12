@@ -21,3 +21,4 @@ This function uploads two files: \code{data}, the complete tracks in a single rd
 file and \code{trips}, a vector containing unique the trips from \code{data} useful to
 take track of the synchronization status of \code{data}.
 }
+\keyword{ingestion}

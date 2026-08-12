@@ -25,3 +25,5 @@ upstream candidate for Phase 10.
 The parameters needed in the config file are \verb{pds.pds_trips.*},
 \verb{pds.pds_tracks.descriptors.*} and the \code{validation.pds_trips} coefficients.
 }
+\keyword{validation}
+\keyword{workflow}

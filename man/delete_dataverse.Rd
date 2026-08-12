@@ -16,3 +16,4 @@ delete_dataverse(key, dataverse, server)
 \description{
 This function delete a specific Dataverse repository.
 }
+\keyword{export}

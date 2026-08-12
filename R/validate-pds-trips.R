@@ -14,6 +14,7 @@
 #' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @return no outputs. This function is used for it's side effects
+#' @keywords workflow validation
 #' @export
 #' @importFrom rlang .data
 #'
@@ -139,6 +140,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' @return A list containing data frames with validated catch duration and
 #' catch distance traveled
 #'
+#' @keywords validation
 #' @export
 #' @importFrom rlang .data
 #'
@@ -257,6 +259,7 @@ get_pds_trips <- function(conf) {
 #' @export
 #'
 
+#' @keywords helper
 merge_consecutive_trips <- function(x,
                                     consecutive_time = NULL,
                                     consecutive_distance = NULL) {
@@ -333,6 +336,7 @@ merge_consecutive_trips <- function(x,
 #' @param x A data frame containing trips coordinates.
 #'
 #' @return A vector of distances in meters
+#' @keywords helper
 #' @export
 #'
 get_distance <- function(x) {

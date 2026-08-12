@@ -27,3 +27,4 @@ timor_boundaries <- get_timor_boundaries()
 plot(timor_boundaries$geometry)
 
 }
+\keyword{helper}

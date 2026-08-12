@@ -552,6 +552,7 @@ get_frame <- function() {
 #' @param trips Dataframe  with Timor validated trips.
 #'
 #' @return A dataframe with filled regions (where possible).
+#' @keywords helper
 #' @export
 #'
 #' @examples
@@ -697,6 +698,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
 #' @param trips data frame
 #'
 #' @return a glmmTMB model
+#' @keywords internal
 #' @importFrom glmmTMB glmmTMB
 model_landings <- function(trips) {
   landings_df <-
@@ -895,6 +897,7 @@ model_catch_per_taxa <- function(trips, modelled_taxa, conf) {
 #' @param trips data frame
 #'
 #' @return a glmmTMB model
+#' @keywords internal
 #' @importFrom glmmTMB glmmTMB
 model_value <- function(trips) {
   value_df <- trips %>%

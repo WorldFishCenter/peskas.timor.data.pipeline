@@ -16,3 +16,4 @@ delete_dataset(key, id, server)
 \description{
 This function delete a specific draft dataset.
 }
+\keyword{export}

@@ -15,3 +15,5 @@ details}
 This function upload and publish data on a specific Dataverse repository
 including associated metadata information.
 }
+\keyword{export}
+\keyword{workflow}

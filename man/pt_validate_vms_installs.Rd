@@ -19,3 +19,4 @@ Convert date and date-time columns and checks that
 \item The devices are installed in a single boat
 }
 }
+\keyword{preprocessing}

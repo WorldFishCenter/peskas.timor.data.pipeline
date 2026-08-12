@@ -21,3 +21,4 @@ This function publish a specific Dataverse repository.
 publish_dataverse(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
 }
 }
+\keyword{export}

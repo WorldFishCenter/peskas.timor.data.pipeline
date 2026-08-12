@@ -18,3 +18,4 @@ Nothing, this function is useful for its side effects.
 This function takes advantage of the package \code{blastula} to send an email
 containing a summary report in each landig site.
 }
+\keyword{export}

@@ -20,3 +20,4 @@ showing the map of Timor divided by municipalities including the tracks paths,
 and upload it to cloud storage. It also upload the data frame splitted by grids
 to produce leaflet maps in the portal.
 }
+\keyword{ingestion}

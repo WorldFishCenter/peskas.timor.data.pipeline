@@ -20,3 +20,4 @@ GPS tracks file are uploaded in two files: one using the original temporal
 resolution (1 sec recording frequency) and one using a lower temporal
 resolution based on a 1 minute scale.
 }
+\keyword{ingestion}

@@ -79,6 +79,7 @@ merge_trips <- function() {
 #' @return no outputs. This function is used for it's side effects
 #' @importFrom rlang .data
 #'
+#' @keywords ingestion
 #' @export
 #'
 ingest_pds_matched_trips <- function(log_threshold = logger::DEBUG) {

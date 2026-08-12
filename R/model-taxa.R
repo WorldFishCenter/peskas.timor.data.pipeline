@@ -104,6 +104,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' @param nutrients_table Table with nutritional parameters
 #'
 #' @return The long landings table with `weight` and nutrients added
+#' @keywords preprocessing
 #' @export
 #'
 join_weights <- function(data, rfish_tab, nutrients_table) {

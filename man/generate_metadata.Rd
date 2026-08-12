@@ -24,3 +24,4 @@ conf <- read_config()
 generate_metadata(conf, temp_coverage = "2018-2024")
 }
 }
+\keyword{export}

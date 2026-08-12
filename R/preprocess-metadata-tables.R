@@ -105,6 +105,7 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
 #' @param vms_installs_table a data frame with the vms movements
 #'
 #' @return a tibble with the vms_installs
+#' @keywords preprocessing
 #' @export
 #'
 pt_validate_vms_installs <- function(vms_installs_table) {
@@ -149,6 +150,7 @@ pt_validate_vms_installs <- function(vms_installs_table) {
 #' @param devices_table a data frame with the devices
 #'
 #' @return a tibble
+#' @keywords preprocessing
 #' @export
 #'
 pt_validate_devices <- function(devices_table) {
@@ -166,6 +168,7 @@ pt_validate_devices <- function(devices_table) {
 #'   flag_category, and flag_message
 #'
 #' @return a data frame with columns flag_id, flag_category, and flag_message
+#' @keywords preprocessing
 #' @export
 #'
 pt_validate_flags <- function(flags_table) {
@@ -193,6 +196,7 @@ pt_validate_flags <- function(flags_table) {
 #' @param boats_table a data frame with the boats info
 #'
 #' @return a tibble
+#' @keywords preprocessing
 #' @export
 #'
 pt_validate_boats <- function(boats_table) {
@@ -224,6 +228,7 @@ pt_validate_boats <- function(boats_table) {
 #'
 #' @return a tibble
 #'
+#' @keywords preprocessing
 pt_validate_catch_types <- function(catch_type_table) {
   catch_type_table
 }
@@ -233,6 +238,7 @@ pt_validate_catch_types <- function(catch_type_table) {
 #' @param morphometric_table a data frame with morphometric info
 #'
 #' @return a tibble
+#' @keywords preprocessing
 pt_validate_morphometric_table <- function(morphometric_table) {
   morphometric_table %>%
     dplyr::mutate(dplyr::across(
@@ -255,6 +261,7 @@ pt_validate_morphometric_table <- function(morphometric_table) {
 #'
 #' @return a tibble
 #'
+#' @keywords preprocessing
 pt_validate_centro_pescas <- function(centro_pescas_table) {
   centro_pescas_table
 }
