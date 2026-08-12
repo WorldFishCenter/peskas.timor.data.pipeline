@@ -3134,10 +3134,19 @@ that nothing reads.
 This is the "drop the dependency" branch of the choice Phase 7 handed over. It
 is reversible — nothing was deleted from the bucket, the existing versions are
 still the newest under those names, and re-adding two lines to `export_files()`
-restores the family. It also makes `ingest_pds_map()` and
-`ingest_kepler_tracks()` fully unreferenced, so Phase 11 can delete them;
-`get_timor_boundaries()` and `convert_taxa_names()` stay, `format_public_data()`
-calls both.
+restores the family.
+
+**The other half of that handover needed no decision: `tracks-map.png` never
+had a reader.** The brief and the Phase 7 entry both say `export_files()` reads
+it; it does not, and nor does anything else. `get_tracks_map()` is defined in
+get-cloud-files.R and called from nowhere in `R/`, `inst/report/` or the
+workflows — the png has simply been sitting in `public-timor` since 2021-12-11.
+
+So `ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`,
+`ingest_complete_tracks()`, `get_tracks_map()` and `label_taxa_groups()` are all
+**fully unreferenced** after this phase, and Phase 11 can delete `R/pds-maps.R`
+down to `get_timor_boundaries()` and `convert_taxa_names()` — which stay,
+`format_public_data()` calls both — plus `inst/kepler_mapper.py`.
 
 *6. `coasts::preprocess_pds_tracks()` was not wired in, and C20 is not why*
 
@@ -3283,9 +3292,11 @@ a fifth R CMD check NOTE.
    between a local run and a CI container. One column in 93 did. A numeric diff
    of the portal set should therefore be read with a tolerance, and structural
    assertions should carry the weight — which is how the gate script is built.
-3. **`ingest_pds_map()` is now genuinely dead**, not "dead but load-bearing".
-   Phase 11 can delete `pds-maps.R` down to `get_timor_boundaries()` and
-   `convert_taxa_names()`, and `inst/kepler_mapper.py` with it.
+3. **`ingest_pds_map()` is now genuinely dead**, not "dead but load-bearing",
+   and `tracks-map.png` never had a reader in the first place. Phase 11 can
+   delete `pds-maps.R` down to `get_timor_boundaries()` and
+   `convert_taxa_names()`, plus `get_tracks_map()`, `label_taxa_groups()` and
+   `inst/kepler_mapper.py`.
 4. **Phase 9 inherits a stable export contract**: seven names, asserted by a
    script that lives in the repo. Any workflow rewrite should keep the
    `format_public_data()` → `export_files()` order and the tinytest step between

@@ -7,15 +7,23 @@
 #' `coasts::preprocess_pds_tracks()`, which is how Mozambique, Kenya and
 #' Zanzibar have always done it — none of them carries any PDS code.
 #'
-#' What is left are the two map products the portal path reads
-#' (`indicators_gridded`, `tracks-map`) plus the Kepler map and the taxa-name
-#' lookup they share with `format_public_data()`. Neither map function is wired
-#' into a workflow: `indicators_gridded.rds` was last written 2024-07-27 and
-#' `tracks-map.png` 2021-12-11, and `portal-indicators_grid.json` — regenerated
-#' from that stale rds on every run — is one of the objects the portal
-#' excludes. They are retained rather than ported to coasts' H3 output because
-#' `export_files()` still reads both; the decision belongs to Phase 8's portal
-#' gate.
+#' What is left are the map products plus the boundary and taxa-name lookups
+#' they share with `format_public_data()`. **Only the lookups are live.**
+#'
+#' Phase 8 resolved the dangling dependency the Phase 7 handover described. Of
+#' the two map products, `tracks-map.png` (last written 2021-12-11) turned out
+#' to have no reader at all — `get_tracks_map()` has no caller — and
+#' `indicators_gridded.rds` (last written 2024-07-27 in production, 2023-05-21
+#' in dev) had exactly one: `export_files()`, which rebuilt
+#' `portal-indicators_grid.json` and `portal-label_groups_list.json` from it on
+#' every run. Those are the two objects `peskas.timor.portal.v2` explicitly
+#' excludes, so Phase 8 dropped them.
+#'
+#' The consequence for this file: `ingest_pds_map()`, `ingest_kepler_tracks()`,
+#' `kepler_mapper()` and `ingest_complete_tracks()` are now **fully
+#' unreferenced** and go in Phase 11, along with `inst/kepler_mapper.py`.
+#' `get_timor_boundaries()` and `convert_taxa_names()` stay —
+#' `format_public_data()` calls both.
 #'
 #' @name pds-maps
 NULL

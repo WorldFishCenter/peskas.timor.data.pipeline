@@ -12,13 +12,21 @@ ingestion: migration Phase 7 deleted \code{ingest_pds_trips()},
 Zanzibar have always done it — none of them carries any PDS code.
 }
 \details{
-What is left are the two map products the portal path reads
-(\code{indicators_gridded}, \code{tracks-map}) plus the Kepler map and the taxa-name
-lookup they share with \code{format_public_data()}. Neither map function is wired
-into a workflow: \code{indicators_gridded.rds} was last written 2024-07-27 and
-\code{tracks-map.png} 2021-12-11, and \code{portal-indicators_grid.json} — regenerated
-from that stale rds on every run — is one of the objects the portal
-excludes. They are retained rather than ported to coasts' H3 output because
-\code{export_files()} still reads both; the decision belongs to Phase 8's portal
-gate.
+What is left are the map products plus the boundary and taxa-name lookups
+they share with \code{format_public_data()}. \strong{Only the lookups are live.}
+
+Phase 8 resolved the dangling dependency the Phase 7 handover described. Of
+the two map products, \code{tracks-map.png} (last written 2021-12-11) turned out
+to have no reader at all — \code{get_tracks_map()} has no caller — and
+\code{indicators_gridded.rds} (last written 2024-07-27 in production, 2023-05-21
+in dev) had exactly one: \code{export_files()}, which rebuilt
+\code{portal-indicators_grid.json} and \code{portal-label_groups_list.json} from it on
+every run. Those are the two objects \code{peskas.timor.portal.v2} explicitly
+excludes, so Phase 8 dropped them.
+
+The consequence for this file: \code{ingest_pds_map()}, \code{ingest_kepler_tracks()},
+\code{kepler_mapper()} and \code{ingest_complete_tracks()} are now \strong{fully
+unreferenced} and go in Phase 11, along with \code{inst/kepler_mapper.py}.
+\code{get_timor_boundaries()} and \code{convert_taxa_names()} stay —
+\code{format_public_data()} calls both.
 }
