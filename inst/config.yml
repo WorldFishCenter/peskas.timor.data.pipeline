@@ -105,6 +105,8 @@ default:
     merged_landings:
       file_prefix: timor-landings-merged
       version: latest
+    # [legacy] lost its last reader in Phase 8 with the nested validated
+    # artefact; see `surveys.landings.validated` below.
     validated_landings:
       file_prefix: timor-landings-merged_validated
       version: latest
@@ -156,12 +158,17 @@ default:
       weight:
         file_prefix: timor-landings-merged_weight
         version: latest
+      # [legacy] the nested `.rds` validated artefact. **No writer and no reader
+      # since Phase 8**, which made `get_validated_landings()` a re-nesting view
+      # over `validated_long` below instead of a second stored object. The eleven
+      # years of history under this prefix stay in the bucket; the key goes with
+      # the other legacy keys in Phase 11.
       validated:
         file_prefix: timor-landings-merged_validated
         version: latest
-      # The flat long counterpart of `validated`, written beside it since
-      # Phase 5 and read by the Phase 6 API export. Phase 8 retires the nested
-      # artefact once `format_public_data()` reads this one too.
+      # The one validated artefact since Phase 8: flat, long, parquet. Written
+      # by `validate_landings()`, read by the API export, by
+      # `get_validated_landings()` and so by the whole portal path.
       validated_long:
         file_prefix: timor-landings-merged_validated_long
         version: latest

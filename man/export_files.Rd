@@ -25,10 +25,13 @@ uploads them to public cloud storage.
 }
 }
 \details{
-Exported JSON objects include (at minimum):
+The exported JSON objects are exactly the seven the live portal consumes:
 \code{aggregated}, \code{taxa_aggregated}, \code{municipal_aggregated}, \code{municipal_taxa},
-\code{nutrients_aggregated}, \code{data_last_updated}, \code{indicators_grid},
-\code{label_groups_list}, and \code{summary_data}.
+\code{nutrients_aggregated}, \code{data_last_updated} and \code{summary_data}. The contract
+is \strong{discovery-based} — \code{peskas.timor.portal.v2/scripts/fetchData.js} lists
+the bucket for the \verb{portal-} prefix and keeps the newest version of each — so
+renaming or dropping one of these seven does not fail a build, it silently
+removes a page from the live site.
 
 The function expects \code{summary_data} (downloaded) to contain fields such as
 \code{n_surveys}, \code{catch_norm}, \code{catch_price_norm}, \code{nutrients_per_catch},

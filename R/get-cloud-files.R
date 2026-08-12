@@ -104,26 +104,109 @@ get_validated_landings_long <- function(conf) {
   )
 }
 
-#' Download Peskas validated landings
+#' Download Peskas validated landings, in the nested portal shape
 #'
-#' Download validated Peskas data from Google Cloud.
+#' One row per submission, with the catch as the `landing_catch` /
+#' `length_frequency` list-columns that [merge_trips()], `format_public_data()`
+#' and `estimate_fishery_indicators()` read.
 #'
-#' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
+#' Until migration Phase 8 this read a second stored artefact,
+#' `timor-landings-merged_validated__*.rds`, written by [validate_landings()]
+#' beside the long parquet. That artefact is gone: this is now a **view** over
+#' [get_validated_landings_long()], rebuilt by `nest_landing_catch()`. The two
+#' were proven interchangeable before the switch — 97,360 submissions and
+#' 1,648,016 catch rows compared column by column, every column equal, with
+#' 1,599 catch weights differing by at most 2.9e-11 g (one ULP of the
+#' grams → kg → grams round trip) and the national total unchanged to 20
+#' significant digits.
 #'
-#' @return A dataframe of validated survey landings.
+#' @param conf The configuration file.
+#'
+#' @return A tibble of validated survey landings, one row per submission.
 #' @keywords storage
 #' @export
 #'
-get_validated_landings <- function(log_threshold = logger::DEBUG) {
-  conf <- read_config()
+get_validated_landings <- function(conf) {
+  long <- get_validated_landings_long(conf)
 
-  download_versioned_rds(
-    prefix = conf$surveys$validated_landings$file_prefix,
-    provider = conf$storage$google$key,
-    options = coasts::resolve_storage_opts(conf, "country"),
-    version = conf$surveys$validated_landings$version,
-    exact_match = TRUE
+  catch <- long %>%
+    dplyr::transmute(
+      .data$submission_id, .data$n_catch, .data$catch_taxon,
+      .data$catch_use, .data$length_type, .data$length,
+      number_of_fish = .data$n_individuals,
+      catch = .data$catch_kg * 1000,
+      dplyr::across(tidyselect::ends_with("_mu"))
+    )
+
+  long %>%
+    dplyr::select(-dplyr::all_of(long_catch_cols())) %>%
+    dplyr::distinct() %>%
+    dplyr::left_join(nest_landing_catch(catch), by = "submission_id") %>%
+    dplyr::select(
+      landing_id = "submission_id",
+      "landing_date",
+      "tracker_imei",
+      trip_length = "trip_duration",
+      "landing_catch",
+      "catch_price",
+      "landing_site",
+      "municipality",
+      habitat = "catch_habitat",
+      tidyselect::starts_with("fisher_number"),
+      "gear",
+      "mesh_size",
+      propulsion_gear = "vessel_type",
+      "n_gleaners",
+      "fuel",
+      "catch_preservation",
+      "happiness"
+    )
+}
+
+# The catch-level columns of the long validated table — everything that is not
+# a property of the submission. Everything else is `distinct()`-ed down to one
+# row per submission by `get_validated_landings()`, so a new catch-level column
+# added to `long_validated_landings()` and not listed here would silently
+# multiply the submission rows.
+long_catch_cols <- function() {
+  c(
+    "n_catch", "catch_taxon", "scientific_name", "catch_use", "catch_outcome",
+    "length_type", "length", "n_individuals", "catch_kg",
+    "Selenium_mu", "Zinc_mu", "Protein_mu", "Omega_3_mu", "Calcium_mu",
+    "Iron_mu", "Vitamin_A_mu"
   )
+}
+
+# Nest the validated catch into the `landing_catch` / `length_frequency`
+# list-columns the portal path consumes. Written by `validate_landings()` until
+# migration Phase 8; it is a read-side reshape now that the nested artefact is
+# gone.
+#
+# `nest(landing_catch = -submission_id)` groups on the submission alone, so two
+# catches of one submission that happen to share a taxon, use and length type
+# stay two rows — 4,873 submissions do.
+#
+# The leading select() is load-bearing: `nest()` groups on every column it is
+# not nesting, so an extra column in `validated_catch` would silently change the
+# grouping and with it what the portal reads. `n_catch` is part of that grouping
+# and is dropped again afterwards.
+nest_landing_catch <- function(validated_catch) {
+  validated_catch %>%
+    dplyr::select(
+      "submission_id", "n_catch", "catch_taxon", "catch_use", "length_type",
+      "length", "number_of_fish", "catch", tidyselect::ends_with("_mu")
+    ) %>%
+    tidyr::nest(
+      length_frequency = c(
+        "length", "number_of_fish", "catch",
+        tidyselect::ends_with("_mu")
+      )
+    ) %>%
+    dplyr::select(
+      "submission_id", "catch_taxon", "catch_use", "length_type",
+      "length_frequency"
+    ) %>%
+    tidyr::nest(landing_catch = -"submission_id")
 }
 
 # Download validated PDS trips.

@@ -150,6 +150,10 @@ format_aggregated_data <- function(
 #' Internally converts to a `data.table`, unique-ifies taxa within group, and
 #' uses `split()` to produce the group-wise list.
 #'
+#' **No caller since migration Phase 8**: it built `portal-label_groups_list`,
+#' one of the two objects the portal excludes and `export_files()` no longer
+#' emits. Retained until Phase 11's dead-code pass.
+#'
 #' @seealso data.table::data.table, split
 #' @keywords internal
 #' @export
@@ -225,10 +229,13 @@ rename_ontology <- function(x) {
 #'   and upload).
 #'
 #' @details
-#' Exported JSON objects include (at minimum):
+#' The exported JSON objects are exactly the seven the live portal consumes:
 #' `aggregated`, `taxa_aggregated`, `municipal_aggregated`, `municipal_taxa`,
-#' `nutrients_aggregated`, `data_last_updated`, `indicators_grid`,
-#' `label_groups_list`, and `summary_data`.
+#' `nutrients_aggregated`, `data_last_updated` and `summary_data`. The contract
+#' is **discovery-based** — `peskas.timor.portal.v2/scripts/fetchData.js` lists
+#' the bucket for the `portal-` prefix and keeps the newest version of each — so
+#' renaming or dropping one of these seven does not fail a build, it silently
+#' removes a page from the live site.
 #'
 #' The function expects `summary_data` (downloaded) to contain fields such as
 #' `n_surveys`, `catch_norm`, `catch_price_norm`, `nutrients_per_catch`,
@@ -261,9 +268,16 @@ export_files <- function() {
     purrr::map(., ~ dplyr::filter(.x, !nutrient == "selenium"))
   summary_data <- get_file("summary_data")
 
-  indicators_grid <- get_file("indicators_gridded") %>%
-    data.table::as.data.table()
-  label_groups_list <- label_taxa_groups(indicators_grid)
+  # NOTE: `portal-indicators_grid` and `portal-label_groups_list` were emitted
+  # here until migration Phase 8 and are not any more. They were the **two
+  # objects `peskas.timor.portal.v2/scripts/fetchData.js` explicitly excludes**
+  # (AUDIT §3), rebuilt on every run from `indicators_gridded.rds` — an object
+  # last written 2024-07-27 in production and 2023-05-21 in dev, by
+  # `ingest_pds_map()`, which no workflow has called in two years. So the export
+  # was publishing a fresh version number over two-year-old content that nothing
+  # read. Dropping them leaves the seven objects the portal actually consumes,
+  # and is reversible: no history was deleted, and re-adding the two lines
+  # restores the family. See the Phase 8 STATE entry.
 
   boats <- sum(unique(municipal_aggregated$n_boats))
 
@@ -410,8 +424,6 @@ export_files <- function() {
     municipal_taxa = municipal_taxa,
     nutrients_aggregated = nutrients_aggregated,
     data_last_updated = data_last_updated,
-    indicators_grid = indicators_grid,
-    label_groups_list = label_groups_list,
     summary_data = summary_data
   )
 

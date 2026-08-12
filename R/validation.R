@@ -147,13 +147,11 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     ) %>%
     purrr::map(~ dplyr::select(.x, -"alert_number")) %>%
     purrr::reduce(dplyr::left_join, by = "submission_id") %>%
-    dplyr::left_join(nest_landing_catch(validated_catch), by = "submission_id") %>%
     dplyr::select(
       landing_id = "submission_id",
       landing_date = "date",
       tracker_imei = "imei",
       "trip_length",
-      "landing_catch",
       "catch_price",
       landing_site = "station_name",
       municipality = "reporting_region",
@@ -168,23 +166,10 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       "happiness"
     )
 
-  validated_landings_filename <- conf$surveys$landings$validated$file_prefix %>%
-    add_version(extension = "rds")
-  readr::write_rds(
-    x = validated_landings,
-    file = validated_landings_filename,
-    compress = "gz"
-  )
-  logger::log_info("Uploading {validated_landings_filename} to cloud storage")
-  coasts::upload_cloud_file(
-    file = validated_landings_filename,
-    provider = conf$storage$google$key,
-    options = coasts::resolve_storage_opts(conf, "country")
-  )
-
-  # The same content, flat and long, under the standard names. Migration
-  # Phase 6 exports the API contract from this; Phase 8 retires the nested
-  # artefact above once the portal reads it too.
+  # The one validated artefact since migration Phase 8. Until then a second,
+  # nested `.rds` was written beside it for the portal path; that path now gets
+  # the same shape from `get_validated_landings()`, which re-nests this table on
+  # read. The two were proven interchangeable first — see that function.
   logger::log_info("Uploading the long validated catch table")
   coasts::upload_parquet_to_cloud(
     data = long_validated_landings(
@@ -482,9 +467,10 @@ sync_validation_status <- function(versions = c("v2", "v3"),
   invisible(results)
 }
 
-# The validated catch columns, under the names the nested artefact and the
-# portal have always used. `catch_outcome` and `scientific_name` ride along for
-# the long table and the API export; `nest_landing_catch()` drops them.
+# The validated catch columns, under the names the portal has always used.
+# `catch_outcome` and `scientific_name` ride along for the long table and the
+# API export; `nest_landing_catch()` — now in get-cloud-files.R, since Phase 8
+# reshapes on read rather than on write — drops them again.
 rename_validated_catch <- function(catch) {
   catch %>%
     dplyr::transmute(
@@ -502,47 +488,19 @@ rename_validated_catch <- function(catch) {
     )
 }
 
-# Re-nest the validated catch into the `landing_catch` / `length_frequency`
-# list-columns the portal path consumes. `nest(landing_catch = -submission_id)`
-# groups on the submission alone, so two catches of one submission that happen
-# to share a taxon, use and length type stay two rows — 4,873 submissions do.
+# The flat long validated table, and since migration Phase 8 the only one: the
+# validated submission columns joined back onto the validated catch rows, under
+# standard names. `catch_kg` rather than grams, because that is what the
+# cross-country API schema migration Phase 6 conforms to publishes.
 #
-# The leading select() is load-bearing: `nest()` groups on every column it is
-# not nesting, so an extra column in `validated_catch` would silently change the
-# grouping and with it the artefact the portal reads.
-nest_landing_catch <- function(validated_catch) {
-  validated_catch %>%
-    dplyr::select(
-      "submission_id", "n_catch", "catch_taxon", "catch_use", "length_type",
-      "length", "number_of_fish", "catch", tidyselect::ends_with("_mu")
-    ) %>%
-    tidyr::nest(
-      length_frequency = c(
-        "length", "number_of_fish", "catch",
-        tidyselect::ends_with("_mu")
-      )
-    ) %>%
-    dplyr::select(
-      "submission_id", "catch_taxon", "catch_use", "length_type",
-      "length_frequency"
-    ) %>%
-    tidyr::nest(landing_catch = -"submission_id")
-}
-
-# The flat long counterpart of the nested artefact: the validated submission
-# columns joined back onto the validated catch rows, under standard names.
-# `catch_kg` rather than grams, because that is what the cross-country API
-# schema migration Phase 6 conforms to publishes.
-#
-# `submission_extras` carries the columns the *nested* artefact never had — the
-# form version and the GAUL administrative codes — so that
+# `submission_extras` carries the columns the retired *nested* artefact never
+# had — the form version and the GAUL administrative codes — so that
 # `export_api_validated()` is a projection of this table rather than a second
 # reconstruction of it.
 long_validated_landings <- function(validated_catch,
                                     validated_landings,
                                     submission_extras) {
   validated_landings %>%
-    dplyr::select(-"landing_catch") %>%
     dplyr::rename(
       submission_id = "landing_id",
       trip_duration = "trip_length",

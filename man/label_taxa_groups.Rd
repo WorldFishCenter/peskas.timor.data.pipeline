@@ -22,6 +22,10 @@ the unique taxa (from \code{catch_taxon}) observed in that group.
 \details{
 Internally converts to a \code{data.table}, unique-ifies taxa within group, and
 uses \code{split()} to produce the group-wise list.
+
+\strong{No caller since migration Phase 8}: it built \code{portal-label_groups_list},
+one of the two objects the portal excludes and \code{export_files()} no longer
+emits. Retained until Phase 11's dead-code pass.
 }
 \examples{
 \dontrun{
