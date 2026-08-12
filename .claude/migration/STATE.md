@@ -3381,3 +3381,9 @@ Against the **Phase 0 golden** with the same declaration: **0 structural
 failures**, eight size-only notes, and the expected numeric drift from
 `a2c2881` and Phase 4 — the golden is a sanity band, not a target, exactly as
 the restated gate says.
+
+*Two further green runs on the same branch*: **31573431992** (`6149f77`, docs)
+and **31575332664** (`54154f2`), the latter carrying the `anyDuplicated()` guard
+in `get_validated_landings()` — exercised twice per run, by `Validate landings`
+and by `Merge trips`, and silent in both. Three green end-to-end runs on Phase 8
+code in total.
