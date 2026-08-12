@@ -628,16 +628,34 @@ data, and it is green — three consecutive end-to-end runs on Phase 8 code.
 
 ### Phase 10 — Upstream to coasts
 
-Runs in the `peskas.coasts` repo, one PR per item:
+**Re-scoped 2026-08-12, after Phase 9.** This phase runs in the
+`peskas.coasts` repo (`~/Desktop/work/wf_projects/peskas.coasts`), not this one.
+It is the only phase whose deliverable is somebody else's repo, and the only one
+where "do nothing" is a defensible outcome per item — an item that no second
+country would use is not worth a hub PR.
 
-- nutrients / RDI computation (Timor's is the only implementation; Kenya and
-  Zanzibar would use it)
-- Dataverse publishing
-- `validate_pds_trips()` consecutive-trip merging and outlier logic
-- the richer validators (landing regularity, mesh, gleaners, fuel, conservation)
-- retry wrappers for cloud upload/download
+**One item was already delivered without a PR.** Retry wrappers landed in coasts
+4.6.0 as `insistent_upload_cloud_file()` / `insistent_download_cloud_file()`
+(COASTS-TODO C5), and Timor's local copies are gone. `resolve_storage_opts()`
+learned `"public"` and `"api"` (C6, C16), and Timor is registered in the hub's
+`api.trips` block and PDS customer list (C7). **Do not re-do these.**
 
-Then Timor depends on the new coasts release and deletes its local copies.
+The candidates, each with the question that decides it:
+
+| Candidate | Where it lives now | The question |
+|---|---|---|
+| nutrients / RDI | `R/nutrients.R` | `coasts::enrich_taxa()` emits six nutrients against Timor's seven, no selenium, no unit conversion, no FAO override for the six invertebrates FishBase cannot estimate. Upstreaming means changing a function three countries already call — is it an extension or a fork? |
+| Dataverse publishing | `R/export-dataverse.R` | Nobody else publishes to Dataverse. Does a second country want it, or is this Timor-only by nature? |
+| `validate_pds_trips()` merging + outlier logic | `R/validate-pds-trips.R` | No coasts equivalent exists and `coasts::merge_survey_trips()` does a different job (C10). This is the strongest candidate |
+| the richer validators | `R/validation-functions.R` | Landing regularity, mesh, gleaners, fuel, conservation, happiness. Deeper than any other country's. Which are Timor-specific by *form*, not by intent? |
+| `get_validation_status()` / `update_validation_status()` | `R/validation-functions.R` | **C15, and the clearest win**: every country writing flags to the shared validation database needs them, Moz's copy has two live bugs Timor fixed (404-throws, per-submission loop at 20 min vs 70 s), and Timor's is the corrected implementation |
+
+Read COASTS-TODO.md in full first: C11, C13, C17, C18, C19, C20 and C12 are all
+open, and two of them (C17, C20) are what keep `preprocess_pds_tracks()` unwired
+in Timor. Some are better fixed while in the hub repo than filed again.
+
+Then Timor depends on the new coasts release and deletes its local copies —
+which is a Phase 11 edit here, not a Phase 10 one.
 
 ---
 
