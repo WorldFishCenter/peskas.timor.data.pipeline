@@ -26,6 +26,11 @@
 # version string is stripped before matching. Exits non-zero on any structural
 # difference, and prints — but does not fail on — numeric ones, which always
 # need a human to accept or reject them.
+#
+# Negative-tested when written: seeding a dropped `summary_data` key, a renamed
+# column and a numeric column turned character into an otherwise-identical set
+# produces four failures and exit status 1. A gate that has only ever been run
+# against passing input is not a gate.
 
 suppressPackageStartupMessages(library(jsonlite))
 
