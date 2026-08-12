@@ -1,38 +1,39 @@
+# The weekly validation summary mail. Rebuilt in migration Phase 9 rather than
+# retired, unlike the three siblings deleted in the same phase: it was one of
+# the four workflows still pushing to the **retired** `docker.pkg.github.com`
+# registry through `whoan/docker-build-with-cache-action@v5`, which is why it
+# has not succeeded since ≥2025-09 — but the function behind it is live.
+# Phase 5 repointed `send_validation_mail()` at the MongoDB flags sink and the
+# `validation.alerts` block of `inst/config.yml`, so it needs
+# `MONGODB_CONNECTION_STRING_VALIDATION`, not `VALID_SHEET_ID`, whose sheet has
+# had no reader since that phase.
+#
+# It runs in the container `data-pipeline.yaml` builds; it does not build one.
+#
+# State: `disabled_inactivity`. Re-enabling is a Phase 11 action — the schedule
+# fires from the default branch, which is still pre-migration code and would
+# mail from the retired Google Sheet.
 name: Send validation summary email
 
 on:
   schedule:
-    - cron:  '0 0 * * MON'
+    - cron: '0 0 * * MON'
+  workflow_dispatch:
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
   PESKAS_GMAIL_KEY: ${{ secrets.PESKAS_GMAIL_KEY }}
-  VALID_SHEET_ID: ${{ secrets.VALID_SHEET_ID }}
+  MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
+  KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}
+  KOBO_ASSET_ID_V3: ${{ secrets.KOBO_PESKAS3 }}
 
 jobs:
-
-  build-container:
-    name: Build R container
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Build image with cache
-        id: build-docker
-        uses: whoan/docker-build-with-cache-action@v5
-        with:
-          username: $GITHUB_ACTOR
-          password: "${{ secrets.GITHUB_TOKEN }}"
-          registry: docker.pkg.github.com
-          image_name: r-runner-peskas-timor
-          dockerfile: Dockerfile.prod
-
   send-mail:
     name: Send summary mail
-    needs: [build-container]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
-      image: docker.pkg.github.com/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
