@@ -22,7 +22,8 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+  # No `GCP_SA_KEY`: since Phase 5 this reads the flags from MongoDB and the
+  # alert descriptions from `inst/config.yml`, and touches cloud storage nowhere.
   PESKAS_GMAIL_KEY: ${{ secrets.PESKAS_GMAIL_KEY }}
   MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
   KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}

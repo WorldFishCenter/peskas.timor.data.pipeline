@@ -6,7 +6,17 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 8 **complete** (2026-08-12). Phase 9 (CI, repo, docs) not started.
+- **Phase:** 9 **complete** (2026-08-12). Phase 10 (upstream to coasts, in the
+  `peskas.coasts` repo) not started.
+- **CI is now nine workflows, not eleven.** Read the Phase 9 entry before
+  touching any of them, and in particular: the three `disabled_inactivity` ones
+  must not be re-enabled until after the Phase 11 merge, because a cron fires
+  from the default branch; `release.yaml` cuts `v4.0.0` the moment this work
+  lands on `main`; the two `if: ${{ !endsWith(github.ref, '/main') }}` lines on
+  the API export steps are the only thing standing between Timor and its first
+  `peskas-api-prod` write; and `R-CMD-check` / `pkgdown` / `test-coverage`
+  cannot run from a phase branch at all, so their first exercise is the Phase 11
+  PR.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
@@ -15,7 +25,10 @@ Append one entry per completed phase, newest at the bottom.
   Phase 7 = **`76b7f71`** (+ `03a1d0f` the C21 leak fix) on
   `feat/align-coasts-phase7`.
   Phase 8 = **`c0207c3`** (renames) + **`c27c126`** (export path) on
-  `feat/align-coasts-phase8`. Green end-to-end CI runs: **31436031588** on the
+  `feat/align-coasts-phase8`.
+  Phase 9 = **`afff10c`** (workflows) + **`586db1d`** (pkgdown keywords) +
+  **`a1773cb`** (NEWS / README / CLAUDE.md) on `feat/align-coasts-phase9`.
+  Green end-to-end CI runs: **31436031588** on the
   Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
   MongoDB flags sink and all four tinytest suites — **31439673841** on the
   Phase 6 code, **31486298126** on Phase 7 and **31569049836** on `87284eb`,
@@ -30,7 +43,7 @@ Append one entry per completed phase, newest at the bottom.
   `gs://pds-timor-dev` now holds **both** track families: 101,959
   `pds-tracks_<id>.parquet` (live) and 103,373 `pds-track-<id>__*__.csv.gz`
   (dead, deleted in Phase 11). `gs://pds-timor` still holds only the old one.
-- **Read before Phase 9:** the Phase 8 entry's "Findings that change later
+- **Read before Phase 10/11:** the Phase 8 entry's "Findings that change later
   phases" — in particular that the export contract is now **seven** portal
   objects asserted by `data-raw/compare-portal-json.R`, that
   `portal-*.json` numbers are host-sensitive at the fourth decimal (so read a
@@ -3387,3 +3400,275 @@ and **31575332664** (`54154f2`), the latter carrying the `anyDuplicated()` guard
 in `get_validated_landings()` — exercised twice per run, by `Validate landings`
 and by `Merge trips`, and silent in both. Three green end-to-end runs on Phase 8
 code in total.
+
+---
+
+## Phase 9 — CI, repo, docs — 2026-08-12
+
+Branch: `feat/align-coasts-phase9` (off `feat/align-coasts-phase8` at `7d0a710`)
+
+**Done**
+
+*1. `data-pipeline.yaml` was edited, not rewritten (`afff10c`)*
+
+The brief called the risk rating right and the risk name wrong: nothing in this
+phase touches data, but this file is the only workflow in the repo that produces
+any, and it was green on three consecutive end-to-end runs. So the diff is
+confined to what the phase asks for, and the whole of it is visible in
+`git diff 7d0a710 HEAD -- .github/workflows/data-pipeline.yaml`:
+
+- `checkout@v4` → `@v5`, `build-push-action@v5` → `@v6`,
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`, and `ubuntu-22.04` →
+  `ubuntu-latest` on all eleven container jobs (`build-container` was already
+  `ubuntu-latest`).
+- three `env:` changes, below.
+- two new steps, below.
+
+Untouched: the job graph, every `needs:`, the four tinytest steps, the COASTS_REF
+resolution, the `R_CONFIG_ACTIVE=production` guards, the C17/C20 comment block,
+and `log_threshold = logger::INFO` on both `coasts::` calls — the one line in
+this file that is load-bearing for secrets, and still needed because the
+container resolves the latest coasts *release*, not the fixed source.
+
+*2. The API exports are wired in, with the prod write held back explicitly*
+
+`export_api_raw()` runs in `merge-landings` after `calculate_weights()`, which
+writes the weight artefact it reads. `export_api_validated()` runs in
+`validate-landings` **after** the tinytest step, so a failed assertion stops the
+export. No new jobs, no extra container pulls.
+
+Both carry `if: ${{ !endsWith(github.ref, '/main') }}`. PLAN Phase 9 says wiring
+them in and the first `peskas-api-prod` write are two decisions and only the
+first belongs here; without the guard, wiring in *is* the second decision,
+deferred to whenever Phase 11 merges. With it the two are actually separate:
+every push to a phase branch exercises the export against `peskas-api-dev`, and
+deleting two lines is how the prod decision gets taken by whoever owns telling
+the API's consumers a fourth country is arriving.
+
+*3. Three `env:` changes*
+
+- `KOBO_PESKAS1/2/3` are no longer passed under their own names — nothing has
+  read them since Phase 3 — but still feed `KOBO_ASSET_ID_V<n>`. **The rename is
+  the user's decision, taken this session: keep the mapping.** Secret values are
+  write-only, so renaming means re-entering three asset ids by hand for no
+  behavioural gain; the legacy names retire in Phase 11 with the config keys.
+- `VALID_SHEET_ID` is dropped. Its only remaining reference is
+  `inst/config.yml:470`, which evaluates it into
+  `validation.google_sheets.sheet_id` — a key with no reader since Phase 5. It
+  now resolves to `""`, read by nothing. Key and secret go in Phase 11.
+- The comment claiming `MONGODB_CONNECTION_STRING_VALIDATION` does not exist yet
+  is gone. It was created 2026-08-10 and CI has used it since run 31436031588.
+
+*4. Four workflows retired, three of them deleted*
+
+Deleted: `form-summary.yaml`, `keplergl-map.yaml`, `upload-matched-trips.yaml`.
+All three build through the retired `docker.pkg.github.com` registry via
+`whoan/docker-build-with-cache-action@v5` and cannot work whatever else is done
+to them; none has succeeded since 2025-08; `keplergl-map` has had no live
+function behind it since Phase 8 left `ingest_kepler_tracks()` unreferenced.
+AUDIT §5's verdict on all three was "retire".
+
+`validation-email-sender.yaml` was the fourth of that family and is **rebuilt
+instead**, because AUDIT's "decide with P5" got decided: Phase 5 repointed
+`send_validation_mail()` at the MongoDB flags sink and the `validation.alerts`
+config block, so the function works and the workflow was the only thing broken.
+It now needs `MONGODB_CONNECTION_STRING_VALIDATION` and — easy to miss —
+`KOBO_ASSET_ID_V2/V3`, because the collection names it pulls are
+`surveys_flags-<asset_id>`.
+
+*5. A build bug of our own making, found and removed*
+
+`data-report.yaml` and `dataverse-upload.yaml` each carried a duplicate
+`build-container` job that **could not have succeeded since Phase 2**:
+`Dockerfile.prod` gained `ARG COASTS_REF` with no default and
+`RUN test -n "$COASTS_REF" && ...`, and neither workflow resolved or passed one.
+Both jobs are gone; all three surviving scheduled workflows now run in the
+`:latest` image `data-pipeline.yaml` pushes every run. Shorter and correct.
+
+They stay `disabled_inactivity`. **Re-enabling is a Phase 11 action:** a
+schedule fires from the **default branch**, so re-enabling now would run `main`'s
+pre-migration code against production on a cron — the validation mail would read
+the retired Google Sheet.
+
+*6. The four generic workflows are on the current r-lib v2 templates*
+
+`check-standard.yaml` → **`R-CMD-check.yaml`**, plus `pkgdown.yaml`,
+`test-coverage.yaml`, `pr-commands.yaml`. Each carries
+`extra-packages: github::WorldFishCenter/peskas.coasts,
+github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R` — `coasts` is not on CRAN,
+and its absence is most of why these failed in under fifteen seconds.
+
+Two deliberate departures, both recorded in the file headers:
+
+- **R-CMD-check runs one runner**, `ubuntu-latest` release, not the example's
+  five-platform matrix. This package only ever executes inside the Linux
+  container the pipeline builds, and resolving arrow / sf / glmmTMB / rfishbase /
+  mongolite / coasts from source on macOS and Windows buys a portability
+  property it does not need.
+- **`test-coverage` sets `fail_ci_if_error: false`** because no `CODECOV_TOKEN`
+  secret exists. Coverage is informational; a failed upload should not turn a run
+  red. `codecov-action@v5` input names (`files`, `plugins`) differ from the
+  reference's v4.
+
+`pr-commands` gains the substantive fix: it gates on
+`comment.author_association == MEMBER || OWNER`. The version it replaces let
+**any** commenter run `/document` or `/style` and push a commit to a PR branch.
+
+*7. `release.yaml` added, with the reference's tag bug fixed*
+
+The reference writes `tag_name=v$version` to `$GITHUB_OUTPUT` and then uses
+`v${{ steps.changelog.outputs.tag_name }}`, producing `vv2.8.0`, and `check_tag`
+compounds a third `v`. Timor's emits a bare `version` and adds the single `v` at
+each use site. It also passes `fetch-tags: true` — without tags in a shallow
+checkout `check_tag` always reports `exists=false` and the release step then
+fails on an existing tag.
+
+*8. `NEWS.md` caught up to DESCRIPTION, not the other way round*
+
+A `4.0.0` block: the storage/secrets/config/format/delegation breaking changes,
+the API export and the portal gate as new features, and the `read_config()` leak
+plus the two Phase 5 validator bugs as fixes. Written before `release.yaml`
+because that workflow parses this file.
+
+*9. `_pkgdown.yml` is keyword-driven (`586db1d`)*
+
+Sections are now the cross-country set — workflow, storage, ingestion,
+preprocessing, validation, export, helper. The name patterns it replaces were
+actively wrong after Phases 2–8: `matches("get")` swept every accessor into
+"Cloud storage", `matches("pds")` claimed map functions, and a rename moved a
+function between sections silently.
+
+**Thirty exported topics carried no `@keywords` at all** and were reachable only
+through those patterns, plus five documented-but-unexported ones
+(`model_landings`, `model_value`, three `pt_validate_*`, and the `pds-maps` file
+header, which never got the `@keywords internal` its Phase 8 siblings did). All
+tagged; no function body and no other roxygen field touched.
+
+*10. `README` rewritten*
+
+It described a repo that no longer exists: `inst/conf.yml`, three config
+environments including a `local:` one reading plaintext files from `auth/`, and
+no mention of `coasts`, parquet, the API tables or the portal gate. Rewritten
+around what a new reader needs, badges pointed at workflows that exist on `main`.
+`CLAUDE.md`'s "most workflows are dead" table is now a nine-workflow table with
+the two rules worth carrying: schedules wait for the Phase 11 merge, and no
+non-pipeline workflow builds its own image again.
+
+**Verified**
+
+*Local gates.* `devtools::document()` clean; `pkgdown::check_pkgdown()` —
+**"No problems found in `_pkgdown.yml`"**, which is the real test of the keyword
+switch since it fails on any exported topic no section claims;
+`devtools::check()` — **0 errors, 0 warnings, 4 NOTEs**, the Phase 4 baseline,
+with testthat green.
+
+The check first reported **5** NOTEs: `rmarkdown::render("README.Rmd")` leaves a
+`README.html` preview beside the generated `README.md`, and R CMD check calls it
+a non-standard top-level file. Deleted, and ignored in both `.Rbuildignore` and
+`.gitignore` — the same class of local-run detritus Phase 8 handled for `.tsv` /
+`.csv`. Re-checked at 4 NOTEs.
+
+*The release parser.* Run against the new NEWS locally: extracts `4.0.0` and an
+83-line changelog body from the top block.
+
+*Every workflow file parses* (`yaml::yaml.load_file()` over all nine).
+
+*The pipeline itself*: CI run **31602163472** on `a1773cb`. Result recorded in
+the follow-up below.
+
+**Deviations from the brief**
+
+- **`data-pipeline.yaml` was not restructured to "mirror Moz's job naming and
+  layout".** Moz's layout differs only in that its YAML has been round-tripped
+  through a serializer (alphabetised keys, `'on':`), and its job names describe
+  Mozambique's two forms. Timor's names already describe Timor's DAG. Churning a
+  green 300-line workflow to match a cosmetic difference is the one change in
+  this phase that could cost a phase to notice.
+- **R-CMD-check is one runner, not five**, and **`test-coverage` tolerates a
+  missing codecov token** — both above.
+- **The KOBO secret rename did not happen**, by the user's decision, above.
+
+**Deferred, with reasons**
+
+- **`AIRTABLE_KEY` was not deleted.** Asked; the user's answer was "if
+  airtable_key is not used anymore I can delete it, don't know if production is
+  still using it". So it is verified rather than deleted, and the verification is
+  the useful part: on `origin/main` — the code production actually runs —
+  `AIRTABLE_KEY` is passed as `env:` by `data-pipeline.yaml` and
+  `data-report.yaml`, read in R only by `air_get_records()` /
+  `air_tibble_to_records()` in `R/airtable.R`, whose only caller
+  `ingest_validation_tables()` **is not in any workflow step on main**, and
+  `main`'s `inst/conf.yml` has **no `airtable` block at all**. So nothing
+  reachable reads it, in production or here. Safe for the user to delete; no
+  workflow on this branch references it.
+- **Possible follow-up for the user, flagged not verified:** the user said they
+  "just updated the airtable keys in `.env`". If the PAT *value* changed, the
+  `AIRTABLE_TOKEN` GitHub secret still holds the old one and `ingest_assets()`
+  will fail on the next run. Re-push the secret if so.
+- **`R-CMD-check`, `pkgdown` and `test-coverage` cannot be exercised from a phase
+  branch.** They trigger on push to `main`/`master` and on PRs targeting them,
+  and `workflow_dispatch` only fires for workflow files on the default branch, so
+  a new file on a feature branch cannot be dispatched. Their first real run is
+  the Phase 11 PR. What could fail there is dependency resolution, not the
+  package: `setup-r-dependencies` has to build `coasts` and `ssfaitk` from GitHub
+  plus arrow / sf / glmmTMB from RSPM binaries. Opening a **draft PR** to `main`
+  from a phase branch would exercise all three without merging anything — worth
+  doing before Phase 11 if someone wants the answer early.
+- `pkgdown::build_site()` was not run locally; `check_pkgdown()` covers the
+  index, which is what changed.
+- `sync_validation_status()` still not wired. `preprocess_pds_tracks()` still
+  unwired, still on C17.
+
+**Findings that change later phases**
+
+1. **Phase 11 inherits a re-enable list, not a rewrite list**: `gh workflow
+   enable` on `data-report.yaml`, `dataverse-upload.yaml` and
+   `validation-email-sender.yaml`, *after* the merge to `main`, because crons
+   fire from the default branch. All three are already on the current stack and
+   run in the pipeline's container.
+2. **The prod API write is now a two-line deletion** with a comment saying so —
+   `if: ${{ !endsWith(github.ref, '/main') }}` in the `merge-landings` and
+   `validate-landings` jobs. Phase 11 should either take that decision
+   deliberately or leave the guards in and say why.
+3. **`VALID_SHEET_ID` is no longer passed by any workflow**, so Phase 11 can
+   drop `validation.google_sheets` from `inst/config.yml` and the secret without
+   checking CI first.
+4. **`release.yaml` fires on the Phase 11 merge.** The moment this branch lands
+   on `main`, it will cut a `v4.0.0` GitHub release from the top of NEWS.md.
+   That is intended, but it should not be a surprise.
+5. **Keywords are now load-bearing.** A new exported function with no
+   `@keywords` fails `pkgdown::check_pkgdown()` and the `pkgdown` workflow. That
+   is the point — it is the check that catches an unclassified topic — but it
+   means `document()` alone is no longer enough before pushing.
+
+**Files added / removed / renamed**
+
+- added: `.github/workflows/R-CMD-check.yaml`, `.github/workflows/release.yaml`
+- removed: `.github/workflows/check-standard.yaml` (replaced by
+  `R-CMD-check.yaml`), `.github/workflows/form-summary.yaml`,
+  `.github/workflows/keplergl-map.yaml`,
+  `.github/workflows/upload-matched-trips.yaml`
+- rewritten: `.github/workflows/{pkgdown,test-coverage,pr-commands}.yaml`
+  (r-lib v2 templates), `.github/workflows/{data-report,dataverse-upload,
+  validation-email-sender}.yaml` (no build job), `README.Rmd` / `README.md`,
+  `_pkgdown.yml`
+- modified: `.github/workflows/data-pipeline.yaml`, `NEWS.md`, `CLAUDE.md`,
+  `.Rbuildignore`, `.gitignore`, thirty-five roxygen blocks across
+  `R/{export-dataverse,merge-trips,model-fishery,model-taxa,nutrients,pds-maps,
+  pds-tracks,preprocess-metadata-tables,reports,validate-pds-trips}.R`
+  (`@keywords` only), and the corresponding `man/*.Rd`
+- **unchanged: every function body, `inst/config.yml`, `DESCRIPTION`, all four
+  tinytest suites, and the entire export path.**
+
+**Open questions for the next session**
+
+1. None blocking. Phase 10 (upstream to coasts) can start; it runs in the
+   `peskas.coasts` repo, not here.
+2. Timor's first write to `peskas-api-prod` — the two `if:` lines above.
+3. Whether to open a draft PR to `main` early to exercise R-CMD-check, pkgdown
+   and test-coverage before the Phase 11 merge.
+4. User actions, unchanged: rotate the credentials exposed in past CI logs;
+   rotate `ANTHROPIC_API_KEY`; run `data-raw/freeze-landings-v1.R` and
+   `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing IMEIs
+   to PESKAS | FRAME; delete the `AIRTABLE_KEY` secret (verified dead above);
+   re-push `AIRTABLE_TOKEN` if its value changed.

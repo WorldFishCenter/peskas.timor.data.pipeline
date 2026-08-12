@@ -258,6 +258,21 @@ Phase 11.
 
 ## 5. GitHub Actions
 
+> **Superseded by Phase 9, 2026-08-12.** The table below is the Phase 0
+> measurement and is kept as the record of what was inherited. Eleven workflows
+> are now nine: `form-summary`, `keplergl-map` and `upload-matched-trips`
+> deleted; `check-standard` → `R-CMD-check`; `release.yaml` added;
+> `validation-email-sender` rebuilt rather than retired, because Phase 5 gave
+> `send_validation_mail()` a working MongoDB reader — which is how the
+> "decide with P5" verdict below resolved. Current state: CLAUDE.md's CI section
+> and the Phase 9 STATE entry.
+>
+> Two things in §5 that were wrong or have moved: `pr-commands` is **not**
+> retired (it is rebuilt and now gated on MEMBER/OWNER — the old version let any
+> commenter push to a PR branch, which is a reason to fix it, not to delete it),
+> and `AIRTABLE_KEY`'s deadness is now verified against `origin/main` as well,
+> not just the migration branch.
+
 ### State (via `gh api .../actions/workflows`)
 
 | workflow | state | last green run | verdict |

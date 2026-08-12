@@ -73,9 +73,19 @@ then differ only by `R_CONFIG_ACTIVE`, not by config branch.
 | `peskas-gmail-key` / `blastula_cred_file` | `PESKAS_GMAIL_KEY` | two files, one config key today |
 | — | `MONGODB_CONNECTION_STRING`, `MONGODB_CONNECTION_STRING_VALIDATION` | new, if flags move to Mongo **[P5]** |
 
-Also rename the GH secrets `KOBO_PESKAS1/2/3` → `KOBO_ASSET_ID_V1/2/3` and
-`AIRTABLE_KEY` → `AIRTABLE_TOKEN` so Timor's secret names match the other
-countries. **[P9]** Ship `.env.example` with every key and no values. **[P1]**
+~~Also rename the GH secrets `KOBO_PESKAS1/2/3` → `KOBO_ASSET_ID_V1/2/3` and
+`AIRTABLE_KEY` → `AIRTABLE_TOKEN`.~~ **Resolved in P9, 2026-08-12, and only
+half of it happened.** `AIRTABLE_TOKEN` has existed since P1 and is what the
+pipeline reads; `AIRTABLE_KEY` is verified dead on `origin/main` too (passed as
+`env:`, read only by the deleted `air_*` client, whose caller is in no workflow
+step and whose config block does not exist) and is the user's to delete. The
+KoBo trio was **declined by the user**: secret values are write-only, so
+renaming means re-entering three asset ids by hand for no behavioural gain, and
+`env:` keeps `KOBO_ASSET_ID_V<n>: ${{ secrets.KOBO_PESKAS<n> }}`. The legacy
+names retire in P11 with the config keys that read them. `VALID_SHEET_ID` is no
+longer passed by any workflow.
+
+Ship `.env.example` with every key and no values. **[P1]**
 
 ### `.Renviron` **[!]**
 
@@ -241,7 +251,7 @@ the credential handling (the value must be stored bare — the standard adds the
 
 ---
 
-## 5. Roxygen and pkgdown **[P9]**
+## 5. Roxygen and pkgdown **[P9 ✅ done 2026-08-12]**
 
 The standard drives `_pkgdown.yml` reference sections off `@keywords`:
 `workflow`, `ingestion`, `preprocessing`, `validation`, `export`, `helper`, `storage`.
@@ -295,7 +305,19 @@ others lack, not drift to remove.
 
 ## 8. GitHub Actions
 
-### Generic workflows — Timor is on the pre-2022 r-lib templates **[P9]**
+> **Done in P9, 2026-08-12.** Eleven workflows became nine:
+> `check-standard.yaml` → `R-CMD-check.yaml` and `pkgdown` / `test-coverage` /
+> `pr-commands` on the r-lib v2 templates with the two GitHub `extra-packages`;
+> `release.yaml` added with the `vv` tag bug fixed; `form-summary`,
+> `keplergl-map` and `upload-matched-trips` **deleted**;
+> `validation-email-sender` rebuilt because P5 gave it a working Mongo reader;
+> `data-report` and `dataverse-upload` stripped of the duplicate
+> `build-container` job that had been failing since P2's `ARG COASTS_REF`.
+> `data-pipeline.yaml` was **edited, not rewritten** — see the P9 STATE entry for
+> the three deviations, including why Moz's job naming was not copied and why
+> R-CMD-check runs one runner instead of five.
+
+### Generic workflows — Timor is on the pre-2022 r-lib templates **[P9 ✅]**
 
 | | Timor | Standard |
 |---|---|---|
@@ -315,7 +337,7 @@ github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R` or they fail immediately.
 
 Rename `check-standard.yaml` → `R-CMD-check.yaml` to match.
 
-### `release.yaml` **[P9]**
+### `release.yaml` **[P9 ✅]**
 
 Adopt it. Timor's `NEWS.md` already uses the `# peskas.timor.data.pipeline X.Y.Z`
 heading the script greps for.
@@ -325,7 +347,7 @@ and then the release step uses `tag_name: v${{ steps.changelog.outputs.tag_name 
 producing `vv2.8.0`. The `check_tag` step compounds it with a third `v`. Emit a bare
 `$version` and add the single `v` at use site.
 
-### Pipeline workflow **[P9]**
+### Pipeline workflow **[P9 ✅]**
 
 Timor: `ubuntu-22.04`, `checkout@v4`, `build-push-action@v5`, no coasts resolution.
 Standard: `ubuntu-latest`, `checkout@v5`, `build-push-action@v6`,
@@ -378,5 +400,5 @@ expectations as schemas change; never delete assertions to make a phase pass. Ad
 | `inst/config_template.yml` | P1 |
 | `R/peskas.timor.data.pipeline-package.R` | P1 |
 | `R/api.R` | P6 |
-| `.github/workflows/release.yaml` | P9 |
+| `.github/workflows/release.yaml` | P9 ✅ |
 | `.Rproj`: `LineEndingConversion: Posix` | P1 (one line) |

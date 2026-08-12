@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–8 complete** (2026-08-12). Phase 9 next.
+Status: **Phases 0–9 complete** (2026-08-12). Phase 10 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -187,7 +187,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 ✅ |
 | 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 ✅ (1 used) |
 | 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 ✅ (1 used) |
-| 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 |
+| 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 ✅ |
 | 10 | Upstream to coasts | separate PRs in the `peskas.coasts` repo | medium | 1–2 |
 | 11 | Cutover | strip legacy config keys and dead code, full green dev run, merge to main | medium | 1 |
 
@@ -527,7 +527,44 @@ never the golden, which predates `a2c2881`'s −15.4% weight rewrite, Phase 4's
 
 ---
 
-### Phase 9 — CI, repo, docs
+### Phase 9 — CI, repo, docs ✅ done 2026-08-12
+
+Shipped as scoped, with three deviations recorded in the STATE Phase 9 entry.
+**Eleven workflows became nine.** What Phases 10 and 11 inherit:
+
+- `data-pipeline.yaml` was **edited, not rewritten**: versions, runners,
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`, three `env:` changes and two new steps.
+  The job graph, the tinytest steps and `log_threshold = logger::INFO` are
+  untouched. Moz's "job naming and layout" was deliberately not copied — the
+  difference is a YAML round trip, and this is the only workflow producing data.
+- **The API exports are wired in, guarded.** `export_api_raw()` in
+  `merge-landings`, `export_api_validated()` in `validate-landings` after its
+  tinytest, both `if: ${{ !endsWith(github.ref, '/main') }}`. That guard is what
+  keeps "wire it in" and "write to `peskas-api-prod`" two decisions rather than
+  one; Phase 11 either deletes the two lines deliberately or says why not.
+- **Deleted:** `form-summary`, `keplergl-map`, `upload-matched-trips` — retired
+  registry, no successful run since 2025-08, and in `keplergl-map`'s case no live
+  function. **Rebuilt:** `validation-email-sender`, because Phase 5 gave it a
+  working Mongo reader. The three surviving scheduled workflows lost the
+  duplicate `build-container` job that had been unable to succeed since Phase 2
+  gave `Dockerfile.prod` an `ARG COASTS_REF` with no default.
+- **Re-enabling the three `disabled_inactivity` workflows is a Phase 11 action.**
+  A cron fires from the default branch, so enabling them before the merge runs
+  pre-migration code against production.
+- `check-standard.yaml` → `R-CMD-check.yaml` plus `pkgdown` / `test-coverage` /
+  `pr-commands` on the r-lib v2 templates, each carrying the two GitHub
+  `extra-packages`. **None of the three can run from a phase branch** — they
+  trigger on `main` and on PRs to it — so their first real run is the Phase 11
+  PR, and a draft PR is the way to find out early.
+- `release.yaml` added with the reference's `vv` tag bug fixed. **It fires on the
+  Phase 11 merge** and will cut `v4.0.0` from the top of NEWS.md.
+- `_pkgdown.yml` is keyword-driven, and 35 roxygen blocks were tagged to make it
+  so. A new exported function with no `@keywords` now fails
+  `pkgdown::check_pkgdown()` and the `pkgdown` workflow.
+- `VALID_SHEET_ID` is no longer passed by any workflow, so Phase 11 can drop
+  `validation.google_sheets` and the secret without checking CI first. The
+  `KOBO_PESKAS*` → `KOBO_ASSET_ID_V*` secret rename was **declined by the user**
+  and retires in Phase 11 with the legacy config keys.
 
 **State on entry, re-measured 2026-08-12** (after Phase 8): 11 workflows, of
 which `data-pipeline.yaml` and four generic ones are `active` and six are
