@@ -6,18 +6,21 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 7 **complete** (2026-08-11). Phase 8 (country modules + portal
-  parity) not started.
+- **Phase:** 8 **complete** (2026-08-12). Phase 9 (CI, repo, docs) not started.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
   docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
   Phase 5 = `75985a8` (+ `992bc6d` docs).
   Phase 6 = `ec0b7e5` (+ `a16d60e` docs) on `feat/align-coasts-phase6`.
   Phase 7 = **`76b7f71`** (+ `03a1d0f` the C21 leak fix) on
-  `feat/align-coasts-phase7`. Two green end-to-end CI runs: **31436031588** on the Phase 5 code
-  — the first to exercise Phases 3, 4 and 5 at all, including the MongoDB flags
-  sink and all four tinytest suites — and **31439673841** on the Phase 6 code,
-  which produced the widened 40-column long artefact from CI.
+  `feat/align-coasts-phase7`.
+  Phase 8 = **`c0207c3`** (renames) + **`c27c126`** (export path) on
+  `feat/align-coasts-phase8`. Green end-to-end CI runs: **31436031588** on the
+  Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
+  MongoDB flags sink and all four tinytest suites — **31439673841** on the
+  Phase 6 code, **31486298126** on Phase 7 and **31569049836** on `87284eb`,
+  the last run of the pre-Phase-8 code and the numeric baseline the Phase 8
+  gate diffs against.
 - **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`. Timor now
   **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
   written to `peskas-api-prod`, though the service account can. `coasts` is
@@ -27,11 +30,15 @@ Append one entry per completed phase, newest at the bottom.
   `gs://pds-timor-dev` now holds **both** track families: 101,959
   `pds-tracks_<id>.parquet` (live) and 103,373 `pds-track-<id>__*__.csv.gz`
   (dead, deleted in Phase 11). `gs://pds-timor` still holds only the old one.
-- **Read before Phase 8:** the Phase 7 entry's "Findings that change later
-  phases" — in particular that the PDS path now has **no Timor ingestion code**,
-  that `coasts::preprocess_pds_tracks()` is deliberately not wired in yet
-  (COASTS-TODO **C20**), and that running it is what would close half of **C17**
-  for Timor. Also note that `devtools::load_all()` reaches neither
+- **Read before Phase 9:** the Phase 8 entry's "Findings that change later
+  phases" — in particular that the export contract is now **seven** portal
+  objects asserted by `data-raw/compare-portal-json.R`, that
+  `portal-*.json` numbers are host-sensitive at the fourth decimal (so read a
+  numeric diff with tolerance and let the structural assertions carry the
+  weight), and that `coasts::preprocess_pds_tracks()` stays unwired until
+  COASTS-TODO **C17** ships *and* a Timor consumer of the grid summaries exists
+  — C20 is the second reason, not the first. Also note that
+  `devtools::load_all()` reaches neither
   `coasts::read_config(package = )` nor `furrr`/`future` workers — test either
   with `devtools::install()` + `library()`; that the four tinytest suites need
   `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call, because
@@ -3045,3 +3052,272 @@ The survey path is untouched, as expected: `13388 of 97348 submissions flagged`
 (13,387 of 97,347 in Phase 6, +1 submission), and the four tinytest suites came
 out **7 / 10 / 2 / 1** — the same counts as Phase 6 and the same as the local
 run.
+
+---
+
+## Phase 8 — Country modules & portal parity — 2026-08-12
+
+Branch: `feat/align-coasts-phase8` (off `feat/align-coasts-phase7` at `87284eb`)
+
+**Done**
+
+*1. The renames, in their own commit (`c0207c3`)*
+
+`estimate-catch.R` + `model-catch.R` → **`R/model-fishery.R`** (concatenated
+verbatim, with a seam comment recording that `model_indicators()` is a second
+glmmTMB implementation of the same estimates with no caller — dead-code removal
+is Phase 11); `calculate-nutrients.R` → **`R/nutrients.R`**; `send-email.R` →
+**`R/reports.R`**; `export-dataverse.R` unchanged. No logic changed, which is
+the point: a rename and a behaviour change in one commit is unreviewable
+against a live portal.
+
+`nutrients.R` and `reports.R` each gained a file-header block. The nutrients one
+records the four measured reasons `coasts::enrich_taxa()` does not replace it —
+six nutrients against seven, no selenium, no unit conversion, no FAO
+food-composition override for the six invertebrates FishBase cannot estimate —
+so the next reader does not re-litigate PLAN §4b. Both blocks are
+`@keywords internal`, or `pkgdown::check_pkgdown()` fails on a missing topic.
+
+*2. `format-public-data.R` and `export.R` were not merged — deviation*
+
+STRUCTURAL-DIFF §4 is the only place that merge was ever specified; PLAN's own
+Phase 8 bullet does not ask for it, and it would produce a 1,636-line
+`export.R`. Recorded as a deviation in STRUCTURAL-DIFF §4 rather than done
+silently.
+
+*3. The nested validated artefact is gone (`c27c126`)*
+
+`validate_landings()` was writing the same content twice: the nested `.rds` the
+portal path reads, and — since Phase 5 — the flat long parquet everything else
+reads. **`timor-landings-merged_validated__*.rds` now has no writer.**
+`get_validated_landings()` is a **view**: it reads
+`timor-landings-merged_validated_long__*.parquet` and re-nests it with
+`nest_landing_catch()`, which moved from validation.R to get-cloud-files.R.
+`long_validated_landings()` no longer has a nested column to drop, and
+`validate_landings()` no longer builds a nested frame at all.
+
+Its signature was fixed on the way: `get_validated_landings(conf)`, not
+`get_validated_landings(log_threshold)`. Both call sites already passed `conf`
+into that slot, where it was ignored while the function silently re-read the
+config.
+
+So the **survey path is parquet end to end** and `format-public-data.R` did not
+have to be touched. The nested `landing_catch` / `length_frequency` shape it
+works in is produced on read instead of stored.
+
+*4. `all_trips` and `pds-trips_validated` stay `.rds` — deviation, both deliberate*
+
+PLAN anticipated `pds-trips_validated__*` flipping format "with the merge path
+in Phase 8". Neither flipped, for the same reason: **neither has a
+cross-country counterpart**, so there is no harmonization to gain.
+
+- `all_trips` is the output of a `merge_trips()` no other country has (coasts'
+  `merge_survey_trips()` does a different job, C10). Flattening it would mean
+  rewriting `format-public-data.R`, `model-fishery.R` and `pds-maps.R` — ~12
+  `unnest()` sites — against a live portal, and would change the shape of
+  `timor_trips`, which Dataverse publishes.
+- `pds-trips_validated` carries `tracker_trip_start`/`_end` as `Asia/Dili`
+  POSIXct, and `merge_trips()` derives `landing_date` from `tracker_trip_end`.
+  Putting that through an arrow round trip is a timezone risk on the exact code
+  path commit `15f6b18` exists to protect, for no reader's benefit.
+
+*5. The export emits seven objects, not nine*
+
+`portal-indicators_grid` and `portal-label_groups_list` are dropped. These are
+the two objects `peskas.timor.portal.v2/scripts/fetchData.js` **explicitly
+excludes** (AUDIT §3), and both were rebuilt on every run from
+`indicators_gridded.rds` — last written **2024-07-27** in production and
+**2023-05-21** in dev by `ingest_pds_map()`, which no workflow has called in two
+years. The export was stamping a fresh version number on two-year-old content
+that nothing reads.
+
+This is the "drop the dependency" branch of the choice Phase 7 handed over. It
+is reversible — nothing was deleted from the bucket, the existing versions are
+still the newest under those names, and re-adding two lines to `export_files()`
+restores the family. It also makes `ingest_pds_map()` and
+`ingest_kepler_tracks()` fully unreferenced, so Phase 11 can delete them;
+`get_timor_boundaries()` and `convert_taxa_names()` stay, `format_public_data()`
+calls both.
+
+*6. `coasts::preprocess_pds_tracks()` was not wired in, and C20 is not why*
+
+The other three countries run it. Timor does not, and the reason is **C17**, not
+C20: the grid summaries exist to feed `coasts::summarize_data()`, which cannot
+run for Timor because it resolves `asfis` and the grid summaries from the
+*country* bucket where Timor has neither — and Timor's portal is the
+`public-timor` JSON contract PLAN §2.1 keeps as-is. So wiring it in would
+produce ~1.4 M grid rows and ~0.8 GB per run **for no reader in this package**.
+C20 (first pass reads every track with `detectCores() - 1` workers, one on a
+2-core runner, ~4 h at 13 workers locally) is the second reason. The workflow
+comment now says all of this; wire it in when C17 ships *and* a Timor consumer
+exists.
+
+*7. The gate is a script, not an eyeball: `data-raw/compare-portal-json.R`*
+
+Reusable by Phase 11. It asserts, in order: object **names**; then keys,
+nesting, column **sets** and column **types**; then per-column numeric summaries
+(n, NA, sum, mean, min, max). Row counts and column *order* are reported but do
+not fail — the portal reads an array of objects by key name. Exit status is
+non-zero on any structural break.
+
+**Verified**
+
+*The view reproduces the retired artefact exactly.* `get_validated_landings()`
+against the stored `timor-landings-merged_validated__20260812062617_87284eb__.rds`:
+
+| check | result |
+|---|---|
+| dimensions | 97,360 × 19 both |
+| column names / classes / `landing_id` order | identical |
+| `all.equal(view, stored)` | **TRUE** |
+| flattened catch rows | 1,648,016 both, all 14 columns compared |
+| rows where `catch` differs at all | **1,599 (0.097%)**, max abs **2.9e-11 g**, max rel **1.1e-16** |
+| national catch total | identical to 20 significant digits |
+
+The 1,599 are the floating-point floor of the grams → kg → grams round trip the
+long table's `catch_kg` implies. Nothing an aggregation or a 4-decimal JSON
+serialisation can see.
+
+*`merge_trips()` on the view is bit-compatible.* Re-run against `timor-dev`:
+**176,302 × 26**, **6,940** matched, column names and classes identical,
+`all.equal(new, old)` **TRUE**, `tzone` still `Asia/Dili`.
+
+*The portal output is unchanged.* `format_public_data()` + `export_files()` run
+locally against `timor-dev` / `public-timor-dev`, diffed against the newest
+pre-change dev set — the **87284eb CI run 31569049836** of 2026-08-12 06:42 UTC,
+not the older `f041d7e` one:
+
+| gate | result |
+|---|---|
+| object names | same |
+| structure (keys, nesting, column sets, column types) | **0 failures** |
+| numeric, per column | **92 of 93 columns identical**, 1 moved |
+
+The one that moved is `portal-aggregated$week$fuel` for the week of
+**2020-07-26**, by **1e-4** — the JSON's own precision. The underlying mean is
+`3.80625000000000079…`, sitting exactly on a 4-decimal rounding tie, and
+recomputing it locally from the *old* and the *new* `all_trips` gives bit-for-bit
+the same double. So it is `toJSON()` rounding on a different host, not this
+change.
+
+*Against the Phase 0 golden* (`reference/2026-07-31_90ede9a/`): the gate is
+clean there too — same nine names at the time of measurement, **0 structural
+failures**, one column-order note (`aggregated$day` moved `recorded_revenue` /
+`recorded_catch`, a pre-existing difference), and size-only notes on seven
+frames. The numeric deltas against the golden are the expected ones and are
+*not* a regression band: catch −18.3%, landing_weight −16.6%, price_kg +22.5%,
+which is `a2c2881`'s −15.4% weight rewrite plus Phase 4's 104,709 removed
+phantom rows.
+
+*The `15f6b18` timezone fix demonstrably still bites*, checked against the
+parquet inputs rather than assumed present:
+
+```
+landing_period class: POSIXct | tzone: Asia/Dili
+resolved data_tz: Asia/Dili | today: 2026-08-12 (tz Asia/Dili)
+months matching floor_date(today,"month"): 1  -> 2026-08-01
+elapsed 12 of period_length 31 -> scale 0.3871
+elapsed > 0 keeps 104 of 109 months
+```
+
+and it reached the output: August 2026 is published at `catch` 168,667 against
+July's 439,932 — ratio **0.383** against the 0.387 scale factor. Had `today`
+been built in the session's zone instead of the data's, the equality would have
+matched nothing and the current month would ship unscaled.
+
+*Local gates*: `devtools::check()` — **0 errors, 0 warnings, 4 NOTEs**, the
+Phase 4 baseline; `pkgdown::check_pkgdown()` clean; testthat **27 passing**; the
+four tinytest suites against `timor-dev` **10 / 7 / 2 / 1**, the same counts as
+Phases 6 and 7, no assertion touched. `test_validated_landings.R` needed no edit
+and now visibly downloads the long parquet, which is the view working.
+`get_public_files()` still resolves — `test_public_data.R` exercises it, and
+`upload_dataverse()`'s `timor_trips` / `timor_catch` family is untouched.
+
+*One hygiene fix*: `.Rbuildignore` learned `.tsv` / `.csv` / `.csv.gz`.
+`format_public_data()` writes the tsv half of the public family into the working
+directory before uploading, so a local run left eight files at the repo root and
+a fifth R CMD check NOTE.
+
+**Deviations from the brief**
+
+- **`format_public_data()` was not repointed at the parquet directly.** The
+  brief and PLAN both say to point it there. What shipped points *the pipeline*
+  there — the stored validated artefact is the long parquet and nothing else —
+  while `format-public-data.R` keeps working in the nested shape, now rebuilt on
+  read. The alternative was rewriting ~12 `unnest()` sites across four files
+  plus the `timor_trips` / `timor_catch` Dataverse shapes, against a live
+  discovery-based portal, to reach an in-memory representation that no
+  cross-country standard specifies. The stored contract is what harmonization is
+  about, and PLAN §2.1 is explicit that Timor's portal path is kept and
+  "everything upstream of it" aligned.
+- **`all_trips` and `pds-trips_validated` stay `.rds`**, above.
+- **`format-public-data.R` + `export.R` not merged**, above.
+- **Nine emitted object names became seven**, above — flagged here because the
+  brief asked for it to be said out loud.
+
+**Deferred, with reasons**
+
+- `coasts::preprocess_pds_tracks()` and the grid summaries — deferred to
+  whenever C17 ships and a Timor consumer exists, not to a phase.
+- `ingest_pds_map()`, `ingest_kepler_tracks()`, `label_taxa_groups()`,
+  `get_file("indicators_gridded")` and the `conf$surveys${landings$validated,
+  validated_landings}` keys are all unreferenced now. Marked `[legacy]` in
+  `inst/config.yml` and noted in the roxygen; **deleting them is Phase 11**, as
+  it has been for every other dead item this migration has produced.
+- The API exports are still not wired into `data-pipeline.yaml` (Phase 6's open
+  question, still Phase 9's call), and nothing has been written to
+  `peskas-api-prod`.
+- `sync_validation_status()` still not wired.
+
+**Findings that change later phases**
+
+1. **The export path is smaller than its line count**, and Phase 8 proved where
+   the seam is: `get_merged_trips()` and `get_models()`. Anything that wants to
+   change the shape `format-public-data.R` sees can do it in
+   `get_validated_landings()` and `merge_trips()` alone, and verify it with an
+   `all.equal()` against the previous artefact before a single portal object is
+   regenerated. That is a much cheaper gate than diffing JSON, and Phase 11
+   should use it.
+2. **`portal-*.json` numbers are host-sensitive at the fourth decimal.**
+   `jsonlite::toJSON()` rounds to 4 digits, so a value on a rounding tie flips
+   between a local run and a CI container. One column in 93 did. A numeric diff
+   of the portal set should therefore be read with a tolerance, and structural
+   assertions should carry the weight — which is how the gate script is built.
+3. **`ingest_pds_map()` is now genuinely dead**, not "dead but load-bearing".
+   Phase 11 can delete `pds-maps.R` down to `get_timor_boundaries()` and
+   `convert_taxa_names()`, and `inst/kepler_mapper.py` with it.
+4. **Phase 9 inherits a stable export contract**: seven names, asserted by a
+   script that lives in the repo. Any workflow rewrite should keep the
+   `format_public_data()` → `export_files()` order and the tinytest step between
+   them.
+
+**Files added / removed / renamed**
+
+- added: `data-raw/compare-portal-json.R`, `man/nutrients.Rd`, `man/reports.Rd`
+- removed: `R/model-catch.R` (concatenated into `R/model-fishery.R`)
+- renamed: `R/estimate-catch.R` → **`R/model-fishery.R`**,
+  `R/calculate-nutrients.R` → **`R/nutrients.R`**,
+  `R/send-email.R` → **`R/reports.R`**
+- modified: `R/get-cloud-files.R` (`get_validated_landings()` is a view;
+  `nest_landing_catch()` and `long_catch_cols()` moved in), `R/validation.R`
+  (no nested artefact, no nesting), `R/export.R` (seven objects),
+  `inst/config.yml` (two keys marked `[legacy]`), `.Rbuildignore`,
+  `.github/workflows/data-pipeline.yaml` (the C17/C20 decision),
+  `CLAUDE.md`, `.claude/migration/{PLAN,STRUCTURAL-DIFF,AUDIT,COASTS-TODO,STATE}.md`
+- **unchanged: `R/format-public-data.R`, `R/merge-trips.R`, `R/api.R`,
+  `R/model-fishery.R` bodies, `R/export-dataverse.R`, `_pkgdown.yml`, and all
+  four tinytest suites.**
+
+**Open questions for the next session**
+
+1. None blocking. Phase 9 (CI, repo, docs) can start.
+2. Phase 9 decides whether `export_api_raw()` / `export_api_validated()` join
+   `data-pipeline.yaml`, and whether the four dead generic workflows are
+   replaced or retired.
+3. Carried over: whether the shared validation app can hold a per-country alert
+   dictionary (Phase 5); when Timor's first write to `peskas-api-prod` happens.
+4. User actions, unchanged and all still open: rotate the credentials exposed in
+   CI logs before Phase 3 (and in coasts' logs until 2026-08-12); rotate
+   `ANTHROPIC_API_KEY`; run `data-raw/freeze-landings-v1.R` and
+   `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing
+   IMEIs to PESKAS | FRAME.

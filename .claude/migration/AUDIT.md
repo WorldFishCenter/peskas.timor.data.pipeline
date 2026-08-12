@@ -197,6 +197,16 @@ So `export_files()` emits **9** objects and the portal consumes **7**:
 object does not fail the build — it silently vanishes from the live site. Phase 8
 must assert on names, not just on content.
 
+**Resolved in Phase 8 (2026-08-12).** The assertion is
+`data-raw/compare-portal-json.R`, which checks names first, then keys, nesting,
+column sets and column types, and reports row counts and column order without
+failing on them. And the emitted set is now **seven, not nine**: the two rows
+marked ❌ above were dropped, because both were rebuilt on every run from an
+`indicators_gridded.rds` last written 2024-07-27 (2023-05-21 in dev) by
+`ingest_pds_map()`, which no workflow calls. The seven the portal consumes are
+untouched. Existing `portal-indicators_grid` / `portal-label_groups_list`
+versions remain in the bucket.
+
 ---
 
 ## 4. Dev environment is not a working mirror — the plan's verification strategy needs work

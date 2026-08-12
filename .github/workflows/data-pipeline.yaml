@@ -200,14 +200,24 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       # `coasts::preprocess_pds_tracks()` — the spatial grid summaries the other
-      # three countries also run here — is deliberately not wired in yet. It
-      # reads *every* track in the bucket on its first pass with
-      # `parallel::detectCores() - 1` workers, which is **one** on a 2-core
-      # runner; measured 2026-08-11, Timor's 102k tracks would take ~4 h at 13
-      # workers locally, so a CI job cannot complete the first pass. Memory is
-      # not the problem (1.4 M grid rows, ~0.8 GB). See COASTS-TODO C20; the
-      # first pass belongs with Phase 8's portal decision, which is also where
-      # the grid summaries first get a reader.
+      # three countries also run here — is deliberately not wired in, and
+      # migration Phase 8 decided to leave it that way rather than run its first
+      # pass out of band as Phase 7 did for the track conversion.
+      #
+      # Two reasons, in order. **Its output has no reader in Timor.** It exists
+      # to feed `coasts::summarize_data()`, and that is what Kenya, Mozambique
+      # and Zanzibar use it for; Timor's portal is the `public-timor` JSON
+      # contract, which PLAN §2.1 keeps as-is, and `summarize_data()` is blocked
+      # for Timor anyway on COASTS-TODO C17 (it resolves `asfis` and the grid
+      # summaries from the country bucket, where Timor has neither). Producing
+      # ~1.4 M grid rows and ~0.8 GB per run for nothing to read is not a
+      # migration step. Second, it cannot complete in CI: it reads *every* track
+      # in the bucket on its first pass with `parallel::detectCores() - 1`
+      # workers, which is **one** on a 2-core runner — measured 2026-08-11,
+      # Timor's 102k tracks are ~4 h at 13 workers locally. COASTS-TODO C20.
+      #
+      # Wire it in when C17 ships and Timor actually adopts a coasts consumer of
+      # the grid summaries, not before.
       - name: Call describe_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::describe_pds_tracks()'
 

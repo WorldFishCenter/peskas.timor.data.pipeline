@@ -14,10 +14,11 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4, 5, 6, 7** — so config, secrets, the container, the **storage
-> layer**, **ingestion**, **preprocessing**, **validation**, the
-> **cross-country API export** and **PDS** are already on the standard; the
-> portal, the country modules and CI are not.
+> **0, 1, 2, 3, 4, 5, 6, 7, 8** — so config, secrets, the container, the
+> **storage layer**, **ingestion**, **preprocessing**, **validation**, the
+> **cross-country API export**, **PDS** and the **country modules + portal
+> parity** are already on the standard; **CI is not** (Phase 9), nor is the
+> upstreaming to coasts (Phase 10) or the legacy cleanup (Phase 11).
 
 ---
 
@@ -53,7 +54,7 @@ be structural, not cosmetic.
 Ingestion
 - [ingestion.R](R/ingestion.R) — `ingest_landings()` (v2 + v3 → raw parquet via `coasts::get_kobo_data()`), `ingest_assets()` (the Airtable frame snapshot) and the `flatten_row()`/`flatten_field()`/`rename_child()` helpers. Added in Phase 3, replacing `ingest-landings.R` and `retrieve-survey-data.R`
 - [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 14 Google Sheets metadata tables. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame but the validators still keep their own Sheets copies, so only `fao_catch` could be dropped; each remaining table is annotated in `inst/config.yml` with the phase that removes it
-- **PDS has no Timor ingestion code since Phase 7.** `ingest-pds-data.R`, `retrieve-pds-data.R` and `preprocess_pds_trips()` are gone; the workflow calls `coasts::ingest_pds_trips()` and `coasts::ingest_pds_tracks()` with `package = "peskas.timor.data.pipeline"`, exactly as Mozambique, Kenya and Zanzibar do — none of them carries a line of PDS code either. Everything coasts needs is in `conf$pds`. The third call those three also make, `coasts::preprocess_pds_tracks()`, is **not** wired in yet: its first pass reads every track in the bucket with `detectCores() - 1` workers, which is one on a CI runner (COASTS-TODO C20). Phase 8 owns it, together with the first reader for its output
+- **PDS has no Timor ingestion code since Phase 7.** `ingest-pds-data.R`, `retrieve-pds-data.R` and `preprocess_pds_trips()` are gone; the workflow calls `coasts::ingest_pds_trips()` and `coasts::ingest_pds_tracks()` with `package = "peskas.timor.data.pipeline"`, exactly as Mozambique, Kenya and Zanzibar do — none of them carries a line of PDS code either. Everything coasts needs is in `conf$pds`. The third call those three also make, `coasts::preprocess_pds_tracks()`, is **not** wired in, and Phase 8 decided to keep it that way: its output feeds `coasts::summarize_data()`, which Timor does not use (its portal is the JSON contract) and which is blocked for Timor anyway on COASTS-TODO C17 — so it would produce ~1.4 M grid rows per run for no reader. C20 (its first pass reads every track with `detectCores() - 1` workers, one on a CI runner) is the second reason, not the first. Wire it in when C17 ships **and** a Timor consumer exists
 
 Preprocessing
 - [preprocessing-surveys.R](R/preprocessing-surveys.R) — `preprocess_landings(versions = c("v2","v3"))` (raw parquet → **flat long catch parquet**), `merge_landings()`, the per-version `harmonise_*()` reconciliation, and the assets-snapshot label joins (`survey_labels()`). Added in Phase 4, replacing `clean-raw-data.R`, `preprocess-landings.R` (`step_1`/`step_2`) and `merge-landings.R`
@@ -69,11 +70,11 @@ Validation
 
 Merge / model / export
 - [api.R](R/api.R) — `export_api_raw()` / `export_api_validated()`, the 22-column cross-country trips table written to `peskas-api-{dev,prod}/timor/{raw,validated}`. Added in Phase 6. **Not wired into any workflow** — run by hand. The schema is the contract Kenya, Mozambique and Zanzibar already publish; do not add, drop or reorder a column without agreeing it across all four
-- [merge-trips.R](R/merge-trips.R), [estimate-catch.R](R/estimate-catch.R), [model-catch.R](R/model-catch.R) (glmmTMB), [calculate-nutrients.R](R/calculate-nutrients.R) (nutrients + RDI). `merge_trips()` matches a landing to a tracked trip on `(landing_date, tracker_imei)` and is **not** `coasts::merge_survey_trips()`, which does a different job (COASTS-TODO C10). Its output `all_trips__*.rds` feeds `format_public_data()`, `estimate-catch.R` and `model-catch.R` — changing its schema breaks the export path. It is a **full join**, so its 175,089 rows are 97,347 landings + 84,741 validated tracker trips − **6,999 actual landing↔trip matches**. "84,741" is the tracker-trip count, not the match count; the match count is the one the `devices` table moves
-- [format-public-data.R](R/format-public-data.R) — 1200 lines, the largest file; builds every portal object
-- [pds-maps.R](R/pds-maps.R) — what survived Phase 7's deletion of `ingest-pds-data.R`: `ingest_pds_map()` (writes `indicators_gridded` + `tracks-map.png`), `ingest_kepler_tracks()`, `kepler_mapper()`, `get_timor_boundaries()`, `convert_taxa_names()` and `ingest_complete_tracks()`. **None of the map functions is in a workflow** — `indicators_gridded.rds` was last written 2024-07-27 and `tracks-map.png` 2021-12-11 — yet `export_files()` reads both, so they stay until Phase 8's portal gate decides whether to regenerate them from coasts' H3 output or drop the dependency
-- [export.R](R/export.R) — `export_files()` serializes and uploads the `portal-*.json` set
-- [export-dataverse.R](R/export-dataverse.R), [send-email.R](R/send-email.R)
+- [merge-trips.R](R/merge-trips.R), [model-fishery.R](R/model-fishery.R) (the Phase 8 concatenation of `estimate-catch.R` and `model-catch.R`; `estimate_fishery_indicators()` is the workflow entry point, `model_indicators()` is a second glmmTMB implementation with no caller), [nutrients.R](R/nutrients.R) (nutrients + RDI, renamed from `calculate-nutrients.R`; **kept, not delegated** — see the file header). `merge_trips()` matches a landing to a tracked trip on `(landing_date, tracker_imei)` and is **not** `coasts::merge_survey_trips()`, which does a different job (COASTS-TODO C10). Its output `all_trips__*.rds` feeds `format_public_data()` and `model-fishery.R` — changing its schema breaks the export path. It is a **full join**, so its 176,302 rows are the landings plus the validated tracker trips minus the **6,940** actual landing↔trip matches (6,999 before Phase 7's frame device filter; the 59 come back when the 27 missing IMEIs are added to PESKAS \| FRAME)
+- [format-public-data.R](R/format-public-data.R) — 1200 lines, the largest file; builds every portal object. It reads exactly two things, `get_merged_trips()` and `get_models()`, and Phase 8 left its body alone: the nested `landing_catch` / `length_frequency` shape it works in is now produced on *read* by `get_validated_landings()` rather than stored
+- [pds-maps.R](R/pds-maps.R) — what survived Phase 7's deletion of `ingest-pds-data.R`: `ingest_pds_map()` (writes `indicators_gridded` + `tracks-map.png`), `ingest_kepler_tracks()`, `kepler_mapper()`, `get_timor_boundaries()`, `convert_taxa_names()` and `ingest_complete_tracks()`. **None of the map functions is in a workflow.** Phase 8 resolved the dangling dependency by dropping it: `export_files()` no longer reads `indicators_gridded`, so `ingest_pds_map()` and `ingest_kepler_tracks()` are now fully unreferenced and go in Phase 11. `get_timor_boundaries()` and `convert_taxa_names()` are still live — `format_public_data()` calls both
+- [export.R](R/export.R) — `export_files()` serializes and uploads the `portal-*.json` set: **seven objects since Phase 8**, exactly the seven the portal consumes
+- [export-dataverse.R](R/export-dataverse.R), [reports.R](R/reports.R) (renamed from `send-email.R`; templates in [inst/report/](inst/report/))
 
 Infrastructure
 - [get-cloud-files.R](R/get-cloud-files.R) — 13 `get_*` accessors over one internal `download_versioned_rds()` helper. Timor's own GCS layer (`cloud-storage.R`, `google-drive.R`) was **deleted in Phase 2**; everything delegates to `coasts::*`
@@ -280,7 +281,7 @@ Prefer `coasts::resolve_storage_opts(pars, type)` over reaching into
 
 | bucket | contents |
 |---|---|
-| `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight artefact is parquet since Phase 5, and the validated artefact is written twice — nested `.rds` for the portal and `timor-landings-merged_validated_long__*.parquet` for everything else |
+| `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight artefact is parquet since Phase 5, and since **Phase 8 the validated artefact is written once**, `timor-landings-merged_validated_long__*.parquet` — the nested `.rds` twin has no writer any more, it is rebuilt on read by `get_validated_landings()` |
 | `pds-timor` / `pds-timor-dev` | one parquet per GPS trip, `pds-tracks_<trip_id>.parquet`, written by `coasts::ingest_pds_tracks()`. **Not versioned** — a re-ingest overwrites. The 103,373 `pds-track-<trip_id>__*__.csv.gz` objects of the old family were converted in place by [data-raw/convert-pds-tracks.R](data-raw/convert-pds-tracks.R) in Phase 7, not re-fetched, and are dead weight until Phase 11 deletes them |
 | `public-timor` / `public-timor-dev` | `portal-*.json` — the live portal contract |
 | `peskas-coasts` / `peskas-coasts-dev` | the shared cross-country hub (`options_coasts`). **Read *and* written** by coasts: `assets__*`, `taxa-fishbase-enriched`, H3 effort/CPUE grids, and per-country `*_fishery_metrics` / `*_monthly_summaries_map`. Both are live — `default` must stay on `-dev` |
@@ -292,41 +293,64 @@ nothing is ever deleted; `gs://timor` holds ~33k objects and `gs://pds-timor`
 prefix inventory including orphaned prefixes.
 
 Interchange format is **flat long parquet** from raw through validated
-(Phases 3, 4 and 5): one row per (submission, catch, length bin). The only
-remaining `.rds` artefact on the survey path is
-`timor-landings-merged_validated__*.rds`, the **nested** shape the portal reads,
-and Phase 5 writes the long parquet `timor-landings-merged_validated_long__*`
-beside it — widened in Phase 6 to 40 columns, a superset of the nested shape.
-The API export projects that one; Phase 8 drops the nested artefact once
-`format_public_data()` reads the long shape too.
+(Phases 3, 4, 5 and 8): one row per (submission, catch, length bin). Since
+Phase 8 there is **no `.rds` artefact left on the survey path**.
+`timor-landings-merged_validated_long__*` (40 columns since Phase 6) is the one
+validated object; the nested `timor-landings-merged_validated__*.rds` has no
+writer any more. `get_validated_landings()` re-nests the parquet on read into
+the `landing_catch` / `length_frequency` shape the portal path works in, so
+`format_public_data()`, `estimate_fishery_indicators()` and `merge_trips()` did
+not have to change. The two shapes were proven interchangeable first — 97,360
+submissions, 1,648,016 catch rows, `all.equal` TRUE, the only difference 1,599
+catch weights moving by ≤2.9e-11 g on the grams → kg → grams round trip.
+
+`all_trips__*.rds` stays nested `.rds`, deliberately. It has **no
+cross-country counterpart** — no other country has a `merge_trips()` at all,
+and `coasts::merge_survey_trips()` does a different job (COASTS-TODO C10) — so
+flattening it would buy no harmonization while requiring `format-public-data.R`,
+`model-fishery.R` and `pds-maps.R` to be rewritten against a live portal.
 
 On the **PDS** path Phase 7 made raw trips and the tracks parquet
 (`pds-trips__*.parquet` from `coasts::ingest_pds_trips()`,
 `pds-tracks_<id>.parquet` from `coasts::ingest_pds_tracks()`,
 `pds-tracks-descriptors__*.parquet` from `describe_pds_tracks()`).
-`pds-trips_validated__*.rds` is still `.rds` because
-`merge_trips()` and `test_validated_pds_trips.R` read it and its format flips
-with the merge path in Phase 8. `pds-trips_preprocessed__*` and
+`pds-trips_validated__*.rds` is still `.rds`, and Phase 8 deliberately left it
+alone rather than flipping it with the merge path as PLAN anticipated: it
+carries `tracker_trip_start`/`_end` as `Asia/Dili` POSIXct and `merge_trips()`
+derives `landing_date` from `tracker_trip_end`, so a parquet round trip is a
+timezone risk on the exact code path commit `15f6b18` exists to protect — for
+no gain, since only `merge_trips()` and `test_validated_pds_trips.R` read it
+and neither is cross-country. `pds-trips_preprocessed__*` and
 `pds-track_preprocessed__*` have no writer any more.
 
 ## Portal contract (do not break)
 
-[export.R](R/export.R) writes nine objects as `portal-<name>__*__.json` to
+[export.R](R/export.R) writes **seven** objects as `portal-<name>__*__.json` to
 `public-timor`:
 
 ```
 aggregated  taxa_aggregated  municipal_aggregated  municipal_taxa
-nutrients_aggregated  data_last_updated  indicators_grid
-label_groups_list  summary_data
+nutrients_aggregated  data_last_updated  summary_data
 ```
 
 `peskas.timor.portal.v2/scripts/fetchData.js` lists `portal-*` in the bucket,
 keeps the newest version of each, and **excludes** `indicators_grid.json`,
 `label_groups_list.json`, `pars.json`, `taxa_names.json`,
-`var_dictionary.json` — so seven of the nine are live. The portal discovers
-files dynamically, meaning a **renamed or dropped object silently disappears
-from the site**. Migration Phase 8 gates on a structural + numeric diff against
-the golden snapshot.
+`var_dictionary.json` — so these seven are exactly the live set. Until Phase 8
+the export also emitted `indicators_grid` and `label_groups_list`, the two the
+portal excludes, rebuilt on every run from an `indicators_gridded.rds` last
+written 2024-07-27. Both were dropped; their existing versions stay in the
+bucket, so re-adding two lines to `export_files()` restores the family.
+
+The portal discovers files dynamically, meaning a **renamed or dropped object
+silently disappears from the site**. The gate for that is
+[data-raw/compare-portal-json.R](data-raw/compare-portal-json.R), written in
+Phase 8 and reused by Phase 11: it asserts object names, then keys, nesting,
+column sets and column types against the Phase 0 golden
+(`reference/2026-07-31_90ede9a/`, gitignored), and prints per-column numeric
+summaries against the newest `public-timor-dev` set. Row counts and column
+order are reported, not failed — the portal reads an array of objects by key.
+Run it before touching anything on the export path.
 
 ## Pipeline DAG
 
@@ -489,7 +513,14 @@ function is exercised just because a workflow references it.
   per-stage `version:` field. Every reader is a legacy-key reader and moves
   across in Phases 3–7.
 - Timezone handling was fixed in commit `15f6b18` — re-verify it after any
-  rewrite of the export path.
+  rewrite of the export path. It lives in `summarise_estimations()`
+  ([format-public-data.R](R/format-public-data.R)) and its point is that `today`
+  must be built in the **data's** timezone, not the session's, or
+  `floor_date(today, "month") == date_bin_start` silently matches nothing and
+  the current month is published unscaled. Re-verified in Phase 8 against the
+  parquet inputs, not assumed: `models$national$aggregated$landing_period`
+  still carries `tzone = "Asia/Dili"`, exactly one month matches, and the
+  emitted August 2026 figures are scaled by 12/31.
 - **Known live bugs** (AUDIT.md §8). Fixed in Phase 1: the duplicate
   `get_preprocessed_metadata()` in `validate-landings.R` that shadowed the
   correct definition at [get-cloud-files.R:110](R/get-cloud-files.R#L110), and

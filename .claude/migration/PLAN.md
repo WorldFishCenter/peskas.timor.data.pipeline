@@ -1,6 +1,6 @@
 # Aligning `peskas.timor.data.pipeline` to the harmonized Peskas standard
 
-Status: **Phases 0–7 complete** (2026-08-11). Phase 8 next.
+Status: **Phases 0–8 complete** (2026-08-12). Phase 9 next.
 Progress and every measured delta: `.claude/migration/STATE.md`.
 Reference implementation: `peskas.mozambique.data.pipeline` (local copy at repo root, untracked + ignored)
 Normative spec: `peskas.mozambique.data.pipeline/inst/config_template.yml` — the
@@ -186,7 +186,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 5 | Validation | `validation.R` + `validation-functions.R`, flags sink | high | 1 ✅ |
 | 6 | API + merge | `api.R`, standard-schema export, `merge_trips()` | medium | 1 ✅ |
 | 7 | PDS switch | delegate to `coasts`, parity check, shim for portal products | **high** | 1–2 ✅ (1 used) |
-| 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 |
+| 8 | Country modules | rename/rewire modelling, nutrients, Dataverse, reports; portal JSON parity | **high** | 1–2 ✅ (1 used) |
 | 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 |
 | 10 | Upstream to coasts | separate PRs in the `peskas.coasts` repo | medium | 1–2 |
 | 11 | Cutover | strip legacy config keys and dead code, full green dev run, merge to main | medium | 1 |
@@ -479,52 +479,51 @@ inherits:
 
 ---
 
-### Phase 8 — Country modules & portal parity
+### Phase 8 — Country modules & portal parity ✅ done 2026-08-12
 
-- Rename/rewire, no logic change where avoidable:
-  `estimate-catch.R` + `model-catch.R` → `R/model-fishery.R`;
-  `calculate-nutrients.R` → `R/nutrients.R`;
-  `export-dataverse.R` stays; `send-email.R` + `inst/report/` → `R/reports.R`.
+Shipped as scoped, in one session, with four decisions recorded in the STATE
+Phase 8 entry. What Phase 9 inherits:
+
+- **The renames landed**, in their own commit and with no logic change:
+  `estimate-catch.R` + `model-catch.R` → `R/model-fishery.R`,
+  `calculate-nutrients.R` → `R/nutrients.R`, `send-email.R` → `R/reports.R`,
+  `export-dataverse.R` unchanged. `format-public-data.R` and `export.R` were
+  **not** merged, against STRUCTURAL-DIFF §4: it would make a 1,636-line file
+  and this plan's own Phase 8 bullet never asked for it.
+- **The nested validated artefact is gone.**
+  `timor-landings-merged_validated__*.rds` has no writer;
+  `get_validated_landings()` re-nests the long parquet on read. Proven
+  interchangeable first — `all.equal` TRUE over 97,360 submissions and
+  1,648,016 catch rows, and `merge_trips()` re-run on the view produced an
+  `all_trips` `all.equal` to the stored one. So the survey path is parquet end
+  to end and `format-public-data.R` did not have to be rewritten.
+- **`all_trips` stays nested `.rds`**, deliberately: it has no cross-country
+  counterpart, so flattening it would buy no harmonization and would mean
+  rewriting three files against a live portal. Same reasoning kept
+  `pds-trips_validated__*.rds` as `.rds`, where a parquet round trip would also
+  put `Asia/Dili` POSIXct through arrow on the one path `15f6b18` protects.
+- **The export emits seven objects, not nine.** `portal-indicators_grid` and
+  `portal-label_groups_list` — the two the portal excludes, rebuilt every run
+  from a 2024-07-27 `indicators_gridded.rds` — were dropped, which is the
+  "drop the dependency" branch of the choice below.
+- **`coasts::preprocess_pds_tracks()` was not wired in**, and the reason is no
+  longer C20: its output has no reader in Timor and `summarize_data()` is
+  blocked on C17 anyway, so it would produce ~1.4 M grid rows per run for
+  nothing.
+- **The gate is `data-raw/compare-portal-json.R`**, reusable in Phase 11.
+- The `15f6b18` timezone fix was re-verified against the parquet inputs rather
+  than assumed: `landing_period` still carries `tzone = "Asia/Dili"`, exactly
+  one month matches `floor_date(today, "month")`, and the current month is
+  published scaled by `elapsed / days_in_month`.
 - ~~Delete `R/airtable.R` and `inst/airtable/edit-submission-link.js`.~~
-  **Done in Phase 1**, pulled forward at the user's request — see §2.5 and the
-  Phase 1 STATE entry. Nothing Airtable-related is left for this phase except
-  dropping the `AIRTABLE_KEY` secret from the workflows (Phase 9), which is
-  where the other secret renames live.
-- Point `format_public_data()` at the new validated/merged parquet. It reads only
-  two things today — `get_merged_trips()` and `get_models()` — so this is a
-  smaller change than the file's 1,200 lines suggest. The long validated table
-  has been a **superset** of the nested one since Phase 6, so everything it
-  reads by name exists there under a standard name.
-- **Hard gate, restated 2026-08-12.** The original wording — match the Phase 0
-  golden "structurally and numerically within rounding" — is no longer
-  achievable and must not be treated as the bar:
-  - **Structural, against the Phase 0 golden** (`reference/2026-07-31_90ede9a/`,
-    still on disk, 100 MB): the same **nine** object *names*, same keys, same
-    nesting, same types. This is the frozen contract and it is discovery-based —
-    a renamed object silently vanishes from the live site (AUDIT §3).
-  - **Numeric, against the latest dev run, not the golden.** The golden predates
-    commit `a2c2881`'s deliberate −15.4% weight rewrite, Phase 4's removal of
-    104,709 phantom no-catch rows and Phase 7's trip-population change, so it
-    *should* differ. The baseline is the newest `portal-*` set in
-    `public-timor-dev`, written by the green Phase 7 CI runs (`0898052` and
-    `f041d7e`). Use the golden only as an order-of-magnitude sanity band.
-- Carry forward the timezone fix from commit `15f6b18` explicitly — it lives in
-  `summarise_estimations()` in `format-public-data.R`, deriving `today` from
-  `attr(aggregated_predictions$landing_period, "tzone")` and using
-  `lubridate::floor_date()` / `days_in_month()` rather than `lead()` arithmetic.
-  Verify it survives the move to the parquet inputs, whose `tzone` may differ.
-- **Inherited from Phase 7, decide here:**
-  - `indicators_gridded` and `tracks-map` still come from `ingest_pds_map()`,
-    which no workflow calls; `export_files()` reads both, and
-    `portal-indicators_grid.json` / `portal-label_groups_list.json` are the two
-    objects the portal excludes. Either schedule the function, regenerate the
-    products from coasts' H3 output, or drop the dependency — but do not leave
-    the export path reading a two-year-old object by accident.
-  - Whether to wire `coasts::preprocess_pds_tracks()` in and run its first pass
-    outside CI, as Phase 7 did for the track conversion. That is what gives
-    Timor the grid summaries in the country bucket, i.e. half of what
-    `summarize_data()` needs (COASTS-TODO C17), plus the H3 effort products the
-    other three countries publish. See C20 for why it cannot run in CI today.
+  **Done in Phase 1.** The remaining Airtable item is dropping the
+  `AIRTABLE_KEY` secret from the workflows, which is Phase 9.
+
+The gate as it was restated on 2026-08-12, for the record: **structural**
+against the Phase 0 golden (`reference/2026-07-31_90ede9a/`) — object names,
+keys, nesting, types; **numeric** against the newest `public-timor-dev` set,
+never the golden, which predates `a2c2881`'s −15.4% weight rewrite, Phase 4's
+104,709 removed phantom rows and Phase 7's trip-population change.
 
 ---
 

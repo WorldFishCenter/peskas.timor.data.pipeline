@@ -200,14 +200,22 @@ away.
 | — (new) | `api.R` | P6 |
 | `merge-trips.R` | keep name, rewrite body | P6 |
 | `ingest-pds-data.R`, `retrieve-pds-data.R`, `preprocess-pds-trips.R`, `validate-pds-trips.R` | mostly deleted → `coasts::*`; keep trip validation | P7 |
-| `estimate-catch.R`, `model-catch.R` | `model-fishery.R` | P8 |
-| `calculate-nutrients.R` | `nutrients.R` | P8 |
-| `format-public-data.R`, `export.R` | `export.R` | P8 |
-| `export-dataverse.R` | keep name | P8 |
-| `send-email.R` | `reports.R` | P8 |
+| `estimate-catch.R`, `model-catch.R` | `model-fishery.R` | P8 ✅ |
+| `calculate-nutrients.R` | `nutrients.R` | P8 ✅ |
+| `format-public-data.R`, `export.R` | ~~`export.R`~~ **both keep their names** | P8 — **deviation** |
+| `export-dataverse.R` | keep name | P8 ✅ |
+| `send-email.R` | `reports.R` | P8 ✅ |
 | `airtable.R` | **deleted** — orphaned `air_*` client; the frame integration is delegated to `coasts::*` | P1 |
 | `utils.R`, `utils-pipe.R`, `utils-tidy-eval.R`, `globals.R` | keep | P1 |
 | — (new) | `peskas.timor.data.pipeline-package.R` | P1 |
+
+**Deviation taken in P8, 2026-08-12:** `format-public-data.R` and `export.R`
+were **not** merged. The table above is the only place the merge was ever
+specified — PLAN's own Phase 8 bullet does not ask for it — and concatenating
+them produces a 1,636-line `export.R` for no structural gain. The standard's
+`export.R` is the portal export, which Timor's already is; the 1,200 lines of
+aggregation upstream of it are a Timor-only country module and read better with
+their own name. Revisit only if `format_public_data()` ever shrinks.
 
 Timor's `airtable.R` (`air_get_records`, `air_tibble_to_records`, …) is an entirely
 different API from the standard's (`airtable_to_df`, `bulk_update_airtable`,

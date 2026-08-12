@@ -319,6 +319,14 @@ absent from coasts' own `inst/conf.yml`; every downstream package must declare
 it (Mozambique has `mozambique-summaries`). Timor adds it when it adopts the
 function — Phase 7 at the earliest, since `grid_summaries` is a PDS product.
 
+**Status after Phase 8: still open, and it is now the *only* thing gating the
+grid summaries.** Phase 8 was asked to decide whether to wire
+`coasts::preprocess_pds_tracks()` in and run its first pass out of band, and
+declined — see C20. C17 is the reason: with `summarize_data()` unable to run
+for Timor, the grid summaries have **no reader in this package at all**, and
+producing ~1.4 M rows and ~0.8 GB per run for nothing is not a migration step.
+Fix C17 and the decision reverses.
+
 ---
 
 ## Added in Timor's migration Phase 7 (2026-08-11)
@@ -369,6 +377,14 @@ run for a country with a long history is unbounded: Timor has 102k tracks
 against Mozambique's much shorter deployment. A `batch_size` argument like
 `ingest_pds_tracks()` already has — process, write, repeat — would make the
 first run survivable on a 7 GB CI runner.
+
+**Status after Phase 8: open, but no longer Timor's blocker.** Phase 8
+considered running the first pass locally, as Phase 7 did for the track
+conversion, and decided not to — **not because of C20 but because of C17**.
+The output has no reader in Timor: it exists to feed `summarize_data()`, which
+cannot resolve Timor's inputs, and Timor's portal is the `public-timor` JSON
+contract PLAN §2.1 keeps as-is. C20 stays filed for the three countries that do
+run it; Timor wires the step in when C17 ships **and** a Timor consumer exists.
 
 ### Not a bug: `Traders` is claimable per country
 
