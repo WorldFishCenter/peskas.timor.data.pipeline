@@ -3234,6 +3234,12 @@ July's 439,932 — ratio **0.383** against the 0.387 scale factor. Had `today`
 been built in the session's zone instead of the data's, the equality would have
 matched nothing and the current month would ship unscaled.
 
+*The gate itself was negative-tested.* Seeding a dropped `summary_data` key, a
+renamed column and a numeric column turned character into an otherwise-identical
+set produces four failures and exit status 1. A gate that has only ever been run
+against passing input is not a gate. `--allow-dropped=` is how an intended
+removal is declared; anything else missing stays a failure.
+
 *Local gates*: `devtools::check()` — **0 errors, 0 warnings, 4 NOTEs**, the
 Phase 4 baseline; `pkgdown::check_pkgdown()` clean; testthat **27 passing**; the
 four tinytest suites against `timor-dev` **10 / 7 / 2 / 1**, the same counts as
@@ -3332,3 +3338,46 @@ a fifth R CMD check NOTE.
    `ANTHROPIC_API_KEY`; run `data-raw/freeze-landings-v1.R` and
    `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing
    IMEIs to PESKAS | FRAME.
+
+**Verified — the CI run, 31572880762, green end to end**
+
+All twelve jobs on `c27c126`, ~35 minutes. The lines that mattered:
+
+- `Validate landings` green **including its tinytest step**, which is the whole
+  change exercised from CI: the job wrote only the long parquet, and
+  `test_validated_landings.R` — unedited — read it back through the re-nesting
+  view. `13388 of 97360 submissions flagged`, the same as Phase 7's 13,388 of
+  97,348 plus the 12 submissions ingested since.
+- Four tinytest suites **10 / 7 / 2 / 1**, the counts unchanged since Phase 6.
+- `Export trips` wrote **seven** `portal-*` objects, not nine.
+- The PDS path stayed incremental: `No new tracks to download`,
+  `99722 trips already described, 0 to read`.
+
+**And the CI-to-CI portal diff is the real gate result.** The seven objects
+from run 31572880762 against the nine from run 31569049836 — the last run of
+the pre-Phase-8 code, same container, same day, same inputs:
+
+```
+== 1. object names
+NOTE dropped by declaration: portal-indicators_grid, portal-label_groups_list
+ok - 7 names carried over, 2 dropped by declaration
+
+== 2. structure (keys, nesting, column names, column types, row counts)
+                                     (nothing — not one difference)
+
+== 3. per-column numeric summary
+  0 of 84 numeric columns moved by more than 1e-9 relative
+
+== result: 0 structural failure(s)
+```
+
+**Zero.** Not "within rounding" — every key, every nesting level, every column
+name, every column type, every row count and all 84 numeric columns identical.
+The single `portal-aggregated$week$fuel` tick seen in the local comparison is
+gone, which confirms it was `toJSON()` rounding a 3.80625 tie differently on a
+different host rather than anything this phase did.
+
+Against the **Phase 0 golden** with the same declaration: **0 structural
+failures**, eight size-only notes, and the expected numeric drift from
+`a2c2881` and Phase 4 — the golden is a sanity band, not a target, exactly as
+the restated gate says.

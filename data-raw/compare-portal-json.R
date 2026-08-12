@@ -21,6 +21,13 @@
 # Usage:
 #   Rscript data-raw/compare-portal-json.R <baseline-dir> <candidate-dir>
 #   Rscript data-raw/compare-portal-json.R <baseline-dir> <candidate-dir> --structure-only
+#   Rscript data-raw/compare-portal-json.R <baseline-dir> <candidate-dir> \
+#       --allow-dropped=portal-indicators_grid,portal-label_groups_list
+#
+# `--allow-dropped` is how an *intended* removal is declared. Against any
+# baseline written before Phase 8 that is exactly the two names above, the
+# objects the portal excludes; anything else missing is a contract break and
+# must stay a failure.
 #
 # Both directories hold versioned `portal-<name>__<ts>_<sha>__.json` files; the
 # version string is stripped before matching. Exits non-zero on any structural
@@ -39,6 +46,10 @@ if (length(args) < 2) stop("usage: compare-portal-json.R <baseline-dir> <candida
 baseline_dir <- args[1]
 candidate_dir <- args[2]
 structure_only <- "--structure-only" %in% args
+allow_dropped <- {
+  a <- grep("^--allow-dropped=", args, value = TRUE)
+  if (length(a)) strsplit(sub("^--allow-dropped=", "", a[1]), ",")[[1]] else character(0)
+}
 
 read_set <- function(dir) {
   files <- list.files(dir, pattern = "^portal-.*\\.json$", full.names = TRUE)
@@ -119,9 +130,15 @@ cat("candidate:", candidate_dir, "-", length(cand), "objects\n\n")
 cat("== 1. object names\n")
 missing <- setdiff(names(base), names(cand))
 added <- setdiff(names(cand), names(base))
+declared <- intersect(missing, allow_dropped)
+missing <- setdiff(missing, allow_dropped)
+if (length(declared)) cat("NOTE dropped by declaration: ", paste(declared, collapse = ", "), "\n", sep = "")
 if (length(missing)) fail("objects present in baseline and MISSING from candidate: ", paste(missing, collapse = ", "))
 if (length(added)) cat("NOTE object names added by the candidate: ", paste(added, collapse = ", "), "\n", sep = "")
-if (!length(missing) && !length(added)) cat("ok - same ", length(base), " names\n", sep = "")
+if (!length(missing) && !length(added)) {
+  cat("ok - ", length(intersect(names(base), names(cand))), " names carried over",
+      if (length(declared)) paste0(", ", length(declared), " dropped by declaration") else "", "\n", sep = "")
+}
 cat("\n")
 
 # 2. structure --------------------------------------------------------------
