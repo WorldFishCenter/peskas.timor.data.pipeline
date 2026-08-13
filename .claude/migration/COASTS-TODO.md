@@ -11,6 +11,25 @@ release that Timor then re-pins to.
 
 ---
 
+## Status after migration Phase 10 (2026-08-13)
+
+Five PRs are open against `WorldFishCenter/peskas.coasts`, all off `main` at
+`8addc96`, none merged and **no release cut** — see the Phase 10 STATE entry
+for why the release is a separate, deliberate act.
+
+| PR | item | state |
+|---|---|---|
+| [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12) | C15 — KoBo validation status | open |
+| [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13) | C13 + C11 — `country` on the snapshot, write to the hub | open |
+| [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14) | C16 + C17 — `resolve_storage_opts(conf, "api")` | open |
+| [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15) | C18 + C19 — track-id extraction | open |
+| [#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16) | nutrients — selenium only | open |
+
+Still open and **not** filed as a PR: C12, C20, and the three candidates
+Phase 10 decided against donating. Reasons in the STATE entry.
+
+---
+
 ## Blocking — Timor's weight path cannot move off `rfish-table` without these
 
 ### C1. `enrich_taxa()` hardcodes FAO Area 57
@@ -128,6 +147,28 @@ invertebrates FishBase cannot estimate (`OCZ`, `IAX`, `COZ`, `PEZ`, `CRA`,
 kept, with those four reasons in its header. It goes back to being a Phase 10
 **upstream** candidate — coasts' version is the subset.
 
+**Phase 10: split. One of the four gaps is upstreamed, PR
+[#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16); the rest stay
+in Timor, on purpose.**
+
+- **Selenium — shipped.** `rfishbase::estimate()` models seven nutrients and
+  `enrich_taxa()` selected six. One word. Verified by regenerating the enriched
+  table against the live production snapshot: 5,318 rows before and after, 21 →
+  22 columns, nothing lost, all 21 pre-existing columns `all.equal()` TRUE, and
+  2,540 of 5,318 rows carrying a selenium value. Both servers have the column
+  with data (FishBase 5,696 non-NA, SeaLifeBase 359).
+- **Unit conversion — not shipped.** The seven nutrients arrive in three
+  different units per 100 g. Normalising them upstream silently rescales
+  numbers Kenya, Mozambique and Zanzibar already publish. That is a decision
+  for those countries, not a default to assume on their behalf.
+- **The FAO food-composition override — not shipped.** Substituting values for
+  taxa the models cannot estimate is an argument to have, not a default. It is
+  also the piece with the most Timor-specific data in it.
+
+Both refusals are now recorded in `?enrich_taxa` alongside the units the table
+is actually in, so the next country reads it there rather than re-deriving it.
+Timor keeps `R/nutrients.R` whole.
+
 Likewise, PLAN sequences Phase 4b (adopt coasts helpers) *before* Phase 10
 (upstream to coasts). For weights the dependency runs the other way: **C1–C3
 must land before Phase 4b can do anything.**
@@ -208,6 +249,14 @@ Fix: resolve through `resolve_storage_opts(conf, "coasts")`, matching C4.
 left on disk to the hub, so the object exists in both buckets. Two uploads of a
 583 Kb file per run. Delete the second one once this lands.
 
+**Phase 10: fixed, PR [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13)
+(with C13).** The upload now resolves `resolve_storage_opts(conf, "coasts")`.
+Verified by running `ingest_assets(package = "peskas.timor.data.pipeline")` off
+the branch — the object landed in `peskas-coasts-dev`. Timor drops its second
+upload in Phase 11, after the release exists. No other country calls
+`ingest_assets()`: `mozambique-dev` holds zero `assets__*` objects, coasts
+itself writes the snapshot.
+
 ### C13. The assets snapshot has no `country` column
 
 `ingest_assets()` selects `form_id, survey_label, alpha3_code, scientific_name,
@@ -233,6 +282,30 @@ and no existing reader would notice.
 Related: `landing_sites` also loses `Latitude` / `Longitude`, which are
 populated for all 40 Timor sites. Timor does not need them yet (it has
 `centro_pescas` in Sheets) but Phase 4's site harmonization would.
+
+**Phase 10: fixed, PR [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13),
+with two deviations from what was filed.**
+
+`country` is added to `taxa`, `gear` and `vessels` — plain text in the frame,
+directly usable — and **not** to `sites`. `landing_sites.Country` is a
+`multipleRecordLinks` field, so it arrives as an Airtable record id
+(`rec8G5G9FZCFZBFyc`), not a name: useless as a filter key. Sites stay keyed by
+`form_id`. `latitude` / `longitude` are picked up instead, populated for 343 of
+736 sites.
+
+Two things measured while doing it, both of which the filing did not know:
+
+- **Adding the column changes no row counts.** taxa 1,609 → 1,609, gear 96 → 96,
+  vessels 49 → 49, sites 736 → 736 — so `dplyr::distinct()` does not fan out and
+  the change is purely additive.
+- **`taxa.country` carries a trailing newline on the Timor rows** —
+  `"Timor-Leste\n"`, in taxa only, not in gears or vessels. It is trimmed in
+  `ingest_assets()` before deduplication. Without that, the whole point of the
+  column fails silently: `country == "Timor-Leste"` matches nothing.
+
+Selecting Timor by the trimmed column returns **60 taxa, 9 gears, 2 vessels** —
+identical to what `metadata.airtable.form_ids` returns today. Timor swaps
+`timor_assets()` onto `country` in Phase 11, after the release.
 
 ### C14. `taxa.length_type` — withdrawn, do not add it
 
@@ -289,6 +362,17 @@ Upstream them, with three corrections Timor made in the process:
    ingestion already uses works on both. A country should not need a second
    credential for this.
 
+**Phase 10: done, PR [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12)**
+— `R/validation-kobo.R` in coasts, all three functions plus `kobo_request()`,
+with all three corrections and a `url` argument defaulting to
+`"eu.kobotoolbox.org"` to match `get_kobo_data()`. Verified live against
+Timor's v3 asset: 22,250 rows in 22.3 s over 23 requests, `all.equal()` TRUE
+against Timor's implementation, and the never-validated single-submission path
+returns `not_validated` with `fetch_error = FALSE`. Additive — nothing existing
+changed — and it incidentally resolves the dangling `[get_validation_status()]`
+link `summarize_data()`'s `@seealso` has carried since before the function
+existed anywhere in coasts. Timor deletes its local copies in Phase 11.
+
 ---
 
 ## Added in Timor's migration Phase 6 (2026-08-11)
@@ -300,6 +384,13 @@ bucket is `storage.google.options_api`, so `export_api_raw()` /
 `export_api_validated()` have to reach into the config by hand — the one thing
 CLAUDE.md tells every Timor call site not to do. Mozambique does the same.
 One more `switch()` arm, exactly like C6.
+
+**Phase 10: fixed, PR [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14).**
+Note that PLAN and the Phase 10 prompt both recorded C16 as *already delivered
+in 4.6.0*. It was not — 4.6.0 shipped `"public"` only, and `summarize_data()`
+was still reaching into `conf$storage$google$options_api` by hand. Verified
+after the change by resolving all five types against coasts', Mozambique's and
+Timor's config in both environments; no bucket moves for anyone.
 
 ### C17. `summarize_data()` reads two hub artefacts from the country bucket
 
@@ -336,6 +427,40 @@ for Timor, the grid summaries have **no reader in this package at all**, and
 producing ~1.4 M rows and ~0.8 GB per run for nothing is not a migration step.
 Fix C17 and the decision reverses.
 
+### **C17 as filed is wrong. Withdrawn in Phase 10, and the diagnosis was measured**
+
+Neither read is a hub read. Listed 2026-08-13 with the ingestion service
+account:
+
+| bucket | `asfis` | `*-grid_summaries__*` |
+|---|---|---|
+| `mozambique-dev` / `-prod` | 1 / 1 | 18 / 330 |
+| `kenya-dev` | 1 | 21 |
+| `zanzibar-dev` | 1 | 72 |
+| `peskas-coasts-dev` / `peskas-coasts` | **0 / 0** | 205 / 357 |
+| `timor-dev` | 0 | 0 |
+
+- **`asfis` is a per-country object.** It exists in every country bucket and in
+  neither hub bucket. Moving that read to the hub — the fix C17 asked for —
+  would have broken Kenya, Mozambique and Zanzibar on their next run.
+- **The grid summaries are written to the country bucket**, by
+  `preprocess_pds_tracks()` (`R/preprocessing.R`, `country_opts`). Reader and
+  writer already agree. The hub's 205/357 copies exist because for coasts
+  *itself* the country bucket **is** the hub.
+
+`timor-dev` holds neither only because Timor has never run either step. So the
+real prerequisite for `summarize_data(package = "peskas.timor.data.pipeline")`
+is not a coasts fix at all — it is **seeding `asfis` into `timor-dev`,
+declaring `surveys.summaries.file_prefix`, and running
+`preprocess_pds_tracks()`**. What was genuinely missing was only the `"api"`
+arm, which is C16 and is fixed in the same PR.
+
+**This does not by itself reverse the Phase 8 decision.** The grid summaries
+still have no Timor consumer — the portal is the `public-timor` JSON contract —
+so wiring `preprocess_pds_tracks()` in still buys ~1.4 M rows per run for no
+reader. What changes is the reason: it is a Timor decision now, not an upstream
+blocker.
+
 ---
 
 ## Added in Timor's migration Phase 7 (2026-08-11)
@@ -369,6 +494,19 @@ Two cheap fixes, worth both:
 Timor hit this in Phase 7 and worked around it by converting its object family
 in place (`data-raw/convert-pds-tracks.R`), not by patching coasts.
 
+**Phase 10: fixed, PR [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15)**
+— both suggested fixes, plus three things the filing did not anticipate.
+`backup_tracks()` was calling the same helper on `unique(latest_df$Trip)`,
+i.e. on trip ids rather than filenames, where the regex was a no-op; a strict
+helper would have started erroring there, so that call is dropped instead. The
+prefix now comes in as an argument rather than being assumed. And the change
+was checked against every PDS bucket before being made — `pds-mozambique-dev`,
+`pds-mozambique-prod`, `pds-kenya-dev`, `pds-zanzibar-dev`, `pds-timor-dev`,
+`pds-peskas-coasts-dev` all store `pds-tracks_<id>.parquet` and all yield
+identical ids under old and new code. The PR also adds the package's **first
+`tests/`**: three assertions over the parser, with the old
+`pds-track-<id>__*__.csv.gz` family as the negative case.
+
 ### C19. Track objects are the only unversioned Peskas artefact
 
 `ingest_pds_tracks()` writes `sprintf("%s_%s.parquet", prefix, trip_id)` with no
@@ -377,6 +515,11 @@ history. Defensible — a finished GPS trip is immutable — but it is the one
 exception to the `<prefix>__<timestamp>_<sha>__.<ext>` convention every other
 object follows, and it means `cloud_object_name(version = "latest")` cannot be
 used on the tracks bucket at all. Worth one line of roxygen.
+
+**Phase 10: documented, PR [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15)** —
+an `@details` block on `ingest_pds_tracks()`. The behaviour is deliberate and
+unchanged; what it now says is *why it matters*, which is that existence is
+decided entirely by object name and therefore rests on C18's parser.
 
 ### C20. `preprocess_pds_tracks()`'s first run reads the whole history at once
 
@@ -447,3 +590,62 @@ argument anyway: its container resolves the latest coasts *release* at build
 time, so the fix reaches Timor only once it is tagged, and the argument costs
 nothing. **Rotation of the exposed credentials is still outstanding** — the fix
 stops new leakage, not what is already in the run history of four repos.
+
+**Confirmed in Phase 10:** the fix is `538b5d0`, merged to `origin/main` as PR
+#11 on 2026-08-11, and `read_config()` now logs bucket names only. Note that
+the local coasts checkout was **three commits behind `origin/main`** at the
+start of Phase 10 (`58a5fdf`, which still had the leak), which is why the phase
+prompt described the fix as absent from the code. Always `git fetch` coasts
+before reading it. Rotation remains outstanding.
+
+---
+
+## Phase 10 decisions on what was *not* upstreamed
+
+PLAN §Phase 10 says "do nothing" is a defensible outcome per item. Three of the
+five candidates and two open items got that answer. Reasons, so the next
+session does not re-litigate them:
+
+### `validate_pds_trips()` — deferred, with the donatable split identified
+
+PLAN called it the strongest candidate. It is the strongest *by novelty* — no
+coasts equivalent exists — but it fails the test that matters, which is whether
+a second country would call it. Kenya, Mozambique and Zanzibar have no PDS trip
+validation step at all, so upstreaming it now adds a hub function with no
+caller.
+
+It also does not upstream whole. The split, measured against the file:
+
+| part | generic? |
+|---|---|
+| `merge_consecutive_trips()`, `get_distance()` | **yes** — they operate on the frame `coasts::get_trips()` returns for every country (`Boat`, `Started`, `Ended`, `Trip`, distance, duration) |
+| `validate_pds_data()` | **no** — its outlier and quality arms need `start_end_distance`, `outliers_proportion` and `timetrace_dispersion`, which come from Timor's `describe_pds_tracks()`, for which coasts has no equivalent |
+| `validate_pds_trips()` itself | **no** — Timor's config keys, its `.rds` contract and its rename onto Timor's ontology |
+
+So the day a second country wants trip merging, the first row is a copy, not a
+redesign. Until then it stays in Timor.
+
+### The richer validators — Timor-specific by form, not by intent
+
+Landing regularity, mesh, gleaners, fuel, conservation and happiness all
+validate **fields Timor's KoBo forms ask and the other countries' do not**. The
+alert-code vocabulary is Timor's contract, and the shared validation UI already
+has a per-country dictionary problem (Phase 5 entry). Nothing to donate that
+another country could switch on.
+
+### Dataverse — Timor-only by nature
+
+Nobody else publishes to Dataverse. This is the acceptable answer the plan
+allowed for.
+
+### C12 (trip-window literals) — left open
+
+`"2018-01-01"` is correct for Timor and harmless for the WIO fleets. Making it
+a config key is right, but it is a change to a function all four pipelines call
+in exchange for nothing anyone is currently blocked on. Not worth spending the
+regression budget on in the same release as five other changes.
+
+### C20 (`preprocess_pds_tracks()` first pass) — left open
+
+Unchanged, and still not Timor's blocker — see the C17 correction above. It
+stays filed for the three countries that do run the step.

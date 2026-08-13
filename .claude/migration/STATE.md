@@ -6,9 +6,19 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **Phase:** 9 **complete** (2026-08-12). Phase 10 (upstream to coasts, in the
-  `peskas.coasts` repo) not started — its session prompt is written, at
-  `.claude/migration/PROMPT-PHASE10.md`.
+- **Phase:** 10 **complete** (2026-08-13). Phase 11 (cutover) next.
+  Phase 10's deliverable is somebody else's repo: five PRs against
+  `WorldFishCenter/peskas.coasts`, **#12–#16**, all open off `main` at
+  `8addc96`, **none merged and no release cut**. Nothing in this repo changed
+  but the two migration documents.
+- **Phase 11 is blocked on a coasts release, not on a merge.** Every country
+  pipeline resolves the latest coasts *release* at container build time, and
+  `peskas.coasts/.github/workflows/release.yaml` cuts one from the top
+  `# coasts X.Y.Z` heading of `NEWS.md` on **any** push to `main`. The five PRs
+  deliberately leave `NEWS.md` at `4.6.0`, so merging them ships nothing. Timor
+  deletes no local copy — the KoBo status trio, the hand-rolled hub mirror in
+  `ingest_assets()`, `timor_assets()`' form-id filter — until 4.7.0 is tagged
+  and one green run has been made against it.
 - **CI is now nine workflows, not eleven.** Read the Phase 9 entry before
   touching any of them, and in particular: the three `disabled_inactivity` ones
   must not be re-enabled until after the Phase 11 merge, because a cron fires
@@ -31,6 +41,10 @@ Append one entry per completed phase, newest at the bottom.
   **`a1773cb`** (NEWS / README / CLAUDE.md) + **`fc8bc2c`** (the API export as
   its own job) on `feat/align-coasts-phase9`, green on runs **31602163472** and
   **31635228716**.
+  Phase 10 = no Timor branch; in `peskas.coasts`, `87b6f0d`
+  (`feat/kobo-validation-status`), `0ef43f6` (`feat/assets-country-column`),
+  `6440547` (`feat/resolve-api-storage`), `e5f3eeb` (`fix/track-id-extraction`),
+  `abe9104` (`feat/taxa-selenium`), all off `8addc96`.
   Green end-to-end CI runs: **31436031588** on the
   Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
   MongoDB flags sink and all four tinytest suites — **31439673841** on the
@@ -3703,3 +3717,188 @@ green end-to-end runs on migration code in total, two of them Phase 9's.
    `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing IMEIs
    to PESKAS | FRAME; delete the `AIRTABLE_KEY` secret (verified dead above);
    re-push `AIRTABLE_TOKEN` if its value changed.
+
+---
+
+## Phase 10 — Upstream to coasts — 2026-08-13
+
+Branch: **none in this repo.** The code landed in
+`WorldFishCenter/peskas.coasts` as five branches off `main` at `8addc96`,
+opened as PRs **#12–#16**, none merged. Timor stays on
+`feat/align-coasts-phase9`; only these two migration documents changed here.
+
+**Done**
+
+*0. The local coasts checkout was three commits stale, and it mattered*
+
+The prompt described coasts as being at `58a5fdf`, one commit past v4.6.0. That
+was the **local** state; `origin/main` was at `8addc96`, three commits ahead,
+carrying PR #11 — the C21 secrets-leak fix. Reading the stale tree said the leak
+was still live in `read_config()`, which contradicted what the prompt recorded.
+`git fetch` resolved it: the fix is real, merged 2026-08-11, and
+`read_config()` now logs bucket names only. All five branches were rebased onto
+`8addc96` before anything was pushed. **Fetch coasts before reading it.**
+
+*1. Five PRs, one item each*
+
+| PR | branch | item |
+|---|---|---|
+| [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12) | `feat/kobo-validation-status` | C15 — the KoBoToolbox validation-status API |
+| [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13) | `feat/assets-country-column` | C13 + C11 — `country` on the snapshot, written to the hub |
+| [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14) | `feat/resolve-api-storage` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
+| [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15) | `fix/track-id-extraction` | C18 + C19 — track-id extraction |
+| [#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16) | `feat/taxa-selenium` | nutrients — selenium, and a record of what stays here |
+
+Every one is additive or provably behaviour-identical for Kenya, Mozambique and
+Zanzibar. No existing function changes what it returns for a country running
+today, and each PR body states what it changes for the three countries that did
+not ask.
+
+*2. **No `NEWS.md` edit, and therefore no release** — deliberate*
+
+`peskas.coasts/.github/workflows/release.yaml` fires on **every push to `main`**
+and cuts a GitHub release from the top `# coasts X.Y.Z` heading in `NEWS.md`,
+skipping only if that tag already exists. Since every country pipeline resolves
+the latest coasts *release* at container build time, adding a `# coasts 4.7.0`
+heading in a feature PR would mean **whoever merges it first ships a release to
+four pipelines**, three of them in production. So NEWS is untouched in all five
+PRs, the top heading stays `4.6.0`, and merging any of them is release-neutral.
+Cutting 4.7.0 is a separate, deliberate act — and it is what Phase 11 waits for
+before Timor can delete a single local copy.
+
+*3. C15 — the clearest win, and it verified exactly*
+
+`R/validation-kobo.R`: `list_validation_statuses()`, `get_validation_status()`,
+`update_validation_status()` and the `kobo_request()` / `kobo_validation_url()`
+helpers, with all three of Timor's corrections and a `url` argument defaulting
+to `"eu.kobotoolbox.org"` to match `get_kobo_data()`.
+
+Verified live against Timor's v3 asset: **22,250 rows in 22.3 s over 23
+requests**, `all.equal()` **TRUE** against Timor's implementation, and the
+single-submission call on a never-validated submission returning
+`not_validated` with `fetch_error = FALSE` — the branch that is unreachable in
+Mozambique's copy.
+
+**Verified**
+
+Everything below was measured against live services on 2026-08-13, not inferred.
+
+*Bucket inventory, with the ingestion service account*
+
+| bucket | `asfis` | `*grid_summaries*` | `*fishery_metrics*` | `assets__*` |
+|---|---|---|---|---|
+| `mozambique-dev` | 1 | 18 | 0 | 0 |
+| `mozambique-prod` | 1 | 330 | 0 | 0 |
+| `kenya-dev` | 1 | 21 | 0 | 0 |
+| `zanzibar-dev` | 1 | 72 | 0 | 0 |
+| `peskas-coasts-dev` | **0** | 205 | 248 | 64 |
+| `peskas-coasts` | **0** | 357 | 600 | 299 |
+| `timor-dev` | 0 | 0 | 0 | 20 |
+
+*C13, against the live frame* — adding `country` changes **no** row counts:
+taxa 1,609 → 1,609, gear 96 → 96, vessels 49 → 49, sites 736 → 736. Running
+`ingest_assets(package = "peskas.timor.data.pipeline")` off the branch produced
+those counts, `country` values `Kenya | Mozambique | Timor-Leste | Zanzibar`,
+and **60 taxa / 9 gears / 2 vessels** for Timor — identical to what
+`metadata.airtable.form_ids` returns. The object landed in `peskas-coasts-dev`,
+which is C11.
+
+*Selenium* — `enrich_taxa()` regenerated against the live production snapshot:
+5,318 rows before and after, 21 → 22 columns, none lost, **all 21 pre-existing
+columns `all.equal()` TRUE**, 2,540 of 5,318 rows carrying selenium.
+
+*Storage resolution* — all five types resolved against coasts', Mozambique's and
+Timor's config in both environments; every bucket identical to today.
+
+*Track ids* — `pds-mozambique-dev`, `pds-mozambique-prod`, `pds-kenya-dev`,
+`pds-zanzibar-dev`, `pds-timor-dev` and `pds-peskas-coasts-dev` all store
+`pds-tracks_<id>.parquet`; old and new code return the same ids for every one.
+
+*`devtools::check()` on all five branches merged together* — **2 WARNINGs,
+4 NOTEs**, every one of them pre-existing and environmental: an untracked local
+`.venv/`, `.env`, `.claude/`, `CLAUDE.md` and the quarto dashboard's long paths,
+none of which `.Rbuildignore` excludes. coasts has **no `R-CMD-check`
+workflow**, so nobody sees these in CI. Not fixed — out of scope, and each fix
+is a separate hygiene decision. `tests/testthat.R` ran green (3 assertions).
+
+**Three findings that correct the record**
+
+1. **C16 was never delivered.** PLAN §Phase 10 and the phase prompt both list
+   it as shipped in 4.6.0. It was not — 4.6.0 added `"public"` only, and
+   `summarize_data()` was still reaching into `conf$storage$google$options_api`
+   by hand. Fixed in #14.
+2. **C17 as filed is wrong, and acting on it would have broken three
+   pipelines.** It asked for `summarize_data()`'s `asfis` and `grid_summaries`
+   reads to move to the hub. `asfis` exists in **every country bucket and
+   neither hub bucket**; the grid summaries are **written** to the country
+   bucket by `preprocess_pds_tracks()`. Both reads are correct as they stand,
+   and moving either would have failed on Kenya's, Mozambique's and Zanzibar's
+   next run. What was actually missing was only the `"api"` arm. Withdrawn, with
+   the measurements, in COASTS-TODO.
+3. **Timor is not blocked from `summarize_data()` by coasts at all.** With C16
+   fixed, what stands between Timor and that function is entirely local: seed an
+   `asfis` parquet into `timor-dev`, declare `surveys.summaries.file_prefix`,
+   and run `preprocess_pds_tracks()`. That does **not** reverse the Phase 8
+   decision — the grid summaries still have no Timor consumer, because the
+   portal is the `public-timor` JSON contract — but the reason is now a Timor
+   choice rather than an upstream blocker.
+
+**Deferred, with reasons** (full form in COASTS-TODO's closing section)
+
+- **`validate_pds_trips()`** — PLAN's "strongest candidate", not upstreamed. It
+  is the strongest by novelty and the weakest by demand: no other country has a
+  PDS trip validation step, so it would be a hub function with no caller. It
+  also does not travel whole — `merge_consecutive_trips()` and `get_distance()`
+  are generic over `coasts::get_trips()`' frame, `validate_pds_data()` needs
+  Timor's `describe_pds_tracks()` descriptors, and the wrapper is Timor's config
+  and `.rds` contract. The split is recorded so the first row is a copy when a
+  second country wants it.
+- **The richer validators** — Timor-specific by *form*: mesh, gleaners, fuel,
+  conservation, happiness and landing regularity validate questions the other
+  countries' forms do not ask.
+- **Dataverse** — Timor-only by nature. The plan allowed this answer.
+- **Nutrients, beyond selenium** — unit conversion and the FAO
+  food-composition override would silently rescale or substitute figures three
+  countries already publish. Both refusals are now in `?enrich_taxa`.
+- **C12** (trip-window literals) and **C20** (`preprocess_pds_tracks()`'s first
+  pass) — left open. C12 changes a function all four pipelines call for nothing
+  anyone is blocked on; C20 is not Timor's problem, per finding 3.
+- **`.Rbuildignore` hygiene in coasts** — `.venv`, `.env`, `.claude` and
+  `CLAUDE.md` cause 2 R CMD check WARNINGs. Nothing in coasts CI runs the check.
+
+**Files added / removed / renamed**
+
+In `peskas.coasts` (five branches, not merged):
+
+- added: `R/validation-kobo.R`, `tests/testthat.R`,
+  `tests/testthat/test-ingestion-pds.R`, `man/{list_validation_statuses,
+  get_validation_status,update_validation_status,kobo_request,
+  kobo_validation_url}.Rd`
+- modified: `R/ingestion.R`, `R/ingestion-pds.R`, `R/utils.R`,
+  `R/summarize-data.R`, `R/fishbase.R`, `_pkgdown.yml`, and the corresponding
+  `man/*.Rd`
+- **unchanged: `NEWS.md`, `DESCRIPTION`, `inst/conf.yml`, and every workflow.**
+
+In this repo:
+
+- modified: `.claude/migration/COASTS-TODO.md` (status lines on C11, C13, C15,
+  C16, C17, C18, C19, C21 and the nutrients section; a new closing section on
+  what was not upstreamed), `.claude/migration/STATE.md`
+
+**Open questions for the next session**
+
+1. **Merge order and the release are the user's call.** The five PRs are
+   independent and can merge in any order. Nothing ships to Kenya, Mozambique or
+   Zanzibar until a `# coasts 4.7.0` heading is added to `NEWS.md` and pushed to
+   `main` — at which point `release.yaml` tags it and all four pipelines pick it
+   up at their next container build.
+2. **Phase 11 cannot delete a single Timor local copy until that release
+   exists.** `list_validation_statuses()`, `get_validation_status()`,
+   `update_validation_status()`, the hand-rolled hub mirror in
+   `ingest_assets()`, and `timor_assets()`' form-id filter all stay until Timor
+   re-pins to a release containing #12 and #13 and gets one green run against it.
+3. User actions, unchanged from Phase 9: rotate the credentials exposed in past
+   CI logs; rotate `ANTHROPIC_API_KEY`; run `data-raw/freeze-landings-v1.R` and
+   `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing
+   IMEIs to PESKAS | FRAME; delete the `AIRTABLE_KEY` secret; re-push
+   `AIRTABLE_TOKEN` if its value changed.

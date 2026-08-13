@@ -14,12 +14,19 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4, 5, 6, 7, 8, 9** — so config, secrets, the container, the
+> **0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10** — so config, secrets, the container, the
 > **storage layer**, **ingestion**, **preprocessing**, **validation**, the
 > **cross-country API export**, **PDS**, the **country modules + portal
-> parity** and now **CI, repo metadata and docs** are on the standard. What is
-> left is the upstreaming to coasts (Phase 10) and the legacy cleanup
-> (Phase 11).
+> parity**, **CI, repo metadata and docs** and now the **upstreaming to coasts**
+> are done. What is left is the legacy cleanup (Phase 11).
+>
+> **Phase 10 changed nothing in this repo.** It opened five PRs against
+> `WorldFishCenter/peskas.coasts` (**#12–#16**), none merged, and deliberately
+> left coasts' `NEWS.md` alone — that file is what `release.yaml` cuts a release
+> from, and a coasts release reaches all four country pipelines at their next
+> container build. **Delete no local copy of anything upstreamed until 4.7.0 is
+> tagged and one green run has been made against it**; that is Phase 11's first
+> gate. See the Phase 10 STATE entry.
 
 ---
 
