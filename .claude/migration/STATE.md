@@ -3975,6 +3975,11 @@ In this repo:
 
 **Open questions for the next session**
 
+0. **Phase 11's session prompt is written**, at
+   `.claude/migration/PROMPT-PHASE11.md`, in the same form Phase 9 left for this
+   session. It carries what this phase learned that the cutover needs: the three
+   deletions 4.7.0 unlocks and the evidence each is equivalent, the two
+   production scripts that must run before the merge, and the harness traps.
 1. **The release is the user's call, and merging #17 is not it.** Nothing ships
    to Kenya, Mozambique or Zanzibar until a `# coasts 4.7.0` heading is added to
    `NEWS.md` and pushed to `main` — at which point `release.yaml` tags it and all
