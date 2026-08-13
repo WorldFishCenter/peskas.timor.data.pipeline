@@ -3752,8 +3752,8 @@ was still live in `read_config()`, which contradicted what the prompt recorded.
 | `c6ed781` | C15 — the KoBoToolbox validation-status API |
 | `6ef429e` | C13 + C11 — `country` on the snapshot, written to the hub |
 | `f4696b8` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
-| `c8ac7bb` | C18 + C19 — track-id extraction |
-| `8403109` | nutrients — selenium, and a record of what stays here |
+| `9923962` | C18 + C19 — track-id extraction |
+| `bf8ac7e` | nutrients — selenium, and a record of what stays here |
 
 Every one is additive or provably behaviour-identical for Kenya, Mozambique and
 Zanzibar. No existing function changes what it returns for a country running

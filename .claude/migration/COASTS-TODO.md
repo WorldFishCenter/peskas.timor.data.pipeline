@@ -26,8 +26,8 @@ must be merged with a merge or rebase, **never squashed**.
 | `c6ed781` | C15 — KoBo validation status |
 | `6ef429e` | C13 + C11 — `country` on the snapshot, write to the hub |
 | `f4696b8` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
-| `c8ac7bb` | C18 + C19 — track-id extraction |
-| `8403109` | nutrients — selenium only |
+| `9923962` | C18 + C19 — track-id extraction |
+| `bf8ac7e` | nutrients — selenium only |
 
 These began as five separate PRs (#12–#16), one per item as PLAN §Phase 10
 asked. Consolidated on the user's call 2026-08-13: nothing ships until 4.7.0 is
@@ -159,7 +159,7 @@ kept, with those four reasons in its header. It goes back to being a Phase 10
 **upstream** candidate — coasts' version is the subset.
 
 **Phase 10: split. One of the four gaps is upstreamed, PR
-[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `8403109`; the rest stay
+[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `bf8ac7e`; the rest stay
 in Timor, on purpose.**
 
 - **Selenium — shipped.** `rfishbase::estimate()` models seven nutrients and
@@ -505,7 +505,7 @@ Two cheap fixes, worth both:
 Timor hit this in Phase 7 and worked around it by converting its object family
 in place (`data-raw/convert-pds-tracks.R`), not by patching coasts.
 
-**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c8ac7bb`**
+**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `9923962`**
 — both suggested fixes, plus three things the filing did not anticipate.
 The helper has **three** call sites, not one: `ingest_pds_tracks()` and
 `preprocess_pds_tracks()` both pass `conf$pds$pds_tracks$file_prefix` now, and
@@ -528,7 +528,7 @@ exception to the `<prefix>__<timestamp>_<sha>__.<ext>` convention every other
 object follows, and it means `cloud_object_name(version = "latest")` cannot be
 used on the tracks bucket at all. Worth one line of roxygen.
 
-**Phase 10: documented, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c8ac7bb`** —
+**Phase 10: documented, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `9923962`** —
 an `@details` block on `ingest_pds_tracks()`. The behaviour is deliberate and
 unchanged; what it now says is *why it matters*, which is that existence is
 decided entirely by object name and therefore rests on C18's parser.
