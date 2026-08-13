@@ -3729,8 +3729,12 @@ green end-to-end runs on migration code in total, two of them Phase 9's.
 
 Branch: **none in this repo.** The code landed in
 `WorldFishCenter/peskas.coasts` on **`feat-upstream`** off `main` at `8addc96`,
-opened as PR **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)**,
-not merged. Timor stays on `feat/align-coasts-phase9`; only the migration
+opened as PR **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)**
+and **merged 2026-08-13 as `989049c`** — with `--merge`, so all five commits
+survive and each item stays individually revertible. **No release is cut**:
+`NEWS.md` is still at `4.6.0`, and `git ls-remote --tags` confirms `v4.6.0` is
+still the newest tag, so Mozambique, Kenya and Zanzibar keep resolving 4.6.0 at
+container build time. Timor stays on `feat/align-coasts-phase9`; only the migration
 documents and `CLAUDE.md`'s header changed here.
 
 **Done**
@@ -3863,6 +3867,47 @@ Two things worth carrying forward from it:
 none of which `.Rbuildignore` excludes. coasts has **no `R-CMD-check`
 workflow**, so nobody sees these in CI. Not fixed — out of scope, and each fix
 is a separate hygiene decision. `tests/testthat.R` ran green (3 assertions).
+
+**The merge is not the fan-out — but `ingest_assets()` partly is**
+
+Two things about merging #17 that the phase brief did not anticipate, both
+verified before the merge:
+
+1. **coasts' own `data-pipeline.yaml` is `on: push:` with no branch filter**, and
+   every job carries `if: endsWith(github.ref, '/main')` → `R_CONFIG_ACTIVE=production`.
+   So merging to `main` runs coasts' **production** pipeline with the new code
+   (plus `tracks-backup.yaml` and `app-usage-report.yaml`). It is not an inert
+   merge. It still reaches no country pipeline — that needs a tag.
+   The same trigger is why every push of the phase branch ran the full coasts
+   pipeline against the `-dev` buckets, which is how the missed
+   `preprocess_pds_tracks()` call site surfaced (run 31692617805) and how the
+   fix was confirmed (run **31694900927**, success, 1h05m).
+2. **The assets snapshot is shared *data*, not code, so C13 does bypass the
+   release.** Mozambique, Kenya and Zanzibar each read `assets__*` at
+   `version = "latest"` from the **hub**, at runtime. The moment coasts'
+   production `ingest_assets()` writes a snapshot carrying `country` /
+   `latitude` / `longitude`, all three see it on their next cron — Moz and Kenya
+   every 2 days, Zanzibar every 4 — with no tag and no container rebuild
+   involved.
+
+   Traced before the merge: each of the three feeds the snapshot's `taxa`,
+   `gear`, `vessels`, `sites` and `geo` tables into a chained join, so a second
+   mapping table carrying `country` collides with the first and dplyr suffixes it
+   to `country.x` / `country.y`. Kenya's `map_kefs_surveys()` joins `taxa`
+   **three times**, so it collides on the second join. Kenya already dropped a
+   bare `country` with `-any_of(...)`, which does not catch the suffixed forms.
+   Consequence measured as cosmetic — no error, no row-count change, and the
+   cross-country API parquet is safe because all three do an explicit positive
+   `select()` of their API columns — but it is schema drift in a published
+   intermediate.
+
+   **The user fixed all three before merging** (`refine join chain` on each
+   `main`: Kenya `R/api.R:202` + `R/preprocessing-surveys.R:91,293`, Zanzibar
+   `R/preprocessing.R:63,351`, Moz `R/preprocessing-surveys.R:62,390`), dropping
+   the columns at *read* time with `-any_of()` — a no-op against the old
+   snapshot, correct against the new one, so it needed no coordination with the
+   merge. Each country rebuilds its container per run from its own `main`, so
+   the fix is live for whichever cron fires first.
 
 **Three findings that correct the record**
 
