@@ -3837,6 +3837,26 @@ Timor's config in both environments; every bucket identical to today.
 `pds-zanzibar-dev`, `pds-timor-dev` and `pds-peskas-coasts-dev` all store
 `pds-tracks_<id>.parquet`; old and new code return the same ids for every one.
 
+**Caught after the PR was opened, and it is the one mistake of this phase:**
+`extract_trip_ids_from_filenames()` has **three** call sites, not the two in
+`R/ingestion-pds.R`. The third is `preprocess_pds_tracks()`
+(`R/preprocessing.R:57`), and making `prefix` required broke it —
+`coasts::preprocess_pds_tracks()` died with `argument "prefix" is missing`.
+Fixed in `9923962`, amended into the commit that introduced the change so a
+revert still takes the whole thing. `main` was never affected; the PR is not
+merged.
+
+Two things worth carrying forward from it:
+
+1. **`R CMD check` cannot catch this.** Verified directly: `codetools`
+   does not report a call that omits a required argument with no default, so
+   the package checks clean and the failure appears only at runtime. Adding a
+   required argument to an existing R function is a source-wide edit that no
+   static check verifies — the guard is `grep`, and reading one file end to end
+   is not a substitute for grepping the package.
+2. **`prefix` stays required.** A default would be a guess, and a wrong guess is
+   precisely the silent failure C18 exists to remove.
+
 *`devtools::check()` on the five commits together* — **2 WARNINGs,
 4 NOTEs**, every one of them pre-existing and environmental: an untracked local
 `.venv/`, `.env`, `.claude/`, `CLAUDE.md` and the quarto dashboard's long paths,

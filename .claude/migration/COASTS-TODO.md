@@ -507,10 +507,11 @@ in place (`data-raw/convert-pds-tracks.R`), not by patching coasts.
 
 **Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c8ac7bb`**
 — both suggested fixes, plus three things the filing did not anticipate.
-`backup_tracks()` was calling the same helper on `unique(latest_df$Trip)`,
-i.e. on trip ids rather than filenames, where the regex was a no-op; a strict
-helper would have started erroring there, so that call is dropped instead. The
-prefix now comes in as an argument rather than being assumed. And the change
+The helper has **three** call sites, not one: `ingest_pds_tracks()` and
+`preprocess_pds_tracks()` both pass `conf$pds$pds_tracks$file_prefix` now, and
+`backup_tracks()` was calling it on `unique(latest_df$Trip)`, i.e. on trip ids
+rather than filenames, where the regex was a no-op — that call is dropped
+instead. The prefix now comes in as an argument rather than being assumed. And the change
 was checked against every PDS bucket before being made — `pds-mozambique-dev`,
 `pds-mozambique-prod`, `pds-kenya-dev`, `pds-zanzibar-dev`, `pds-timor-dev`,
 `pds-peskas-coasts-dev` all store `pds-tracks_<id>.parquet` and all yield
