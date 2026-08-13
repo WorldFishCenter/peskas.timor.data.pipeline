@@ -7,15 +7,20 @@ Append one entry per completed phase, newest at the bottom.
 ## Current position
 
 - **Phase:** 10 **complete** (2026-08-13). Phase 11 (cutover) next.
-  Phase 10's deliverable is somebody else's repo: five PRs against
-  `WorldFishCenter/peskas.coasts`, **#12–#16**, all open off `main` at
-  `8addc96`, **none merged and no release cut**. Nothing in this repo changed
-  but the two migration documents.
+  Phase 10's deliverable is somebody else's repo: PR
+  **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)** against
+  `WorldFishCenter/peskas.coasts`, branch `feat-upstream` off `main` at
+  `8addc96`, five items as **five separate commits**, **not merged and no
+  release cut**. (It began as #12–#16, one PR per item; consolidated the same
+  day — see the Phase 10 entry.) **Merge it with a merge or rebase, never a
+  squash**: the commit boundary is what lets one item be reverted out of a
+  release without the other four. Nothing in this repo changed but the
+  migration documents and `CLAUDE.md`'s header.
 - **Phase 11 is blocked on a coasts release, not on a merge.** Every country
   pipeline resolves the latest coasts *release* at container build time, and
   `peskas.coasts/.github/workflows/release.yaml` cuts one from the top
-  `# coasts X.Y.Z` heading of `NEWS.md` on **any** push to `main`. The five PRs
-  deliberately leave `NEWS.md` at `4.6.0`, so merging them ships nothing. Timor
+  `# coasts X.Y.Z` heading of `NEWS.md` on **any** push to `main`. #17
+  deliberately leaves `NEWS.md` at `4.6.0`, so merging it ships nothing. Timor
   deletes no local copy — the KoBo status trio, the hand-rolled hub mirror in
   `ingest_assets()`, `timor_assets()`' form-id filter — until 4.7.0 is tagged
   and one green run has been made against it.
@@ -3723,9 +3728,10 @@ green end-to-end runs on migration code in total, two of them Phase 9's.
 ## Phase 10 — Upstream to coasts — 2026-08-13
 
 Branch: **none in this repo.** The code landed in
-`WorldFishCenter/peskas.coasts` as five branches off `main` at `8addc96`,
-opened as PRs **#12–#16**, none merged. Timor stays on
-`feat/align-coasts-phase9`; only these two migration documents changed here.
+`WorldFishCenter/peskas.coasts` on **`feat-upstream`** off `main` at `8addc96`,
+opened as PR **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)**,
+not merged. Timor stays on `feat/align-coasts-phase9`; only the migration
+documents and `CLAUDE.md`'s header changed here.
 
 **Done**
 
@@ -3736,23 +3742,40 @@ was the **local** state; `origin/main` was at `8addc96`, three commits ahead,
 carrying PR #11 — the C21 secrets-leak fix. Reading the stale tree said the leak
 was still live in `read_config()`, which contradicted what the prompt recorded.
 `git fetch` resolved it: the fix is real, merged 2026-08-11, and
-`read_config()` now logs bucket names only. All five branches were rebased onto
+`read_config()` now logs bucket names only. Everything was rebased onto
 `8addc96` before anything was pushed. **Fetch coasts before reading it.**
 
-*1. Five PRs, one item each*
+*1. One PR, five items, one commit each*
 
-| PR | branch | item |
-|---|---|---|
-| [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12) | `feat/kobo-validation-status` | C15 — the KoBoToolbox validation-status API |
-| [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13) | `feat/assets-country-column` | C13 + C11 — `country` on the snapshot, written to the hub |
-| [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14) | `feat/resolve-api-storage` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
-| [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15) | `fix/track-id-extraction` | C18 + C19 — track-id extraction |
-| [#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16) | `feat/taxa-selenium` | nutrients — selenium, and a record of what stays here |
+| commit | item |
+|---|---|
+| `c6ed781` | C15 — the KoBoToolbox validation-status API |
+| `6ef429e` | C13 + C11 — `country` on the snapshot, written to the hub |
+| `f4696b8` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
+| `c8ac7bb` | C18 + C19 — track-id extraction |
+| `8403109` | nutrients — selenium, and a record of what stays here |
 
 Every one is additive or provably behaviour-identical for Kenya, Mozambique and
 Zanzibar. No existing function changes what it returns for a country running
-today, and each PR body states what it changes for the three countries that did
-not ask.
+today, and each commit message states what it changes for the three countries
+that did not ask.
+
+**These shipped first as five separate PRs, #12–#16, one per item as PLAN
+§Phase 10 asked; consolidated onto one branch on the user's call the same day.**
+The five were closed, not abandoned — each carries the identical commit and its
+own description, so the per-item reasoning stays readable there — and the
+combined branch was verified content-identical to all five before anything was
+closed (`git diff` per branch over its own files: no difference).
+
+The reasoning for consolidating, since it looks like it contradicts the brief:
+the independent-merge benefit was already void. Nothing reaches any country
+until 4.7.0 is tagged, so all five were always going to ship in the same
+release; what five PRs actually bought was five review threads for one
+reviewer, and five conflicting edits to the same `NEWS.md` heading later.
+**What is preserved is the commit boundary**, which is the thing that matters:
+`git revert <sha>` takes one item back out of a release without the other four.
+So #17 must be merged with a merge or rebase and **never squashed** — a squash
+converts five revertible changes into one.
 
 *2. **No `NEWS.md` edit, and therefore no release** — deliberate*
 
@@ -3814,7 +3837,7 @@ Timor's config in both environments; every bucket identical to today.
 `pds-zanzibar-dev`, `pds-timor-dev` and `pds-peskas-coasts-dev` all store
 `pds-tracks_<id>.parquet`; old and new code return the same ids for every one.
 
-*`devtools::check()` on all five branches merged together* — **2 WARNINGs,
+*`devtools::check()` on the five commits together* — **2 WARNINGs,
 4 NOTEs**, every one of them pre-existing and environmental: an untracked local
 `.venv/`, `.env`, `.claude/`, `CLAUDE.md` and the quarto dashboard's long paths,
 none of which `.Rbuildignore` excludes. coasts has **no `R-CMD-check`
@@ -3826,7 +3849,7 @@ is a separate hygiene decision. `tests/testthat.R` ran green (3 assertions).
 1. **C16 was never delivered.** PLAN §Phase 10 and the phase prompt both list
    it as shipped in 4.6.0. It was not — 4.6.0 added `"public"` only, and
    `summarize_data()` was still reaching into `conf$storage$google$options_api`
-   by hand. Fixed in #14.
+   by hand. Fixed in `f4696b8`.
 2. **C17 as filed is wrong, and acting on it would have broken three
    pipelines.** It asked for `summarize_data()`'s `asfis` and `grid_summaries`
    reads to move to the hub. `asfis` exists in **every country bucket and
@@ -3868,7 +3891,7 @@ is a separate hygiene decision. `tests/testthat.R` ran green (3 assertions).
 
 **Files added / removed / renamed**
 
-In `peskas.coasts` (five branches, not merged):
+In `peskas.coasts` (branch `feat-upstream`, PR #17, not merged):
 
 - added: `R/validation-kobo.R`, `tests/testthat.R`,
   `tests/testthat/test-ingestion-pds.R`, `man/{list_validation_statuses,
@@ -3887,16 +3910,17 @@ In this repo:
 
 **Open questions for the next session**
 
-1. **Merge order and the release are the user's call.** The five PRs are
-   independent and can merge in any order. Nothing ships to Kenya, Mozambique or
-   Zanzibar until a `# coasts 4.7.0` heading is added to `NEWS.md` and pushed to
-   `main` — at which point `release.yaml` tags it and all four pipelines pick it
-   up at their next container build.
+1. **The release is the user's call, and merging #17 is not it.** Nothing ships
+   to Kenya, Mozambique or Zanzibar until a `# coasts 4.7.0` heading is added to
+   `NEWS.md` and pushed to `main` — at which point `release.yaml` tags it and all
+   four pipelines pick it up at their next container build. Merge #17 without
+   squashing, so a regression can be traced and reverted per item.
 2. **Phase 11 cannot delete a single Timor local copy until that release
    exists.** `list_validation_statuses()`, `get_validation_status()`,
    `update_validation_status()`, the hand-rolled hub mirror in
    `ingest_assets()`, and `timor_assets()`' form-id filter all stay until Timor
-   re-pins to a release containing #12 and #13 and gets one green run against it.
+   re-pins to a release containing `c6ed781` and `6ef429e` and gets one green
+   run against it.
 3. User actions, unchanged from Phase 9: rotate the credentials exposed in past
    CI logs; rotate `ANTHROPIC_API_KEY`; run `data-raw/freeze-landings-v1.R` and
    `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing

@@ -13,17 +13,28 @@ release that Timor then re-pins to.
 
 ## Status after migration Phase 10 (2026-08-13)
 
-Five PRs are open against `WorldFishCenter/peskas.coasts`, all off `main` at
-`8addc96`, none merged and **no release cut** — see the Phase 10 STATE entry
-for why the release is a separate, deliberate act.
+One PR is open against `WorldFishCenter/peskas.coasts` —
+**[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)**, branch
+`feat-upstream` off `main` at `8addc96` — not merged, and **no release cut**.
+See the Phase 10 STATE entry for why the release is a separate, deliberate act.
 
-| PR | item | state |
-|---|---|---|
-| [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12) | C15 — KoBo validation status | open |
-| [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13) | C13 + C11 — `country` on the snapshot, write to the hub | open |
-| [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14) | C16 + C17 — `resolve_storage_opts(conf, "api")` | open |
-| [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15) | C18 + C19 — track-id extraction | open |
-| [#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16) | nutrients — selenium only | open |
+Five items, **one commit each**. The commits are the unit of revert, so #17
+must be merged with a merge or rebase, **never squashed**.
+
+| commit | item |
+|---|---|
+| `c6ed781` | C15 — KoBo validation status |
+| `6ef429e` | C13 + C11 — `country` on the snapshot, write to the hub |
+| `f4696b8` | C16 + C17 — `resolve_storage_opts(conf, "api")` |
+| `c8ac7bb` | C18 + C19 — track-id extraction |
+| `8403109` | nutrients — selenium only |
+
+These began as five separate PRs (#12–#16), one per item as PLAN §Phase 10
+asked. Consolidated on the user's call 2026-08-13: nothing ships until 4.7.0 is
+tagged, so the five could never have merged on independent timelines anyway,
+and one branch is one review and one NEWS edit. The five closed PRs carry the
+identical commits and their own descriptions, so the per-item reasoning is
+still readable there.
 
 Still open and **not** filed as a PR: C12, C20, and the three candidates
 Phase 10 decided against donating. Reasons in the STATE entry.
@@ -148,7 +159,7 @@ kept, with those four reasons in its header. It goes back to being a Phase 10
 **upstream** candidate — coasts' version is the subset.
 
 **Phase 10: split. One of the four gaps is upstreamed, PR
-[#16](https://github.com/WorldFishCenter/peskas.coasts/pull/16); the rest stay
+[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `8403109`; the rest stay
 in Timor, on purpose.**
 
 - **Selenium — shipped.** `rfishbase::estimate()` models seven nutrients and
@@ -249,7 +260,7 @@ Fix: resolve through `resolve_storage_opts(conf, "coasts")`, matching C4.
 left on disk to the hub, so the object exists in both buckets. Two uploads of a
 583 Kb file per run. Delete the second one once this lands.
 
-**Phase 10: fixed, PR [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13)
+**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `6ef429e`
 (with C13).** The upload now resolves `resolve_storage_opts(conf, "coasts")`.
 Verified by running `ingest_assets(package = "peskas.timor.data.pipeline")` off
 the branch — the object landed in `peskas-coasts-dev`. Timor drops its second
@@ -283,7 +294,7 @@ Related: `landing_sites` also loses `Latitude` / `Longitude`, which are
 populated for all 40 Timor sites. Timor does not need them yet (it has
 `centro_pescas` in Sheets) but Phase 4's site harmonization would.
 
-**Phase 10: fixed, PR [#13](https://github.com/WorldFishCenter/peskas.coasts/pull/13),
+**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `6ef429e`,
 with two deviations from what was filed.**
 
 `country` is added to `taxa`, `gear` and `vessels` — plain text in the frame,
@@ -362,7 +373,7 @@ Upstream them, with three corrections Timor made in the process:
    ingestion already uses works on both. A country should not need a second
    credential for this.
 
-**Phase 10: done, PR [#12](https://github.com/WorldFishCenter/peskas.coasts/pull/12)**
+**Phase 10: done, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c6ed781`**
 — `R/validation-kobo.R` in coasts, all three functions plus `kobo_request()`,
 with all three corrections and a `url` argument defaulting to
 `"eu.kobotoolbox.org"` to match `get_kobo_data()`. Verified live against
@@ -385,7 +396,7 @@ bucket is `storage.google.options_api`, so `export_api_raw()` /
 CLAUDE.md tells every Timor call site not to do. Mozambique does the same.
 One more `switch()` arm, exactly like C6.
 
-**Phase 10: fixed, PR [#14](https://github.com/WorldFishCenter/peskas.coasts/pull/14).**
+**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `f4696b8`.**
 Note that PLAN and the Phase 10 prompt both recorded C16 as *already delivered
 in 4.6.0*. It was not — 4.6.0 shipped `"public"` only, and `summarize_data()`
 was still reaching into `conf$storage$google$options_api` by hand. Verified
@@ -494,7 +505,7 @@ Two cheap fixes, worth both:
 Timor hit this in Phase 7 and worked around it by converting its object family
 in place (`data-raw/convert-pds-tracks.R`), not by patching coasts.
 
-**Phase 10: fixed, PR [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15)**
+**Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c8ac7bb`**
 — both suggested fixes, plus three things the filing did not anticipate.
 `backup_tracks()` was calling the same helper on `unique(latest_df$Trip)`,
 i.e. on trip ids rather than filenames, where the regex was a no-op; a strict
@@ -516,7 +527,7 @@ exception to the `<prefix>__<timestamp>_<sha>__.<ext>` convention every other
 object follows, and it means `cloud_object_name(version = "latest")` cannot be
 used on the tracks bucket at all. Worth one line of roxygen.
 
-**Phase 10: documented, PR [#15](https://github.com/WorldFishCenter/peskas.coasts/pull/15)** —
+**Phase 10: documented, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `c8ac7bb`** —
 an `@details` block on `ingest_pds_tracks()`. The behaviour is deliberate and
 unchanged; what it now says is *why it matters*, which is that existence is
 decided entirely by object name and therefore rests on C18's parser.

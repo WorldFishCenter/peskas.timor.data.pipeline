@@ -20,8 +20,9 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > parity**, **CI, repo metadata and docs** and now the **upstreaming to coasts**
 > are done. What is left is the legacy cleanup (Phase 11).
 >
-> **Phase 10 changed nothing in this repo.** It opened five PRs against
-> `WorldFishCenter/peskas.coasts` (**#12–#16**), none merged, and deliberately
+> **Phase 10 changed nothing in this repo.** It opened one PR against
+> `WorldFishCenter/peskas.coasts` (**#17**, five items as five commits), not
+> merged — **merge it without squashing** — and deliberately
 > left coasts' `NEWS.md` alone — that file is what `release.yaml` cuts a release
 > from, and a coasts release reaches all four country pipelines at their next
 > container build. **Delete no local copy of anything upstreamed until 4.7.0 is
