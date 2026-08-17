@@ -4075,3 +4075,60 @@ territory. Phase 10's change to the fishery-metrics upload was ruled out
 explicitly: Kenya defines `storage.google.options_coasts` in **both**
 environments, so `resolve_storage_opts(conf, "coasts")` resolves exactly what the
 previous raw read did.
+
+---
+
+## Addendum 6 — the static-assets divergence, and a session to resolve it — 2026-08-14
+
+Raised while walking the pipeline DAG from the top: the first step is
+`ingest_metadata_tables()`, **12 Google Sheets tables, and no other country
+pipeline has an equivalent function.** If Airtable is authoritative (PLAN §2.5),
+why does Timor still ingest static assets from Sheets?
+
+**The premise holds, and more strongly than expected.** Measured 2026-08-14
+across the three WIO repos:
+
+| repo | `metadata.google_sheets.tables` | reads them? |
+|---|---|---|
+| Mozambique | `landing_sites`, `catch_groups`, `vessel_type`, `habitat`, `gear_type` | **no** — no `read_sheet` / `range_read` / `gs4_auth` anywhere in `R/` |
+| Zanzibar | `devices`, `sites`, `boats`, `catch_type`, `communities` | **no** |
+| Kenya | `BMUs` | only `R/export.R`, which **writes** a sheet as an export |
+
+So all three have already reached the target state, and their Sheets config is
+vestigial. **Timor is the only pipeline that still actively ingests metadata
+tables.**
+
+A name-based reader grep over Timor's twelve suggests the gap is smaller than the
+count implies — `vms_installs`, `centro_pescas`, `fishing_vessel_statistics` and
+`boats` appear only in `preprocess-metadata-tables.R` itself, and
+`reporting_units` matched **nothing** in `R/` — but the grep cannot see
+indirection, so those are leads, not findings. Two of the twelve may not belong
+in Airtable at all: `morphometric_table`'s target is the **hub**
+(`coasts::get_taxa_morphometrics()`, adopted in Phase 4 — so the Sheets copy may
+simply be a leftover), and `centro_pescas` is superseded by the
+`landing_sites.latitude/longitude` that **Phase 10's own C13 PR added** to the
+frame.
+
+The three genuinely blocked ones are unchanged and all blocked on *data*, not
+code: `devices` (frame 442 vs Sheets 595 — alert 3 goes 824 → 1,475 and 651
+submissions lose their matched trip), and `stations` / `reporting_units`, which
+are the **published** labels where 11 of 40 site names and 18 of 40 municipalities
+disagree and `format_public_data()` / `get_summary_data()` hardcode ten spellings
+between them.
+
+**Action: a dedicated audit session before Phase 11**, prompt written at
+`.claude/migration/PROMPT-ALIGNMENT-AUDIT.md`. It covers the twelve tables *and*
+pipeline logic — the DAG against the WIO DAG, with every divergence classified as
+deliberate-and-documented, deliberate-but-undocumented, or unexamined drift. It
+is explicitly an audit, not a refactor, and "Timor keeps this, and here is the
+number that says why" is an acceptable outcome per table.
+
+It also reopens one thing Addendum 5 changed: `coasts::summarize_data()` is the
+largest single piece of the standard Timor does not run, and after Phase 10 the
+reason is no longer an upstream bug — the remaining prerequisites are all local.
+
+**Why before Phase 11:** Phase 11 deletes legacy config keys and dead code. What
+this audit changes is *what Phase 11 is allowed to delete* — a `# [legacy]` key
+with a live reader is not deletable either way, but a Sheets table whose only
+reader is its own parser is deletable now, and one blocked on Airtable data is
+not deletable at all until the user completes the frame.
