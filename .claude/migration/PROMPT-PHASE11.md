@@ -24,11 +24,34 @@ Execute Phase 11 only. End the session by appending a Phase 11 entry to
 ## Where things stand
 
 Phases 0–10 are complete. Phase 10 upstreamed five items to `peskas.coasts`
-(PR #17, merged as `989049c`) and they shipped in **release v4.7.0**. Timor is
-**already unpinned** — `.github/workflows/data-pipeline.yaml` resolves
-`repos/WorldFishCenter/peskas.coasts/releases/latest` at container build time —
-so PLAN's "unpin coasts" item is **already done**; verify the resolved ref reads
-`v4.7.0` in the build log rather than re-doing it.
+(PR #17, merged as `989049c`) and they shipped in **release v4.7.0**
+(`597003c`). Timor is **already unpinned** — `.github/workflows/data-pipeline.yaml`
+resolves `repos/WorldFishCenter/peskas.coasts/releases/latest` at container build
+time — so PLAN's "unpin coasts" item is **already done**; just read the resolved
+ref out of the build log rather than re-doing it.
+
+**The dev-run gate is already met.** Run
+[31778254836](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/actions/runs/31778254836)
+(2026-08-14, on this branch at `0573d4f`) logged `Resolved peskas.coasts ref:
+v4.7.0` and went **green on all thirteen jobs**, including the four that carry
+the tinytest suites. Timor's existing code works against the upstreamed hub.
+What that run does *not* prove is that the hub versions are wired in — Timor's
+own definitions still win over the imports — so the deletions below still need
+their own run.
+
+**coasts has since shipped v4.8.0**, so your next build resolves that, not
+4.7.0. It is immaterial here, verified rather than assumed: v4.7.0..v4.8.0
+touches only `summarize_data()` and `export_portal()`, and the only mentions of
+either in this repo are comments in `R/api.R`, `R/pds-tracks.R`, `R/pds-maps.R`,
+`inst/config.yml` and `data-pipeline.yaml`. All five Phase 10 commits are
+ancestors of v4.8.0. One further commit on coasts `main`, `dedf4d6` (removes the
+dead `fetch_assets()`), is **unreleased**; harmless either way, since every
+`fetch_assets` reference in the country repos is a local definition, not a
+`coasts::` call.
+
+Do not read Timor's **`main`** pipeline runs as evidence about the hub: `main`
+is pre-migration and has no `COASTS_REF` at all, so its green production runs
+say nothing about coasts compatibility.
 
 Branch: `feat/align-coasts-phase9`, which despite the name carries Phases 9 and
 10's documentation. Decide early whether Phase 11 continues on it or branches
@@ -108,6 +131,20 @@ wired in. Those are two separate tests; do both.
 - **`R CMD check` does not catch a call that omits a required argument** —
   `codetools` does not report it. Phase 10 broke a caller this way and only
   runtime surfaced it. When you change a signature, grep every call site.
+- **Two lessons from Phase 10's fallout in the country repos**, both of which
+  cost live pipeline runs and both avoidable:
+  1. **Never write an elision inside code someone may paste.** A recommended
+     snippet contained `str_detect(.data$form_id, ...)`, where `...` stood for
+     "the existing pattern". It was pasted literally into Mozambique and
+     Zanzibar; inside a `purrr` `~` lambda `...` is the lambda's own arguments,
+     so `str_detect()` received the tibble as its pattern and **every
+     preprocessing run aborted** until it was fixed. Write the whole line or
+     name a variable.
+  2. **`select(-c("x"))` errors when `x` is absent; `-any_of()` does not.**
+     Stripping `country` at read time made `map_surveys()`' existing
+     `select(-c("form_id", "district_code", "country"))` fail in both repos.
+     When you remove a column upstream, grep for every negative select that
+     names it.
 
 ## Things Phase 10 learned about the hub repo, if you go back into it
 

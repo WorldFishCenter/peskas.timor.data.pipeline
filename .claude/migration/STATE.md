@@ -3996,3 +3996,82 @@ In this repo:
    `data-raw/convert-pds-tracks.R` against `production`; add the 27 missing
    IMEIs to PESKAS | FRAME; delete the `AIRTABLE_KEY` secret; re-push
    `AIRTABLE_TOKEN` if its value changed.
+
+---
+
+## Addendum 5 — post-Phase-10 alignment check — 2026-08-14
+
+Re-verified across all four repos before Phase 11, after edits landed in coasts,
+Mozambique and Zanzibar.
+
+**coasts — two releases since the merge, both fine for Timor**
+
+| ref | what |
+|---|---|
+| `597003c` = **v4.7.0** | the #18 merge. The release *was* cut, so the 2026-08-13 skipped-check-suite anomaly did not recur |
+| `f33ca3b` = **v4.8.0** | PR #19, `exclude_dashboard_ids` was emptying the multi-country portal |
+| `dedf4d6` | PR #20, removes the dead duplicate-keyed `fetch_assets()`. **Unreleased** — no tag contains it |
+
+- **All five Phase 10 commits are ancestors of v4.8.0** (`merge-base --is-ancestor`,
+  each checked). All six files they touched are still present.
+- **#19 rewrote 154 lines of `R/summarize-data.R` and my storage-resolution edits
+  survived intact** — `country_opts`, `resolve_storage_opts(conf, "api",
+  error_if_missing = TRUE)` and `resolve_storage_opts(conf, "coasts")` are all
+  still there, and `resolve_storage_opts()` keeps the `"api"` arm.
+- **v4.8.0 is immaterial to Timor**, verified rather than assumed: `v4.7.0..v4.8.0`
+  touches only `summarize_data()` and `export_portal()`, and every mention of
+  either in this repo is a comment (`R/api.R`, `R/pds-tracks.R`, `R/pds-maps.R`,
+  `inst/config.yml`, `data-pipeline.yaml`). No call sites.
+- `dedf4d6` is safe whenever it ships: every `fetch_assets` reference in the
+  country repos is a **local definition** (Moz `preprocessing-surveys.R:1083`,
+  Kenya `airtable.R:383`), not a `coasts::` call.
+
+**Timor — the Phase 11 dev-run gate is already met**
+
+Run **31778254836** (2026-08-14, `feat/align-coasts-phase9` at `0573d4f`) logged
+`Resolved peskas.coasts ref: v4.7.0` and went green on **all thirteen jobs**,
+including the four carrying the tinytest suites. Timor's existing code works
+against the upstreamed hub. It does *not* prove the hub versions are wired in —
+Timor's own definitions still win over the imports — so the Phase 11 deletions
+need their own run.
+
+`main`'s green production runs (2026-08-15, 2026-08-17) are **not** evidence
+about the hub: `main` is pre-migration and has no `COASTS_REF` at all.
+
+**Both production prerequisites are still outstanding**, re-measured 2026-08-14:
+`pds-timor` has **no** `pds-tracks*` object and `timor` has **no**
+`timor-landings-v1-frozen*`. `convert-pds-tracks.R` and `freeze-landings-v1.R`
+both still gate the Phase 11 merge.
+
+**Mozambique and Zanzibar — the recommended edit broke both, twice, and this
+session's advice caused the first one**
+
+The read-time `-any_of(c("country","latitude","longitude"))` drop was the right
+fix and is now correctly in place in both repos. Getting there cost two live
+regressions, both worth recording because both were avoidable:
+
+1. **Moz `f13cf91`, Zanzibar `eb9f7c8`.** The snippet handed over during Phase 10
+   contained `str_detect(.data$form_id, ...)`, where `...` was an *elision*
+   standing for the existing pattern. It was pasted literally. Inside a `purrr`
+   `~` lambda `...` is the lambda's own arguments, so `str_detect()` received the
+   tibble as its pattern and **every preprocessing run aborted.** Both repos now
+   use a named `ids_pattern` with `.env$`. Lesson: never put an elision inside
+   code that can be pasted — write the whole line or name a variable.
+2. **Moz `d82a95d`, Zanzibar `2127d80`.** `map_surveys()` opened with
+   `select(-c("form_id", "district_code", "country"))`, and bare `-c()` **errors
+   on an absent column** — which stripping `country` upstream guarantees. The
+   Phase 10 analysis had explicitly said geo's `country` "is already dropped —
+   unaffected", a claim its own recommendation invalidated. Both now use
+   `-any_of()`. Lesson: when removing a column upstream, grep every negative
+   select that names it.
+
+**Kenya — unaffected by both, and its own breakage is unrelated**
+
+Kenya never had either bug: its read sites pass a named pattern variable, and
+both `map_*_surveys()` already ended in `-any_of(...)`. Its commit `c9e8ac2`
+("two independent bugs, together they took Kenya off the coasts portal") touches
+Kenya's own `export_coasts_metrics()` and its kefs form-id filter — not Phase 10
+territory. Phase 10's change to the fishery-metrics upload was ruled out
+explicitly: Kenya defines `storage.google.options_coasts` in **both**
+environments, so `resolve_storage_opts(conf, "coasts")` resolves exactly what the
+previous raw read did.
