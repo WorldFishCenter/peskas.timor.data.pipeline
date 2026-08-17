@@ -12,6 +12,54 @@ happen before the cutover: Phase 11 deletes legacy keys and merges to `main`, an
 deleting the *wrong* things — or keeping divergences nobody has examined — bakes
 them in. Produce an assessment and decisions. Write code only to measure.
 
+> ## Nothing in this session touches production. Nothing.
+>
+> This is a read-and-measure session. The full list, because "be careful" is not
+> an instruction:
+>
+> - **Never set `R_CONFIG_ACTIVE=production`.** Leave it unset or `default`, so
+>   every bucket resolves `-dev`.
+> - **Write to no production bucket**: not `timor`, `pds-timor`, `public-timor`,
+>   `peskas-api-prod`, nor `peskas-coasts` (the prod hub). Reading them to
+>   *measure* is fine and often the point — listing objects and downloading an
+>   artefact to diff it changes nothing.
+> - **Do not run `data-raw/freeze-landings-v1.R` or
+>   `data-raw/convert-pds-tracks.R`.** They are Phase 11's, against production, and
+>   they are the user's to run.
+> - **Airtable is read-only.** `PESKAS | FRAME` is live shared data for four
+>   country pipelines and `coasts::ingest_assets()` snapshots it on every run. You
+>   may *propose* a table or a field; do not create, rename or populate one. There
+>   is no dev copy of the frame.
+> - **KoBoToolbox is read-only.** Never call `update_validation_status()` or
+>   `sync_validation_status()` — they PATCH the live forms and there is no
+>   development KoBo instance, so `R_CONFIG_ACTIVE` does not isolate them.
+> - **MongoDB: `validation-dev` only.** Never `validation-prod`.
+> - **Do not merge anything, and do not push to `main`** in any repo. Pushing the
+>   Timor phase branch is safe and is the intended test mechanism — every workflow
+>   sets `R_CONFIG_ACTIVE=production` only on `main`, so a branch push exercises
+>   the whole pipeline against `-dev` — but do not push one just to see what
+>   happens; it is a ~1h30m run.
+> - **Change no code in `R/`, `inst/config.yml` or the workflows.** Findings go in
+>   a document. If a measurement needs a script, put it in the scratchpad, not in
+>   `data-raw/`.
+
+## Where this session sits
+
+The sequence the user is following:
+
+1. **this audit session** — assess and decide, change nothing;
+2. **the user walks the pipeline themselves**, using this session's output as the
+   map;
+3. **then Phase 11** (`.claude/migration/PROMPT-PHASE11.md`), which is where code
+   is deleted and `main` is merged.
+
+Write the deliverable for step 2. That means **ordering it by pipeline step, in
+DAG order** — `ingest_metadata_tables` → `ingest_landings` → `ingest_assets` →
+PDS → preprocessing → validation → merge → model → export — not alphabetically
+by table and not by severity. Someone should be able to read it top to bottom
+beside `data-pipeline.yaml` and know, at each step, what Timor does, what the
+other three do, and whether the difference is intentional.
+
 ## Why this session exists
 
 Walking the pipeline DAG from the top, the first step is
@@ -160,8 +208,11 @@ names.
 
 ## Deliverables
 
-1. **`.claude/migration/ALIGNMENT-AUDIT.md`** — one section per table and per
-   pipeline divergence, each with a disposition and the number behind it.
+1. **`.claude/migration/ALIGNMENT-AUDIT.md`**, **in DAG order** — one section per
+   pipeline step, and within it every static asset and every logic divergence that
+   step involves, each with a disposition and the number behind it. A short
+   summary table at the top (asset → disposition → blocked on what) so the detail
+   is skippable on a second read.
 2. **A list of Airtable data-entry tasks for the user**, with row counts and the
    exact fields, separated from anything that is code.
 3. **A sequencing recommendation**: what must land before Phase 11, what can
@@ -179,8 +230,9 @@ names.
   has repeatedly found that the documented reason and the live behaviour differ —
   Phase 10 withdrew COASTS-TODO C17 entirely because acting on it as filed would
   have broken three pipelines.
-- **Read-only against production.** `default` config, `-dev` buckets. Do not run
-  the two one-off production scripts and do not merge anything to `main`.
+- **Read-only against production** — the full list is at the top of this prompt.
+  If a measurement seems to require a production write, it does not; say what you
+  would have needed and move on.
 - **Do not weaken the portal contract or delete a test assertion** to make
   something align.
 - **Alignment is not the goal; a justified position is.** "Timor keeps this, and
