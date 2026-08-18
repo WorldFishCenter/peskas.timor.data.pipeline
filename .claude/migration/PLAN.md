@@ -190,6 +190,7 @@ Each phase is **one fresh Claude session**. Do not combine.
 | 9 | CI / repo / docs | workflows, pkgdown, README, NEWS, release automation | low | 1 ✅ |
 | 10 | Upstream to coasts | separate PRs in the `peskas.coasts` repo | medium | 1–2 |
 | 11 | Cutover | strip legacy config keys and dead code, full green dev run, merge to main | medium | 1 |
+| 12 | Static assets & label sources | move `registered_boats` to the frame, reconcile the site/municipality labels, retire the remaining Sheets tables | **high** | 1–2 |
 
 ---
 
@@ -667,6 +668,51 @@ which is a Phase 11 edit here, not a Phase 10 one.
 - Remove the `peskas.mozambique.data.pipeline/` reference copy.
 - Full green run on the phase branch (dev buckets), golden-output diff on every
   portal file, then merge to `main` and watch one production run end to end.
+
+**Scope is constrained by the 2026-08-18 alignment audit.**
+[`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md) §13 is the operative list of what may
+and may not be deleted here. In particular Phase 11 must **not** remove the
+59-column raw KoBo passthrough (`enumerators_summary.Rmd` reads nine of those
+columns and runs on every pipeline run), must **not** swap `timor_assets()` onto
+the assets snapshot's `country` column (it is absent on `sites` and is a record-id
+link on `geo`), and must **not** flatten `all_trips__*.rds`. Seven of the twelve
+Google Sheets metadata tables still have live readers and stay.
+
+---
+
+### Phase 12 — Static assets & label sources
+
+Everything the alignment audit found that is not a pure deletion. **After the
+cutover, deliberately**: each item below moves a published number, and doing that
+inside Phase 11 puts a portal regression and a config migration in one diff with
+no way to bisect them.
+
+Three items are gated on Airtable data entry by the user, not on code — see
+`ALIGNMENT-AUDIT.md` §14.
+
+1. `registered_boats` → the frame's `geo.total_boats`. Ten of twelve values are
+   already identical; the two that are not move national published catch by
+   **−4.74%**. Gated on Airtable task B.
+2. Reconcile the two conflicting "North Coast" definitions
+   (`format-public-data.R:785` vs `export.R:377`, disagreeing on Manatuto —
+   14.97% of national revenue) into one config list read by both call sites.
+3. `timor_assets()` off hardcoded Airtable record ids, onto Mozambique's
+   `get_airtable_form_id()`. Behaviour-neutral.
+4. `devices` → the frame's `pds_devices`. Gated on Airtable task A; today the
+   switch costs 651 resolved trips and takes alert 3 from 824 to 1,475.
+5. `stations` / `reporting_units` — the accent decision, the Atauro-vs-GAUL rule,
+   the Welaluhu conflict, and the fifteen hardcoded spellings across three files.
+   Largest and last; gated on `data-raw/compare-portal-json.R`.
+6. Document `coasts::generate_fleet_analysis()` (the standard's counterpart to
+   `estimate_fishery_indicators()`, which no phase has examined) and the
+   `harmonise_*()` vs `map_surveys()` distinction. Writing only.
+7. File COASTS-TODO C22 (upstream `merge_trips()` — three countries have it),
+   C23 (a hub home for curated length-weight coefficients) and C24
+   (`geo.country` is a record-id link, same defect C13 fixed on `taxa`).
+
+Out of scope: `coasts::summarize_data()` and the grid summaries (still no Timor
+consumer), `morphometric_table` (needs C23 upstream first), and anything touching
+the seven portal objects' names or keys.
 
 ---
 

@@ -12,11 +12,22 @@ Everything before it was reversible; this one merges to `main` and lets a real
 run write to `timor`, `pds-timor`, `public-timor` and — if you remove two `if:`
 lines — `peskas-api-prod`.
 
-Read in order before doing anything: `CLAUDE.md`,
-`.claude/migration/PLAN.md` (§Phase 11), `.claude/migration/STATE.md` — the
-**Phase 10 entry first**, then Phase 8's "Findings that change later phases" and
-Phase 9's — and `.claude/migration/COASTS-TODO.md`'s status lines, which record
-what coasts 4.7.0 now provides.
+Read in order before doing anything: `CLAUDE.md`;
+**`.claude/migration/ALIGNMENT-AUDIT.md` §13 ("What Phase 11 may and may not
+delete") — this is the operative list and it overrides anything below that
+disagrees with it**; `.claude/migration/PLAN.md` (§Phase 11);
+`.claude/migration/STATE.md` — the **alignment-audit entry at the bottom first**,
+then Phase 10's, then Phase 8's "Findings that change later phases" and Phase
+9's — and `.claude/migration/COASTS-TODO.md`'s status lines.
+
+> **This prompt was written before the 2026-08-18 alignment audit and three of
+> its instructions were wrong.** They are corrected in place below and flagged
+> **[corrected 2026-08-18]**. Read those first.
+
+**Send `PROMPT-PORTAL-CORRECTIONS.md` before this one.** Two published numbers
+are wrong (the coast rule and the registered-boat counts) and both fixes are
+decided. Landing them first lets *this* phase's dev run be asserted as **zero
+portal change**, which is a much stronger gate on a deletion phase.
 
 Execute Phase 11 only. End the session by appending a Phase 11 entry to
 `.claude/migration/STATE.md`.
@@ -65,11 +76,58 @@ Delete only after a green dev run against 4.7.0 proves the hub versions work.
 |---|---|---|
 | `kobo_request()`, `kobo_validation_url()`, `list_validation_statuses()`, `get_validation_status()`, `update_validation_status()` in `R/validation-functions.R` | `coasts::` equivalents | Phase 10 verified live: 22,250 rows in 22.3 s, `all.equal()` TRUE against Timor's implementation |
 | the **second** upload in `ingest_assets()` (`R/ingestion.R`) — the hand-rolled hub mirror | nothing; coasts 4.7.0 writes the hub itself (C11) | verified by running it off the branch: the object landed in `peskas-coasts-dev` |
-| `timor_assets()`'s `metadata.airtable.form_ids` filter | `country == "Timor-Leste"` (C13) | measured identical: **60 taxa, 9 gears, 2 vessels** either way. The value is trimmed upstream, but assert it |
+| ~~`timor_assets()`'s `metadata.airtable.form_ids` filter~~ | ~~`country == "Timor-Leste"` (C13)~~ | **[corrected 2026-08-18] DO NOT DO THIS. It silently empties two label joins.** See below |
+
+### [corrected 2026-08-18] The `timor_assets()` swap is wrong as filed
+
+The row above was true for the three tables it was measured on and false for the
+two it was not. `timor_assets()` is applied to **five** asset tables, and
+`survey_labels()` (`R/preprocessing-surveys.R:503`) applies it to `sites` and
+`geo`. Measured against the live snapshot:
+
+| table | `form_ids` rows | `country == "Timor-Leste"` rows |
+|---|---|---|
+| `taxa` | 60 | 60 — `identical()` TRUE |
+| `gear` | 9 | 9 — `identical()` TRUE |
+| `vessels` | 2 | 2 — `identical()` TRUE |
+| `geo` | 37 | **0** |
+| `sites` | 40 | **no such column** |
+
+`geo.country` is a `multipleRecordLinks` field carrying Airtable record ids
+(`rec7DrrSnRrlzv8BF` for Timor) — the same defect C13 found on
+`landing_sites.Country` and deliberately skipped; nobody checked `geo`. Making
+the swap would return zero rows for `geo` and error or empty for `sites`,
+silently stripping `landing_site`, `gaul_1_*` and `gaul_2_*` from the
+preprocessed table — which feeds the cross-country API export.
+
+**Leave `timor_assets()` on `form_id` in this phase.** It works for all five
+tables. Filed upstream as COASTS-TODO C24. The better long-term fix is
+Mozambique's `get_airtable_form_id()` (`preprocessing-surveys.R:950`), which
+resolves the record id from the KoBo asset id at run time and needs no `country`
+column at all — that is Phase 12's, not this one.
 
 **Do not delete `add_version()`** — Timor keeps it deliberately; coasts exports a
 body-identical copy and delegating would mean editing ~40 call sites plus three
 `inst/report/` drivers for no behavioural gain. The reason is in CLAUDE.md.
+
+### [corrected 2026-08-18] Three things this phase must NOT delete
+
+- **The 59-column raw KoBo passthrough** carried through `merge_landings()` and
+  `calculate_weights()`. No file in `R/` reads one, but
+  `inst/report/enumerators_summary.Rmd` reads **nine** (`_id`,
+  `landing_site_name`, `Ita_koleta_dadus_husi_atividad`, `no_boats`,
+  `reason_no_activity`, `date`, `today`, `start`, `end`) and
+  `generate_enumerators_report.R` is the **last step of the active
+  `export-trips` job**. `CLAUDE.md` and `AUDIT.md` both imply this phase removes
+  it. They are wrong.
+- **`all_trips__*.rds` stays `.rds`.** The recorded reason ("no cross-country
+  counterpart") is false — Mozambique's `merge_trips()` is line-for-line Timor's
+  and writes parquet — but the real reason holds: three readers against a live
+  portal.
+- **Seven of the twelve Sheets metadata tables have live readers**: `devices`,
+  `stations`, `reporting_units`, `catch_types`, `morphometric_table`, `habitat`,
+  `conservation`. `catch_types.interagency_code` is also a live tinytest
+  assertion (`test_validated_landings.R:70`).
 
 Timor's local copies winning over the hub's is **not** a bug while both exist —
 a package's own definitions take precedence over an import — so a green run
@@ -82,12 +140,49 @@ wired in. Those are two separate tests; do both.
   marked `# [legacy]`. Delete a key only after grepping for its last reader.
   `validation.google_sheets` and `validation.version.preprocess` lost theirs in
   Phase 5; `VALID_SHEET_ID` has had none since Phase 5.
-- **Dead code**, listed in the Phase 8 STATE entry and confirmed unreferenced:
-  `ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`,
-  `ingest_complete_tracks()`, `get_tracks_map()` and `inst/kepler_mapper.py`.
-  `model_indicators()` has no caller either — decide deliberately, it is a
-  second glmmTMB implementation someone may want. **Keep
-  `sync_validation_status()`**: unwired on purpose, not dead.
+- **Dead code. [corrected 2026-08-18 — the list was incomplete.]** Re-measured
+  by call-site count across `R/`, `inst/tinytest/`, `inst/report/`,
+  `.github/workflows/` and `data-raw/`, excluding definitions and comments.
+  Over **1,000 unreachable lines**, in two blocks plus a scatter:
+
+  - **`R/model-fishery.R` lines 646–1289 — 644 lines, the whole second half of
+    the file.** A complete second glmmTMB implementation rooted at
+    `model_indicators()` (0 callers). Everything it reaches — `run_models()`,
+    `model_landings()`, `model_catch()`, `model_catch_per_taxa()`,
+    `model_value()`, `estimate_statistics()`, `estimates_per_taxa()` — is called
+    only from inside that dead subgraph. Deleting the root without the family
+    leaves 600 lines of orphans; decide on the whole block at once.
+  - **`R/pds-maps.R` — 429 of 636 lines.** Two dead chains: `ingest_pds_map()`
+    (81–372) → `get_sync_tracks()` → `get_full_trips()` / `ingest_complete_tracks()`,
+    and `ingest_kepler_tracks()` (485–557) → `kepler_mapper()` (558–589), plus
+    `inst/kepler_mapper.py`. **Only `convert_taxa_names()` (373–484) and
+    `get_timor_boundaries()` (590–636) are live** — both called by
+    `format-public-data.R`. Do not delete the file.
+  - **Scattered, all 0 callers:** `ingest_pds_matched_trips()`
+    (`merge-trips.R:85`), `get_validation_flags()` (`get-cloud-files.R:530`),
+    `get_tracks_map()` (`get-cloud-files.R:473`), `pt_validate_flags()`
+    (`preprocess-metadata-tables.R:174`), `send_sites_report()` (`reports.R:28`),
+    `delete_dataverse()` / `publish_dataverse()` (`export-dataverse.R`), and
+    `get_preprocessed_metadata()` (`get-cloud-files.R:293`) — the last being
+    **body-identical** to `get_preprocessed_sheets()`, with its only caller
+    `inst/report/unanswered_summary.Rmd`, whose driver
+    `inst/report/generate_form_summary.R` lost its workflow in Phase 9. Delete
+    both files with it.
+
+  **Keep `sync_validation_status()`**: unwired on purpose, not dead. Its only
+  match in the workflow is a comment saying so.
+- **User decision 2026-08-18 — drop the boats section of
+  `inst/report/data_report.Rmd`**, and with it the `vessels_stats` summary at its
+  line 48, the `boats` and `fishing_vessel_statistics` config entries, and
+  `pt_validate_boats()` / `pt_validate_vessels_stats()`. Those two tables had no
+  other reader.
+- **Also deletable, measured:** `vms_installs` and `centro_pescas` (zero readers
+  anywhere; `pt_validate_vms_installs()` and `pt_validate_centro_pescas()` go
+  with them), the `centro_pescas` comment at `inst/config.yml:310` (it claims the
+  table is "the only source of landing-site lat/lon"; the table has no lat/lon
+  columns at all and the frame has coordinates for all 40 Timor sites), and the
+  `aL`/`bL` coercion in `pt_validate_morphometric_table()` (both columns are
+  100 % `NA`).
 - **Directories**: `auth/`, `docs/`, `inst/__pycache__`, `cran-comments.md`, and
   the untracked `peskas.mozambique.data.pipeline/` reference copy.
 - **Cloud cleanup**, all deferred here: the 103,373 dead
@@ -111,7 +206,19 @@ wired in. Those are two separate tests; do both.
   indistinguishable from a fresh bucket. `pds-timor-dev` is fully converted
   (101,960 objects, measured 2026-08-13), so dev runs are cheap.
 - **`data-raw/freeze-landings-v1.R` against production is also mandatory** —
-  `merge_landings()` reads a frozen v1 snapshot that exists in `timor-dev` only.
+  `merge_landings()` reads a frozen v1 snapshot that exists in `timor-dev` only
+  (re-verified 2026-08-18: `gs://timor` holds **0**). **[corrected 2026-08-18 —
+  run it at the END of this phase, not before it.]** It produces a *permanent*
+  artefact and is built by package code — `get_preprocessed_sheets()`,
+  `get_taxa_list()`, and four internals via `:::` (`sum_fishers()`,
+  `mesh_size_mm()`, `resolve_catch_taxa()`, `resolve_survey_labels()`). Running
+  it before this phase's deletions would commit a permanent production object
+  built by code that is about to change. Order: deletions → green dev run →
+  freeze → merge.
+  `convert-pds-tracks.R` has the opposite property and can run at any time,
+  including in parallel with this session: it is purely additive, idempotent
+  (`filter(!target %in% already)`) and depends only on `read_config()` and
+  `conf$pds$pds_tracks$file_prefix`, which is `[new]`, not `[legacy]`.
 - **Timor's first `peskas-api-prod` write is a separate decision.** It is the two
   `if: ${{ !endsWith(github.ref, '/main') }}` lines on the API export steps.
   Deleting them is not implied by "merge to main".
@@ -165,6 +272,14 @@ wired in. Those are two separate tests; do both.
 ## Carried user actions
 
 Rotate the credentials exposed in past CI logs (four repos' run history);
-rotate `ANTHROPIC_API_KEY`; add the 27 missing IMEIs to PESKAS | FRAME (worth
-2,791 trips and 59 landing↔trip matches); delete the obsolete `AIRTABLE_KEY`
-GitHub secret; and re-push `AIRTABLE_TOKEN` if its value changed locally.
+rotate `ANTHROPIC_API_KEY`; delete the obsolete `AIRTABLE_KEY` **and
+`VALID_SHEET_ID`** GitHub secrets; and re-push `AIRTABLE_TOKEN` if its value
+changed locally.
+
+**[corrected 2026-08-18] The Airtable device gap is two jobs, not one.** Adding
+the 27 IMEIs to a frame customer is worth 2,791 trips and 59 landing↔trip
+matches on the *PDS* side — but it recovers **zero** survey-side matches.
+Measured: matching submissions against **all 910** `pds_devices` rows, ignoring
+the customer filter entirely, gives results identical to the 457-row Timor
+subset. The survey-side gap is **144** Sheets IMEIs absent from `pds_devices`
+altogether, and that is what gates moving `validate_imeis()` off the Sheets.

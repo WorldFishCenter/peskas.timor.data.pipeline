@@ -6,6 +6,11 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
+- **The 2026-08-18 alignment audit ran between Phase 10 and Phase 11.** Its
+  deliverable is [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md); read its §13
+  ("What Phase 11 may and may not delete") before touching anything in the
+  cutover, and its entry at the bottom of this file for the five documented
+  claims it found to be false. It also scoped a **Phase 12**, after the cutover.
 - **Phase:** 10 **complete** (2026-08-13). Phase 11 (cutover) next.
   Phase 10's deliverable is somebody else's repo: PR
   **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)** against
@@ -4132,3 +4137,270 @@ this audit changes is *what Phase 11 is allowed to delete* — a `# [legacy]` ke
 with a live reader is not deletable either way, but a Sheets table whose only
 reader is its own parser is deletable now, and one blocked on Airtable data is
 not deletable at all until the user completes the frame.
+
+---
+
+## Alignment audit — static assets and pipeline logic — 2026-08-18
+
+**Read-only session.** No file in `R/`, `inst/config.yml` or
+`.github/workflows/` was touched; nothing was written to any bucket, Airtable,
+KoBo or Mongo. `R_CONFIG_ACTIVE` was left unset throughout, so every
+measurement resolved a `-dev` bucket. Measurement scripts live in the session
+scratchpad, not in `data-raw/`.
+
+Deliverable: **[`.claude/migration/ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md)** —
+1,091 lines, ordered by DAG step, with a summary table at the top. Read that,
+not this entry; what follows is only what changes other documents.
+
+### The twelve tables — outcome
+
+Two deletable now, two on a report decision, one movable, seven keepers:
+
+| disposition | tables |
+|---|---|
+| **Delete** | `vms_installs`, `centro_pescas` |
+| **Delete with `data_report.Rmd`'s boats section** | `boats`, `fishing_vessel_statistics` |
+| **Move to the frame** (`geo.total_boats`) | `registered_boats` |
+| **Keep, measured** | `devices`, `stations`, `reporting_units`, `catch_types`, `morphometric_table`, `habitat`, `conservation` |
+
+### Five things the documents said that the data does not
+
+Each was measured, and each would have misled the next session.
+
+1. **`merge_trips()` has three cross-country counterparts, not zero.**
+   `CLAUDE.md` says twice that "no other country has a `merge_trips()` at all".
+   Mozambique's `R/merge-trips.R:20` is **line-for-line Timor's** — the same
+   `(landing_date, imei)` + `unique_trip_per_day` split, the same `full_join`,
+   the same comments including the "Merging datasets datasets..." typo — and it
+   writes **parquet**. Zanzibar has `merge_trips(site=)`; Kenya documents the
+   identical algorithm in `R/match-trips.R:285`. `coasts::merge_survey_trips()`
+   doing a different job (C10) is correct; inferring from it that no country
+   implements Timor's job is not. Two consequences: `merge_trips()` is a real
+   upstreaming candidate that should have been on the Phase 10 list (filed as
+   C22), and **Phase 8's stated reason for keeping `all_trips` as `.rds` is
+   wrong as written** — the second half of that reason (three readers against a
+   live portal) is real and sufficient, so the artefact stays, but the reason
+   needs restating.
+
+2. **The raw-column passthrough has a live reader and is not deletable.**
+   AUDIT/`CLAUDE.md` imply Phase 11 removes it. Measured: 59 raw KoBo columns
+   ride from preprocessing through `merge_landings()` and `calculate_weights()`
+   (98 and 106 columns respectively) and are dropped at validation
+   (`*_validated_long` is 40 columns, zero passthrough). Nothing in `R/` reads
+   one — but **`inst/report/enumerators_summary.Rmd` reads nine of them**
+   (`_id`, `landing_site_name`, `Ita_koleta_dadus_husi_atividad`, `no_boats`,
+   `reason_no_activity`, `date`, `today`, `start`, `end`) and
+   `generate_enumerators_report.R` is the last step of the **active**
+   `export-trips` job. Cost is real (the two biggest prefixes in `timor-dev`,
+   0.81 + 0.87 GB) but it is not dead weight.
+
+3. **The frame's `pds_devices` is no longer a strict subset of the Sheets.**
+   6 IMEIs are in Timor's frame customers and not in the Sheets; 144 Sheets
+   IMEIs are in no `pds_devices` row at all. The blocker numbers replicate
+   exactly (alert 3 824 → 1,475; 651 submissions lose their resolved IMEI), and
+   a **new** measurement sharpens them: matching against **all 910**
+   `pds_devices` rows, ignoring the customer filter, gives *identical* results.
+   So the 651 are missing from the frame outright — adding the 27 known IMEIs
+   to a customer recovers PDS trips and **zero** survey matches. Two separate
+   Airtable jobs, not one.
+
+4. **`centro_pescas` contains no coordinates.** `inst/config.yml:310` says
+   "keep: the only source of landing-site lat/lon". Its ten columns are
+   administrative nesting (`suco`, `aldeias`, `administrative_posts`,
+   `municipality`); there is no latitude and no longitude. It also has **zero
+   readers**. Meanwhile all **40 of 40** Timor sites in the frame now carry
+   `latitude`/`longitude` (Phase 10's C13 PR). Delete the table and the comment.
+
+5. **The Phase 11 `timor_assets()` swap onto `country` only works for three of
+   five tables.** C13 records the intent. Measured against the live snapshot:
+   taxa 60=60, gear 9=9, vessels 2=2, all `identical()` TRUE — but `geo` returns
+   **0** rows under `country == "Timor-Leste"` because `geo.country` is a
+   `multipleRecordLinks` field carrying record ids (`rec7DrrSnRrlzv8BF` for
+   Timor), the same defect C13 found on `landing_sites.Country` and skipped;
+   and `sites` has no `country` column at all. Filed as C24. The better fix is
+   Mozambique's `get_airtable_form_id()` (`preprocessing-surveys.R:950`), which
+   resolves the frame record id from the KoBo asset id at run time and needs no
+   `country` column — it is what C13's "brittle key" objection was actually
+   reaching for, and it is already live in another repo.
+
+### Two findings that are live bugs, neither caused by the migration
+
+- **Two different "North Coast" definitions write into one published object.**
+  `format-public-data.R:785` uses five municipalities; `export.R:377` uses six.
+  They disagree on **Manatuto**, which is **14.97%** of national revenue. Both
+  land in `portal-summary_data` — `n_surveys` by the five-name rule,
+  `estimated_revenue` by the six-name rule. Confirmed against the live JSON.
+- **`get_preprocessed_metadata()` and `get_preprocessed_sheets()` are
+  body-identical.** Same prefix, provider and `resolve_storage_opts()`. The
+  only caller of the former is `unanswered_summary.Rmd`, whose driver
+  `generate_form_summary.R` lost its workflow when `form-summary.yaml` was
+  deleted in Phase 9. Both are deletable.
+
+### `registered_boats` — the one table that moves, and the number that gates it
+
+The frame's `geo.total_boats` is populated for exactly **12** Timor `gaul_2`
+rows, one per reporting unit, **with Atauro split out from Dili** — Timor's
+reporting geography exactly. **Ten of twelve match the Sheets byte-for-byte.**
+Two do not: Manatuto (Sheets 283, frame 213) and Viqueque (Sheets 213, frame
+207). Note the frame's Manatuto equals the Sheets' Viqueque, which is what a
+transposition looks like.
+
+`run_estimations()` does `catch = landing_catch * n_landings_per_boat * n_boats`
+— strictly linear — so applying the frame values to the currently published
+`portal-municipal_aggregated` moves Manatuto **−24.7%**, Viqueque **−2.8%**,
+**national published catch −4.74%**. Manatuto is the second-largest
+municipality at 18.54% of national catch.
+
+The reason to do it anyway: `coasts::generate_fleet_analysis()`
+(`peskas.coasts/R/model-fishery.R:450`) builds its `boat_registry` as
+`assets$geo |> select("gaul_2_name", "total_boats")`. `geo.total_boats` **is**
+the standard's registered-boat field, and Timor's is already populated. But not
+before the user resolves those two values in Airtable.
+
+### `stations` / `reporting_units` — the blocker is smaller than recorded
+
+The "18 of 40 municipalities disagree" figure is right but is three things:
+**8× Atauro** (Timor reports it as its own unit, GAUL nests it in Dili — a
+genuine semantic difference the frame can already express via
+`gaul_2_name = "Atauro"`), **9× diacritics only** (Lautem/Lautém ×5,
+Liquica/Liquiçá ×2, Oecusse/Oecussi ×2), and **1 real data conflict** — site
+33 "Welaluhu", Sheets says Manatuto, the frame resolves to Manufahi/Fatuberliu.
+The 11-of-40 site-name difference is confirmed and all eleven are substantive.
+Fifteen spellings are hardcoded across `format-public-data.R`, `export.R` and
+`model-fishery.R`, and two of the five hardcoded *landing-site* names
+(`Tutuala`, `Comando`) are among the eleven the frame writes differently.
+
+### Also measured, no change of position
+
+- **`catch_types` stays**, and the number is `catch_name_en`: **55 of 59**
+  display names differ from the frame's FAO `english_name` ("Jacks/Trevally/Other
+  Scad" vs "Carangids nei"). `interagency_code` vs `alpha3_code` is **0
+  disagreements over 60 codes**. Narrow the table to four columns; the other
+  five have no reader. Two incidental findings: the five-name filter in
+  `convert_taxa_names()` is a **de-duplicator** (it takes duplicated
+  `interagency_code`s from 4 to 0; without it `SUR`/`IHX`/`MZZ` catch rows would
+  fan out and double-count in a published object), and that function's
+  `Common name` output is **never read on the live path** — only by the dead
+  `ingest_pds_map()`. C14 stays withdrawn: `length_type` reaches **none** of the
+  seven portal JSONs and none of the 22 API columns.
+- **`morphometric_table` is live**, not a leftover — `calculate_weights()` pools
+  it with the FishBase fetch before aggregation. 559 rows over **11** codes
+  (`COZ CRA CUX FLY GZP IAX MOO OCZ PEZ SFA SLV`), 98 species, worth **4.14%**
+  of national catch weight. The COASTS-TODO acceptance-gate numbers (693
+  species, 5,926 rows) describe the coasts fetch, not this table. `aL`/`bL` are
+  100% `NA` and their coercion in the parser is dead. Target is the **hub**, and
+  the hub has no home for it — filed as C23.
+- **`coasts::summarize_data()` — decision unchanged, prerequisites now exact.**
+  Three inputs: `asfis` (**0** in `timor-dev`, and 0 in `peskas-coasts-dev` —
+  the C17 correction holds, it is a per-country object), the API validated
+  parquet (**present**, 144,343 × 22 in `peskas-api-dev/timor/validated/`), and
+  `pds-tracks-grid_summaries` (**0** in `timor-dev`). Config gaps:
+  `conf$surveys$summaries` and `conf$surveys$aggregated` are both `NULL`. Still
+  no Timor consumer, so still not wired in; `peskas-coasts-dev` holds 210
+  grid-summary / 401 monthly-summary / 256 fishery-metrics objects for the other
+  three.
+- **The API contract is intact.** All four countries' newest `-dev` validated
+  parquets carry the same **22 columns in the same order**. The one divergence
+  is the *source* of `landing_site`: Timor publishes the Sheets `station_name`
+  while the other three publish the frame's `site`, so a single Timor row mixes
+  frame `gaul_*` (with diacritics) and Sheets site names.
+- **PDS.** The raw trips parquet carries **422** distinct IMEIs, all 422 inside
+  Timor's three frame customers — the 27 missing ones are filtered at ingestion
+  and are invisible downstream, exactly as Phase 7 recorded.
+- **`harmonise_v2()`/`harmonise_v3()` vs `map_surveys()` are not counterparts.**
+  `map_surveys()` resolves labels and drops the raw column at every join;
+  `harmonise_*` reconciles two form versions so they can be `bind_rows()`d, a
+  job the WIO repos never have because each form keeps its own `preprocess_*()`.
+  Timor's actual counterpart is `resolve_survey_labels()`. Deliberate, and the
+  one thing it does not copy from `map_surveys()` is the raw-column drop — which
+  is finding 2 above.
+
+### `coasts::generate_fleet_analysis()` — never examined by any phase
+
+All three WIO repos run it, between `summarize_data()` and `export_portal()`.
+It appears **once** in this repo's entire migration corpus — one cell of
+`PLAN.md:43` — and in no other document. It is the standard's version of
+`estimate_fishery_indicators()`: it raises sampled catch to a fleet total from a
+registered-boat count, using the same input field (`geo.total_boats`) and a
+different estimator (PDS trip rates rather than glmmTMB). It does not need to be
+adopted — PLAN §2.3 keeps Timor's modelling and it is downstream of
+`summarize_data()` — but the comparison has never been written down, and it is
+the function Timor's modelling would be compared against.
+
+Unrelated, still true: none of the three WIO repos passes
+`log_threshold = logger::INFO` to any `coasts::` call, so C21's secret leak is
+live in all three. Timor's workflow passes it on both PDS steps.
+
+### Consequences for Phase 11
+
+`ALIGNMENT-AUDIT.md` §13 is the operative list. In short:
+
+**May delete:** `vms_installs`, `centro_pescas` and their parsers and list
+elements; the wrong `centro_pescas` config comment; `get_preprocessed_metadata()`,
+`unanswered_summary.Rmd`, `generate_form_summary.R`; the `aL`/`bL` coercion in
+`pt_validate_morphometric_table()`; `boats` + `fishing_vessel_statistics` only
+if `data_report.Rmd`'s boats section goes too.
+
+**Must not delete:** the 59-column raw passthrough (finding 2), any of the seven
+keeper tables, `catch_types.interagency_code` (a live tinytest assertion).
+
+**Must not change:** `timor_assets()`'s filter key (finding 5),
+`all_trips__*.rds` to parquet (finding 1), the `registered_boats` source
+(−4.74% of published catch).
+
+Both production prerequisites are unchanged and still gate the merge:
+`freeze-landings-v1.R` and `convert-pds-tracks.R` against `production`, the
+user's to run.
+
+### Phase 12 proposed, after Phase 11
+
+Everything here that is not a pure deletion changes a published number. Doing
+that inside the cutover puts a portal regression and a config migration in one
+diff with no way to bisect them. Merge first, then move numbers one at a time
+against a stable `main`. `PLAN.md` §4 updated with the phase row and a scope
+section.
+
+Scope, in dependency order: `registered_boats` → `geo.total_boats` (after
+Airtable task B); the North Coast definition; `timor_assets()` onto
+`get_airtable_form_id()`; `devices` → `pds_devices` (after Airtable task A);
+`stations`/`reporting_units` last and largest; then the two documentation items
+(`generate_fleet_analysis`, `harmonise_*` vs `map_surveys`) and filing C22–C24.
+Out of scope: `summarize_data()`, `morphometric_table` (needs C23 first), and
+anything touching the seven portal objects' names or keys.
+
+### User actions, separated from code
+
+Airtable, in `PESKAS | FRAME` — **none of it done this session, all of it data
+entry**:
+
+- **A.** Add the **144** Sheets IMEIs missing from `pds_devices` with a Timor
+  `customer_name`; separately give the **27** Phase 7 IMEIs a `customer_name`.
+  These are two different jobs and only A fixes the 651 survey matches.
+- **B. RESOLVED 2026-08-18 — the user ruled Airtable authoritative.** No data
+  entry needed; `geo.total_boats` stands (Barique/Natarbora 213, Uato-Lari 207)
+  and the Sheets values (283, 213) are wrong. Consequence: the live portal is
+  over-reporting, so the swap is a correction to publish. Verified end to end —
+  a four-case recode (Atauro, plus the three accented municipality names) makes
+  the 12 keys `identical()` to the Sheets table's and resolves all 12
+  `all_trips` municipalities; an accent strip does **not** work (`iconv`
+  TRANSLIT gives `Laut'em`). National `n_boats` -1.96%, national published catch
+  **-4.74%**. It needs no part of the 40-site label reconciliation, so it can
+  land on its own.
+- **C.** Resolve site 33 "Welaluhu": Manatuto or Manufahi/Fatuberliu.
+- **D.** *Proposal only, do not create unilaterally*: two four-field enum tables,
+  `habitats` (7 Timor rows) and `conservation` (5 Timor rows), each with
+  `country` / `form_id` / `survey_label` / `standard_name`. Gather the other
+  three countries' equivalents first.
+
+**Correction to an earlier draft of this entry:**
+`MONGODB_CONNECTION_STRING_VALIDATION` **does** exist as a GitHub secret
+(created 2026-08-10, verified against `gh secret list` 2026-08-18) and is wired
+into both `data-pipeline.yaml:31` and `validation-email-sender.yaml:28`. The
+Phase 5 note saying otherwise was superseded in Phase 6 (STATE:2602).
+
+Still genuinely outstanding, verified 2026-08-18 by listing the production
+buckets read-only: `gs://timor` holds **0** `timor-landings-v1-frozen*` objects
+and `gs://pds-timor` holds **0** `pds-tracks_*.parquet` against **97,827** legacy
+`pds-track-*.csv.gz`. Both Phase 11 production prerequisites are unmet. Two stale
+secrets also survive, `AIRTABLE_KEY` (Phase 9 was to delete it) and
+`VALID_SHEET_ID` (no reader since Phase 5).

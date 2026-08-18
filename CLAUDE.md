@@ -8,9 +8,21 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > [.claude/migration/PLAN.md](.claude/migration/PLAN.md),
 > [.claude/migration/STRUCTURAL-DIFF.md](.claude/migration/STRUCTURAL-DIFF.md),
 > [.claude/migration/AUDIT.md](.claude/migration/AUDIT.md),
-> [.claude/migration/STATE.md](.claude/migration/STATE.md).
+> [.claude/migration/STATE.md](.claude/migration/STATE.md),
+> [.claude/migration/ALIGNMENT-AUDIT.md](.claude/migration/ALIGNMENT-AUDIT.md).
 > **One migration phase per session — never two.** End every session by appending
 > a STATE.md entry.
+>
+> **`ALIGNMENT-AUDIT.md` (2026-08-18) corrects five claims made below and in
+> `AUDIT.md`. Trust it over this file where they disagree**, and read its §13
+> before deleting anything in Phase 11. The five: `merge_trips()` **does** have
+> cross-country counterparts (Mozambique's is line-for-line identical, and writes
+> parquet); the 59-column raw KoBo passthrough has a live reader
+> (`enumerators_summary.Rmd`, which runs every pipeline run) and is **not**
+> deletable; the frame's `pds_devices` is **not** a strict subset of the Sheets
+> `devices`; `centro_pescas` contains **no** lat/lon and has no reader at all; and
+> `timor_assets()` cannot be swapped onto the snapshot's `country` column, which
+> is absent on `sites` and a record-id link on `geo`.
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
@@ -18,7 +30,8 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > **storage layer**, **ingestion**, **preprocessing**, **validation**, the
 > **cross-country API export**, **PDS**, the **country modules + portal
 > parity**, **CI, repo metadata and docs** and now the **upstreaming to coasts**
-> are done. What is left is the legacy cleanup (Phase 11).
+> are done. What is left is the legacy cleanup (Phase 11), then the static-asset
+> and label-source work the alignment audit scoped as **Phase 12**.
 >
 > **Phase 10 changed nothing in this repo.** It opened one PR against
 > `WorldFishCenter/peskas.coasts` (**#17**, five items as five commits), not
