@@ -1,3 +1,37 @@
+# Registered boats per reporting region, from the PESKAS | FRAME snapshot.
+#
+# This is the raising factor for every published municipal and national
+# estimate: `run_estimations()` does `catch = landing_catch *
+# n_landings_per_boat * n_boats`, strictly linear in `n_boats`.
+#
+# Airtable is authoritative (PLAN 2.5) and `geo.total_boats` is the
+# cross-country registered-boat field -- `coasts::generate_fleet_analysis()`
+# builds its own `boat_registry` from it. It replaces the Google Sheets
+# `registered_boats` table, which agreed on ten of twelve regions and
+# over-reported Manatuto (283 vs 213) and Viqueque (213 vs 207).
+#
+# The recode is four cases, not an accent strip: `iconv(x, "UTF-8",
+# "ASCII//TRANSLIT")` yields `Laut'em` / `Liquic'a` on macOS and matches
+# nothing. Same three spellings as `get_timor_boundaries()` in pds-maps.R;
+# consolidating the label sources is Phase 12.
+#
+# See .claude/migration/ALIGNMENT-AUDIT.md 11, table 5.
+get_registered_boats <- function(conf) {
+  timor_assets(get_assets(conf)$geo, conf) %>%
+    dplyr::filter(!is.na(.data$total_boats)) %>%
+    dplyr::transmute(
+      reporting_region = dplyr::case_when(
+        # Atauro is a gaul_2 of Dili, but a reporting region of its own here
+        .data$gaul_2_name == "Atauro" ~ "Atauro",
+        .data$gaul_1_name == "Liqui\u00E7\u00E1" ~ "Liquica",
+        .data$gaul_1_name == "Laut\u00E9m" ~ "Lautem",
+        .data$gaul_1_name == "Oecussi" ~ "Oecusse",
+        TRUE ~ .data$gaul_1_name
+      ),
+      n_boats = as.integer(.data$total_boats)
+    )
+}
+
 #' Estimate fisheries indicators
 #'
 #' Uses the trip data to estimate various fisheries statistics.
@@ -29,7 +63,7 @@ estimate_fishery_indicators <- function(log_threshold = logger::DEBUG) {
     get_merged_trips(conf) %>%
     fill_missing_regions()
 
-  vessels_metadata <- get_preprocessed_sheets(conf)$registered_boats
+  vessels_metadata <- get_registered_boats(conf)
 
   municipal_estimations <-
     unique(na.omit(trips$municipality)) %>%
@@ -651,7 +685,7 @@ model_indicators <- function(log_threshold = logger::DEBUG) {
     get_merged_trips(conf) %>%
     fill_missing_regions()
 
-  vessels_stats <- get_preprocessed_sheets(conf)$registered_boats
+  vessels_stats <- get_registered_boats(conf)
 
   municipal_models <-
     unique(na.omit(trips$reporting_region)) %>%
