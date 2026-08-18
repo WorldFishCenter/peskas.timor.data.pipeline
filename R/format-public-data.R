@@ -776,6 +776,11 @@ get_municipal_nutrients <- function(
 }
 
 get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
+  # This is the authoritative coast rule: municipality plus a site-level rescue
+  # list, because coast is a property of the site. `export_files()` carries a
+  # municipality-only approximation of it that must be kept in step.
+  # The durable fix is one site->coast table read by both call sites: Phase 12.
+  # See .claude/migration/ALIGNMENT-AUDIT.md §11 (L3).
   data_area <-
     data %>%
     fill_missing_regions() %>%

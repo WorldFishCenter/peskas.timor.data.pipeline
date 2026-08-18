@@ -369,12 +369,27 @@ export_files <- function() {
     dplyr::mutate(tons = round(.data$tons, 0)) %>%
     dplyr::arrange(-.data$tons)
 
+  # Coast is a property of the landing site, not the municipality, but by this
+  # point the model has collapsed the data to municipality and the site is gone.
+  # `get_summary_data()` in format-public-data.R has the site-level rescue list;
+  # this list is its municipality-level approximation. With "Lautem" the two
+  # rules agree on all but 3 of 76k landings (Lore 2, Welaluhu 1).
+  # The durable fix is one site->coast table read by both call sites: Phase 12.
+  # See .claude/migration/ALIGNMENT-AUDIT.md §11 (L3).
   estimated_revenue <-
     municipal_aggregated %>%
     dplyr::mutate(
       Area = dplyr::case_when(
         .data$region %in%
-          c("Oecusse", "Bobonaro", "Liquica", "Dili", "Manatuto", "Baucau") ~
+          c(
+            "Oecusse",
+            "Bobonaro",
+            "Liquica",
+            "Dili",
+            "Manatuto",
+            "Baucau",
+            "Lautem"
+          ) ~
           "North Coast",
         .data$region == "Atauro" ~ "Atauro island",
         TRUE ~ "South Coast"
