@@ -356,7 +356,7 @@ merge_kobo_validation_status <- function(flags, conf, version) {
 
 # Every submission's current status in KoBoToolbox, so an approval a human
 # entered there is not overwritten. One paginated request per 1,000 submissions;
-# see `list_validation_statuses()` for why this is not done one at a time.
+# see `coasts::list_validation_statuses()` for why this is not done one at a time.
 kobo_validation_status <- function(conf, version) {
   empty <- tibble::tibble(
     submission_id = integer(),
@@ -377,7 +377,7 @@ kobo_validation_status <- function(conf, version) {
 
   logger::log_info("Reading KoBoToolbox validation statuses for {version}")
   tryCatch(
-    list_validation_statuses(
+    coasts::list_validation_statuses(
       asset_id = ingestion$asset_id,
       username = ingestion$username,
       password = ingestion$password
@@ -436,7 +436,7 @@ sync_validation_status <- function(versions = c("v2", "v3"),
     pending <- flags %>%
       dplyr::select("submission_id", "validation_status") %>%
       dplyr::anti_join(
-        list_validation_statuses(
+        coasts::list_validation_statuses(
           asset_id = ingestion$asset_id,
           username = ingestion$username,
           password = ingestion$password
@@ -451,7 +451,7 @@ sync_validation_status <- function(versions = c("v2", "v3"),
     purrr::pmap_dfr(
       list(pending$submission_id, pending$validation_status),
       function(submission_id, status) {
-        update_validation_status(
+        coasts::update_validation_status(
           submission_id = submission_id,
           asset_id = ingestion$asset_id,
           username = ingestion$username,

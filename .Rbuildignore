@@ -3,7 +3,6 @@
 ^peskas\.timor\.data\.pipeline\.Rproj$
 ^LICENSE\.md$
 ^README\.Rmd$
-^cran-comments\.md$
 ^\.github$
 ^codecov\.yml$
 ^_pkgdown\.yml$
@@ -14,7 +13,6 @@
 ^.dockerignore$
 ^rstudio-prefs.json$
 ^.DS_Store$
-^peskas\.mozambique\.data\.pipeline/
 ^\.env$
 ^\.env\.example$
 ^\.Renviron$

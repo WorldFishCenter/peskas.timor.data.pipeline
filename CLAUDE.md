@@ -14,33 +14,35 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 > a STATE.md entry.
 >
 > **`ALIGNMENT-AUDIT.md` (2026-08-18) corrects five claims made below and in
-> `AUDIT.md`. Trust it over this file where they disagree**, and read its §13
-> before deleting anything in Phase 11. The five: `merge_trips()` **does** have
-> cross-country counterparts (Mozambique's is line-for-line identical, and writes
-> parquet); the 59-column raw KoBo passthrough has a live reader
-> (`enumerators_summary.Rmd`, which runs every pipeline run) and is **not**
-> deletable; the frame's `pds_devices` is **not** a strict subset of the Sheets
-> `devices`; `centro_pescas` contains **no** lat/lon and has no reader at all; and
-> `timor_assets()` cannot be swapped onto the snapshot's `country` column, which
-> is absent on `sites` and a record-id link on `geo`.
+> `AUDIT.md`. Trust it over this file where they disagree.** The five:
+> `merge_trips()` **does** have cross-country counterparts (Mozambique's is
+> line-for-line identical, and writes parquet); the 59-column raw KoBo
+> passthrough has a live reader (`enumerators_summary.Rmd`, which runs every
+> pipeline run) and is **not** deletable; the frame's `pds_devices` is **not** a
+> strict subset of the Sheets `devices`; `centro_pescas` contained **no** lat/lon
+> and had no reader at all; and `timor_assets()` cannot be swapped onto the
+> snapshot's `country` column, which is absent on `sites` and a record-id link on
+> `geo` (COASTS-TODO C24).
 >
 > Everything below documents the repo **as it is today**, not the target state.
 > Where the target differs, the plan says so. Phases completed so far:
-> **0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10** — so config, secrets, the container, the
-> **storage layer**, **ingestion**, **preprocessing**, **validation**, the
+> **0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11a** — so config, secrets, the container,
+> the **storage layer**, **ingestion**, **preprocessing**, **validation**, the
 > **cross-country API export**, **PDS**, the **country modules + portal
-> parity**, **CI, repo metadata and docs** and now the **upstreaming to coasts**
-> are done. What is left is the legacy cleanup (Phase 11), then the static-asset
-> and label-source work the alignment audit scoped as **Phase 12**.
+> parity**, **CI, repo metadata and docs**, the **upstreaming to coasts** and now
+> the **legacy cleanup** are done. What is left is the **cutover (Phase 11b:
+> freeze v1, convert the prod tracks, merge to `main`, first production run)**,
+> then the static-asset and label-source work the alignment audit scoped as
+> **Phase 12**.
 >
-> **Phase 10 changed nothing in this repo.** It opened one PR against
-> `WorldFishCenter/peskas.coasts` (**#17**, five items as five commits), not
-> merged — **merge it without squashing** — and deliberately
-> left coasts' `NEWS.md` alone — that file is what `release.yaml` cuts a release
-> from, and a coasts release reaches all four country pipelines at their next
-> container build. **Delete no local copy of anything upstreamed until 4.7.0 is
-> tagged and one green run has been made against it**; that is Phase 11's first
-> gate. See the Phase 10 STATE entry.
+> **Phase 11a deleted ~2,900 lines and changed no published number.** The
+> KoBoToolbox validation-status functions now come from `coasts::` (4.7.0, C15);
+> `ingest_assets()` no longer mirrors the snapshot to the hub (C11); the second
+> glmmTMB estimator, the PDS map products and eleven other unreferenced
+> functions are gone, with the five Sheets tables that had no reader and every
+> `# [legacy]` config key. It touched no production bucket. **Phase 11b is the
+> cutover and is a separate session** — see
+> [.claude/migration/PROMPT-PHASE11B.md](.claude/migration/PROMPT-PHASE11B.md).
 
 ---
 
@@ -61,45 +63,44 @@ be structural, not cosmetic.
 
 | Path | What |
 |---|---|
-| [R/](R/) | 29 source files, verb-noun naming (see module map below) |
-| [inst/config.yml](inst/config.yml) | the config file. A **superset**: harmonized keys plus every legacy key, so old code keeps running mid-migration |
+| [R/](R/) | 25 source files, verb-noun naming (see module map below) |
+| [inst/config.yml](inst/config.yml) | the config file. Harmonized keys only since Phase 11 — every `# [legacy]` key is gone |
 | [inst/config_template.yml](inst/config_template.yml) | Timor's copy of the cross-country spec, with its deviations recorded |
 | `.env` | local secrets, gitignored. Template: [.env.example](.env.example). Replaced the old `auth/` directory in Phase 1 |
 | [inst/tinytest/](inst/tinytest/) | 4 assertion suites, run as steps **inside** the pipeline workflow |
 | [inst/report/](inst/report/) | Rmd reports + `generate_*.R` drivers, shapefiles, bib, css |
 | [inst/export/](inst/export/) | Dataverse dataset metadata (README.Rmd, dataset-fields.json, PNGs) |
-| [.github/workflows/](.github/workflows/) | 11 workflows — **only 2 are healthy**, see below |
-| `peskas.mozambique.data.pipeline/` | untracked reference copy of the standard; read constantly, copy sparingly. Removed in migration Phase 11 |
+| [.github/workflows/](.github/workflows/) | 9 workflows since Phase 9, see below |
 
 ## Module map (`R/`)
 
 Ingestion
 - [ingestion.R](R/ingestion.R) — `ingest_landings()` (v2 + v3 → raw parquet via `coasts::get_kobo_data()`), `ingest_assets()` (the Airtable frame snapshot) and the `flatten_row()`/`flatten_field()`/`rename_child()` helpers. Added in Phase 3, replacing `ingest-landings.R` and `retrieve-survey-data.R`
-- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — 14 Google Sheets metadata tables. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame but the validators still keep their own Sheets copies, so only `fao_catch` could be dropped; each remaining table is annotated in `inst/config.yml` with the phase that removes it
+- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — **7** Google Sheets metadata tables, from twelve. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame; Phase 11 dropped the five with no reader left (`vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics`, `registered_boats`). The seven that stay — `devices`, `catch_types`, `morphometric_table`, `stations`, `reporting_units`, `habitat`, `conservation` — all have a live reader and each is annotated in `inst/config.yml` with what blocks it. Moving them is **Phase 12**, and every one is blocked on Airtable *data*, not code (ALIGNMENT-AUDIT §0)
 - **PDS has no Timor ingestion code since Phase 7.** `ingest-pds-data.R`, `retrieve-pds-data.R` and `preprocess_pds_trips()` are gone; the workflow calls `coasts::ingest_pds_trips()` and `coasts::ingest_pds_tracks()` with `package = "peskas.timor.data.pipeline"`, exactly as Mozambique, Kenya and Zanzibar do — none of them carries a line of PDS code either. Everything coasts needs is in `conf$pds`. The third call those three also make, `coasts::preprocess_pds_tracks()`, is **not** wired in, and Phase 8 decided to keep it that way: its output feeds `coasts::summarize_data()`, which Timor does not use (its portal is the JSON contract) and which is blocked for Timor anyway on COASTS-TODO C17 — so it would produce ~1.4 M grid rows per run for no reader. C20 (its first pass reads every track with `detectCores() - 1` workers, one on a CI runner) is the second reason, not the first. Wire it in when C17 ships **and** a Timor consumer exists
 
 Preprocessing
 - [preprocessing-surveys.R](R/preprocessing-surveys.R) — `preprocess_landings(versions = c("v2","v3"))` (raw parquet → **flat long catch parquet**), `merge_landings()`, the per-version `harmonise_*()` reconciliation, and the assets-snapshot label joins (`survey_labels()`). Added in Phase 4, replacing `clean-raw-data.R`, `preprocess-landings.R` (`step_1`/`step_2`) and `merge-landings.R`
 - [survey-reshaping.R](R/survey-reshaping.R) — `reshape_species_groups()`, `expand_length_frequency()`, the bin-midpoint and free-text-trim helpers. Replaces `pt_nest_species.R` / `pt_nest_attachments.R`
 - [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot. Renamed from `calculate-weights.R` in Phase 4. Phase 5 deleted the re-nesting from `join_weights()`, so the weight artefact is **flat long parquet** like every stage before it
-- [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R) — the Google Sheets `pt_validate_*` parsers
+- [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R) — the seven surviving Google Sheets `pt_validate_*` parsers, most of them pass-throughs
 - [pds-tracks.R](R/pds-tracks.R) — `describe_pds_tracks()` + `get_tracks_descriptors()`, the per-trip track descriptors (`start_end_distance`, `outliers_proportion`, `timetrace_dispersion`, start/end coordinates) that `validate_pds_trips()` joins on. **The one PDS product `coasts` has no equivalent for** — `coasts::preprocess_pds_tracks()` emits spatial grid summaries instead, and both steps run. Renamed from `preprocess-pds-trips.R` in Phase 7, which also deleted `preprocess_pds_trips()`: the trips artefact is read typed and Dili-local straight from the raw parquet by `get_pds_trips()`, so there is no preprocessed-trips stage any more, as there never was in the WIO repos
 
 Validation
 - [validation.R](R/validation.R) — `validate_landings()` orchestrator, the MongoDB flags sink (`push_validation_flags()`), and `sync_validation_status()` (the KoBo write-back, deliberately not wired into the pipeline). Renamed from `validate-landings.R` in Phase 5
-- [validation-functions.R](R/validation-functions.R) — 16 validators over the long table plus the KoBo `get_validation_status()` / `update_validation_status()` pair ported from Mozambique. **This is deeper than any other country pipeline — preserve it.** The alert codes are the contract; the file opens with the code → validator table and `inst/config.yml`'s `validation.alerts` block carries the descriptions
+- [validation-functions.R](R/validation-functions.R) — 16 validators over the long table. **This is deeper than any other country pipeline — preserve it.** The KoBo validation-status client that lived here from Phase 5 was upstreamed in Phase 10 (COASTS-TODO C15) and deleted in Phase 11; `R/validation.R` calls `coasts::list_validation_statuses()` and `coasts::update_validation_status()`. The alert codes are the contract; the file opens with the code → validator table and `inst/config.yml`'s `validation.alerts` block carries the descriptions
 - [validate-pds-trips.R](R/validate-pds-trips.R) — `validate_pds_trips()`, consecutive-trip merging, distance/outlier logic, plus `get_pds_trips()` (the typed, Dili-local view of the raw trips parquet). No `coasts` equivalent exists; upstream candidate for Phase 10
 
 Merge / model / export
-- [api.R](R/api.R) — `export_api_raw()` / `export_api_validated()`, the 22-column cross-country trips table written to `peskas-api-{dev,prod}/timor/{raw,validated}`. Added in Phase 6. **Not wired into any workflow** — run by hand. The schema is the contract Kenya, Mozambique and Zanzibar already publish; do not add, drop or reorder a column without agreeing it across all four
-- [merge-trips.R](R/merge-trips.R), [model-fishery.R](R/model-fishery.R) (the Phase 8 concatenation of `estimate-catch.R` and `model-catch.R`; `estimate_fishery_indicators()` is the workflow entry point, `model_indicators()` is a second glmmTMB implementation with no caller), [nutrients.R](R/nutrients.R) (nutrients + RDI, renamed from `calculate-nutrients.R`; **kept, not delegated** — see the file header). `merge_trips()` matches a landing to a tracked trip on `(landing_date, tracker_imei)` and is **not** `coasts::merge_survey_trips()`, which does a different job (COASTS-TODO C10). Its output `all_trips__*.rds` feeds `format_public_data()` and `model-fishery.R` — changing its schema breaks the export path. It is a **full join**, so its 176,302 rows are the landings plus the validated tracker trips minus the **6,940** actual landing↔trip matches (6,999 before Phase 7's frame device filter; the 59 come back when the 27 missing IMEIs are added to PESKAS \| FRAME)
+- [api.R](R/api.R) — `export_api_raw()` / `export_api_validated()`, the 22-column cross-country trips table written to `peskas-api-{dev,prod}/timor/{raw,validated}`. Added in Phase 6 and wired into `data-pipeline.yaml` in Phase 9, `if: !endsWith(github.ref, '/main')` — so it publishes to `-dev` only, and deleting those two lines is Timor's first write to `peskas-api-prod`. The schema is the contract Kenya, Mozambique and Zanzibar already publish; do not add, drop or reorder a column without agreeing it across all four
+- [merge-trips.R](R/merge-trips.R), [model-fishery.R](R/model-fishery.R) (the Phase 8 concatenation of `estimate-catch.R` and `model-catch.R`; `estimate_fishery_indicators()` is the workflow entry point. `model_indicators()`, the second glmmTMB implementation with no caller, and its 674-line subgraph went in Phase 11 — with `glmmTMB` itself, which nothing in the package imports any more), [nutrients.R](R/nutrients.R) (nutrients + RDI, renamed from `calculate-nutrients.R`; **kept, not delegated** — see the file header). `merge_trips()` matches a landing to a tracked trip on `(landing_date, tracker_imei)` and is **not** `coasts::merge_survey_trips()`, which does a different job (COASTS-TODO C10). Its output `all_trips__*.rds` feeds `format_public_data()` and `model-fishery.R` — changing its schema breaks the export path. It is a **full join**, so its 176,302 rows are the landings plus the validated tracker trips minus the **6,940** actual landing↔trip matches (6,999 before Phase 7's frame device filter; the 59 come back when the 27 missing IMEIs are added to PESKAS \| FRAME)
 - [format-public-data.R](R/format-public-data.R) — 1200 lines, the largest file; builds every portal object. It reads exactly two things, `get_merged_trips()` and `get_models()`, and Phase 8 left its body alone: the nested `landing_catch` / `length_frequency` shape it works in is now produced on *read* by `get_validated_landings()` rather than stored
-- [pds-maps.R](R/pds-maps.R) — what survived Phase 7's deletion of `ingest-pds-data.R`: `ingest_pds_map()` (writes `indicators_gridded` + `tracks-map.png`), `ingest_kepler_tracks()`, `kepler_mapper()`, `get_timor_boundaries()`, `convert_taxa_names()` and `ingest_complete_tracks()`. **None of the map functions is in a workflow.** Phase 8 resolved the dangling dependency by dropping it: `export_files()` no longer reads `indicators_gridded`, and `tracks-map.png` turned out never to have had a reader — `get_tracks_map()` has no caller. So `ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`, `ingest_complete_tracks()` and `get_tracks_map()` are all **fully unreferenced** now and go in Phase 11 with `inst/kepler_mapper.py`. `get_timor_boundaries()` and `convert_taxa_names()` are still live — `format_public_data()` calls both
+- [pds-maps.R](R/pds-maps.R) — two lookups, `get_timor_boundaries()` and `convert_taxa_names()`, both called by `format_public_data()`. The map products it is named for are gone: Phase 8 stopped `export_files()` reading `indicators_gridded` and found `tracks-map.png` had never had a reader, which left `ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()` and `ingest_complete_tracks()` unreferenced, and **Phase 11 deleted all four** with `inst/kepler_mapper.py` and the four accessors that fed them (`get_sync_tracks()`, `get_full_tracks()`, `get_full_trips()`, `get_tracks_map()`)
 - [export.R](R/export.R) — `export_files()` serializes and uploads the `portal-*.json` set: **seven objects since Phase 8**, exactly the seven the portal consumes
 - [export-dataverse.R](R/export-dataverse.R), [reports.R](R/reports.R) (renamed from `send-email.R`; templates in [inst/report/](inst/report/))
 
 Infrastructure
-- [get-cloud-files.R](R/get-cloud-files.R) — 13 `get_*` accessors over one internal `download_versioned_rds()` helper. Timor's own GCS layer (`cloud-storage.R`, `google-drive.R`) was **deleted in Phase 2**; everything delegates to `coasts::*`
+- [get-cloud-files.R](R/get-cloud-files.R) — 9 `get_*` accessors over one internal `download_versioned_rds()` helper, from 13: Phase 11 deleted `get_sync_tracks()`, `get_full_tracks()`, `get_full_trips()`, `get_tracks_map()`, `get_validation_flags()`, `get_tracks_ids()` and the duplicate `get_preprocessed_metadata()`. Timor's own GCS layer (`cloud-storage.R`, `google-drive.R`) was **deleted in Phase 2**; everything delegates to `coasts::*`
 - [utils.R](R/utils.R) — `add_version()`, `read_config()`, `load_dotenv()`
 - [peskas.timor.data.pipeline-package.R](R/peskas.timor.data.pipeline-package.R) — package-level roxygen block
 - [utils-pipe.R](R/utils-pipe.R), [utils-tidy-eval.R](R/utils-tidy-eval.R), [globals.R](R/globals.R)
@@ -123,12 +124,17 @@ resolve the same config branch and differ only by `R_CONFIG_ACTIVE`.**
 **any push to a non-main branch runs the whole pipeline against the `-dev`
 buckets.** That is the integration-test mechanism for the migration.
 
-The file is a **superset**: harmonized keys (`country`, `ingestion`,
-`surveys.landings.{v1,v2,v3}`, `api`, `storage.google.options_{coasts,api}`)
-sit alongside every legacy key the current functions still read
-(`surveys.landings_{1,2,3}`, `pds.{trips,tracks}`, `models`, `export*`, …).
-Legacy keys are marked `# [legacy]` and are deleted in Phase 11. Do not remove
-one before the phase that removes its last reader.
+The file **was** a superset. Through Phases 1-10 every harmonized key
+(`country`, `ingestion`, `surveys.landings.{v1,v2,v3}`, `api`,
+`storage.google.options_{coasts,api}`) sat beside the legacy key it replaced,
+marked `# [legacy]`. **Phase 11 deleted the legacy half** — `surveys.kobo_*`,
+`surveys.landings_{1,2,3}`, `surveys.{merged,validated}_landings`,
+`surveys.landings.validated`, `pds.{trips,tracks}`, `validation.google_sheets`,
+`validation.version`, `metadata.rfishtable` and `export_dataverse.metadata`,
+each after its last reader. What is left is read by this package, by `coasts::`
+through `read_config(package = "peskas.timor.data.pipeline")`, or is part of the
+harmonized shape. **`coasts` reads this file too**, so grep the hub as well as
+`R/` before removing a key.
 
 `storage.mongodb` is **declared and inert** since Phase 2. It has no reader yet
 — ~~the validation flags sink decision is Phase 5~~; `validation.*` is live
@@ -148,11 +154,9 @@ entries must be minified onto one line — dotenv parses line by line.
 |---|---|---|
 | `KOBO_USERNAME` / `KOBO_PASSWORD` | same | basic auth against `eu.kobotoolbox.org` |
 | `KOBO_TOKEN` | *not set in CI yet* | token auth, used by the new `ingestion` block |
-| `KOBO_ASSET_ID_V1/2/3` | *not set in CI yet* | new names, read by `ingestion.landings.<v>` |
-| `KOBO_PESKAS1/2/3` | same | legacy names, read by `surveys.landings_{1,2,3}`; secrets renamed in Phase 9 |
+| `KOBO_ASSET_ID_V1/2/3` | `KOBO_PESKAS1/2/3`, mapped in the workflow `env:` block | the only asset-id names read since Phase 11 |
 | `GCP_SA_KEY` | `PESKAS_DATAINGESTION_GCS_KEY` | full service-account JSON, minified |
 | `GOOGLE_SHEET_ID` | same | metadata tables |
-| `VALID_SHEET_ID` | same | ~~validation flags sheet~~ — no reader since Phase 5, dropped in Phase 11 |
 | `MONGODB_CONNECTION_STRING_VALIDATION` | *not set in CI yet* | the flags sink. Absent → `validate_landings()` warns and only the GCS snapshot is written |
 | `PDS_TOKEN` / `PDS_SECRET` | `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` | |
 | `DATAVERSE_TOKEN` | `PESKAS_DATAVERSE_TOKEN` | |
@@ -160,11 +164,15 @@ entries must be minified onto one line — dotenv parses line by line.
 | `AIRTABLE_TOKEN` | same | the **bare** `pat…` — coasts prepends `Bearer `. Needs frame-base read access + `schema.bases:read` |
 | `AIRTABLE_BASE_ID_FRAME` | same | PESKAS \| FRAME, `appMMEJYlJdfSJEjm` |
 
-`KOBO_ASSET_ID_V1/2/3` are mapped in the workflow `env:` block since Phase 3,
-fed from the existing `KOBO_PESKAS*` secrets; the secrets themselves are
-renamed in Phase 9. `KOBO_TOKEN` has no secret and is optional — `ingestion`
-uses basic auth. The stale `AIRTABLE_KEY` secret still exists and is deleted in
-Phase 9; nothing maps it any more.
+`KOBO_ASSET_ID_V1/2/3` are mapped in the workflow `env:` block from the
+`KOBO_PESKAS*` secrets, which keep their legacy names on purpose: secret values
+are write-only, so renaming them means re-entering three asset ids by hand for
+no behavioural gain. Phase 11 deleted the config keys that read
+`KOBO_PESKAS<n>` directly, not the mapping. `KOBO_TOKEN` has no secret and is
+optional — `ingestion` uses basic auth. **Two stale GitHub secrets survive and
+deleting them is a user action**, neither mapped by any workflow:
+`AIRTABLE_KEY` and `VALID_SHEET_ID`, the latter's sheet having lost its last
+reader in Phase 5 and its config key in Phase 11.
 
 **Never log the resolved config.** `read_config()` used to end with
 `logger::log_debug("Running with parameters {pars}")`, and every workflow
@@ -287,8 +295,9 @@ The signatures match, but coasts returns `selected_rows$name[1]` where Timor
 returned the whole vector. Every Timor call site was audited against the dev
 buckets and only one relied on the vector: the ~100k track names in the PDS
 bucket. Use **`coasts::cloud_object_names()`** (plural, 4.6.0, with
-`latest_only`) for that — `get_tracks_ids()`, `get_tracks_descriptors()` and
-`data-raw/convert-pds-tracks.R` all do. Never use the singular to enumerate a
+`latest_only`) for that — `get_tracks_descriptors()` and
+`data-raw/convert-pds-tracks.R` both do (`get_tracks_ids()` did too, until
+Phase 11 deleted it as unreachable). Never use the singular to enumerate a
 bucket; it silently returns one name, and on the PDS path that reads as "no
 tracks stored" and re-fetches the entire history from the API.
 
@@ -304,7 +313,7 @@ Prefer `coasts::resolve_storage_opts(pars, type)` over reaching into
 | bucket | contents |
 |---|---|
 | `timor` / `timor-dev` | surveys and derived tables. Raw, preprocessed, merged and the frozen v1 snapshot are all **parquet** since Phase 4 (`timor-landings-v{2,3}_{raw,preprocessed}__*.parquet`, `timor-landings-merged__*.parquet`, `timor-landings-v1-frozen__*.parquet`); the weight artefact is parquet since Phase 5, and since **Phase 8 the validated artefact is written once**, `timor-landings-merged_validated_long__*.parquet` — the nested `.rds` twin has no writer any more, it is rebuilt on read by `get_validated_landings()` |
-| `pds-timor` / `pds-timor-dev` | one parquet per GPS trip, `pds-tracks_<trip_id>.parquet`, written by `coasts::ingest_pds_tracks()`. **Not versioned** — a re-ingest overwrites. The 103,373 `pds-track-<trip_id>__*__.csv.gz` objects of the old family were converted in place by [data-raw/convert-pds-tracks.R](data-raw/convert-pds-tracks.R) in Phase 7, not re-fetched, and are dead weight until Phase 11 deletes them |
+| `pds-timor` / `pds-timor-dev` | one parquet per GPS trip, `pds-tracks_<trip_id>.parquet`, written by `coasts::ingest_pds_tracks()`. **Not versioned** — a re-ingest overwrites. The 103,373 `pds-track-<trip_id>__*__.csv.gz` objects of the old family were converted in place by [data-raw/convert-pds-tracks.R](data-raw/convert-pds-tracks.R) in Phase 7, not re-fetched. Phase 11a deleted the dev bucket's copies; the ~98k in `pds-timor` are Phase 11b's, after the production conversion |
 | `public-timor` / `public-timor-dev` | `portal-*.json` — the live portal contract |
 | `peskas-coasts` / `peskas-coasts-dev` | the shared cross-country hub (`options_coasts`). **Read *and* written** by coasts: `assets__*`, `taxa-fishbase-enriched`, H3 effort/CPUE grids, and per-country `*_fishery_metrics` / `*_monthly_summaries_map`. Both are live — `default` must stay on `-dev` |
 | `peskas-api-prod` / `peskas-api-dev` | cross-country API parquet (`options_api`), live for Kenya/Moz/Zanzibar. Timor joined in Phase 6 and publishes to **`-dev` only** so far: `timor/{raw,validated}/trips-{raw,validated}__*.parquet`. The service account has object create/delete on **both** buckets (verified 2026-08-11 via `testIamPermissions`), so the first prod write is a decision, not a permission |
@@ -429,8 +438,11 @@ and the same `COASTS_REF`. Keep the two in step. **coasts ≥ 4.6.0 is now a har
 floor**: Phase 7's PDS path needs `cloud_object_names()`, `get_trip_points()`,
 `resolve_storage_opts(conf, "pds")` and the `"MAF / WorldFish"` customer.
 
-**`devtools::check()` baseline** (re-measured after Phase 4): **0 errors,
-0 WARNINGs, 4 NOTEs**, and testthat is now **green**. The long-standing
+**`devtools::check()` baseline** (re-measured after Phase 11a): **0 errors,
+0 WARNINGs, 4 NOTEs**, and testthat is **green** (27 assertions).
+The four NOTEs are: 30 non-default Imports, installed size (`inst/export` +
+`inst/report`), unverifiable file timestamps, and four undefined globals (`sd`,
+`rnorm`, `if_all`, `` `Estimated revenue` ``) — none of them new. The long-standing
 `FAIL 1 | WARN 9 | PASS 9` is gone: `tests/testthat/test-pre-process-landings.R`
 tested `pt_nest_attachments()` / `pt_nest_species()`, both deleted in Phase 4,
 and was replaced by `test-survey-reshaping.R` (8 passing assertions over
@@ -452,8 +464,13 @@ Two things moved in Phase 3 and both are improvements, not drift:
   come back. Phase 7 dropped **`googleCloudStorageR`** the same way — the last
   two direct `gcs_list_objects()` calls became
   `coasts::cloud_object_names()` — and `arrow` came *back* into use, in
-  `describe_pds_tracks()` and `get_sync_tracks()`, which read the per-trip track
-  parquet directly.
+  `describe_pds_tracks()`, which reads the per-trip track parquet directly.
+  Phase 11 dropped three more for the same reason: **`httr2`** (the KoBo
+  validation client moved to `coasts::`), **`reticulate`** (`kepler_mapper()`)
+  and **`glmmTMB`** (`model_indicators()`), and moved **`ggplot2`** to Suggests,
+  where the Rmd reports are its only consumers. The `installGithub.r glmmTMB`
+  line went out of both Dockerfiles with it — nothing in the package or in
+  `coasts` imports it.
 
 ## CI — nine workflows since Phase 9, from eleven
 
@@ -469,9 +486,9 @@ Two things moved in Phase 3 and both are improvements, not drift:
 | `dataverse-upload.yaml` | disabled (inactivity) | same |
 | `validation-email-sender.yaml` | disabled (inactivity) | same, and repointed at the Mongo flags sink |
 
-**Re-enabling the three disabled ones is a Phase 11 action, not a Phase 9 one.**
-A schedule fires from the **default branch**, so until the migration branch is
-merged those crons would run `main`'s pre-migration code against production.
+**Re-enabling the three disabled ones is a Phase 11b action.** A schedule fires
+from the **default branch**, so until the migration branch is merged those crons
+would run `main`'s pre-migration code against production.
 
 Deleted in Phase 9: `form-summary.yaml`, `keplergl-map.yaml`,
 `upload-matched-trips.yaml` — three of the four workflows that could only build
@@ -506,9 +523,13 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   `vessel_type`, `habitat`, `catch_outcome`, `n_catch`, `catch_taxon`,
   `scientific_name`, `length`, `catch_price`, …) sit beside every raw KoBo
   column, reconciled per form version by `harmonise_v2()` / `harmonise_v3()`.
-  Nothing reads the raw columns since Phase 5 — validation moved onto the
-  standard names — and they go with the rest of the legacy passthrough in
-  Phase 11.
+  Nothing in `R/` reads the raw columns since Phase 5 — validation moved onto
+  the standard names — but **`inst/report/enumerators_summary.Rmd` reads nine of
+  them** (`_id`, `landing_site_name`, `Ita_koleta_dadus_husi_atividad`,
+  `no_boats`, `reason_no_activity`, `date`, `today`, `start`, `end`) and its
+  driver is the last step of the active `export-trips` job. **The passthrough is
+  not deletable**; Phase 11 verified this and left it in place
+  (ALIGNMENT-AUDIT §7).
 - **Length bins with no count are kept.** A catch expands to one row per 5 cm
   bin whether or not anybody was counted in it, because that is what the nested
   `length_frequency` has always held and it reaches the portal —
@@ -526,7 +547,8 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   the long shape into that script, deliberately — the form is dead and
   `preprocess_landings()` should not carry a shape nothing will produce again.
   **The snapshot exists in `timor-dev` only** — run the script against
-  `production` before the Phase 11 cutover.
+  `production` before the Phase 11b cutover, **after** Phase 11a's deletions,
+  so the permanent snapshot is built by the final code.
 - **`length_type` is descriptive, not functional.** It is not a survey field —
   the form records only counts per length bin, and `mean_length` is the bin
   midpoint. It comes from the Sheets `catch_types`, per taxon, non-`NA` for
@@ -572,9 +594,12 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   its workflow step are gone. **AUDIT §8.5 is stale**: `export_files()` already
   passes basenames as `name` and normalises correctly — verified in Phase 2. The
   45 leaked absolute-path objects in `public-timor` date from January 2026 and
-  are historical residue, not a live bug. Deleting them is Phase 11.
-  **Found in Phase 7, open upstream:** `coasts::read_config()` logs the whole
-  resolved config at DEBUG (COASTS-TODO C21) — worked around at every
-  `coasts::` call site in the workflow with `log_threshold = logger::INFO`.
+  are historical residue, not a live bug. Deleting them is Phase 11b — they are
+  in a production bucket.
+  ~~**Found in Phase 7, open upstream:** `coasts::read_config()` logs the whole
+  resolved config at DEBUG (COASTS-TODO C21)~~ — **fixed upstream** in coasts
+  PR #11 and in every release the workflow can resolve. The
+  `log_threshold = logger::INFO` at each `coasts::` call site stays as a
+  regression guard, deliberately; it is still live in the other three repos.
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.

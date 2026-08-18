@@ -85,7 +85,6 @@ ARG COASTS_REF
 RUN test -n "$COASTS_REF" && \
     Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
-RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
 
 # Rstudio interface preferences
 COPY rstudio-prefs.json /home/rstudio/.config/rstudio/rstudio-prefs.json

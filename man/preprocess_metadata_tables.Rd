@@ -10,16 +10,16 @@ preprocess_metadata_tables(log_threshold = logger::DEBUG)
 \item{log_threshold}{The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
 }
 \description{
-Takes ingested metadata tables, validates them, and processes them into
-artefacts (devices information, flags) to be used further down in the
-pipeline.
+Takes the ingested Google Sheets metadata tables, parses them and writes one
+versioned preprocessed list for the rest of the pipeline to read.
 }
 \details{
-Specifically this function:
-\itemize{
-\item Validates the flags table containing the columns: flag_id, flag_category, flag_message
-\item Constructs a devices table containing the columns: imei
-}
+Seven tables are left, all with live readers: \code{devices} (\code{validate_imeis()}),
+\code{catch_types}, \code{morphometric_table}, \code{stations}, \code{reporting_unit}, \code{habitat}
+and \code{conservation}. \code{vms_installs}, \code{centro_pescas}, \code{boats},
+\code{fishing_vessel_statistics} and \code{registered_boats} went in migration
+Phase 11 — the frame is authoritative for the last of those
+(\code{get_registered_boats()}) and the other four had no reader.
 
 This function requires no arguments because it retrieves the parameters from
 \code{conf.yml}. The fields required are:

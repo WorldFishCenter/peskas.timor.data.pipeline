@@ -12,22 +12,20 @@ ingestion: migration Phase 7 deleted \code{ingest_pds_trips()},
 Zanzibar have always done it — none of them carries any PDS code.
 }
 \details{
-What is left are the map products plus the boundary and taxa-name lookups
-they share with \code{format_public_data()}. \strong{Only the lookups are live.}
+What is left are the boundary and taxa-name lookups the map products used to
+share with \code{format_public_data()}.
 
 Phase 8 resolved the dangling dependency the Phase 7 handover described. Of
 the two map products, \code{tracks-map.png} (last written 2021-12-11) turned out
-to have no reader at all — \code{get_tracks_map()} has no caller — and
-\code{indicators_gridded.rds} (last written 2024-07-27 in production, 2023-05-21
-in dev) had exactly one: \code{export_files()}, which rebuilt
+to have no reader at all, and \code{indicators_gridded.rds} (last written
+2024-07-27 in production) had exactly one: \code{export_files()}, which rebuilt
 \code{portal-indicators_grid.json} and \code{portal-label_groups_list.json} from it on
 every run. Those are the two objects \code{peskas.timor.portal.v2} explicitly
-excludes, so Phase 8 dropped them.
-
-The consequence for this file: \code{ingest_pds_map()}, \code{ingest_kepler_tracks()},
-\code{kepler_mapper()} and \code{ingest_complete_tracks()} are now \strong{fully
-unreferenced} and go in Phase 11, along with \code{inst/kepler_mapper.py}.
-\code{get_timor_boundaries()} and \code{convert_taxa_names()} stay —
-\code{format_public_data()} calls both.
+excludes, so Phase 8 dropped them — which left \code{ingest_pds_map()},
+\code{ingest_kepler_tracks()}, \code{kepler_mapper()} and \code{ingest_complete_tracks()}
+unreferenced. \strong{Phase 11 deleted all four}, with \code{inst/kepler_mapper.py}
+and the accessors that fed them. What is left is
+\code{get_timor_boundaries()} and \code{convert_taxa_names()}, both of which
+\code{format_public_data()} calls.
 }
 \keyword{internal}

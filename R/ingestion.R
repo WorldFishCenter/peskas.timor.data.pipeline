@@ -79,14 +79,10 @@ ingest_landings <- function(versions = c("v2", "v3"),
 #' tables (taxa, gears, vessels, landing sites, districts, PDS devices); the
 #' Sheets keep only the five tables the frame does not cover.
 #'
-#' @section The extra upload:
-#' `coasts::ingest_assets()` uploads the snapshot to `storage.google.options`
-#' (the country bucket) while every reader in coasts — `ingestion-pds.R` and,
-#' since 4.6.0, `enrich_taxa()` — resolves it through
-#' `resolve_storage_opts(conf, "coasts")` (the hub). Inside coasts the two are
-#' the same bucket so the disagreement is invisible; from here they are not.
-#' Until the upstream fix lands (COASTS-TODO C11) the snapshot is mirrored to
-#' the hub after the delegated call.
+#' Until coasts 4.7.0 the delegated call wrote the snapshot to the country
+#' bucket while every reader resolved the hub, so this function mirrored it
+#' afterwards. COASTS-TODO C11 fixed that upstream — `coasts::ingest_assets()`
+#' now writes the hub itself — and migration Phase 11 deleted the mirror.
 #'
 #' @param log_threshold The (standard Apache logj4) log level used as a
 #'   threshold for the logging infrastructure. See [logger::log_levels].
@@ -96,24 +92,9 @@ ingest_landings <- function(versions = c("v2", "v3"),
 #' @export
 #'
 ingest_assets <- function(log_threshold = logger::DEBUG) {
-  logger::log_threshold(log_threshold)
-  conf <- read_config()
-
   coasts::ingest_assets(
     log_threshold = log_threshold,
     package = "peskas.timor.data.pipeline"
-  )
-
-  snapshot <- sort(list.files(
-    pattern = paste0("^", conf$metadata$airtable$name, "__.*__\\.rds$")
-  ))
-  snapshot <- snapshot[length(snapshot)]
-
-  logger::log_info("Mirroring {snapshot} to the coasts hub bucket...")
-  coasts::upload_cloud_file(
-    file = snapshot,
-    provider = conf$storage$google$key,
-    options = coasts::resolve_storage_opts(conf, "coasts")
   )
 }
 

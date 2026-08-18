@@ -134,52 +134,6 @@ format_aggregated_data <- function(
   aggregated
 }
 
-#' Build a lookup list of taxa names grouped by fish group
-#'
-#' From an input table containing `catch_taxon` and `fish_group`, constructs a
-#' named list where each element corresponds to one `fish_group` and contains
-#' the unique taxa (from `catch_taxon`) observed in that group.
-#'
-#' @param x A data frame/data.table with at least columns `catch_taxon` and
-#'   `fish_group`.
-#'
-#' @return A named list. Names are fish group labels; values are lists of unique
-#'   taxa strings belonging to each group.
-#'
-#' @details
-#' Internally converts to a `data.table`, unique-ifies taxa within group, and
-#' uses `split()` to produce the group-wise list.
-#'
-#' **No caller since migration Phase 8**: it built `portal-label_groups_list`,
-#' one of the two objects the portal excludes and `export_files()` no longer
-#' emits. Retained until Phase 11's dead-code pass.
-#'
-#' @seealso data.table::data.table, split
-#' @keywords internal
-#' @export
-#' @examples
-#' \dontrun{
-#' grid <- get_file("indicators_gridded")
-#' groups <- label_taxa_groups(grid)
-#' names(groups)
-#' groups[["Small pelagics"]]
-#' }
-label_taxa_groups <- function(x) {
-  label_groups <-
-    dplyr::tibble(
-      taxa = x$catch_taxon,
-      group = x$fish_group
-    ) |>
-    dplyr::distinct(.data$group, .data$taxa)
-
-  label_groups_list <- split(label_groups$taxa, label_groups$group)
-
-  # make each element a list of 1-length character vectors (data.table-like)
-  label_groups_list <- lapply(label_groups_list, as.list)
-
-  label_groups_list
-}
-
 #' Rename fields to match the portal ontology
 #'
 #' Standardizes column names by applying a set of pattern-based substitutions:

@@ -22,18 +22,12 @@ from the PESKAS | FRAME base and writes one versioned \code{assets__*.rds}.
 Airtable is authoritative wherever it overlaps the Google Sheets metadata
 tables (taxa, gears, vessels, landing sites, districts, PDS devices); the
 Sheets keep only the five tables the frame does not cover.
-}
-\section{The extra upload}{
 
-\code{coasts::ingest_assets()} uploads the snapshot to \code{storage.google.options}
-(the country bucket) while every reader in coasts — \code{ingestion-pds.R} and,
-since 4.6.0, \code{enrich_taxa()} — resolves it through
-\code{resolve_storage_opts(conf, "coasts")} (the hub). Inside coasts the two are
-the same bucket so the disagreement is invisible; from here they are not.
-Until the upstream fix lands (COASTS-TODO C11) the snapshot is mirrored to
-the hub after the delegated call.
+Until coasts 4.7.0 the delegated call wrote the snapshot to the country
+bucket while every reader resolved the hub, so this function mirrored it
+afterwards. COASTS-TODO C11 fixed that upstream — \code{coasts::ingest_assets()}
+now writes the hub itself — and migration Phase 11 deleted the mirror.
 }
-
 \keyword{ingestion}
 \keyword{metadata}
 \keyword{workflow}

@@ -13,6 +13,8 @@ pt_validate_morphometric_table(morphometric_table)
 a tibble
 }
 \description{
-Parse and validate morphometric table
+The 559 curated length-weight rows \code{calculate_weights()} pools with the
+FishBase fetch, over 11 mostly-invertebrate codes. \code{aL} and \code{bL} were coerced
+here too until migration Phase 11 measured them 100\% \code{NA}.
 }
 \keyword{preprocessing}

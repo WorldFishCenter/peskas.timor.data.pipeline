@@ -47,7 +47,6 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Generating metadata...")
-  # metadat <- generate_metadata(conf, temp_coverage = data_description$time_range)
 
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
@@ -78,7 +77,6 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   file.remove(release_files_names)
 
   # Restrict files "on request"
-  # dataverse_info <-  get_dataverses(dataverse = dataverse, key = key, server = server)
 
   # purrr::walk(dataverse_info$dataset_$files$id, restrict_files, key = key, server = server)
   # allow_requests(key = key, server = server,id = dataverse_info$dataset_$datasetId)
@@ -92,64 +90,6 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
 }
 
-
-#' Publish a Dataverse repository
-#'
-#' This function publish a specific Dataverse repository.
-#'
-#' @param key API token associated to the Dataverse account.
-#' @param dataverse A character string specifying the Dataverse ID.
-#' @param server A character string specifying a Dataverse server.
-#'
-#' @keywords export
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' publish_dataverse(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
-#' }
-publish_dataverse <- function(key, dataverse, server) {
-  url <- paste0("https://", server, "/api/dataverses/", dataverse, "/actions/:publish")
-  res <- httr::POST(
-    url = url,
-    httr::add_headers(`X-Dataverse-key` = key)
-  )
-  res
-}
-
-
-#' Generate a list of metadata
-#'
-#' The function generate a list of metadata information to append to the
-#' files to upload to a Dataverse repository.
-#'
-#' @param conf The configuration file.
-#' @param temp_coverage Temporal coverage of the data to upload.
-#'
-#' @return A list with metadata information
-#' @keywords export
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' conf <- read_config()
-#' generate_metadata(conf, temp_coverage = "2018-2024")
-#' }
-generate_metadata <- function(conf, temp_coverage = NULL) {
-  metadat <- list(
-    title = as.character(conf$export_dataverse$metadata$title),
-    subject = as.character(conf$export_dataverse$metadata$subject),
-    language = as.character(conf$export_dataverse$metadata$language),
-    description = paste(
-      as.character(conf$export_dataverse$metadata$description),
-      "Period covered:", temp_coverage
-    ),
-    creator = as.character(conf$export_dataverse$metadata$creator),
-    created = as.character(Sys.Date())
-  )
-
-  metadat
-}
 
 #' Upload files to Dataverse
 #'
@@ -198,65 +138,6 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
   )
 }
 
-
-
-#' Delete a dataverse collection
-#'
-#' This function delete a specific Dataverse repository.
-#'
-#' @param key API token associated to the Dataverse account.
-#' @param dataverse A character string specifying the Dataverse ID.
-#' @param server A character string specifying a Dataverse server.
-#'
-#' @keywords export
-#' @export
-#'
-delete_dataverse <- function(key, dataverse, server) {
-  dataverse_content <-
-    dataverse::dataverse_contents(
-      dataverse = dataverse,
-      key = key,
-      server = server
-    )
-
-  # delete datasets inside dataverse collection
-  clean_dataverse <- function(x) {
-    id <-
-      x %>%
-      magrittr::extract2("id")
-    delete_dataset(key = key, id = id, server = server)
-  }
-
-  purrr::walk(dataverse_content, clean_dataverse)
-
-  url <- paste0("https://", server, "/api/dataverses/", dataverse)
-  res <- httr::DELETE(
-    url = url,
-    httr::add_headers(`X-Dataverse-key` = key)
-  )
-  res
-}
-
-
-#' Delete a dataset of a dataverse collection
-#'
-#' This function delete a specific draft dataset.
-#'
-#' @param key API token associated to the Dataverse account.
-#' @param id The dataset ID.
-#' @param server A character string specifying a Dataverse server.
-#'
-#' @keywords export
-#' @export
-#'
-delete_dataset <- function(key, id, server) {
-  url <- paste0("https://", server, "/api/datasets/", id, "/versions/:draft")
-  res <- httr::DELETE(
-    url = url,
-    httr::add_headers(`X-Dataverse-key` = key)
-  )
-  res
-}
 
 
 #' Publish latest dataset created
@@ -436,28 +317,6 @@ generate_description <- function(...) {
     time_range = time_range
   )
 }
-get_dataverses <- function(dataverse = dataverse, key = key, server = server) {
-  dataverse_content <-
-    dataverse::dataverse_contents(
-      dataverse = dataverse,
-      key = key,
-      server = server
-    )
-
-  last_data <- list(
-    dataverse_ = last_dataset <- dataverse_content[length(dataverse_content)][[1]],
-    dataset_ = dataset_list <-
-      dataverse::get_dataset(
-        dataset = last_dataset,
-        version = ":latest",
-        key = key,
-        server = server
-      )
-  )
-  last_data
-}
-
-
 # restrict_files <- function(key = key, server = server, dat_id = NULL) {
 #  url <- paste0("https://", server, "/api/files/", dat_id, "/restrict")
 #  res <- httr::PUT(
