@@ -11,12 +11,28 @@ release that Timor then re-pins to.
 
 ---
 
-## Status after migration Phase 10 (2026-08-13)
+## Status after migration Phase 11a (2026-08-18)
 
-One PR is open against `WorldFishCenter/peskas.coasts` —
-**[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)**, branch
-`feat-upstream` off `main` at `8addc96` — not merged, and **no release cut**.
-See the Phase 10 STATE entry for why the release is a separate, deliberate act.
+**#17 is merged and shipped.** Merged 2026-08-13 as `989049c` with `--merge`, so
+all five commits survive as units of revert, and released as **v4.7.0**; coasts
+has since tagged **v4.8.0**, which Timor's container build resolves. All five
+commits are ancestors of v4.8.0.
+
+**Timor now actually calls two of them.** C15 and C11 were shipped in 4.7.0 but a
+package's own definitions win over its imports, so until Phase 11a deleted the
+local copies, Timor's own code was still what executed:
+
+| item | Timor's state after Phase 11a |
+|---|---|
+| **C15** KoBo validation status | **delegated.** All five local functions deleted; `R/validation.R` calls `coasts::list_validation_statuses()` / `coasts::update_validation_status()`. Verified live: v2 64,997 rows / 74 s, v3 22,285 / 16 s |
+| **C11** `ingest_assets()` writes the hub | **workaround deleted.** `coasts::ingest_assets()` resolves the hub itself, so Timor's mirror upload is gone |
+| **C13** `country` on the snapshot | **not adopted, and must not be** — see C24 |
+| **C16/C17** `resolve_storage_opts(conf, "api")` | in use since Phase 6 |
+| **C18/C19** track-id extraction | Timor-side workaround still in place |
+| **C21** the secrets leak | fixed upstream; the `log_threshold = logger::INFO` at each call site is kept as a regression guard, and is still absent from all three WIO repos |
+
+Five items, **one commit each**. The commits are the unit of revert, so #17 was
+merged with a merge, **never squashed**.
 
 Five items, **one commit each**. The commits are the unit of revert, so #17
 must be merged with a merge or rebase, **never squashed**.
@@ -255,9 +271,15 @@ nothing reads. Timor hits this in migration Phase 3.
 
 Fix: resolve through `resolve_storage_opts(conf, "coasts")`, matching C4.
 
-**Status after Timor's migration Phase 3: still open, worked around.** Timor's
-`ingest_assets()` calls the coasts function and then re-uploads the snapshot it
-left on disk to the hub, so the object exists in both buckets. Two uploads of a
+**Status after Timor's migration Phase 11a: ✅ fixed upstream and the workaround
+is gone.** Shipped in 4.7.0 (commit `6ef429e`); `coasts::ingest_assets()` now
+resolves the hub itself and says so in a comment. Timor's mirror upload was
+deleted in Phase 11a, verified against v4.8.0's source rather than assumed.
+Historical record of the workaround follows.
+
+Timor's
+`ingest_assets()` called the coasts function and then re-uploaded the snapshot it
+left on disk to the hub, so the object existed in both buckets. Two uploads of a
 583 Kb file per run. Delete the second one once this lands.
 
 **Phase 10: fixed, PR [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17) `6ef429e`
@@ -382,7 +404,15 @@ against Timor's implementation, and the never-validated single-submission path
 returns `not_validated` with `fetch_error = FALSE`. Additive — nothing existing
 changed — and it incidentally resolves the dangling `[get_validation_status()]`
 link `summarize_data()`'s `@seealso` has carried since before the function
-existed anywhere in coasts. Timor deletes its local copies in Phase 11.
+existed anywhere in coasts.
+
+**Phase 11a: ✅ closed.** Shipped in v4.7.0 and Timor's five local copies are
+deleted, so `coasts::` is now what executes. Re-verified live against both forms
+before the deletion: v2 **64,997** rows in 74.2 s (63,293 not_validated, 1,623
+approved, 11 not approved, 70 on hold), v3 **22,285** in 15.5 s — the v3 figure
+replicating Phase 10's 22,250 five days later. **The lesson worth keeping: a
+green run against a hub release does not prove the hub version is wired in.** A
+package's own definitions win over its imports, so the deletion is the test.
 
 ---
 
@@ -661,3 +691,51 @@ regression budget on in the same release as five other changes.
 
 Unchanged, and still not Timor's blocker — see the C17 correction above. It
 stays filed for the three countries that do run the step.
+
+---
+
+## Added by the 2026-08-18 alignment audit, confirmed in Phase 11a
+
+### C22. `merge_trips()` — four repos, one algorithm
+
+Mozambique's `R/merge-trips.R:20` is **line-for-line Timor's**: the same
+`(landing_date, imei)` join, the same `unique_trip_per_day` split, the same
+`full_join`, the same comments including the "Merging datasets datasets…" typo,
+and it writes parquet. Zanzibar has `merge_trips(site =)`; Kenya documents the
+identical algorithm at `R/match-trips.R:285`. This is **not**
+`coasts::merge_survey_trips()`, which does C10's different job — inferring from
+that function's existence that no country implements this one is the mistake
+`CLAUDE.md` made twice.
+
+A real upstreaming candidate that should have been on the Phase 10 list.
+
+### C23. A curated length-weight supplement in the hub
+
+Timor pools **559** manual coefficient rows over 11 mostly-invertebrate codes
+(`COZ CRA CUX FLY GZP IAX MOO OCZ PEZ SFA SLV`, 98 species) with the FishBase
+fetch, and **4.14%** of national catch weight depends on them. They live in the
+Google Sheets `morphometric_table`, which is why that table cannot be deleted —
+Phase 11a kept it for exactly this reason. The PESKAS | FRAME base is a
+label-mapping layer and is the wrong home; the right one is a coasts-side
+curated table that `get_taxa_morphometrics()` pools automatically. No other
+country has anywhere to put such rows either.
+
+### C24. `geo.country` is a record-id link, like `landing_sites.Country`
+
+C13 added `country` to `taxa`, `gear` and `vessels` and **explicitly skipped**
+`landing_sites` because its `Country` field is a `multipleRecordLinks` holding
+Airtable record ids. `geo` (the `districts` table) has the same defect and
+nobody checked it. Measured against the live snapshot: `country ==
+"Timor-Leste"` returns **37 → 0** rows for `geo`, and `sites` has no `country`
+column at all, while `taxa`/`gear`/`vessels` are `identical()` under either key.
+
+**This is why Phase 11a did not make the `timor_assets()` swap C13 anticipated.**
+It fails silently: `survey_labels()` applies `timor_assets()` to `sites` and
+`geo`, so the swap would strip `landing_site`, `gaul_1_*` and `gaul_2_*` from the
+preprocessed table — which feeds the cross-country API export — with no error.
+
+The fix is not a `country` column on those two tables but Mozambique's
+`get_airtable_form_id()` (`preprocessing-surveys.R:950`), which resolves the
+frame record id from the KoBo asset id at run time and needs no `country` column
+at all. It is already live in another repo, and it is what C13's "brittle key"
+objection was reaching for. Timor adopts it in Phase 12.

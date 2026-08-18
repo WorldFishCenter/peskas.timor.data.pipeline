@@ -173,10 +173,9 @@ rename_ontology <- function(x) {
 #'    `get_file()`.
 #' 2) Standardizes column names via `rename_ontology()`.
 #' 3) Formats time-binned tables via `format_aggregated_data()`.
-#' 4) Builds taxa group lookup via `label_taxa_groups()`.
-#' 5) Computes summary tables (`estimated_tons`, `estimated_revenue`) and a
+#' 4) Computes summary tables (`estimated_tons`, `estimated_revenue`) and a
 #'    curated `summary_data` list for portal use.
-#' 6) Writes each object to pretty-printed JSON with versioned filenames and
+#' 5) Writes each object to pretty-printed JSON with versioned filenames and
 #'    uploads them to public cloud storage.
 #'
 #' @return Invisibly returns `NULL`. Called for its side effects (JSON creation
@@ -199,7 +198,7 @@ rename_ontology <- function(x) {
 #' `conf$public_storage$google` and relies on helper functions such as
 #' `add_version()`, `coasts::upload_cloud_file()`, and JSON serialization via `toJSON()`.
 #'
-#' @seealso get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
+#' @seealso get_file, rename_ontology, format_aggregated_data,
 #'   coasts::upload_cloud_file, add_version
 #'
 #' @keywords workflow
@@ -227,7 +226,8 @@ export_files <- function() {
   # objects `peskas.timor.portal.v2/scripts/fetchData.js` explicitly excludes**
   # (AUDIT §3), rebuilt on every run from `indicators_gridded.rds` — an object
   # last written 2024-07-27 in production and 2023-05-21 in dev, by
-  # `ingest_pds_map()`, which no workflow has called in two years. So the export
+  # `ingest_pds_map()`, which no workflow had called in two years and which
+  # Phase 11 deleted. So the export
   # was publishing a fresh version number over two-year-old content that nothing
   # read. Dropping them leaves the seven objects the portal actually consumes,
   # and is reversible: no history was deleted, and re-adding the two lines

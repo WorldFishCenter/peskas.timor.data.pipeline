@@ -660,14 +660,32 @@ which is a Phase 11 edit here, not a Phase 10 one.
 
 ---
 
-### Phase 11 — Cutover
+### Phase 11 — Cutover, split into 11a and 11b
 
-- Strip legacy keys from `config.yml`; delete `auth/`, `docs/`, `inst/__pycache__`,
-  `cran-comments.md`, dead code.
-- Unpin `coasts` from the migration tag → resolve latest release at build time.
-- Remove the `peskas.mozambique.data.pipeline/` reference copy.
-- Full green run on the phase branch (dev buckets), golden-output diff on every
-  portal file, then merge to `main` and watch one production run end to end.
+**Split 2026-08-18 at the production line.** 11a touches no production bucket and
+is done; 11b is the cutover and is a separate session
+([`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md)). Sending them together was what the
+split was written to prevent.
+
+**11a — done 2026-08-18, `11f4081`:**
+
+- Legacy keys stripped from `config.yml` — every `# [legacy]` marker is gone.
+- Dead code deleted: 25 functions, −3,597 net lines, including
+  `model_indicators()`'s 674-line subgraph and the PDS map products.
+- The KoBoToolbox validation-status client and the `ingest_assets()` hub mirror
+  now come from `coasts::` (C15, C11) — the deletions are what made the
+  delegation real, since a package's own definitions win over its imports.
+- Five Sheets metadata tables dropped, seven kept.
+- `cran-comments.md`, `docs/` and the `peskas.mozambique.data.pipeline/`
+  reference copy removed. `auth/` and `inst/__pycache__` no longer existed.
+- `coasts` was already unpinned (the workflow resolves the latest release).
+- Full green run on the phase branch against the `-dev` buckets, and the portal
+  gate re-run: **zero change to the seven published objects.**
+
+**11b — the cutover, not yet started:** the v1 freeze and the PDS track
+conversion against `production`, the merge to `main`, one watched production run,
+`public-timor`'s 45 leaked objects and re-enabling the three
+`disabled_inactivity` workflows.
 
 **Scope is constrained by the 2026-08-18 alignment audit.**
 [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md) §13 is the operative list of what may
@@ -676,7 +694,8 @@ and may not be deleted here. In particular Phase 11 must **not** remove the
 columns and runs on every pipeline run), must **not** swap `timor_assets()` onto
 the assets snapshot's `country` column (it is absent on `sites` and is a record-id
 link on `geo`), and must **not** flatten `all_trips__*.rds`. Seven of the twelve
-Google Sheets metadata tables still have live readers and stay.
+Google Sheets metadata tables still have live readers and stay. All three
+constraints were honoured in 11a.
 
 ---
 
@@ -772,5 +791,7 @@ Open questions for the next session: ...
 Files added / removed / renamed: ...
 ```
 
-- The reference copy at `peskas.mozambique.data.pipeline/` stays until Phase 11.
+- ~~The reference copy at `peskas.mozambique.data.pipeline/` stays until
+  Phase 11.~~ Removed in Phase 11a. Re-clone it if a session needs to read the
+  standard again.
   Read it constantly; copy from it sparingly.

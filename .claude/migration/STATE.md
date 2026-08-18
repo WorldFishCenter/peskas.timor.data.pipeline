@@ -11,32 +11,32 @@ Append one entry per completed phase, newest at the bottom.
   ("What Phase 11 may and may not delete") before touching anything in the
   cutover, and its entry at the bottom of this file for the five documented
   claims it found to be false. It also scoped a **Phase 12**, after the cutover.
-- **Phase:** 10 **complete** (2026-08-13). Phase 11 (cutover) next.
-  Phase 10's deliverable is somebody else's repo: PR
+- **Phase:** **11a complete** (2026-08-18, `11f4081`). **Phase 11b — the
+  cutover — is next and is a separate session**:
+  [`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md). 11a deleted the stale code and
+  proved the branch green on `-dev`; it touched no production bucket, merged
+  nothing and ran neither production script.
+- Phase 10's deliverable is somebody else's repo: PR
   **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)** against
-  `WorldFishCenter/peskas.coasts`, branch `feat-upstream` off `main` at
-  `8addc96`, five items as **five separate commits**, **not merged and no
-  release cut**. (It began as #12–#16, one PR per item; consolidated the same
-  day — see the Phase 10 entry.) **Merge it with a merge or rebase, never a
-  squash**: the commit boundary is what lets one item be reverted out of a
-  release without the other four. Nothing in this repo changed but the
-  migration documents and `CLAUDE.md`'s header.
-- **Phase 11 is blocked on a coasts release, not on a merge.** Every country
-  pipeline resolves the latest coasts *release* at container build time, and
-  `peskas.coasts/.github/workflows/release.yaml` cuts one from the top
-  `# coasts X.Y.Z` heading of `NEWS.md` on **any** push to `main`. #17
-  deliberately leaves `NEWS.md` at `4.6.0`, so merging it ships nothing. Timor
-  deletes no local copy — the KoBo status trio, the hand-rolled hub mirror in
-  `ingest_assets()`, `timor_assets()`' form-id filter — until 4.7.0 is tagged
-  and one green run has been made against it.
+  `WorldFishCenter/peskas.coasts`, **merged 2026-08-13 as `989049c`** with
+  `--merge`, so all five commits survive and each item stays individually
+  revertible. Shipped in **v4.7.0**; coasts has since tagged **v4.8.0**, which
+  the container build resolves. Nothing in this repo changed in Phase 10.
+- **The Phase 11 release gate is met and spent.** Phase 11 could delete no local
+  copy of anything upstreamed until 4.7.0 was tagged and one green run made
+  against it; run **31778254836** (2026-08-14) was that run, and Phase 11a spent
+  the gate on the KoBo status client and the `ingest_assets()` hub mirror.
+  Remember why the run alone was never sufficient: **a package's own definitions
+  win over its imports**, so the delegation is only real once the local copy is
+  gone.
 - **CI is now nine workflows, not eleven.** Read the Phase 9 entry before
   touching any of them, and in particular: the three `disabled_inactivity` ones
-  must not be re-enabled until after the Phase 11 merge, because a cron fires
+  must not be re-enabled until after the Phase 11b merge, because a cron fires
   from the default branch; `release.yaml` cuts `v4.0.0` the moment this work
   lands on `main`; the two `if: ${{ !endsWith(github.ref, '/main') }}` lines on
   the API export steps are the only thing standing between Timor and its first
   `peskas-api-prod` write; and `R-CMD-check` / `pkgdown` / `test-coverage`
-  cannot run from a phase branch at all, so their first exercise is the Phase 11
+  cannot run from a phase branch at all, so their first exercise is the Phase 11b
   PR.
 - **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
   (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
@@ -55,6 +55,10 @@ Append one entry per completed phase, newest at the bottom.
   (`feat/kobo-validation-status`), `0ef43f6` (`feat/assets-country-column`),
   `6440547` (`feat/resolve-api-storage`), `e5f3eeb` (`fix/track-id-extraction`),
   `abe9104` (`feat/taxa-selenium`), all off `8addc96`.
+  Portal corrections = **`602a110`** (the coast rule) + **`5a83f11`**
+  (`registered_boats` from the frame), green on runs **32138700774** and
+  **32142177446**.
+  Phase 11a = **`11f4081`** on `feat/align-coasts-phase9`.
   Green end-to-end CI runs: **31436031588** on the
   Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
   MongoDB flags sink and all four tinytest suites — **31439673841** on the
@@ -4404,3 +4408,221 @@ and `gs://pds-timor` holds **0** `pds-tracks_*.parquet` against **97,827** legac
 `pds-track-*.csv.gz`. Both Phase 11 production prerequisites are unmet. Two stale
 secrets also survive, `AIRTABLE_KEY` (Phase 9 was to delete it) and
 `VALID_SHEET_ID` (no reader since Phase 5).
+
+## Phase 11a — cut the stale code, delegate to the hub — 2026-08-18
+
+Branch: `feat/align-coasts-phase9`, commit **`11f4081`**.
+**Nothing in this session touched production.** `R_CONFIG_ACTIVE` was never set,
+so every read and write resolved a `-dev` bucket; no bucket in the production set
+(`timor`, `pds-timor`, `public-timor`, `peskas-api-prod`, `peskas-coasts`) was
+written; nothing was merged to `main`; neither `freeze-landings-v1.R` nor
+`convert-pds-tracks.R` was run. The cutover is
+[`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md).
+
+**One commit, −3,597 net lines** (242 added, 3,839 deleted across 59 files;
+`R/` alone went 9,480 → 7,283 lines and 29 → 25 files).
+
+### The gate the prompt set, and what it proved
+
+Both prerequisite commits were green before anything was deleted: run
+**32142177446** (`5a83f11`, `registered_boats` from the frame) and
+**32142470930** (`2547cea`) both finished green on all thirteen jobs, which is
+what authorised deleting the `registered_boats` config entry.
+
+**Gap in the record, noted rather than filled: the portal-corrections session
+left no STATE entry**, though its prompt asked for one with the two measured
+deltas. Both commits are in and both are green, and their effects were verified
+here in the published `-dev` JSON rather than taken on trust, because Phase 11a's
+"zero portal change" claim is measured *against* them:
+
+| assertion | in `portal-*__20260818140056_2547cea__` |
+|---|---|
+| the coast rule (`602a110`) | North Coast **126,862,745**, South Coast **21,642,831**, Atauro 13,369,136 — Lautem's revenue is north |
+| `registered_boats` from the frame (`5a83f11`) | Manatuto `n_boats` **213** (was 283), Viqueque **207** (was 213), the other ten unchanged |
+
+Note the coast figures are not the ones the corrections prompt predicted
+(133,087,662 / 21,986,965): that prediction was computed from the then-published
+set, before `registered_boats` also moved. Manatuto is a North Coast
+municipality, so lowering its boat count lowers North Coast revenue. The two
+changes compose, and both are visible.
+
+### 1. The two alignment deletions — the point of the session
+
+**The KoBoToolbox validation-status client is now the hub's.** Phase 10
+upstreamed it as C15 and coasts 4.7.0 shipped it, but **a package's own
+definitions win over its imports**, so Timor's five local copies
+(`kobo_request()`, `kobo_validation_url()`, `list_validation_statuses()`,
+`get_validation_status()`, `update_validation_status()`, 270 lines of
+`R/validation-functions.R`) were still what executed. All five are gone and
+`R/validation.R` calls `coasts::` at all three sites. **Verified against both
+live forms before the deletion, not assumed:**
+
+| form | rows | time | statuses |
+|---|---|---|---|
+| v2 | 64,997 | 74.2 s | 63,293 not_validated · 1,623 approved · 11 not approved · 70 on hold |
+| v3 | 22,285 | 15.5 s | 22,285 not_validated |
+
+The v3 figure replicates Phase 10's 22,250 five days later. Signatures are
+compatible — coasts adds a `url =` argument with the same default and every
+Timor call site passes named arguments.
+
+**`ingest_assets()` lost its hand-rolled hub mirror.** Read from coasts v4.8.0's
+`R/ingestion.R` rather than inferred: the delegated call now resolves the hub
+itself, with a comment saying so, closing C11. Timor's `ingest_assets()` is a
+five-line wrapper again.
+
+### 2. Dead code — 25 functions, none with a caller
+
+Measured by a bare-name sweep over `R/`, `inst/`, `tests/`, `data-raw/`,
+`.github/` and `_pkgdown.yml`, excluding definition lines and comments, so a
+`purrr::map(x, fn)` reference counts as a call.
+
+| where | what |
+|---|---|
+| `R/model-fishery.R` | `model_indicators()` + `run_models()`, `model_landings()`, `model_catch()`, `model_catch_per_taxa()`, `model_value()`, `estimate_statistics()`, `estimates_per_taxa()` — **674 lines**, the whole former `R/model-catch.R` |
+| `R/pds-maps.R` | `ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`, `ingest_complete_tracks()` — 423 lines — plus `inst/kepler_mapper.py`. File is 636 → 213 lines and keeps only the two live lookups |
+| `R/get-cloud-files.R` | `get_sync_tracks()`, `get_full_tracks()`, `get_full_trips()`, `get_tracks_map()`, `get_validation_flags()`, `get_tracks_ids()`, `get_preprocessed_metadata()` — 13 accessors → 9 |
+| scattered | `ingest_pds_matched_trips()`, `pt_validate_flags()`, `send_sites_report()`, `publish_dataverse()`, `delete_dataverse()`, `delete_dataset()`, `generate_metadata()`, `get_dataverses()`, `label_taxa_groups()`, `get_weight()`, `get_municipal_nutrients()`, `predict_variable()` |
+| `inst/report/` | `unanswered_summary.Rmd` + `generate_form_summary.R`, whose workflow went in Phase 9 |
+
+**Six of those were not on the prompt's list**, and the reason matters: the
+prompt's list was measured before the session, so it counted a call *from inside
+dead code* as a call. `generate_metadata()`, `get_dataverses()`,
+`label_taxa_groups()`, `get_weight()` and `get_municipal_nutrients()` were
+already unreachable and the same sweep found them; `predict_variable()`,
+`get_tracks_ids()`, `delete_dataset()` and the `get_sync_tracks()` chain became
+unreachable *because of* this session's deletions. Deleting a root and leaving
+its orphans is exactly the trap the prompt warned about for
+`model_indicators()`, and it applies transitively. Every deletion left a `NOTE:`
+comment where the code was, naming what went and why.
+
+**`sync_validation_status()` stays** — unwired on purpose, not dead.
+
+### 3. Sheets metadata tables — twelve to seven
+
+| table | disposition |
+|---|---|
+| `vms_installs`, `centro_pescas` | deleted; no reader anywhere. Parsers and list elements went too, and so did the `centro_pescas` comment claiming it was "the only source of landing-site lat/lon" — it has no coordinate column at all |
+| `boats`, `fishing_vessel_statistics` | deleted with `data_report.Rmd`'s "Boats information" section (user decision 2026-08-18) |
+| `registered_boats` | deleted; `get_registered_boats()` reads the frame's `geo.total_boats` since `5a83f11` |
+| `devices`, `catch_types`, `morphometric_table`, `stations`, `reporting_units`, `habitat`, `conservation` | **kept**, every one with a live reader |
+
+`data_report.Rmd` needed more than the prompt's line 48: **`vessels_stats` is
+joined at four later points** (478, 547, 616, 1066), so deleting the summary
+would have broken four chunks. It now reads
+`peskas.timor.data.pipeline:::get_registered_boats(pars)` — same two columns,
+same source the pipeline itself uses, one row per region instead of a
+`group_by` + `sum`. The report is on a disabled workflow, so this is not
+exercised by CI.
+
+Also dropped: the `aL`/`bL` coercion in `pt_validate_morphometric_table()`, both
+columns 100% `NA`.
+
+### 4. `inst/config.yml` is no longer a superset
+
+Every `# [legacy]` key is gone, each after its last reader:
+`surveys.kobo_username`/`kobo_password`, `surveys.landings_{1,2,3}`,
+`surveys.merged_landings`, `surveys.validated_landings`,
+`surveys.landings.validated`, the whole legacy `pds.trips` / `pds.tracks` pair
+(including `tracks.map`, whose last reader was `ingest_pds_map()`),
+`validation.google_sheets` with its `production:` override,
+`validation.version.preprocess`, `metadata.rfishtable` and
+`export_dataverse.metadata`. The header block now says so instead of describing
+the superset rule.
+
+**A trap worth recording for Phase 12: `coasts` reads this file too**, through
+`read_config(package = "peskas.timor.data.pipeline")`. Both reader sets were
+enumerated before anything was deleted — every `conf$…` path in `R/`, `inst/`
+and `data-raw/`, and every one in coasts v4.8.0's `R/`. `conf$pds$customers`,
+`conf$metadata$airtable$assets` and `storage.google.options_coasts` have **no
+Timor reader at all** and would have looked deletable.
+
+One thing that measurement turned up and did not change: `model-taxa.R` reads
+`conf$metadata$fishbase$fao_areas` **twice, and no such key exists** — it
+resolves to `NULL`. Harmless today because both call sites pass
+`filter_by_area = FALSE`, but it is a silent no-op, not a working default.
+
+### 5. Dependencies, and the container
+
+`httr2` (the KoBo client), `reticulate` (`kepler_mapper()`) and `glmmTMB`
+(`model_indicators()`) left `Imports`; `ggplot2` moved to `Suggests`, where the
+Rmd reports are now its only consumers. The `installGithub.r glmmTMB` line left
+**both** Dockerfiles — neither this package nor coasts imports it, and it was a
+TMB compile on every build. `httr2` and `reticulate` stay installed in the image
+because coasts imports both.
+
+### 6. Verified
+
+- `devtools::check()`: **0 errors, 0 warnings, 4 NOTEs** — the documented
+  baseline, and no unused-`Imports` NOTE.
+- `devtools::test()`: **27 pass, 0 fail, 0 warn**.
+- All four tinytest suites green locally against the `-dev` artefacts, before
+  the branch run: validated landings 10/10, validated PDS trips 7/7, merged
+  trips 2/2, public data 1/1. **No assertion was touched.**
+- The KoBo delegation, live, table above.
+- Every remaining function in `R/` has a caller, except
+  `sync_validation_status()` (deliberate) and the workflow entry points.
+
+### 7. Cloud cleanup — `pds-timor-dev` only
+
+The legacy `pds-track-<id>__<version>__.csv.gz` family, **103,373 objects**,
+deleted from `pds-timor-dev`. Three checks first, because a wrong delete here is
+a re-fetch of the whole PDS history:
+
+1. all 103,373 listed names match
+   `^gs://pds-timor-dev/pds-track-\d+__\d+_[0-9a-f]+__\.csv\.gz$` — zero
+   non-matching;
+2. the parquet family has **101,962** objects against the legacy family's
+   **101,960** distinct trip ids;
+3. **every one of those 101,960 ids has a parquet twin** — the two extras are
+   trips ingested since the conversion.
+
+`gsutil -m rm -I` managed ~1 object/s and `gcloud storage rm -I` ~2/s, so
+neither was usable for 103k objects; a 128-thread JSON-API delete ran at
+~120/s. **The 97,827 legacy objects in `pds-timor` are Phase 11b's**, after the
+user runs `convert-pds-tracks.R` against production.
+
+Deliberately **not** deleted, since the prompt scoped this session to that one
+family: the orphaned prefixes AUDIT §4 lists in `timor-dev` (2,934
+`*_raw__*.json`, 2,941 `*_metadata__*.json`, 733 `validation-tables__*.rds`, 42
+`pds-track-complete*`, and the one-offs). They are inert and cost storage only.
+Still no lifecycle policy on any bucket.
+
+### 8. Kept deliberately, against what the older documents say
+
+- **The 59-column raw KoBo passthrough.** `CLAUDE.md` and `AUDIT.md` imply this
+  phase removes it; `enumerators_summary.Rmd` reads nine of them and its driver
+  is the last step of the active `export-trips` job. Left in place, and
+  `CLAUDE.md`'s "Conventions" bullet now says so.
+- **`all_trips__*.rds` stays `.rds`** — three readers against a live portal.
+- **`timor_assets()` stays on `form_id`.** The swap onto `country` returns
+  **0** rows for `geo` (a `multipleRecordLinks` field of record ids) and errors
+  on `sites` (no such column). C24; the fix is Phase 12's.
+- **`log_threshold = logger::INFO` at every `coasts::` call site.** C21 is fixed
+  upstream and in every release the workflow can resolve, so the argument is now
+  a regression guard rather than a fix. Kept on that basis — it costs nothing
+  and the failure mode is a private key in a public log. The workflow comment
+  was rewritten to say which of the two it is.
+
+### 9. Documents updated
+
+`CLAUDE.md` describes the repo after the deletions, not before: the phase list,
+the `R/` file and accessor counts, the seven Sheets tables, the module map for
+`pds-maps.R` / `get-cloud-files.R` / `model-fishery.R` /
+`validation-functions.R`, the config section (no longer a superset, plus the
+"coasts reads this file too" warning), the env-var table (`VALID_SHEET_ID` and
+`KOBO_PESKAS*` rows gone), the check baseline with its four NOTEs named, and
+every "goes in Phase 11" promise either marked done or repointed at 11b.
+
+### Deferred, and for whom
+
+- **Phase 11b, the cutover** — the v1 freeze against production, the production
+  track conversion (**the user's to launch**), the merge to `main`, the first
+  production run, `public-timor`'s 45 leaked absolute-path objects, and
+  re-enabling the three `disabled_inactivity` workflows.
+- **Two stale GitHub secrets, a user action**: `AIRTABLE_KEY` (Phase 9 was to
+  delete it) and `VALID_SHEET_ID`, whose config key went this session. Neither
+  is mapped by any workflow.
+- **Phase 12** is unchanged: `registered_boats`' remaining label work, the North
+  Coast site table, `timor_assets()` onto `get_airtable_form_id()`, `devices` →
+  `pds_devices` after Airtable task A, then `stations` / `reporting_units`.

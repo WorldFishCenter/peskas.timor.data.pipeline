@@ -17,7 +17,6 @@ Orchestrates the portal data export workflow:
 \code{get_file()}.
 \item Standardizes column names via \code{rename_ontology()}.
 \item Formats time-binned tables via \code{format_aggregated_data()}.
-\item Builds taxa group lookup via \code{label_taxa_groups()}.
 \item Computes summary tables (\code{estimated_tons}, \code{estimated_revenue}) and a
 curated \code{summary_data} list for portal use.
 \item Writes each object to pretty-printed JSON with versioned filenames and
@@ -47,7 +46,7 @@ export_files()
 }
 }
 \seealso{
-get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
+get_file, rename_ontology, format_aggregated_data,
 coasts::upload_cloud_file, add_version
 }
 \keyword{workflow}
