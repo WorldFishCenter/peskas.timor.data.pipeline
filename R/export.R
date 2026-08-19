@@ -350,8 +350,7 @@ export_files <- function() {
       )
     ) %>%
     dplyr::group_by(.data$Area) %>%
-    dplyr::summarise(`Estimated revenue` = sum(.data$revenue, na.rm = T)) %>%
-    dplyr::mutate(`Estimated revenue` = round(`Estimated revenue`, 0))
+    dplyr::summarise(`Estimated revenue` = round(sum(.data$revenue, na.rm = T), 0))
 
   summary_data <-
     list(

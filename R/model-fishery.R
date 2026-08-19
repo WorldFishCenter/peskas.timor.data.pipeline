@@ -415,7 +415,7 @@ estimate_indicators <- function(value_estimate, landings_estimate, catch_estimat
       for(col in c("price_kg", "landing_catch", "landing_catch_price")) {
         # Get mean and sd for adding noise
         col_mean <- mean(temp_data[[col]], na.rm = TRUE)
-        col_sd <- sd(temp_data[[col]], na.rm = TRUE) * 0.1 # 10% noise
+        col_sd <- stats::sd(temp_data[[col]], na.rm = TRUE) * 0.1 # 10% noise
         
         # Interpolate missing values
         imputed_values <- zoo::na.approx(temp_data[[col]], na.rm = FALSE, rule = 2)
@@ -423,7 +423,7 @@ estimate_indicators <- function(value_estimate, landings_estimate, catch_estimat
         # Add small random noise to imputed values
         na_indices <- is.na(temp_data[[col]])
         if(any(na_indices)) {
-          noise <- rnorm(sum(na_indices), 0, col_sd)
+          noise <- stats::rnorm(sum(na_indices), 0, col_sd)
           imputed_values[na_indices] <- imputed_values[na_indices] + noise
           temp_data[[col]] <- imputed_values
         }

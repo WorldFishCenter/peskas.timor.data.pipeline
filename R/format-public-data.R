@@ -508,7 +508,7 @@ summarise_estimations <- function(
           week_start = 7
         )
       ) %>%
-      dplyr::filter(if_all(dplyr::all_of(groupings), ~ !is.na(.))) %>%
+      dplyr::filter(dplyr::if_all(dplyr::all_of(groupings), ~ !is.na(.))) %>%
       dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
 
     binned_frame <-
@@ -559,7 +559,7 @@ summarise_estimations <- function(
           week_start = 7
         )
       ) %>%
-      dplyr::filter(if_all(dplyr::all_of(groupings), ~ !is.na(.))) %>%
+      dplyr::filter(dplyr::if_all(dplyr::all_of(groupings), ~ !is.na(.))) %>%
       dplyr::group_by(dplyr::across(dplyr::all_of(groupings)))
 
     binned_frame <-
