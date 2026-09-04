@@ -171,13 +171,17 @@ jobs:
   # waits for both jobs; `merge-trips` and everything after it run in parallel
   # with it and are unaffected if it fails.
   #
-  # The `if:` is the **prod go-live switch**, and it is deliberate. The bucket
-  # comes from `storage.google.options_api`, which is `peskas-api-dev` in the
-  # `default` environment and `peskas-api-prod` in `production` — i.e. on `main`.
-  # Wiring the export in and Timor's first write to `peskas-api-prod` are two
-  # separate decisions (PLAN Phase 9); this phase takes the first only. Deleting
-  # the two `if:` lines is how the second one is taken, once someone owns telling
-  # the API's consumers that a fourth country is arriving.
+  # The steps carry no `if:` of their own, which matches Kenya, Mozambique and
+  # Zanzibar exactly: the only gate is the shared "Set env to production" step
+  # above, so the bucket follows `storage.google.options_api` — `peskas-api-dev`
+  # on a branch, `peskas-api-prod` on `main`.
+  #
+  # Through Phases 9-11a these two steps were additionally gated
+  # `if: ${{ !endsWith(github.ref, '/main') }}`, which published to `-dev` only
+  # and, on `main`, skipped the export altogether rather than promoting it. That
+  # was deliberate while Timor's first write to `peskas-api-prod` was an unmade
+  # decision; it was made on 2026-09-04, so Timor now publishes on the same terms
+  # as the other three countries.
   export-api:
     name: Export cross-country API
     needs: [merge-landings, validate-landings]
@@ -192,10 +196,8 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_api_raw()
-        if: ${{ !endsWith(github.ref, '/main') }}
         run: Rscript -e 'peskas.timor.data.pipeline::export_api_raw()'
       - name: Call export_api_validated()
-        if: ${{ !endsWith(github.ref, '/main') }}
         run: Rscript -e 'peskas.timor.data.pipeline::export_api_validated()'
 
   ingest-pds-data:

@@ -11,11 +11,18 @@ Append one entry per completed phase, newest at the bottom.
   ("What Phase 11 may and may not delete") before touching anything in the
   cutover, and its entry at the bottom of this file for the five documented
   claims it found to be false. It also scoped a **Phase 12**, after the cutover.
-- **Phase:** **11a complete** (2026-08-18, `11f4081`). **Phase 11b — the
-  cutover — is next and is a separate session**:
-  [`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md). 11a deleted the stale code and
-  proved the branch green on `-dev`; it touched no production bucket, merged
-  nothing and ran neither production script.
+- **Phase:** **11b prepared, 2026-09-04 — the branch is ready to merge and the
+  merge is the user's to make.** Nothing is committed, pushed or published; the
+  only working-tree change is `NEWS.md`, left unstaged. Both production scripts
+  have now run (`freeze-landings-v1.R` and `convert-pds-tracks.R`), the whole
+  pipeline has been run against production **except the publish**, and the
+  measured effect of merging is **catch and tonnage ≈ −22%, price/kg ≈ +22%,
+  nutrient supply −24% to −38%**. Read the Phase 11b entry at the bottom before
+  anything else — its §4 is a decision the user has not yet made (**after the
+  merge, the API export ran nowhere; the user ruled that Timor should publish as
+  the other countries do, so the merge is **also** Timor's first
+  `peskas-api-prod` write**), and its §0 records that two consecutive sessions
+  skipped their STATE entry.
 - Phase 10's deliverable is somebody else's repo: PR
   **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)** against
   `WorldFishCenter/peskas.coasts`, **merged 2026-08-13 as `989049c`** with
@@ -4626,3 +4633,228 @@ every "goes in Phase 11" promise either marked done or repointed at 11b.
 - **Phase 12** is unchanged: `registered_boats`' remaining label work, the North
   Coast site table, `timor_assets()` onto `get_airtable_form_id()`, `devices` →
   `pds_devices` after Airtable task A, then `stations` / `reporting_units`.
+
+## Phase 11b — prepare the cutover, and hand it over — 2026-09-04
+
+Branch: `feat/align-coasts-phase9`, 57 commits ahead of `main`, tip `f38f31c`.
+**Nothing was committed, pushed, merged or published in this session**, by
+instruction: the merge is the moment the live portal steps to the migrated
+numbers, and the user times that. The only working-tree change is `NEWS.md`
+(§3 below), left unstaged for the user.
+
+This entry covers **two** sessions of the same date, because the first one left
+no record.
+
+### 0. A gap in the log, filled here rather than silently
+
+`STATE.md` had no entry for the 2026-09-04 production dry run. Its record
+existed only as an uncommitted 157-line rewrite of
+[`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md), which is not where the log lives and
+would have been lost on a `git checkout`. Section 1 below reconstructs it from
+that diff and from direct verification; figures attributed to the dry run are
+the dry run's measurements, re-verified here only where cheap.
+
+This is the **second** consecutive session to skip its entry — Phase 11a
+recorded the same gap for the portal-corrections session. The instruction is in
+`CLAUDE.md` and in every phase prompt; it is being missed at the point where the
+work touches production, which is exactly where the log matters most.
+
+### 1. The 2026-09-04 production dry run — reconstructed record
+
+- **The whole production pipeline ran locally except the publish** — 19 stages
+  green, all four tinytest suites green on production data. `gs://timor` now
+  holds migrated raw, preprocessed, merged, weighted, validated, `all_trips`,
+  models and `timor_*` artefacts; `validation-prod` holds migrated flags. **The
+  portal was not published** — the newest `portal-*` in `gs://public-timor` is
+  still `90ede9a`.
+- Production is therefore in a **mixed state**: migrated artefacts, `main`'s
+  pre-migration code still on the schedule. `main` rebuilds everything it reads
+  within each run, so this is stable rather than urgent — but it is a reason not
+  to let the merge sit for weeks.
+- **`export_files()` was rehearsed with `coasts::upload_cloud_file` stubbed in
+  the coasts namespace** — a three-line technique that exercises the publish
+  path without touching the bucket. Reuse it to re-measure. The script itself
+  lived in a session scratchpad and is **gone**; only the technique survives.
+- **The measured portal deltas**, against the live production set, not
+  predicted: catch and tonnage **≈ −22%**, price/kg **≈ +22%**, nutrient supply
+  **−24% (calcium) to −38% (protein)**, catch **−22.5%**, per-kg nutrient
+  profile −13% selenium to +9% zinc from the 693 → 5,259 species expansion.
+  North/South Coast revenue redistributed by the Lautem fix. Labels, keys and
+  categories unchanged.
+- **The v1 freeze ran against production**, and this is the permanent artefact
+  the whole ordering of Phase 11 was built around:
+  `gs://timor/timor-landings-v1-frozen__20260904115114_f38f31c__.parquet`, built
+  by post-11a code, byte-identical in size to the dev snapshot.
+- **A command trap, verified and worth keeping.** The long-documented
+  `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R` **silently
+  runs against `-dev`**: `.Renviron` in the repo root pins
+  `R_CONFIG_ACTIVE=default` and R applies it *after* the inherited environment.
+  Use `R_ENVIRON_USER=/dev/null R_CONFIG_ACTIVE=production Rscript …`, or
+  `use_prod()` from `.Rprofile` in an interactive session. CI is immune —
+  `.Renviron` is gitignored and never reaches the image.
+- The user took a rollback copy of the pre-merge live set to
+  `~/peskas-portal-live` — 9 files, `20260903032053_90ede9a`. **Verified present
+  this session.**
+
+### 2. Entry gate — re-verified, not re-derived
+
+| gate | result |
+|---|---|
+| 1. Phase 11a green, zero portal change | from the record: run **32152744776**, 13/13; 0 of 84 numeric columns moved |
+| 2. Both portal corrections in | from the record; also now asserted in `NEWS.md` |
+| 3. production tracks converted | **re-checked live** — `gs://pds-timor` serves `pds-tracks_<id>.parquet` (10000905, 10000946, 10000947 …) and the legacy `.csv.gz` family is intact beside it |
+| 4. `main` a clean fast-forward | **re-checked** — `git rev-list --left-right --count main...feat/align-coasts-phase9` → `0  57` |
+| — the v1 freeze | **re-checked live** — the object above is in `gs://timor` |
+
+Working tree clean apart from the prompt rewrite; `.env` and `.Renviron` are
+gitignored and untracked, so the merge leaks no secret.
+
+### 3. The one thing that actually needed fixing: `NEWS.md`
+
+`release.yaml` fires on the push to `main` and publishes **the top block of
+`NEWS.md` verbatim** as the body of release `v4.0.0`. That block was written
+before Phase 11a and before the deltas were measured, and it opened with
+
+> The portal contract is deliberately unchanged.
+
+which is true of the *schema* and badly misleading about the *numbers*. A reader
+of the release notes would have had no way to learn that published catch drops
+22%. Four corrections, all documentation:
+
+1. **New leading section, "Published figures change"** — the −22% / +22% /
+   −24%…−38%, attributed to the length-weight path and dated. The intro now
+   says the *contract* is unchanged and points at it.
+2. **The config-superset claim** ("legacy keys are marked `# [legacy]` and
+   retire with the dead code they feed") was false after 11a. Rewritten to say
+   that half is deleted.
+3. **The two portal corrections added to Bug fixes** — the Lautem coast rule,
+   and `registered_boats` from the frame with its Manatuto 283 → 213 and
+   Viqueque 213 → 207.
+4. **A "Removals" section**, which the block lacked entirely: the 25
+   unreferenced functions, the five Sheets tables, the upstreamed KoBo client,
+   and the four dependencies.
+
+**The claim was checked against the code, not copied from the prompt.**
+`summarise_lw_coeffs()` ([model-taxa.R:292](../../R/model-taxa.R#L292)) is a
+geometric mean of `a`, an arithmetic mean of `b`, grouped by `alpha3_code`,
+filtering `EsQ != "yes"` — a central estimate with no per-taxon special case,
+which is what the release note now says.
+
+`release.yaml`'s own `awk` extractor was **run against the edited file**: it
+yields `version=4.0.0` and 134 lines, with no bleed into the 3.3.0 block.
+
+### 4. Found this session: after the merge, the API export runs *nowhere*
+
+`data-pipeline.yaml` flips each job to production with
+`if: endsWith(github.ref, '/main')` on a "Set env to production" step. The two
+API export steps carry the **inverse** condition
+([lines 195 and 198](../../.github/workflows/data-pipeline.yaml#L195-L198)):
+
+```yaml
+      - name: Call export_api_raw()
+        if: ${{ !endsWith(github.ref, '/main') }}
+```
+
+So on the branch they run with `R_CONFIG_ACTIVE` unset and publish to
+`peskas-api-dev`; **on `main` they are skipped**. The consequence is not "Timor
+keeps publishing to dev" — it is that Timor's cross-country API export stops
+running at all the moment this merges, while Kenya, Mozambique and Zanzibar keep
+publishing to `peskas-api-prod`.
+
+That is a sharper decision than the one PLAN §Phase 11 framed ("the first prod
+write is a decision, not a permission" — the service account has
+`storage.objects.{create,delete}` on both buckets, verified 2026-08-11), so it
+was put to the user rather than assumed.
+
+**The user's ruling, 2026-09-04: Timor uploads API data as the other packages
+do, following the same logic and structure.** The two `if:` lines are therefore
+**deleted**, which is precisely what the comment above the job had said the
+second decision would look like.
+
+Parity was read from the sibling repos, not assumed —
+`../peskas.{mozambique,kenya,zanzibar}.data.pipeline/.github/workflows/data-pipeline.yaml`
+all carry **no `if:` on the export steps at all**, only the shared "Set env to
+production" gate. Kenya and Zanzibar put both calls in one job, which is already
+Timor's shape, so parity cost exactly two deleted lines. `options_api` resolves
+`peskas-api-dev` under `default` ([config.yml:444](../../inst/config.yml#L444))
+and `peskas-api-prod` under `production`
+([config.yml:502](../../inst/config.yml#L502)), so a branch push still publishes
+to `-dev` and `main` publishes to prod.
+
+The job comment was rewritten to describe the gate as it now is and to record
+that the Phases 9-11a arrangement was deliberate and has been superseded.
+`NEWS.md` says this release is Timor's first `peskas-api-prod` write.
+
+Verified: the workflow parses (13 jobs) and `export-api`'s two call steps carry
+no condition, while "Set env to production" keeps
+`if: endsWith(github.ref, '/main')`. **This is a second production consequence of
+the merge, alongside the portal republish** — the first `peskas-api-prod` write
+happens on the same run.
+
+### 5. Verified
+
+- `git rev-list --left-right --count main...feat/align-coasts-phase9` → `0  57`
+- `gs://timor/timor-landings-v1-frozen__20260904115114_f38f31c__.parquet` present
+- `gs://pds-timor` serves both track families
+- `~/peskas-portal-live` holds the 9-file rollback copy at `90ede9a`
+- `.env`, `.Renviron` gitignored and untracked; `git status` otherwise clean
+- `inst/config.yml` has no `# [legacy]` key left (the one grep hit is the header
+  comment explaining that it used to)
+- `release.yaml`'s extractor against the edited `NEWS.md`: 4.0.0, 134 lines, clean
+- No R source file was touched, so the Phase 11a check baseline (0 errors,
+  0 warnings, 4 NOTEs; 27 testthat assertions) is unaffected.
+
+### Deferred — for the user, in order
+
+1. **Commit `NEWS.md`, merge to `main`.** `release.yaml` then cuts `v4.0.0`.
+2. **Watch the first production run**: 13/13 jobs; record the
+   `Resolved peskas.coasts ref:` line; seven `portal-*.json` in
+   `gs://public-timor`; `portal-indicators_grid` and `portal-label_groups_list`
+   **stop** — expected since Phase 8, `fetchData.js` excludes both.
+3. **Rollback, if wanted**: nothing is ever overwritten and the portal keeps the
+   newest version of each name, so deleting the seven newly written objects
+   makes the previous set newest again and the site reverts on its next fetch.
+4. *(after the first green run)* delete the **45** leaked absolute-path objects
+   in `gs://public-timor`, and the **97,830** legacy `pds-track-*.csv.gz` in
+   `gs://pds-timor`.
+5. *(after the merge only)* re-enable `data-report.yaml`,
+   `dataverse-upload.yaml`, `validation-email-sender.yaml`. A cron fires from
+   the default branch, so earlier is unsafe. Re-read `data_report.Rmd` first —
+   it lost its boats section in 11a, and its nine hardcoded Sheets gear names at
+   ~1187–1195 have resolved to `NA` since Phase 5.
+
+### Open questions for the next session
+
+Raised with the user, none blocking, all inside the weight/nutrient change:
+
+- **`FLY`'s per-taxon `quantile_coeff` override is gone**, though Addendum 3
+  item 3 said the overrides "must survive any rewrite". Probably superseded by
+  the central-estimate decision — keeping per-taxon percentiles would contradict
+  it — but that supersession is written down nowhere.
+- **`GZP` moves −71%**, the largest relative change; `a2c2881`'s own message
+  called it "worth a look" because it is a common-name rescue depending on what
+  `common_to_sci("Garfish")` returns. No record that anyone looked.
+- **The per-taxon share of the nutrient drop is unquantified.** Volume plus the
+  per-kg profile shift explains calcium exactly; protein and zinc do not close
+  from the published aggregates. The residual is catch composition.
+- ~~The API export decision in §4~~ — **ruled on 2026-09-04**: publish as the
+  other countries do. Implemented; no longer open.
+
+### Carried user actions, unchanged
+
+- Rotate the credentials exposed in past CI logs across four repos, and
+  `ANTHROPIC_API_KEY` — which also sits in plaintext in the untracked
+  `.Renviron`.
+- Delete the obsolete `AIRTABLE_KEY` and `VALID_SHEET_ID` GitHub secrets.
+- **The Airtable device gap is two jobs.** The 27 IMEIs are worth 2,791 trips
+  and 59 matches on the *PDS* side but recover **zero** survey-side matches; the
+  survey-side gap is **144** Sheets IMEIs absent from `pds_devices`, and that is
+  what gates moving `validate_imeis()` off the Sheets. Phase 12's.
+
+### Files changed
+
+All unstaged, for the user: `NEWS.md`,
+`.github/workflows/data-pipeline.yaml` (§4), `.claude/migration/STATE.md`
+(this entry).
+`.claude/migration/PROMPT-PHASE11B.md` carries the previous session's uncommitted
+rewrite.

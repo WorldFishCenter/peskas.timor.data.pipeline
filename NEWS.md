@@ -3,7 +3,29 @@
 Alignment of the Timor pipeline to the harmonized Peskas standard shared with
 the Mozambique, Kenya and Zanzibar pipelines. Timor was the first Peskas
 pipeline and predates the conventions the others share, so most of this release
-is structural. The portal contract is deliberately unchanged.
+is structural. The portal *contract* — the seven `portal-*.json` objects, their
+keys, nesting, categories and column types — is deliberately unchanged. The
+**figures inside it move**, and that is the first section below.
+
+### Published figures change
+
+This release is a bias correction, not a re-skin. The first production run on it
+republishes the portal with:
+
+- **catch and tonnage ≈ −22%**, and **price per kg ≈ +22%**;
+- **nutrient supply −24% (calcium) to −38% (protein)**;
+- North/South Coast revenue redistributed, Lautem now counted North.
+
+The cause is the length-weight path. `summarise_lw_coeffs()` takes a central
+estimate per taxon — a geometric mean of FishBase's `a`, an arithmetic mean of
+`b`, over every study not flagged questionable — where the previous code
+selected a per-taxon percentile. The species base behind those coefficients grew
+from 693 to 5,259 in the same rewrite, which also shifts the per-kg nutrient
+profile (−13% selenium to +9% zinc).
+
+Object names, keys, categories and labels are unchanged, so nothing on the site
+breaks or empties: the numbers are lower and better founded. Measured
+2026-09-04 against the live production set.
 
 ### Breaking changes
 
@@ -18,8 +40,9 @@ is structural. The portal contract is deliberately unchanged.
 - **`inst/conf.yml` → `inst/config.yml`**, derived from the cross-country
   configuration template: `country`, `ingestion`, `surveys.landings.{v1,v2,v3}`,
   `api`, `pds`, `metadata`, `storage.google.options_{coasts,api}`,
-  `storage.mongodb`, `validation`. The file is a superset — legacy keys are
-  marked `# [legacy]` and retire with the dead code they feed.
+  `storage.mongodb`, `validation`. Through the migration the file carried every
+  legacy key beside the harmonized one that replaced it, marked `# [legacy]`;
+  that half is now deleted, each key after its last reader.
 - **Interchange format is flat long parquet**, one row per
   (submission, catch, length bin), from raw through validated. No `.rds`
   artefact is left on the survey path; `get_validated_landings()` re-nests the
@@ -47,6 +70,9 @@ is structural. The portal contract is deliberately unchanged.
 - **Timor publishes the cross-country API parquet.** `export_api_raw()` and
   `export_api_validated()` write the 22-column trips table Kenya, Mozambique and
   Zanzibar already publish, to `peskas-api-{dev,prod}/timor/{raw,validated}`.
+  The export is gated exactly as those three gate theirs — the shared "Set env
+  to production" step and nothing else — so this release is Timor's first write
+  to `peskas-api-prod`, and the API gains its fourth country.
 - `data-raw/compare-portal-json.R` — a gate over the seven `portal-*.json`
   objects: object names, then keys, nesting, column sets and column types, then
   per-column numeric summaries. Run it before touching the export path.
@@ -77,9 +103,37 @@ is structural. The portal contract is deliberately unchanged.
   separately-derived frame, and an `isTRUE()` on a vector made alerts 12–15
   unreachable. Both are alert-identical to the intended behaviour on current
   data.
+- **The coast rule put Lautem in the South.** `export_files()` classified Lautem
+  as a South Coast municipality; it is on the north coast. North and South Coast
+  revenue in `portal-summary_data` change accordingly.
+- **`registered_boats` came from a stale Google Sheet.** It now reads
+  `geo.total_boats` from the PESKAS | FRAME Airtable base, the same source the
+  rest of the pipeline uses, which moves Manatuto from 283 boats to 213 and
+  Viqueque from 213 to 207. The other ten municipalities are unchanged.
 - A duplicate `get_preprocessed_metadata()` shadowed the correct definition.
 - The `local:` config environment inherited a non-existent `development`
   environment.
+
+### Removals
+
+None of the following changed a published number; each was verified to have no
+caller or no reader before it went.
+
+- **25 unreferenced functions, ~2,900 lines.** The second, uncalled glmmTMB
+  estimator `model_indicators()` and its 674-line subgraph; the four PDS map
+  products (`ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`,
+  `ingest_complete_tracks()`) with `inst/kepler_mapper.py`; four cloud
+  accessors; and twelve scattered helpers.
+- **Five Google Sheets metadata tables** whose last reader had gone —
+  `vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics` and
+  `registered_boats`. Seven remain, each annotated in `inst/config.yml` with
+  what blocks moving it.
+- **The KoBoToolbox validation-status client**, upstreamed to `coasts` 4.7.0 and
+  now called from there. A package's own definitions win over its imports, so
+  the delegation was only real once the local copy was gone.
+- `glmmTMB`, `httr2` and `reticulate` leave `Imports` and `ggplot2` moves to
+  `Suggests`. The `glmmTMB` GitHub install leaves both Dockerfiles with it — a
+  TMB compile on every image build, for a package nothing imports.
 
 
 # peskas.timor.data.pipeline 3.3.0

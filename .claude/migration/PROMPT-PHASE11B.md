@@ -1,22 +1,59 @@
-# Prompt for the next session — Phase 11b: the cutover
+# Prompt for the next session — Phase 11b: prepare the cutover
 
 Copy everything below the line into a fresh Claude Code session started in the
 **`peskas.timor.data.pipeline`** working directory.
 
-**This is the session that changes production.** Everything before it was
-reversible. Do not send it until `PROMPT-PHASE11A.md` is done and its dev run is
-green with zero portal change.
+**This is the session that readies production for the cutover — but does not
+perform it.** The user commits, opens the PR and merges by hand; see "The rule
+that shapes this whole session" below. Do not send this prompt until
+`PROMPT-PHASE11A.md` is done and its dev run is green with zero portal change.
 
 ---
 
-Phase 11b — cutover
+Phase 11b — prepare the cutover, and hand it over
 
 Read in order: `CLAUDE.md`; `.claude/migration/STATE.md` — the Phase 11a entry
-first, then the alignment-audit entry; `.claude/migration/PLAN.md` §Phase 11.
+first, then the 2026-09-04 production dry-run entry, then the alignment-audit
+entry; `.claude/migration/PLAN.md` §Phase 11.
 
 End the session by appending a Phase 11b entry to `.claude/migration/STATE.md`.
 
-## Entry gate — verify all four before touching anything
+## The rule that shapes this whole session
+
+> **You do not commit, you do not push, and you do not merge.**
+>
+> The user commits, opens the PR and merges, by hand, when they choose. Your job
+> is to get the branch into a state where that is a one-step decision, and to
+> hand over what they need to make it: what changed, what to watch on the first
+> production run, and how to undo it.
+>
+> This is deliberate and was decided 2026-09-04. **The merge is the moment the
+> live portal steps to the migrated numbers** — catch and tonnage roughly −22%,
+> price/kg +22%, nutrient supply −24% to −38%. That is a bias correction the user
+> has approved in principle, but publishing it is theirs to time, because people
+> read that dashboard.
+>
+> Everything downstream of the merge — the production bucket cleanup and
+> re-enabling the three disabled workflows — is therefore **not this session's**.
+> It is listed at the bottom, gated on the first green production run.
+
+## Entry gate — all four were met on 2026-09-04
+
+**Re-verify cheaply, do not re-derive.** Each was measured in the 2026-09-04
+session and recorded in the STATE entry of that date:
+
+| gate | state | evidence |
+|---|---|---|
+| 1. Phase 11a green, zero portal change | ✅ | run **32152744776**, 13/13 jobs; `compare-portal-json.R` 0 structural failures, **0 of 84** numeric columns moved |
+| 2. Both portal corrections in | ✅ | verified in the published dev JSON: North Coast revenue carries Lautem; Manatuto 213 boats, Viqueque 207 |
+| 3. `convert-pds-tracks.R` against production | ✅ | `gs://pds-timor` holds **97,830** `pds-tracks_*.parquet`; all 97,830 legacy `.csv.gz` intact |
+| 4. `main` a clean fast-forward | ✅ | `git rev-list --left-right --count` → left side 0 (re-check, it is the one that can go stale) |
+
+Only gate 4 can rot. Re-run that one command; take the other three from the
+record unless something looks wrong.
+
+<details>
+<summary>The original gate text, kept for the reasoning behind gate 3</summary>
 
 1. **Phase 11a is merged into this branch and its run was green** on all thirteen
    jobs, with `compare-portal-json.R` showing **zero** portal change.
@@ -36,11 +73,32 @@ End the session by appending a Phase 11b entry to `.claude/migration/STATE.md`.
 If gate 3 fails, **stop and tell the user.** It is theirs to run and it takes
 hours.
 
-## 1. The v1 freeze — first, and from the final code
+</details>
+
+## 1. The v1 freeze — ✅ DONE 2026-09-04
+
+`gs://timor/timor-landings-v1-frozen__20260904115114_f38f31c__.parquet`, built by
+post-11a code, byte-identical in size to the dev snapshot the pre-11a code built.
+**Nothing to do here.** The rest of this section is why it had to run when it
+did, and the command trap that nearly sent it to the wrong bucket.
 
 ```
-R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R
+R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R   # DOES NOT WORK
 ```
+
+**That documented command silently runs against `-dev`.** `.Renviron` in the repo
+root pins `R_CONFIG_ACTIVE=default` and R applies it *after* the inherited
+environment, so the variable is overwritten at startup. Verified 2026-09-04. Use
+either of these instead, both confirmed to resolve `timor` / `pds-timor` /
+`public-timor`:
+
+```
+R_ENVIRON_USER=/dev/null R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R
+```
+
+or, in an interactive session, `use_prod()` from `.Rprofile` — it calls
+`Sys.setenv()` after startup, which beats `.Renviron`. CI is immune: `.Renviron`
+is gitignored and never reaches the image.
 
 `merge_landings()` reads `timor-landings-v1-frozen__*.parquet` unconditionally
 inside `bind_rows()`. `gs://timor` held **0** on 2026-08-18, so without this the
@@ -62,21 +120,70 @@ object landed.
 This is an **additive** write on a prefix `main`'s pre-migration code does not
 read, so it is invisible to the currently-running production pipeline.
 
-## 2. Merge to `main`
+## 2. Prepare the merge — then stop and hand over
 
-Fast-forward. Then watch **one full production run end to end** — ~1h35m on the
-schedule, or dispatch it.
+**You do not commit, push, open the PR, or merge.** Leave the working tree with
+your changes unstaged or staged, whichever is tidier, and hand the user a
+summary. If the tree is already clean and nothing needs changing, say so — "the
+branch is ready to merge as it stands" is a perfectly good outcome for this
+session.
 
-What to check on that run:
-- all thirteen jobs green;
-- `Resolved peskas.coasts ref:` in the build log — record which release it used;
-- the seven `portal-*.json` objects written to `gs://public-timor`;
-- `portal-indicators_grid` and `portal-label_groups_list` **stop** being written.
-  That is expected — Phase 8 dropped them and the portal's `fetchData.js`
-  excludes both. Their existing versions stay in the bucket; the newest simply
-  freezes at merge time. Nothing on the site changes.
+What to hand over, in your final message:
 
-## 3. Production cloud cleanup
+1. **What the merge publishes.** The first production run after it writes the
+   seven `portal-*.json` objects, and the live dashboard steps to: catch and
+   tonnage **≈ −22%**, price/kg **≈ +22%**, nutrient supply **−24% to −38%**,
+   North/South Coast revenue redistributed by the Lautem fix. Measured
+   2026-09-04 against the live set, not predicted. Labels and categories are
+   unchanged, so nothing on the site should break or empty.
+2. **A draft PR description** they can paste — what changed across Phases 0-11a,
+   the measured portal deltas, and the rollback.
+3. **What to watch on the first run**: all thirteen jobs green; the
+   `Resolved peskas.coasts ref:` line in the build log, recorded; the seven
+   `portal-*.json` written to `gs://public-timor`; and
+   `portal-indicators_grid` / `portal-label_groups_list` **stopping** — expected,
+   since Phase 8 dropped them and `fetchData.js` excludes both. Their existing
+   versions stay in the bucket and the site does not change because of it.
+4. **The rollback, in one line.** Nothing is ever overwritten and the portal
+   keeps the newest version of each name, so deleting the seven newly written
+   objects makes the previous set newest again and the site reverts on its next
+   fetch. The user has a copy of the pre-merge live set at
+   `~/peskas-portal-live` (9 files, `20260903032053_90ede9a`).
+5. **`release.yaml` fires on the push to `main`** and cuts `v4.0.0` from the top
+   block of `NEWS.md`. Not a side effect to discover afterwards.
+
+## 2b. What is already done, so you do not redo it
+
+The 2026-09-04 session ran the **entire production pipeline locally except the
+publish** — 19 stages, all green, all four tinytest suites green on production
+data. So `gs://timor` already holds migrated raw, preprocessed, merged,
+weighted, validated, `all_trips`, models and `timor_*` artefacts, and
+`validation-prod` holds migrated flags. **The portal was not published**: the
+newest `portal-*` in `gs://public-timor` is still `90ede9a`.
+
+That means the first post-merge run re-treads warm ground, and it also means
+production is currently in a mixed state — migrated artefacts, `main`'s old code
+still on the schedule. `main` rebuilds everything it reads within each run, so
+this is stable rather than urgent, but it is a reason not to leave the merge
+sitting for weeks.
+
+`export_files()` was rehearsed with `coasts::upload_cloud_file` stubbed in the
+coasts namespace, which is a clean way to exercise the publish path without
+touching the bucket — reuse it if you need to re-measure. The script is at
+`scratchpad/prodrun/export-dryrun.R` in that session's notes; the technique is
+three lines and is written up in the STATE entry.
+
+# ==========================================================================
+# AFTER THE MERGE — not this session
+# ==========================================================================
+#
+# Both of the following are gated on the user having merged **and** on one green
+# production run. Since this session neither commits nor merges, neither can
+# happen here. Carry them into a short follow-up session, or hand them to the
+# user as steps. Do not do them early: §4 in particular is actively unsafe
+# before the merge.
+
+## 3. Production cloud cleanup  *(after the merge + first green run)*
 
 The **45** leaked absolute-path objects in `gs://public-timor`, dating from
 2026-01-18 and all of the form
@@ -87,7 +194,7 @@ correctly — these are historical residue, not a live bug.
 Delete them **after** the first green production run, not before: if anything
 goes wrong you want the bucket unchanged apart from the new writes.
 
-## 4. Re-enable the three disabled workflows
+## 4. Re-enable the three disabled workflows  *(after the merge)*
 
 `data-report.yaml`, `dataverse-upload.yaml`, `validation-email-sender.yaml`, all
 `disabled_inactivity`. **Only after the merge** — a cron fires from the default
@@ -103,6 +210,10 @@ enabling, and check the nine hardcoded Sheets gear names at its lines ~1187–11
 which have received Title Case from the frame since Phase 5 and resolve to `NA`.
 That was flagged in the Phase 5 entry and never fixed.
 
+# ==========================================================================
+# DECISIONS AND HANDOVER
+# ==========================================================================
+
 ## 5. Not implied by "merge to main" — leave unless the user says otherwise
 
 **Timor's first `peskas-api-prod` write.** It is the two
@@ -111,10 +222,33 @@ The service account has object create/delete on that bucket (verified 2026-08-11
 via `testIamPermissions`), so the first prod write is a decision, not a
 permission. Ask; do not assume.
 
+## 6. Three open questions, none blocking — raise them, let the user rule
+
+Found 2026-09-04 while attributing the portal deltas. All three sit inside the
+weight/nutrient change that the −22% comes from:
+
+- **`FLY`'s per-taxon `quantile_coeff` override is gone.** Phase 4b's decision
+  list (STATE Addendum 3, item 3) recorded that `estimate_weight()`'s per-taxon
+  overrides "must survive any rewrite". `summarise_lw_coeffs()` is now a plain
+  geometric mean with no special cases. Probably superseded by the decision to
+  use a central estimate — keeping per-taxon percentiles would contradict it —
+  but that supersession is written down nowhere.
+- **`GZP` moves −71%**, the largest relative change, and commit `a2c2881`'s own
+  message called it "worth a look" because it is a common-name rescue whose
+  species set depends on what `common_to_sci("Garfish")` returns. No record that
+  anyone looked.
+- **The per-taxon share of the nutrient drop is unquantified.** Published supply
+  falls 24% (calcium) to 38% (protein) against catch's 22.5%. Volume and the
+  per-kg profile shift (−13% selenium to +9% zinc, from the 693 → 5,259 species
+  expansion) explain calcium exactly; protein and zinc do not close from the
+  published aggregates alone. The residual is catch composition — which taxa lost
+  weight — and closing it means tracing the per-taxon tables.
+
 ## Carried user actions — report, do not perform
 
 - Rotate the credentials exposed in past CI logs (four repos' run history) and
-  rotate `ANTHROPIC_API_KEY`.
+  rotate `ANTHROPIC_API_KEY`. Note it also sits in plaintext in the untracked
+  `.Renviron`.
 - Delete the obsolete `AIRTABLE_KEY` and `VALID_SHEET_ID` GitHub secrets.
 - **The Airtable device gap is two jobs, not one.** Adding the 27 IMEIs to a
   frame customer is worth 2,791 trips and 59 landing↔trip matches on the *PDS*
