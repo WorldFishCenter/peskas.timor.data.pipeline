@@ -93,6 +93,7 @@ Suggests:
     zip,
     zoo
 Remotes:
+    github::hrbrmstr/ggchicklet,
     github::WorldFishCenter/peskas.coasts,
     github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R
 Config/testthat/edition: 3

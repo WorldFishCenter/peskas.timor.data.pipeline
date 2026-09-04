@@ -83,6 +83,10 @@ breaks or empties: the numbers are lower and better founded. Measured
   service-account private key and every token into each CI job log; it now logs
   key names only, and every `coasts::` workflow call passes
   `log_threshold = logger::INFO` for the same reason.
+- `DESCRIPTION` declares `ggchicklet` in `Remotes:`. It is a GitHub-only package
+  used by `inst/report/data_report.Rmd` and installed in both Dockerfiles, but it
+  was declared nowhere `pak` could see it, so any dependency resolution outside
+  the container failed to solve.
 - Reference sections in `_pkgdown.yml` are keyword-driven rather than
   name-pattern driven, so a rename can no longer silently move a function
   between sections.

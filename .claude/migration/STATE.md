@@ -4791,6 +4791,44 @@ no condition, while "Set env to production" keeps
 the merge, alongside the portal republish** — the first `peskas-api-prod` write
 happens on the same run.
 
+### 4b. PR #126 — the three first-time checks failed, one shared cause
+
+Opening the PR was the first time `R-CMD-check`, `pkgdown` and `test-coverage`
+had ever run: all three are `pull_request: branches: [main]`, so no phase branch
+could exercise them. All three failed in under 90 s on the **same** first line:
+
+```
+* deps::.: Can't install dependency ggchicklet
+* ggchicklet: Can't find package called coasts, ggchicklet.
+```
+
+**`ggchicklet` was declared nowhere `pak` could resolve it.** It is GitHub-only
+(`hrbrmstr/ggchicklet`), sits in `Suggests`, is genuinely used — five
+`ggchicklet::geom_chicklet()` calls in `inst/report/data_report.Rmd` — and is
+installed in both Dockerfiles by `installGithub.r`. That is why
+`data-pipeline.yaml` is green and these three are not: the pipeline runs inside
+the image, the r-lib workflows resolve dependencies from `DESCRIPTION` on a bare
+runner.
+
+**`coasts` is not the problem**, despite being named in that message. It is
+declared twice over — in `Remotes:` and in each workflow's `extra-packages` —
+and the three sibling repos have green `R-CMD-check` runs with the identical
+remote and no `ggchicklet`. pak enumerates every non-repository name while the
+solve collapses; the actionable line is the first, and the `dependency conflict`
+lines under it (`sessioninfo`, `pkgdown`, `covr`, `xml2`) are cascade noise.
+
+Fix: one line in `DESCRIPTION`, `github::hrbrmstr/ggchicklet` added to
+`Remotes:`, which is where `coasts` is already declared. `read.dcf()` parses the
+result — 17 fields, three remotes.
+
+**`ggchicklet` was deliberately not dropped from `Suggests` instead.** That would
+have turned all three checks green by deleting the declaration rather than
+fixing it, and `data_report.Rmd` ships in `inst/` and calls the namespace — the
+report is also due to be re-enabled after the merge (§4 of
+[`PROMPT-PHASE11B.md`](PROMPT-PHASE11B.md)).
+
+The dev pipeline run for the same push, **33882164161**, was green in 33m56s.
+
 ### 5. Verified
 
 - `git rev-list --left-right --count main...feat/align-coasts-phase9` → `0  57`
@@ -4854,7 +4892,7 @@ Raised with the user, none blocking, all inside the weight/nutrient change:
 ### Files changed
 
 All unstaged, for the user: `NEWS.md`,
-`.github/workflows/data-pipeline.yaml` (§4), `.claude/migration/STATE.md`
-(this entry).
+`.github/workflows/data-pipeline.yaml` (§4), `DESCRIPTION` (§4b),
+`.claude/migration/STATE.md` (this entry).
 `.claude/migration/PROMPT-PHASE11B.md` carries the previous session's uncommitted
 rewrite.
