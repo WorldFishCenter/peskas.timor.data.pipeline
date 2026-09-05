@@ -265,8 +265,12 @@ default:
   #     therefore what makes the `api` block above meaningful rather than
   #     merely schema-shaped.
   #   Google Sheets keeps only what Airtable does not cover: Timor's
-  #     `morphometric_table`, `habitat`, `conservation`,
-  #     `fishing_vessel_statistics`, `registered_boats`.
+  #     `habitat` and `conservation`. `morphometric_table` left on 2026-09-05
+  #     — its 559 curated length-weight rows are package data now
+  #     (`inst/extdata/morphometric-coefficients.csv`), which took the last
+  #     Google Sheet off the weight path; their permanent home is a curated
+  #     table in coasts, COASTS-TODO C23. `fishing_vessel_statistics` and
+  #     `registered_boats` left in Phase 11.
   #
   # Timor also has two Timor-only sub-blocks: `rfishtable` (rfishbase
   # length-weight coefficients) and `nutrients` (nutrient predictions and RDI

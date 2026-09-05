@@ -14,12 +14,14 @@ Takes the ingested Google Sheets metadata tables, parses them and writes one
 versioned preprocessed list for the rest of the pipeline to read.
 }
 \details{
-Seven tables are left, all with live readers: \code{devices} (\code{validate_imeis()}),
-\code{catch_types}, \code{morphometric_table}, \code{stations}, \code{reporting_unit}, \code{habitat}
-and \code{conservation}. \code{vms_installs}, \code{centro_pescas}, \code{boats},
-\code{fishing_vessel_statistics} and \code{registered_boats} went in migration
-Phase 11 — the frame is authoritative for the last of those
-(\code{get_registered_boats()}) and the other four had no reader.
+Six tables are left, all with live readers: \code{devices} (\code{validate_imeis()}),
+\code{catch_types}, \code{stations}, \code{reporting_unit}, \code{habitat} and \code{conservation}.
+\code{vms_installs}, \code{centro_pescas}, \code{boats}, \code{fishing_vessel_statistics} and
+\code{registered_boats} went in migration Phase 11 — the frame is authoritative
+for the last of those (\code{get_registered_boats()}) and the other four had no
+reader. \code{morphometric_table} went on 2026-09-05, when its 559 curated rows
+became a package snapshot (\code{inst/extdata/morphometric-coefficients.csv}) so
+that \code{calculate_weights()} reads no Google Sheet.
 
 This function requires no arguments because it retrieves the parameters from
 \code{conf.yml}. The fields required are:

@@ -10,24 +10,62 @@ keys, nesting, categories and column types — is deliberately unchanged. The
 ### Published figures change
 
 This release is a bias correction, not a re-skin. The first production run on it
-republishes the portal with:
+republishes the portal with, against the live production set:
 
-- **catch and tonnage ≈ −22%**, and **price per kg ≈ +22%**;
-- **nutrient supply −24% (calcium) to −38% (protein)**;
+- **catch −8.5%**, **landing weight −4.9%**, **estimated tonnage −8.5%**;
+- **price per kg +5.4%**, **revenue −4.5%**;
+- **nutrient supply −16.0%**, **nutrient RDI −9.3%**;
 - North/South Coast revenue redistributed, Lautem now counted North.
 
-The cause is the length-weight path. `summarise_lw_coeffs()` takes a central
-estimate per taxon — a geometric mean of FishBase's `a`, an arithmetic mean of
-`b`, over every study not flagged questionable — where the previous code
-selected a per-taxon percentile. The species base behind those coefficients grew
-from 693 to 5,259 in the same rewrite, which also shifts the per-kg nutrient
-profile (−13% selenium to +9% zinc).
+Object names, keys, categories, nesting and column types are unchanged — the
+contract gate reports **0 structural failures** — so nothing on the site breaks
+or empties.
 
-Object names, keys, categories and labels are unchanged, so nothing on the site
-breaks or empties: the numbers are lower and better founded. Measured
-2026-09-04 against the live production set.
+The cause is the length-weight path, rebuilt twice. `summarise_lw_coeffs()` now
+takes a central estimate per taxon — a geometric mean of FishBase's `a`, an
+arithmetic mean of `b`, over every study not flagged questionable — where the
+previous code selected a per-taxon percentile. The taxa path was then aligned to
+the WIO pipelines (see below), which moved the figures back most of the way:
+taken alone that second change is catch **+12.6%**, landing weight **+16.0%**,
+price per kg **−11.0%** and nutrient supply **+30.3%**.
+
+The largest per-taxon moves against production are `CJX` **+46%** (it was
+absent from the published object entirely in some runs — see below), `FLY`
+**+27%**, `CLP` **+17%**, `TUN` **−18%**, `MOO` **−38%** and `GZP` **−45%**.
+`GZP`'s fall is a correction: its coefficients came from a common-name lookup
+whose pool was topped by driftfishes and scads at 185–328 g while the actual
+garfish sit at 17–21 g.
+
+Measured 2026-09-05 against the live production set, with the FishBase snapshot
+held fixed on both sides — which matters, because it is not fixed in general
+(next section).
+
+### Known issue: published catch is not reproducible run to run
+
+`peskas.coasts` reads FishBase over the network at pipeline time with no pinned
+release. Two Timor dev runs one day apart, on code differing only in Markdown
+and workflow YAML, produced national catch of **5,200.8 t** and **4,995.8 t**;
+41 of 51 taxon codes differed by up to 54%, and `CJX` — 5% of landed weight and
+one of the 13 modelled taxa — silently weighed zero in one of them and was
+**missing from `portal-taxa_aggregated` altogether**.
+
+This release adds a local guard: `assert_taxa_coverage()` fails the run when any
+taxon but the two documented exemptions resolves to no coefficient pair, so a
+vanished taxon can no longer reach the portal. It does not make the numbers
+reproducible — that needs a version pin in `peskas.coasts`, filed as
+COASTS-TODO C25 and outstanding for all four country pipelines.
 
 ### Breaking changes
+
+- **The taxa and weight path no longer reads Google Sheets, and is filtered to
+  Timor's FAO areas.** Taxon *codes* still come from the PESKAS | FRAME
+  snapshot; their *scientific names* now come from the FAO ASFIS list in the
+  country bucket, joined on `Alpha3_Code`, as Mozambique does — measured
+  behaviour-neutral, 55 of 56 names identical. Length-weight coefficients are
+  restricted to FAO areas **57 and 71** via the new
+  `metadata.fishbase.fao_areas` key, which **must** be set: `coasts` falls back
+  to the Indian Ocean pair `c(51, 57)` otherwise. `get_morphometric_tables()`
+  loses its `manual_table` argument.
 
 - **Storage is delegated to the shared `peskas.coasts` hub.**
   `R/cloud-storage.R` and `R/google-drive.R` are deleted; every call site is
@@ -128,10 +166,19 @@ caller or no reader before it went.
   products (`ingest_pds_map()`, `ingest_kepler_tracks()`, `kepler_mapper()`,
   `ingest_complete_tracks()`) with `inst/kepler_mapper.py`; four cloud
   accessors; and twelve scattered helpers.
-- **Five Google Sheets metadata tables** whose last reader had gone —
+- **Six Google Sheets metadata tables.** Five whose last reader had gone —
   `vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics` and
-  `registered_boats`. Seven remain, each annotated in `inst/config.yml` with
-  what blocks moving it.
+  `registered_boats` — plus `morphometric_table`, whose 559 curated
+  length-weight rows are now package data
+  (`inst/extdata/morphometric-coefficients.csv`). That was the weight path's
+  last Google Sheet. Six tables remain, each annotated in `inst/config.yml`
+  with what blocks moving it.
+- **`rescue_by_common_name()`**, which reached three taxa by
+  `rfishbase::common_to_sci()` on the literal strings `"Tuna"`, `"Shark"` and
+  `"Garfish"`. Being a substring match on common names, `SKH`'s pool contained a
+  Mekong catfish and an aquarium bala shark. Replaced in the same change by an
+  explicit alias table — it was the only source of coefficients for `TUN`, 56%
+  of landed weight, and removing it alone would have halved published catch.
 - **The KoBoToolbox validation-status client**, upstreamed to `coasts` 4.7.0 and
   now called from there. A package's own definitions win over its imports, so
   the delegation was only real once the local copy was gone.

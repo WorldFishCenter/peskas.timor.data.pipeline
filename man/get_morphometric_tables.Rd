@@ -4,14 +4,10 @@
 \alias{get_morphometric_tables}
 \title{Build per-taxon length-weight coefficients}
 \usage{
-get_morphometric_tables(conf, manual_table = NULL)
+get_morphometric_tables(conf)
 }
 \arguments{
 \item{conf}{The configuration file.}
-
-\item{manual_table}{Timor's curated morphometric rows
-(\code{metadata$morphometric_table}), pooled with the fetched coefficients
-before aggregation.}
 }
 \value{
 A list with \code{expanded} (the taxon-to-species expansion) and
@@ -23,11 +19,31 @@ Fetches coefficients from FishBase and SeaLifeBase via
 pair per taxon code}, the same aggregation Mozambique uses: geometric mean
 of \code{a}, arithmetic mean of \code{b}.
 }
-\details{
-Two flags are non-default and both are required for Timor. \code{filter_by_area}
-is off because FAO-area filtering costs ~40\% of the species that carry usable
-coefficients, and body form does not stop applying at an area boundary.
+\section{FAO area filtering}{
+
+Coefficients are restricted to the FAO major fishing areas in
+\code{conf$metadata$fishbase$fao_areas} — \strong{57 and 71} for Timor-Leste, which
+straddles the Eastern Indian Ocean and the Western Central Pacific. Do not
+leave that key unset: \code{\link[coasts:resolve_fao_areas]{coasts::resolve_fao_areas()}} falls back to \code{c(51, 57)},
+the \emph{Indian} Ocean pair the WIO pipelines use, which would filter Timor on one
+wrong area and miss the Pacific one entirely, silently.
+
+The filter was off until 2026-09-05, justified as "body form does not stop
+applying at an area boundary". That answered the wrong question — the filter
+removes \emph{species} from the pool, it does not invalidate a coefficient. The
+measured reason to have it on is that the unfiltered pools are dominated by
+species that do not occur in Timor: \code{CLP} was priced off 114 records of
+\emph{Clupea harengus} (Atlantic herring) and 36 of \emph{Sprattus sprattus}.
+
 \code{strip_parentheticals} is on because several FAO names carry a bracketed
 synonym (\code{"Haemulidae (=Pomadasyidae)"}) and match nothing as written.
 }
+
+\section{What is pooled in}{
+
+Timor's 559 curated rows over 11 mostly-invertebrate codes, from
+\code{curated_lw_coeffs()}. They carry no FAO area, so they are bound on \strong{after}
+the filter and are never area-restricted.
+}
+
 \keyword{helper}

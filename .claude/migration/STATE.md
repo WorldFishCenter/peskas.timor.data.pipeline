@@ -11,13 +11,23 @@ Append one entry per completed phase, newest at the bottom.
   ("What Phase 11 may and may not delete") before touching anything in the
   cutover, and its entry at the bottom of this file for the five documented
   claims it found to be false. It also scoped a **Phase 12**, after the cutover.
+- **Read the 2026-09-05 taxa-path entry at the bottom before anything else.** It
+  rewrote the weight path (no Google Sheets, FAO areas 57/71, no common-name
+  rescue) and it found that **the FishBase fetch is not reproducible run to
+  run** — two dev runs a day apart on identical code differed by 4% in national
+  catch, and `CJX`, one of the 13 `modelled_taxa`, silently weighed zero and
+  vanished from `portal-taxa_aggregated` in one of them (COASTS-TODO **C25**).
+  **The `−22%` recorded below and in `NEWS.md` was measured on that anomalous
+  run.** The current measured effect of merging is **catch −8.5%**, **price/kg
+  +5.4%**, **nutrient supply −16.0%** against the live production set.
 - **Phase:** **11b prepared, 2026-09-04 — the branch is ready to merge and the
   merge is the user's to make.** Nothing is committed, pushed or published; the
   only working-tree change is `NEWS.md`, left unstaged. Both production scripts
   have now run (`freeze-landings-v1.R` and `convert-pds-tracks.R`), the whole
   pipeline has been run against production **except the publish**, and the
-  measured effect of merging is **catch and tonnage ≈ −22%, price/kg ≈ +22%,
-  nutrient supply −24% to −38%**. Read the Phase 11b entry at the bottom before
+  measured effect of merging was recorded there as **catch and tonnage ≈ −22%,
+  price/kg ≈ +22%, nutrient supply −24% to −38%** — **superseded**, see the
+  2026-09-05 entry. Read the Phase 11b entry at the bottom before
   anything else — its §4 is a decision the user has not yet made (**after the
   merge, the API export ran nowhere; the user ruled that Timor should publish as
   the other countries do, so the merge is **also** Timor's first
@@ -4896,3 +4906,349 @@ All unstaged, for the user: `NEWS.md`,
 `.claude/migration/STATE.md` (this entry).
 `.claude/migration/PROMPT-PHASE11B.md` carries the previous session's uncommitted
 rewrite.
+
+## Taxa and weight path — ASFIS, FAO areas, no Sheets, no common-name rescue — 2026-09-05
+
+Branch: `feat/align-coasts-phase9` (unchanged — this is not a numbered migration
+phase; it sits between the Phase 11b preparation and the merge). **Nothing was
+committed, pushed or merged.** No production bucket was written. The dev buckets
+and `validation-dev` were written, which is what they are for.
+
+### 0. What was asked, and what the measurement said about each
+
+Three requirements from the user, all met:
+
+1. **`calculate_weights()` must not read Google Sheets.** Done — it reads none.
+2. **Coefficients must be filtered to Timor's FAO areas.** Done — 57 and 71,
+   from a config key that did not previously exist.
+3. **`rescue_by_common_name()` must go.** Deleted, *with* its replacement in the
+   same change.
+
+Two decisions were the user's and were put to them with numbers before anything
+was written: the `TUN` species pool, and how to handle `CLP` under the area
+filter. Both are recorded in §2.
+
+### 1. The finding that reframes the whole gate: the FishBase fetch is not reproducible
+
+**This was not in the prompt and it is the most consequential thing this session
+found.** Filed as COASTS-TODO **C25**; it is live in all four pipelines.
+
+`coasts::get_combined_tbl()` calls `rfishbase::fb_tbl()` with no `version`, so
+each run resolves whatever FishBase release is newest *and streams the parquet
+over HTTPS at run time*. Two consecutive Timor dev runs, one day apart, on code
+that differed only in Markdown, workflow YAML and `DESCRIPTION`, and on an
+identical assets snapshot:
+
+| artefact | national catch | `CJX` | `PWT` | `FLY` |
+|---|---|---|---|---|
+| `..._20260813195815_d7bf352__` | 5,197.4 t | 281.3 t | 25.6 t | 58.7 t |
+| `..._20260818152854_968a486__` | 4,993.1 t | **0 t** | **0 t** | 81.7 t |
+| `..._20260903131649_f38f31c__` | 5,200.8 t | 281.9 t | 25.8 t | 58.7 t |
+| `..._20260904151856_088d400__` | 4,995.8 t | **0 t** | **0 t** | 81.7 t |
+
+Deriving `a`/`b` back out of the two neighbouring artefacts (two rows with
+distinct lengths determine the pair exactly): **41 of 51 codes differ, by up to
++53.9%**, and `CJX` and `PWT` vanish. `CJX` is 2.1 M individuals, 5% of landed
+weight, and **one of the 13 `models.modelled_taxa`**. Nothing failed — a taxon
+with no coefficient pair yields `NA` weight, which sums to zero.
+
+The 2026-09-03 state reproduces **exactly** (mean error 0.0000 across all codes)
+against FishBase release **25.04**. The 2026-09-04 state matches **no** release —
+its pools are uniformly smaller and whole families are absent — which points at a
+partial remote read, not a version change.
+
+**Consequences for anybody reading this log:**
+
+- **The `−22%` in the Phase 11b entry and in `NEWS.md` was measured against the
+  anomalous 4,995.8 t run.** It is not wrong about the direction, but it is not
+  reproducible either, and part of what it attributed to the length-weight
+  rewrite was `CJX` and `PWT` silently weighing zero.
+- **Never read one run's catch total as the effect of a code change.** Every
+  number in this entry comes from running today's code and the candidate in the
+  same session against the same snapshot (25.04), and diffing those.
+- Timor now has `assert_taxa_coverage()`, which **fails the run** when any taxon
+  but `MZZ`/`SWX` resolves to no coefficient pair. That would have caught
+  `CJX`/`PWT`. It cannot catch the 41 codes that merely moved. Only a version pin
+  in `coasts` fixes that — C25 asks for it.
+
+### 2. The two decisions the user made, with the numbers they were given
+
+**`TUN` — 56% of landed weight.** ASFIS names it `Thunnini`, a tribe, and the
+FishBase backbone has no such rank, so it resolves to nothing. Options measured
+at 25 cm and as national catch:
+
+| pool | records / species | w@25cm | `TUN` | national |
+|---|---|---|---|---|
+| today's `common_to_sci("Tuna")` | 180 / 20 | 213 g | 2,749 t | 5,201 t |
+| **tribe `Thunnini`, 5 genera** ← chosen | 138 / 15 | 249 g | 3,216 t | 5,689 t |
+| `TUS` = *Thunnus* (Mozambique's recode) | 68 / 8 | 249 g | 3,197 t | 5,670 t |
+| `Scombridae` (ASFIS family) | 397 / 48 | 172 g | 2,238 t | 4,711 t |
+
+Chosen: the tribe's five genera — *Allothunnus, Auxis, Euthynnus, Katsuwonus,
+Thunnus*. It is what `Thunnini` denotes, it keeps skipjack and frigate tuna,
+and it excludes the mackerels Timor codes separately as `RAX`.
+
+**`CLP` — 26% of landed weight, and this was a real defect, not a filter
+problem.** Filtering to 57/71 left `CLP` with **one** published record. The cause
+is that FishBase's 2022 revision moved the tropical sardines — *Sardinella*,
+*Amblygaster*, *Herklotsichthys*, *Nematalosa*, *Tenualosa* — out of `Clupeidae`
+into `Dorosomatidae`, while FAO still files them all under `CLUPEIDAE`. FishBase's
+`Clupeidae` now holds 15 mostly temperate species, so Timor's second-largest
+taxon was priced off **114 records of *Clupea harengus* and 36 of *Sprattus
+sprattus***:
+
+| `CLP` pool | records / species | w@25cm | `CLP` |
+|---|---|---|---|
+| `Clupeidae`, unfiltered (today) | 170 / 8 | 125.5 g | 1,481 t |
+| `Clupeidae`, filtered 57/71 | **1 / 1** | 131.9 g | 1,664 t |
+| **`Clupeidae` + `Dorosomatidae`, filtered** ← chosen | 123 / 25 | 171.7 g | 2,079 t |
+| `Sardinella` genus (recode to `SIX`), filtered | 50 / 8 | 138.7 g | 1,720 t |
+| `Clupeiformes` order, filtered | 280 / 71 | 145.4 g | 1,746 t |
+
+The user asked three times whether the fix belonged in Airtable instead —
+`DAG`, then `DCX`, then `CLU`. It does not, and each was checked against ASFIS
+and the backbone rather than argued:
+
+- **`DAG`** = `Stolothrissa, Limnothrissa spp`, "Dagaas (=Kapenta)", ISSCAAP
+  **13** — the freshwater Lake Tanganyika sardine.
+- **`DCX`** = `Clupeoidei`, "Diadromous clupeoids nei", ISSCAAP **24** — shads.
+- **`CLU`** = `Clupeoidei`, "Clupeoids nei", ISSCAAP **35** — correctly aimed,
+  but the same scientific name.
+- `Clupeoidei` is a **suborder**, and FishBase's `families` table has
+  `Family`, `Order`, `Class` and **nothing between** — verified against the
+  table's own column list. It matches **0** species, so `CLU`/`DCX` would take
+  `CLP` from a wrong pool to *no* pool.
+- `SIX` (`Sardinella spp`) does resolve, but narrows to 8 species, drops the
+  *Amblygaster*/*Herklotsichthys* herrings the label "Herrings, sardines nei"
+  names, and renames a published taxon key — `CLP` is in both `all_taxa` and
+  `modelled_taxa`, and **two** frame survey labels map to it (`6` **and** `27`),
+  so changing one would split the series.
+
+So the fix is an additive alias in the pipeline lookup and the frame is
+untouched.
+
+### 3. What changed in the code
+
+- **`R/model-taxa.R`** rewritten:
+  - `calculate_weights()` no longer calls `get_preprocessed_sheets()`.
+  - `get_taxa_list()` takes **codes** from the frame and **names** from ASFIS
+    (`gs://timor{,-dev}/asfis__*.parquet`, joined on `Alpha3_Code`), the same
+    object and access path Mozambique uses. Measured behaviour-neutral before
+    the switch: 55 of 56 codes carry an identical name in both sources (the
+    exception is `MZZ`), and both expand to the same 50 codes over the same
+    species. It **errors** if a code has no ASFIS name.
+  - `taxa_search_aliases()` — new, 8 rows, **additive** search names for the
+    four codes ASFIS names at a rank FishBase does not carry. Deliberately not
+    Mozambique's approach, which recodes `catch_taxon` in the data and thereby
+    renames the published taxon.
+  - `get_morphometric_tables()` — `filter_by_area = TRUE`, `manual_table`
+    parameter dropped, curated rows read from package data, coverage asserted.
+    The old roxygen justified `filter_by_area = FALSE` with "body form does not
+    stop applying at an area boundary"; that answered the wrong question (the
+    filter removes *species from the pool*) and has been replaced with the
+    measured reason.
+  - `curated_lw_coeffs()`, `assert_taxa_coverage()` — new, both `@noRd`.
+  - `rescue_by_common_name()` — **deleted**.
+- **`R/nutrients.R`** — `get_nutrients_table()` warns for taxa with no nutrient
+  values, and `get_taxa_expansion()` now filters by area like the coefficient
+  path.
+- **`R/preprocess-metadata-tables.R`** — `pt_validate_morphometric_table()`
+  deleted; the preprocessed metadata list is six tables.
+- **`inst/extdata/morphometric-coefficients.csv`** — new, 559 rows / 11 codes /
+  98 species, the curated table that used to come from the Sheets.
+  `data-raw/refresh-morphometric-coefficients.R` regenerates it.
+- **`inst/config.yml`** — `metadata.asfis.file_prefix` and
+  `metadata.fishbase.fao_areas: [57, 71]` added; `morphometric_table` removed
+  from `metadata.google_sheets.tables`.
+- **`.gitignore` / `.Rbuildignore`** — both blanket-excluded `*.csv`, which
+  would have kept the new package data out of git *and* out of the built
+  tarball. Both now carry an exception for `inst/extdata/`. The
+  `.Rbuildignore` one needs two rules because TRE regex has no negative
+  lookahead.
+
+### 4. `conf$metadata$fishbase$fao_areas` never existed
+
+It was read twice and resolved to `NULL` from Phase 3 until this session. That
+was harmless only because `filter_by_area` was `FALSE`. Turning the filter on
+without adding the key would have silently used `coasts::resolve_fao_areas()`'s
+fallback of `c(51, 57)` — the **Indian Ocean** pair the WIO repos use — filtering
+Timor on one wrong area and missing the Pacific one entirely.
+
+### 5. `TUN` supplied no nutrients at all, and nobody knew
+
+Found while re-measuring nutrients, and it is the same root cause as the weight
+gap. `get_taxa_expansion()` feeds both the coefficients and the nutrients from
+one taxon-to-species expansion. `rescue_by_common_name()` patched the
+*coefficients* for `TUN` but never touched the *expansion* — so `TUN` had no
+species behind it, `rfishbase::estimate()` returned nothing for it, and every
+`*_mu` column was `NA`. `join_weights()` left-joins, so those `NA`s summed to
+zero silently.
+
+**51% of national catch contributed nothing to any published nutrient figure**,
+for the life of the pipeline. Fixing the alias fixed it as a side effect, which
+is exactly the problem — nothing reported it. `get_nutrients_table()` now warns.
+
+| | old | new |
+|---|---|---|
+| codes with nutrient values | 50 | 52 |
+| gained | — | `LGE`, `SKH`, **`TUN`** |
+| lost | — | `CUX` (24 kg, 0.0005% of catch) |
+| species behind the expansion | 5,259 | 3,080 |
+| codes in the expansion | 50 | 53 |
+
+The species count falls because of the FAO area filter and rises in coverage
+because of the aliases. Both are intended. `CUX` and `GZP` are the two codes the
+new warning fires for.
+
+### 6. Verified
+
+| gate | result |
+|---|---|
+| `devtools::check()` | **0 errors, 0 warnings, 3 NOTEs** — the two WARNINGs the first run showed (a non-ASCII em dash inside a `stop()` string, and an Rd link to a `@noRd` function) were introduced here and fixed here |
+| `testthat` | **40 pass, 0 fail, 0 warn** — 27 existing plus 13 new in `tests/testthat/test-model-taxa.R`, including a negative test of the coverage guard against the exact `CJX`/`PWT` failure |
+| tinytest, four suites | all green |
+| taxon coverage | 54 of 56 codes resolve; only `MZZ` and `SWX` do not, both already zero-weight. **No code silently drops to `NA`** |
+| national catch, same FishBase snapshot both sides | 5,201.1 t → **6,275.4 t (+20.7%)** |
+| validation alerts | 13,329 → 12,865 flagged. The whole move is alert **17** (price/kg band) −466 and clean +464; every other code within ±26. Weight went up, so fewer price-per-kg outliers — the expected direction |
+| portal contract, structure | gate passes on the pre-change set, so any post-change structural failure is attributable |
+
+Per-taxon catch, everything that moved more than half a tonne:
+
+| code | before | after | delta |
+|---|---|---|---|
+| `CLP` | 1,481.0 t | 2,079.4 t | **+40.4%** |
+| `TUN` | 2,749.3 t | 3,171.3 t | **+15.3%** |
+| `GZP` | 24.2 t | 48.3 t | +99.9% |
+| `OCZ` | 65.7 t | 78.9 t | +20.2% |
+| `CGX` | 53.3 t | 57.2 t | +7.3% |
+| `BEN` | 64.6 t | 68.0 t | +5.3% |
+| `SPI` | 22.2 t | 25.1 t | +13.1% |
+| `SNA` | 45.3 t | 47.9 t | +5.7% |
+| `PWT` | 25.9 t | 27.5 t | +6.4% |
+| `LGE` | **0 t** | 1.2 t | new |
+| `LWX` | 15.4 t | 14.6 t | −5.3% |
+| `SKH` | 4.2 t | 4.6 t | +9.8% |
+
+`GZP` doubling is the resolution of the open question the Phase 11b entry left
+("`GZP` moves −71%, no record that anyone looked"). It was the common-name
+rescue: `common_to_sci("Garfish")` returned 53 species topped by *Cubiceps*
+driftfishes and *Decapterus* scads at 185–328 g, while the real garfish —
+*Belone belone*, *Ablennes hians*, *Strongylura marina* — sit at 17–21 g. With
+the rescue gone `GZP` is *Hyporhamphus quoyi* plus its two curated rows.
+
+### 7. The portal, run end to end against `-dev`
+
+The DAG's tail was run locally against the dev buckets — `calculate_weights` →
+`validate_landings` → `merge_trips` → `estimate_fishery_indicators` →
+`format_public_data` → `export_files`. Everything upstream was unchanged, so the
+existing dev artefacts fed it. `validation-dev` was written; no production bucket
+was touched.
+
+`data-raw/compare-portal-json.R` against the Phase 0 golden
+(`reference/2026-07-31_90ede9a/`): **0 structural failures**, 9 of 9 object names
+carried, keys, nesting, column sets and column types unchanged. The gate was also
+run on the *pre-change* dev set first, so the pass is attributable.
+
+**Against the live production numbers** (the golden), before and after this
+session:
+
+| series | before this session | after |
+|---|---|---|
+| `aggregated$year$catch` | −18.7% | **−8.5%** |
+| `aggregated$year$landing_weight` | −15.9% | **−4.9%** |
+| `aggregated$year$price_kg` | +20.4% | **+5.4%** |
+| `aggregated$year$revenue` | −3.9% | −4.5% |
+| `summary_data$estimated_tons` | −18.7% | −8.5% |
+| `nutrients_aggregated$year$nut_supply` | −24% to −38% | **−16.0%** |
+| `nutrients_aggregated$year$nut_rdi` | — | −9.3% |
+
+**This session alone** (pre-change dev set → new dev set): catch **+12.6%**,
+landing weight **+16.0%**, price/kg **−11.0%**, nutrient supply **+30.3%**,
+48 of 93 numeric columns moved.
+
+Per modelled taxon, published catch in kt:
+
+| taxon | golden | before | after | session | vs golden |
+|---|---|---|---|---|---|
+| `CLP` | 11,916.8 | 10,018.3 | 13,919.9 | +38.9% | +16.8% |
+| `TUN` | 7,854.0 | 5,817.9 | 6,442.9 | +10.7% | −18.0% |
+| `FLY` | 4,712.1 | 8,398.2 | 5,997.2 | −28.6% | +27.3% |
+| `GZP` | 9,446.8 | 2,989.5 | 5,234.6 | +75.1% | −44.6% |
+| `MZZ` | 5,566.3 | 5,430.1 | 5,116.4 | −5.8% | −8.1% |
+| `SDX` | 5,403.2 | 4,902.2 | 4,699.2 | −4.1% | −13.0% |
+| `CGX` | 3,564.2 | 3,137.6 | 3,282.1 | +4.6% | −7.9% |
+| **`CJX`** | 1,963.0 | **absent** | 2,866.3 | — | +46.0% |
+| `SNA` | 2,638.6 | 2,511.2 | 2,475.3 | −1.4% | −6.2% |
+| `MOO` | 3,290.0 | 2,516.6 | 2,026.9 | −19.5% | −38.4% |
+| `BEN` | 1,545.4 | 1,048.6 | 1,026.2 | −2.1% | −33.6% |
+| `RAX` | 949.0 | 1,023.3 | 921.7 | −9.9% | −2.9% |
+| `LWX` | 954.9 | 806.1 | 718.9 | −10.8% | −24.7% |
+| **total** | 59,804.3 | 48,599.6 | 54,727.6 | +12.6% | −8.5% |
+
+**`CJX` had no row at all in the pre-change `portal-taxa_aggregated`.** That is
+§1's defect reaching a published object, not a hypothetical: a modelled taxon
+simply vanished from the portal, and nothing failed. It is the single strongest
+argument for COASTS-TODO C25.
+
+All four tinytest suites were re-run **against the new artefacts** and are green.
+
+`NEWS.md`'s "Published figures change" block was rewritten to these measured
+numbers — the `−22%` it carried was measured against the anomalous run — and a
+"Known issue" section added for C25. The `release.yaml` `awk` extractor was run
+against the edited file: 4.0.0, 188 lines, no bleed into the 3.3.0 block.
+
+### 8. Deferred, with reasons
+
+- **COASTS-TODO C25 (pin the FishBase release) is not fixed here** and cannot be
+  from this repo — `get_combined_tbl()` takes no version. Timor has a coverage
+  guard only. Until it ships, treat any single run's catch total as ±4%.
+- **`MZZ` still weighs zero**, and it is one of the 13 `modelled_taxa`. It has
+  24,043 catch rows and 109,251 individuals behind it. `Actinopterygii` is a
+  class FishBase files as `Teleostei`, so nothing resolves; Mozambique drops the
+  code outright. Giving it coefficients is a *new* published number and was out
+  of scope. `SWX` (seaweed) is the same and immaterial.
+- **`morphometric_table` is a package snapshot, not its final home.** COASTS-TODO
+  C23 still wants a curated table in the hub that
+  `get_taxa_morphometrics()` pools for every country. Until then, an edit to the
+  Google Sheet does not reach the pipeline —
+  `data-raw/refresh-morphometric-coefficients.R` has to be run and the diff
+  committed. **This is a behaviour change for whoever maintains that sheet and
+  they should be told.**
+- **The other six Sheets tables are untouched.** `catch_types` (in
+  `convert_taxa_names()` and `preprocessing-surveys.R`), `devices`, `stations`,
+  `reporting_unit`, `conservation`, `habitat` all still have live readers and are
+  blocked on Airtable data, not code. That is Phase 12.
+- **The `FLY` per-taxon `quantile_coeff` override** that Addendum 3 said "must
+  survive any rewrite" stays absent, and this session did not restore it.
+  Mozambique hardcodes `FLY` as `lw_a = 0.00631, lw_b = 3.05`; Timor's curated
+  table already carries 13 `FLY` rows that are pooled with the FishBase fetch, so
+  the taxon is not unattended. Recorded rather than acted on — the supersession
+  is the move to a central estimate.
+- **`data-raw/freeze-landings-v1.R` was not re-run and must not be.** It calls
+  `get_taxa_list()`, which changed under it, so a re-freeze would move v1's
+  converted lengths. The snapshot already exists in both buckets and is never
+  rebuilt; a comment in the script now says so.
+
+### 9. Open questions for the next session
+
+- **The Phase 11b entry's numbers need re-reading in light of §1.** Its `−22%`,
+  and the per-taxon attribution behind it, were measured on a run in which two
+  taxa silently weighed zero. Nothing else in that entry is affected.
+- **Should `MZZ` get coefficients?** It is 5,116 kt of published catch produced
+  by a model with no observed weight behind it. Either give it a pool or drop it
+  from `modelled_taxa` — the present state is neither.
+- **`FLY` is +27.3% against production and `MOO` −38.4%.** Both are dominated by
+  the curated table rather than FishBase; neither was investigated here.
+
+### Files changed
+
+`R/model-taxa.R`, `R/nutrients.R`, `R/preprocess-metadata-tables.R`,
+`inst/config.yml`, `inst/config_template.yml`, `inst/extdata/` (new),
+`data-raw/refresh-morphometric-coefficients.R` (new),
+`data-raw/freeze-landings-v1.R` (comment), `tests/testthat/test-model-taxa.R`
+(new), `.gitignore`, `.Rbuildignore`, `NEWS.md`, `CLAUDE.md`,
+`man/` (regenerated; `pt_validate_morphometric_table.Rd` deleted),
+`.claude/migration/COASTS-TODO.md` (C25–C27), `.claude/migration/STATE.md`
+(this entry).
+
+**Nothing committed. Nothing pushed. Nothing merged.**

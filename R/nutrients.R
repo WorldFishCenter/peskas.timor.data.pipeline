@@ -93,6 +93,25 @@ get_nutrients_table <- function(conf,
     nutrients_tab %>%
     dplyr::bind_rows(fly_group)
 
+  # A taxon with no row here contributes nothing to any published nutrient
+  # figure, silently — `join_weights()` left-joins and the `NA`s sum to zero.
+  # `TUN` was in that state for the life of the pipeline, which is 51% of
+  # landed weight supplying no nutrients at all; it was found on 2026-09-05
+  # when the taxa path stopped resolving `Thunnini` through a common-name
+  # lookup that never reached the expansion. This is a warning rather than an
+  # error because a genuine gap is possible — `get_fao_composition()` covers
+  # the invertebrates FishBase does not, but not all of them.
+  uncovered <- setdiff(
+    unique(rfish_tab$interagency_code),
+    nutrients_tab$interagency_code
+  )
+  if (length(uncovered) > 0) {
+    logger::log_warn(
+      "No nutrient values for {length(uncovered)} taxa: ",
+      "{paste(sort(uncovered), collapse = ', ')}"
+    )
+  }
+
   if (isTRUE(convert)) {
     nutrients_tab <-
       nutrients_tab %>%

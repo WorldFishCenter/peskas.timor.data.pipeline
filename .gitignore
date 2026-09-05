@@ -50,6 +50,10 @@ docs
 *.geojson
 /.quarto/
 
+## …except reference data the package ships. The curated length-weight
+## coefficients are package data, not a downloaded artefact.
+!inst/extdata/*.csv
+
 ## Golden-output snapshots for the coasts migration
 reference/
 

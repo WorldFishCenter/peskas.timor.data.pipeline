@@ -67,6 +67,7 @@ be structural, not cosmetic.
 | [inst/config.yml](inst/config.yml) | the config file. Harmonized keys only since Phase 11 — every `# [legacy]` key is gone |
 | [inst/config_template.yml](inst/config_template.yml) | Timor's copy of the cross-country spec, with its deviations recorded |
 | `.env` | local secrets, gitignored. Template: [.env.example](.env.example). Replaced the old `auth/` directory in Phase 1 |
+| [inst/extdata/](inst/extdata/) | packaged reference data. One file: `morphometric-coefficients.csv`, Timor's 559 curated length-weight rows, read by `curated_lw_coeffs()`. Note `.gitignore` and `.Rbuildignore` both blanket-exclude `*.csv` and both carry an exception for this directory — check them before adding a file here |
 | [inst/tinytest/](inst/tinytest/) | 4 assertion suites, run as steps **inside** the pipeline workflow |
 | [inst/report/](inst/report/) | Rmd reports + `generate_*.R` drivers, shapefiles, bib, css |
 | [inst/export/](inst/export/) | Dataverse dataset metadata (README.Rmd, dataset-fields.json, PNGs) |
@@ -76,13 +77,13 @@ be structural, not cosmetic.
 
 Ingestion
 - [ingestion.R](R/ingestion.R) — `ingest_landings()` (v2 + v3 → raw parquet via `coasts::get_kobo_data()`), `ingest_assets()` (the Airtable frame snapshot) and the `flatten_row()`/`flatten_field()`/`rename_child()` helpers. Added in Phase 3, replacing `ingest-landings.R` and `retrieve-survey-data.R`
-- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — **7** Google Sheets metadata tables, from twelve. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame; Phase 11 dropped the five with no reader left (`vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics`, `registered_boats`). The seven that stay — `devices`, `catch_types`, `morphometric_table`, `stations`, `reporting_units`, `habitat`, `conservation` — all have a live reader and each is annotated in `inst/config.yml` with what blocks it. Moving them is **Phase 12**, and every one is blocked on Airtable *data*, not code (ALIGNMENT-AUDIT §0)
+- [ingest-metadata-tables.R](R/ingest-metadata-tables.R) — **6** Google Sheets metadata tables, from twelve. Phase 4 moved the taxa/gear/vessel/site joins onto the Airtable frame; Phase 11 dropped the five with no reader left (`vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics`, `registered_boats`), and the 2026-09-05 taxa-path session dropped `morphometric_table` — its 559 curated rows are package data now, which is what took the last Google Sheet off the weight path. The six that stay — `devices`, `catch_types`, `stations`, `reporting_units`, `habitat`, `conservation` — all have a live reader and each is annotated in `inst/config.yml` with what blocks it. Moving them is **Phase 12**, and every one is blocked on Airtable *data*, not code (ALIGNMENT-AUDIT §0)
 - **PDS has no Timor ingestion code since Phase 7.** `ingest-pds-data.R`, `retrieve-pds-data.R` and `preprocess_pds_trips()` are gone; the workflow calls `coasts::ingest_pds_trips()` and `coasts::ingest_pds_tracks()` with `package = "peskas.timor.data.pipeline"`, exactly as Mozambique, Kenya and Zanzibar do — none of them carries a line of PDS code either. Everything coasts needs is in `conf$pds`. The third call those three also make, `coasts::preprocess_pds_tracks()`, is **not** wired in, and Phase 8 decided to keep it that way: its output feeds `coasts::summarize_data()`, which Timor does not use (its portal is the JSON contract) and which is blocked for Timor anyway on COASTS-TODO C17 — so it would produce ~1.4 M grid rows per run for no reader. C20 (its first pass reads every track with `detectCores() - 1` workers, one on a CI runner) is the second reason, not the first. Wire it in when C17 ships **and** a Timor consumer exists
 
 Preprocessing
 - [preprocessing-surveys.R](R/preprocessing-surveys.R) — `preprocess_landings(versions = c("v2","v3"))` (raw parquet → **flat long catch parquet**), `merge_landings()`, the per-version `harmonise_*()` reconciliation, and the assets-snapshot label joins (`survey_labels()`). Added in Phase 4, replacing `clean-raw-data.R`, `preprocess-landings.R` (`step_1`/`step_2`) and `merge-landings.R`
 - [survey-reshaping.R](R/survey-reshaping.R) — `reshape_species_groups()`, `expand_length_frequency()`, the bin-midpoint and free-text-trim helpers. Replaces `pt_nest_species.R` / `pt_nest_attachments.R`
-- [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`; taxa list from the assets snapshot. Renamed from `calculate-weights.R` in Phase 4. Phase 5 deleted the re-nesting from `join_weights()`, so the weight artefact is **flat long parquet** like every stage before it
+- [model-taxa.R](R/model-taxa.R) — `calculate_weights()` / `join_weights()`, morphometric length-weight via `coasts::get_taxa_morphometrics()`. Renamed from `calculate-weights.R` in Phase 4. Phase 5 deleted the re-nesting from `join_weights()`, so the weight artefact is **flat long parquet** like every stage before it. Rewritten 2026-09-05 — see **The taxa and weight path** below. It reads **no Google Sheet**: the taxon *codes* come from the frame, the *names* from the FAO ASFIS list in the country bucket, the curated invertebrate coefficients from `inst/extdata/`. Coefficients are filtered to FAO areas **57 and 71**, and `assert_taxa_coverage()` fails the run if any taxon but `MZZ`/`SWX` resolves to nothing
 - [preprocess-metadata-tables.R](R/preprocess-metadata-tables.R) — the seven surviving Google Sheets `pt_validate_*` parsers, most of them pass-throughs
 - [pds-tracks.R](R/pds-tracks.R) — `describe_pds_tracks()` + `get_tracks_descriptors()`, the per-trip track descriptors (`start_end_distance`, `outliers_proportion`, `timetrace_dispersion`, start/end coordinates) that `validate_pds_trips()` joins on. **The one PDS product `coasts` has no equivalent for** — `coasts::preprocess_pds_tracks()` emits spatial grid summaries instead, and both steps run. Renamed from `preprocess-pds-trips.R` in Phase 7, which also deleted `preprocess_pds_trips()`: the trips artefact is read typed and Dili-local straight from the raw parquet by `get_pds_trips()`, so there is no preprocessed-trips stage any more, as there never was in the WIO repos
 
@@ -252,6 +253,90 @@ lists `devices`: the frame's 442 Timor rows are a strict subset of the Sheets'
 595, so `validate_imeis()` would take alert 3 from 824 to 1,475 submissions and
 strip the resolved `tracker_imei` — hence the matched trip — from 651 of them.
 Switch it only once the frame is complete.
+
+### The taxa and weight path
+
+Rewritten **2026-09-05** at the user's instruction that it be aligned to the WIO
+packages. Three sources, and after this change **none of them is a Google
+Sheet** — `calculate_weights()` was the weight path's last Sheets reader.
+
+| what | where from |
+|---|---|
+| which taxon *codes* Timor has | the PESKAS \| FRAME assets snapshot (authoritative for taxa, PLAN §2.5) |
+| each code's *scientific name* | the FAO **ASFIS** list, `gs://timor{,-dev}/asfis__*.parquet`, joined on `Alpha3_Code` — the same object and access path Mozambique uses |
+| the curated invertebrate coefficients | `inst/extdata/morphometric-coefficients.csv` |
+
+**ASFIS was adopted for alignment, not for effect.** Measured before the switch:
+55 of Timor's 56 codes carry an identical `scientific_name` in the frame and in
+ASFIS, the exception being `MZZ` (frame `Osteichthyes`, ASFIS
+`Actinopterygii`), and both expand to the same 50 codes over the same species.
+Join on `Alpha3_Code`, never `Taxonomic_Code`.
+
+**FAO areas 57 and 71**, from `metadata.fishbase.fao_areas`, with
+`filter_by_area = TRUE`. That key **must** exist: `coasts::resolve_fao_areas()`
+falls back to `c(51, 57)`, the Indian Ocean pair the WIO repos use, so an unset
+key filters Timor on one wrong area and misses the Pacific one silently. It was
+absent and read as `NULL` from Phase 3 until this session, harmless only because
+the filter was off.
+
+**`taxa_search_aliases()` is the load-bearing part.** `expand_taxonomic_info()`
+matches the FishBase backbone at species / genus / family / order / class only,
+and FAO names several taxa at ranks that backbone has no column for. Aliases are
+**additive** — extra search names for a code, never a replacement — so nothing
+that already resolves can regress and **no published taxon code changes**. This
+is deliberately *not* Mozambique's approach, which recodes `catch_taxon` in the
+data (`TUN` → `TUS`, `SKH` → `CVX`, `CLP` → `ANX`) and thereby renames the
+published taxon.
+
+| code | ASFIS name | why it fails | alias |
+|---|---|---|---|
+| `TUN` | `Thunnini` | tribe — no such rank | the tribe's 5 genera |
+| `SKH` | `Selachimorpha (Pleurotremata)` | superorder | `Carcharhiniformes` |
+| `LGE` | `Leiognathus equulus` | binomial FishBase has revised | `Leiognathidae` |
+| `CLP` | `Clupeidae` | **stale family**, see below | `Dorosomatidae` too |
+
+`TUN` is **56% of landed weight**, so its pool is a fishery decision, taken with
+the user on 2026-09-05: the tribe *Thunnini* is *Allothunnus, Auxis, Euthynnus,
+Katsuwonus, Thunnus*, which is what Timor's "Tunas nei" lands. Mozambique's
+`TUS` would drop skipjack and frigate tuna; the ASFIS family `Scombridae` would
+pull in the mackerels Timor codes separately as `RAX`. At 25 cm: 249 g for the
+tribe, 249 g for `TUS`, 172 g for `Scombridae`.
+
+`CLP` is **not** a rank problem. FishBase's 2022 revision moved the tropical
+sardines — *Sardinella*, *Amblygaster*, *Herklotsichthys*, *Nematalosa*,
+*Tenualosa* — out of `Clupeidae` into `Dorosomatidae`, while FAO still files
+them all under `CLUPEIDAE`. FishBase's `Clupeidae` now holds 15 mostly temperate
+species, so Timor's second-largest taxon (26% of landed weight) was priced off
+**114 records of *Clupea harengus* and 36 of *Sprattus sprattus***. Searching
+both families restores 123 area-57/71 records over 25 Indo-Pacific species.
+**Do not "fix" this in Airtable** — it was considered and rejected: `DCX` and
+`CLU` are `Clupeoidei`, a *suborder*, which matches nothing; `DAG` is the
+freshwater Lake Tanganyika sardine; `SIX` (*Sardinella* spp) resolves but
+narrows to 8 species, drops the herrings the label names, and renames a
+published taxon key.
+
+**`rescue_by_common_name()` is gone**, and it was not a like-for-like removal —
+it was the *only* source of coefficients for `TUN`. It ran
+`rfishbase::common_to_sci()` on the literal strings `"Tuna"`, `"Shark"` and
+`"Garfish"`, a substring match on common names, so `SKH`'s pool contained
+*Pangasius sanitwongsei* (a Mekong catfish) and the aquarium bala shark, and
+`GZP`'s was topped by driftfishes and scads at 185–328 g while the actual
+garfish sit at 17–21 g. It also never touched the *expansion*, only the
+coefficients — which is why **`TUN`, 51% of national catch, contributed nothing
+to any published nutrient figure** for the life of the pipeline. Fixing the
+alias fixed the nutrients as a side effect.
+
+**Two guards, and they exist because of a measured failure.** See COASTS-TODO
+**C25** before trusting any single run's numbers:
+
+- `assert_taxa_coverage()` **errors** when a taxon resolves to no coefficient
+  pair. `MZZ` (`Actinopterygii`, which FishBase files as `Teleostei`) and `SWX`
+  (`Algae`) are the two documented exemptions — neither has ever had a
+  coefficient here, and both weigh zero.
+- `get_nutrients_table()` **warns** for taxa with no nutrient values. Currently
+  `CUX` and `GZP`, together 0.5% of catch. A warning rather than an error
+  because `get_fao_composition()` legitimately does not cover every
+  invertebrate.
 
 ## Storage
 
@@ -601,5 +686,21 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   PR #11 and in every release the workflow can resolve. The
   `log_threshold = logger::INFO` at each `coasts::` call site stays as a
   regression guard, deliberately; it is still live in the other three repos.
+- **The FishBase fetch is not reproducible, and it has already changed published
+  numbers.** `coasts::get_combined_tbl()` calls `rfishbase::fb_tbl()` with no
+  `version`, so each run resolves whatever release is newest *and streams the
+  parquet over HTTPS at run time*. Two consecutive dev runs a day apart on
+  identical code and an identical assets snapshot gave **5,200.8 t** and
+  **4,995.8 t** of national catch; 41 of 51 taxon codes differed, by up to
+  +53.9%, and `CJX` (5% of landed weight, one of the 13 `models.modelled_taxa`)
+  and `PWT` dropped out entirely and weighed **zero**. Nothing failed, because a
+  taxon with no coefficient pair yields `NA` weight, which sums to zero. The
+  2026-09-03 state reproduces exactly against release **25.04**; the 2026-09-04
+  state matches no release at all, which points at a partial remote read. So:
+  **never read a single run's catch total as the effect of a code change** —
+  re-run today's code and the candidate in the same session, against the same
+  snapshot, and diff those. Timor's `assert_taxa_coverage()` now fails the run on
+  a vanished taxon, but only a version pin in `coasts` fixes this properly, and
+  it is live in all four pipelines. COASTS-TODO **C25**.
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.

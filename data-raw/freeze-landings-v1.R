@@ -52,6 +52,15 @@ metadata <- get_preprocessed_sheets(conf)
 # added before averaging. This used to be `summarise_ll_coeffs()` in the
 # package; it was deleted once nothing in the recurring pipeline converted a
 # length any more.
+#
+# NOTE (2026-09-05): `get_taxa_list()` changed under this script — it now takes
+# its names from ASFIS and adds `taxa_search_aliases()`, so re-running would
+# produce different length-length pools for TUN, SKH, LGE and CLP. That is
+# harmless because the frozen snapshot is **already built** in both `timor` and
+# `timor-dev` and is never rebuilt; if it ever has to be, re-freeze
+# deliberately and expect v1's converted lengths to move. `filter_by_area`
+# stays FALSE here on purpose: a length-length ratio is a body-proportion
+# constant, unlike the length-weight pools this session filtered.
 ll <- coasts::get_taxa_morphometrics(
   get_taxa_list(conf),
   filter_by_area = FALSE,

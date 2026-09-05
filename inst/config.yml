@@ -237,14 +237,19 @@ default:
         # `registered_boats` (`get_registered_boats()` reads the frame's
         # `geo.total_boats`).
         #
-        # The seven left all have a live reader, measured in
+        # `morphometric_table` went on 2026-09-05: its 559 curated rows are a
+        # package snapshot now (inst/extdata/morphometric-coefficients.csv,
+        # refreshed by data-raw/refresh-morphometric-coefficients.R), which is
+        # what took the last Google Sheet off the weight path. Their permanent
+        # home is still COASTS-TODO C23.
+        #
+        # The six left all have a live reader, measured in
         # .claude/migration/ALIGNMENT-AUDIT.md §0. Moving any of them is
         # Phase 12 and each is blocked on Airtable data, not on code:
         - devices             # 595 IMEIs against the frame's 442. Switching
                               # moves alert 3 from 824 to 1,475 submissions and
                               # unmatches 651 trackers (Airtable task A).
         - catch_types         # the display names and interagency_code
-        - morphometric_table  # Timor-curated coefficients (COASTS-TODO C23)
         - stations            # the published `landing_site` label.
                               # 11 of 40 names differ from the frame and
                               # format_public_data() hardcodes 5 of them.
@@ -255,6 +260,26 @@ default:
         - conservation        # no frame equivalent (proposed, ALIGNMENT-AUDIT §14 D)
     version:
       preprocess: latest
+
+    # [new] The FAO ASFIS list, read from the country bucket by
+    # `get_taxa_list()` — the same object and the same access path Mozambique
+    # uses. 13,615 rows; the weight path joins it on `Alpha3_Code` to get each
+    # taxon's scientific name. Present in both `timor` and `timor-dev`.
+    asfis:
+      file_prefix: asfis
+
+    # [new] FAO major fishing areas the length-weight coefficients are
+    # restricted to. Timor-Leste straddles **57** (Indian Ocean, Eastern) and
+    # **71** (Pacific, Western Central).
+    #
+    # This key MUST be set. `coasts::resolve_fao_areas()` falls back to
+    # `c(51, 57)` — the Indian Ocean pair the WIO pipelines use — so leaving it
+    # unset would filter Timor on one wrong area and miss the Pacific one
+    # entirely, with no error. It was absent and read as NULL from Phase 3 until
+    # 2026-09-05, which was harmless only because `filter_by_area` was FALSE.
+    fishbase:
+      fao_areas: [57, 71]
+
     # `rfishtable:` went in Phase 11 — `ingest_rfish_table()` was deleted in
     # Phase 3 when the weight path moved onto `coasts::get_taxa_morphometrics()`.
     nutrients:

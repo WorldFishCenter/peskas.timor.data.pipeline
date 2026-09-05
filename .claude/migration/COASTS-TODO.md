@@ -739,3 +739,126 @@ The fix is not a `country` column on those two tables but Mozambique's
 frame record id from the KoBo asset id at run time and needs no `country` column
 at all. It is already live in another repo, and it is what C13's "brittle key"
 objection was reaching for. Timor adopts it in Phase 12.
+
+---
+
+## Added by Timor's taxa-path session (2026-09-05)
+
+### C25. The FishBase fetch is unpinned and unverified — published catch moves between runs
+
+**This is the most serious item on this list. It is live in all four
+pipelines.**
+
+`get_combined_tbl()` ([`R/fishbase.R:14`](../../../peskas.coasts/R/fishbase.R))
+calls `rfishbase::fb_tbl(tbl_name, server = ...)` with no `version`, so every
+pipeline run resolves whatever FishBase release is newest at that moment and
+reads its parquet **over HTTPS at run time** — `fb_urls()` hits the Hugging Face
+tree API for the release list, and `duckdbfs::open_dataset()` streams the file.
+Two consequences, one theoretical and one measured.
+
+**Theoretical:** when FishBase publishes a release, every country's published
+catch changes with no code change and no record of what moved. Timor's own
+history shows why that matters — the five releases give materially different
+coefficients:
+
+| release | `poplw` rows |
+|---|---|
+| 21.06 | 19,821 |
+| 23.01 | 22,840 |
+| 23.05 | 23,389 |
+| 24.07 | 24,326 |
+| 25.04 | 25,730 |
+
+**Measured, and worse:** two consecutive Timor dev runs one day apart, on
+identical code (`f38f31c` → `088d400` changed only Markdown, the workflow YAML
+and `DESCRIPTION`) and an identical assets snapshot, produced different national
+catch weight:
+
+| run | artefact | national catch | `CJX` | `PWT` | `FLY` |
+|---|---|---|---|---|---|
+| 2026-09-03 | `..._20260903131649_f38f31c__` | **5,200.8 t** | 281.9 t | 25.8 t | 58.7 t |
+| 2026-09-04 | `..._20260904151856_088d400__` | **4,995.8 t** | **0 t** | **0 t** | 81.7 t |
+| 2026-08-18 | `..._20260818152854_968a486__` | 4,993.1 t | **0 t** | **0 t** | 81.7 t |
+| 2026-08-13 | `..._20260813195815_d7bf352__` | 5,197.4 t | 281.3 t | 25.6 t | 58.7 t |
+
+Deriving the implied `a`/`b` back out of the two neighbouring artefacts: **41 of
+51 taxon codes differ**, by up to **+53.9%** (`ECN`), and **two codes vanish
+entirely** — `CJX` (*Caesionidae*, 2.1 M individuals, 5% of landed weight) and
+`PWT` (*Scaridae*). **`CJX` is one of the 13 `models.modelled_taxa`.** Nothing
+failed. A taxon with no coefficient pair simply yields `NA` weight, which sums
+to zero.
+
+The 2026-09-03 state reproduces **exactly** (mean error 0.0000 across all codes)
+against FishBase release **25.04**. The 2026-09-04 state matches **no** release
+— its pools are uniformly smaller and it is missing whole families — which
+points at a partial remote read rather than a version change.
+
+**Three asks, in order of value:**
+
+1. **Pin the release.** Give `get_combined_tbl()` a `version` argument sourced
+   from configuration (`metadata.fishbase.db_version`, defaulting to `"latest"`
+   for compatibility), and thread it through `get_taxa_backbone()`,
+   `filter_by_fao_area()`, `get_length_weight_coeffs()` and
+   `get_length_length_coeffs()` so one run cannot mix releases. Published
+   fishery statistics should move when somebody decides they move.
+2. **Fail on a short read.** `get_combined_tbl()` should assert a plausible row
+   count per table and server and stop otherwise. Anything is better than
+   silently returning a subset.
+3. **Log what was used.** One `logger::log_info()` of the resolved release and
+   the row count per table, so an artefact can be traced to its inputs after the
+   fact.
+
+Timor has a **local guard only** — `assert_taxa_coverage()`
+([`R/model-taxa.R`](../../R/model-taxa.R)) fails the run when any taxon except
+the two documented exemptions (`MZZ`, `SWX`) resolves to no coefficient pair.
+That would have caught the `CJX`/`PWT` disappearance. It cannot catch the 41
+codes that merely *moved*, and it does nothing for the other three countries.
+Only the pin does.
+
+### C26. `expand_taxonomic_info()` cannot match a rank between genus and family
+
+`get_taxa_backbone()` pivots `sci_name`, `Genus`, `Family`, `Order` and `Class`,
+which is already richer than Mozambique's rank switch. But FAO's ASFIS list
+names taxa at ranks FishBase's `families` table does not carry at all — it has
+`Family`, `Order`, `Class` and nothing between — so these resolve to nothing and
+are dropped by the inner join with no warning:
+
+| ASFIS name | rank | codes affected |
+|---|---|---|
+| `Thunnini` | tribe | `TUN` — **56% of Timor's landed weight** |
+| `Clupeoidei` | suborder | `CLU`, `DCX` |
+| `Selachimorpha (Pleurotremata)` | superorder | `SKH` |
+| `Brachyura` | infraorder | `CRA` |
+| `Actinopterygii` | class, filed by FishBase as `Teleostei` | `MZZ` |
+
+Timor handles this with an explicit alias table, `taxa_search_aliases()`
+([`R/model-taxa.R`](../../R/model-taxa.R)), which adds extra search names for a
+code rather than replacing its ASFIS name — additive, so nothing that already
+resolves can regress, and the published taxon codes are untouched. Mozambique
+handles the same problem by recoding `catch_taxon` **in the data**
+(`TUN` → `TUS`, `SKH` → `CVX`, `CLP` → `ANX`,
+`preprocessing-surveys.R:248`), which also renames the published taxon.
+
+The additive-alias shape is the better of the two and belongs in `coasts` so
+every country gets it. **The inner join swallowing an unmatched name is the
+underlying defect** — `expand_taxonomic_info()` should at minimum warn when an
+input row matches nothing.
+
+### C27. A taxon can silently have no nutrient values
+
+Found while re-measuring nutrients for the same session. `get_nutrients_table()`
+is Timor-local, but the shape of the bug is not: the taxon-to-species expansion
+feeds both the coefficients and the nutrients, so a code the backbone cannot
+resolve gets **neither**, and the nutrient half fails even more quietly than the
+weight half — `join_weights()` left-joins and the `NA`s sum to zero.
+
+`TUN` was in exactly that state for the life of the Timor pipeline: **51% of
+national catch contributed nothing to any published nutrient figure**, because
+`Thunnini` resolved to no species and the common-name rescue that patched the
+coefficients never touched the expansion. Fixing the alias (C26) fixed the
+nutrients as a side effect, which is precisely the problem — nobody was ever
+told.
+
+Any `coasts` function that expands taxa for downstream use should report the
+codes it could not resolve. Timor now warns from `get_nutrients_table()` and
+errors from `assert_taxa_coverage()`.

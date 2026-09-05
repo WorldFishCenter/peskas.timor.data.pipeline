@@ -3,12 +3,14 @@
 #' Takes the ingested Google Sheets metadata tables, parses them and writes one
 #' versioned preprocessed list for the rest of the pipeline to read.
 #'
-#' Seven tables are left, all with live readers: `devices` (`validate_imeis()`),
-#' `catch_types`, `morphometric_table`, `stations`, `reporting_unit`, `habitat`
-#' and `conservation`. `vms_installs`, `centro_pescas`, `boats`,
-#' `fishing_vessel_statistics` and `registered_boats` went in migration
-#' Phase 11 — the frame is authoritative for the last of those
-#' (`get_registered_boats()`) and the other four had no reader.
+#' Six tables are left, all with live readers: `devices` (`validate_imeis()`),
+#' `catch_types`, `stations`, `reporting_unit`, `habitat` and `conservation`.
+#' `vms_installs`, `centro_pescas`, `boats`, `fishing_vessel_statistics` and
+#' `registered_boats` went in migration Phase 11 — the frame is authoritative
+#' for the last of those (`get_registered_boats()`) and the other four had no
+#' reader. `morphometric_table` went on 2026-09-05, when its 559 curated rows
+#' became a package snapshot (`inst/extdata/morphometric-coefficients.csv`) so
+#' that `calculate_weights()` reads no Google Sheet.
 #'
 #' This function requires no arguments because it retrieves the parameters from
 #' `conf.yml`. The fields required are:
@@ -60,9 +62,6 @@ preprocess_metadata_tables <- function(log_threshold = logger::DEBUG) {
   preprocessed_metadata <- list(
     devices = pt_validate_devices(metadata_tables$devices),
     catch_types = pt_validate_catch_types(metadata_tables$catch_types),
-    morphometric_table = pt_validate_morphometric_table(
-      metadata_tables$morphometric_table
-    ),
     stations = pt_validate_stations(metadata_tables$stations),
     reporting_unit = pt_validate_reporting_unit(metadata_tables$reporting_unit),
     habitat = pt_validate_habitat(metadata_tables$habitat),
@@ -118,24 +117,6 @@ pt_validate_devices <- function(devices_table) {
 #' @keywords preprocessing
 pt_validate_catch_types <- function(catch_type_table) {
   catch_type_table
-}
-
-#' Parse and validate morphometric table
-#'
-#' The 559 curated length-weight rows `calculate_weights()` pools with the
-#' FishBase fetch, over 11 mostly-invertebrate codes. `aL` and `bL` were coerced
-#' here too until migration Phase 11 measured them 100% `NA`.
-#'
-#' @param morphometric_table a data frame with morphometric info
-#'
-#' @return a tibble
-#' @keywords preprocessing
-pt_validate_morphometric_table <- function(morphometric_table) {
-  morphometric_table %>%
-    dplyr::mutate(dplyr::across(
-      c(.data$a, .data$b, .data$LengthMin:.data$CoeffDetermination),
-      ~ as.double(.)
-    ))
 }
 
 # NOTE: `pt_validate_gear_types()` and `pt_validate_vessel_types()` went with
