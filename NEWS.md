@@ -56,8 +56,9 @@ Two things in this release:
 - `assert_taxa_coverage()` fails the run when any taxon but the two documented
   exemptions resolves to no coefficient pair, so a vanished taxon can no longer
   reach the portal silently. This is what caught the above.
-- `rfishbase` is pinned to 5.0.1 in both Dockerfiles, after the `install_github`
-  step so it is not upgraded back. **This is a stopgap** — it pins the host, not
+- `rfishbase` is pinned to 5.0.1 in both Dockerfiles, as the last install step
+  and followed by a version assertion, since `install_github()` and
+  `install_local(dependencies = TRUE)` both upgrade it back otherwise. **This is a stopgap** — it pins the host, not
   the release. The real fix is a data-version argument in `peskas.coasts`, filed
   as COASTS-TODO C25 and outstanding for all four country pipelines.
 

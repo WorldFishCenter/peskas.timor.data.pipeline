@@ -4991,8 +4991,11 @@ Resolve the release before concluding either.
 - `assert_taxa_coverage()` **fails the run** when any taxon but `MZZ`/`SWX`
   resolves to no coefficient pair. It is what caught this, in CI, on the first
   deployment after the rewrite.
-- `rfishbase` is **pinned to 5.0.1 in both Dockerfiles**, placed after
-  `install_github()` so it is not upgraded back. It pins the *host*, not the
+- `rfishbase` is **pinned to 5.0.1 in both Dockerfiles**, as the last install
+  step, followed by a `packageVersion()` assertion so a lost pin fails the
+  *build* rather than the pipeline. The first attempt put it before
+  `remotes::install_local(dependencies = TRUE)` and was silently undone — the
+  re-run produced byte-identical output, which is the tell. It pins the *host*, not the
   release, and stops working the day HuggingFace serves 26.06. The real fix is
   a `version` argument in coasts driven by `metadata.fishbase.db_version`. That
   config key was deliberately **not** added yet: nothing reads it, and an inert

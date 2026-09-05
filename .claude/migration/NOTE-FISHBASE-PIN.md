@@ -61,10 +61,16 @@ Filed as COASTS-TODO C25 / C26 / C27.
 
 ## Timor's interim fix
 
-`rfishbase` pinned to 5.0.1 in both Dockerfiles, placed **after**
-`install_github()` so it is not upgraded back. That pins the *host*, not the
-release, and stops working the day HuggingFace serves 26.06 — replace it with
-the config-driven data-version pin as soon as (1) ships.
+`rfishbase` pinned to 5.0.1 in both Dockerfiles. **Make it the last install
+step and then assert it** — the first attempt placed it before
+`remotes::install_local(dependencies = TRUE)`, which upgraded it straight back
+to 5.0.3, and the pipeline failed again with byte-identical output. A one-line
+`stopifnot(packageVersion('rfishbase') == '5.0.1')` turns that into a build
+failure instead of a pipeline failure.
+
+The pin covers the *host*, not the release, so it stops working the day
+HuggingFace serves 26.06 — replace it with the config-driven data-version pin
+as soon as (1) ships.
 
 Timor also added `assert_taxa_coverage()`, which fails the run when any taxon
 resolves to no coefficient pair. **That is what caught this**, and it is the

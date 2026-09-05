@@ -699,8 +699,11 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   error. Two consequences:
   - **Every number in `NEWS.md` and the 2026-09-05 STATE entry was measured on
     25.04.** Adopting 26.06 is a separate change needing its own before/after.
-  - **`rfishbase` is pinned to 5.0.1 in both Dockerfiles**, placed *after*
-    `install_github()` so it is not upgraded back. It pins the **host**, not the
+  - **`rfishbase` is pinned to 5.0.1 in both Dockerfiles**, as the **last**
+    install step and followed by a `packageVersion()` assertion. It has to be
+    last: `install_github()` and, in `Dockerfile.prod`,
+    `remotes::install_local(dependencies = TRUE)` both upgrade it back, which
+    silently defeated the first attempt. It pins the **host**, not the
     release, and stops working the day HuggingFace serves 26.06. The real fix is
     a `version` argument in coasts driven by `metadata.fishbase.db_version` —
     COASTS-TODO **C25**, live in all four pipelines. `assert_taxa_coverage()` is
