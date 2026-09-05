@@ -13,13 +13,18 @@ Append one entry per completed phase, newest at the bottom.
   claims it found to be false. It also scoped a **Phase 12**, after the cutover.
 - **Read the 2026-09-05 taxa-path entry at the bottom before anything else.** It
   rewrote the weight path (no Google Sheets, FAO areas 57/71, no common-name
-  rescue) and it found that **the FishBase fetch is not reproducible run to
-  run** — two dev runs a day apart on identical code differed by 4% in national
-  catch, and `CJX`, one of the 13 `modelled_taxa`, silently weighed zero and
-  vanished from `portal-taxa_aggregated` in one of them (COASTS-TODO **C25**).
-  **The `−22%` recorded below and in `NEWS.md` was measured on that anomalous
-  run.** The current measured effect of merging is **catch −8.5%**, **price/kg
-  +5.4%**, **nutrient supply −16.0%** against the live production set.
+  rescue) and it found that **the FishBase release is not pinned**: `rfishbase`
+  5.0.3 moved the data host from HuggingFace (latest **25.04**) to Source
+  Cooperative (latest **26.06**), so a container rebuild silently moved the
+  pipeline to FishBase 26.06 — in which `Caesionidae` and `Scaridae` hold zero
+  species, so `CJX` (one of the 13 `modelled_taxa`) and `PWT` weighed nothing
+  and `CJX` vanished from `portal-taxa_aggregated`. COASTS-TODO **C25**;
+  `rfishbase` is pinned to 5.0.1 in both Dockerfiles as a stopgap.
+  **The `−22%` recorded below and in `NEWS.md` was measured on a 26.06 run.**
+  The current measured effect of merging, **on 25.04**, is **catch −8.5%**,
+  **price/kg +5.4%**, **nutrient supply −16.0%** against the live production
+  set. See [`NOTE-FISHBASE-PIN.md`](NOTE-FISHBASE-PIN.md), written to be sent to
+  coasts and the WIO repos.
 - **Phase:** **11b prepared, 2026-09-04 — the branch is ready to merge and the
   merge is the user's to make.** Nothing is committed, pushed or published; the
   only working-tree change is `NEWS.md`, left unstaged. Both production scripts
@@ -4928,48 +4933,70 @@ Two decisions were the user's and were put to them with numbers before anything
 was written: the `TUN` species pool, and how to handle `CLP` under the area
 filter. Both are recorded in §2.
 
-### 1. The finding that reframes the whole gate: the FishBase fetch is not reproducible
+### 1. The finding that reframes the whole gate: the FishBase release is not pinned
 
 **This was not in the prompt and it is the most consequential thing this session
 found.** Filed as COASTS-TODO **C25**; it is live in all four pipelines.
+`.claude/migration/NOTE-FISHBASE-PIN.md` is a short brief written to be sent to
+coasts and the WIO repos.
 
-`coasts::get_combined_tbl()` calls `rfishbase::fb_tbl()` with no `version`, so
-each run resolves whatever FishBase release is newest *and streams the parquet
-over HTTPS at run time*. Two consecutive Timor dev runs, one day apart, on code
-that differed only in Markdown, workflow YAML and `DESCRIPTION`, and on an
-identical assets snapshot:
+`coasts::get_combined_tbl()` calls `rfishbase::fb_tbl()` with **no `version`**,
+so each run takes whatever FishBase release is newest. `rfishbase` **5.0.3**
+then moved the parquet host:
 
-| artefact | national catch | `CJX` | `PWT` | `FLY` |
+| host | rfishbase | latest release |
+|---|---|---|
+| HuggingFace | ≤ 5.0.1 | **25.04** |
+| Source Cooperative | ≥ 5.0.3 | **26.06** |
+
+A container rebuild picking up a current rfishbase therefore moved the pipeline
+from FishBase 25.04 to 26.06 with no code change. **26.06 carries a taxonomic
+revision**: *Caesio* and *Pterocaesio* moved `Caesionidae` → `Lutjanidae`,
+*Scarus*/*Chlorurus*/… moved `Scaridae` → `Labridae`. Both family names survive
+in the `families` table with **zero species assigned**, verified by reading the
+26.06 parquet directly (`Clupeidae` 15 and `Lethrinidae` 43 are unchanged). So
+`CJX` and `PWT` expand to nothing, get no coefficients, and weigh `NA` — which
+sums to zero.
+
+Timor's artefact history, now fully explained:
+
+| run | environment | national catch | `CJX` | `PWT` |
 |---|---|---|---|---|
-| `..._20260813195815_d7bf352__` | 5,197.4 t | 281.3 t | 25.6 t | 58.7 t |
-| `..._20260818152854_968a486__` | 4,993.1 t | **0 t** | **0 t** | 81.7 t |
-| `..._20260903131649_f38f31c__` | 5,200.8 t | 281.9 t | 25.8 t | 58.7 t |
-| `..._20260904151856_088d400__` | 4,995.8 t | **0 t** | **0 t** | 81.7 t |
+| 2026-08-13 | local, 25.04 | 5,197.4 t | 281.3 t | 25.6 t |
+| 2026-08-18 | container, 26.06 | 4,993.1 t | **0 t** | **0 t** |
+| 2026-09-03 | local, 25.04 | 5,200.8 t | 281.9 t | 25.8 t |
+| 2026-09-04 | container, 26.06 | 4,995.8 t | **0 t** | **0 t** |
 
-Deriving `a`/`b` back out of the two neighbouring artefacts (two rows with
-distinct lengths determine the pair exactly): **41 of 51 codes differ, by up to
-+53.9%**, and `CJX` and `PWT` vanish. `CJX` is 2.1 M individuals, 5% of landed
-weight, and **one of the 13 `models.modelled_taxa`**. Nothing failed — a taxon
-with no coefficient pair yields `NA` weight, which sums to zero.
+**`CJX` is 5% of landed weight and one of the 13 `models.modelled_taxa`, and it
+was missing from `portal-taxa_aggregated` altogether** on the 09-04 dev set.
+Nothing failed.
 
-The 2026-09-03 state reproduces **exactly** (mean error 0.0000 across all codes)
-against FishBase release **25.04**. The 2026-09-04 state matches **no** release —
-its pools are uniformly smaller and whole families are absent — which points at a
-partial remote read, not a version change.
+**This entry's first version diagnosed it as "the fetch returns partial data
+non-deterministically". That was wrong**, and it is worth recording why it
+looked right: 41 of 51 codes differed by up to 54% between neighbouring runs,
+and the bad state matched none of releases 23.01 / 23.05 / 24.07 / 25.04 — all
+of which is simply the 25.04 → 26.06 diff, seen without knowing 26.06 existed
+because the local rfishbase could not see that host. **From artefacts alone,
+"varies between runs" and "varies between environments" are indistinguishable.**
+Resolve the release before concluding either.
 
 **Consequences for anybody reading this log:**
 
-- **The `−22%` in the Phase 11b entry and in `NEWS.md` was measured against the
-  anomalous 4,995.8 t run.** It is not wrong about the direction, but it is not
-  reproducible either, and part of what it attributed to the length-weight
-  rewrite was `CJX` and `PWT` silently weighing zero.
-- **Never read one run's catch total as the effect of a code change.** Every
-  number in this entry comes from running today's code and the candidate in the
-  same session against the same snapshot (25.04), and diffing those.
-- Timor now has `assert_taxa_coverage()`, which **fails the run** when any taxon
-  but `MZZ`/`SWX` resolves to no coefficient pair. That would have caught
-  `CJX`/`PWT`. It cannot catch the 41 codes that merely moved. Only a version pin
-  in `coasts` fixes that — C25 asks for it.
+- **Every number in this entry and in `NEWS.md` was measured on 25.04**, which
+  is what the pinned container now runs. Adopting 26.06 is a separate change and
+  needs its own before/after.
+- **The `−22%` in the Phase 11b entry was measured on a 26.06 run**, in which
+  `CJX` and `PWT` silently weighed zero. Its direction is right; part of what it
+  attributed to the length-weight rewrite was those two taxa vanishing.
+- `assert_taxa_coverage()` **fails the run** when any taxon but `MZZ`/`SWX`
+  resolves to no coefficient pair. It is what caught this, in CI, on the first
+  deployment after the rewrite.
+- `rfishbase` is **pinned to 5.0.1 in both Dockerfiles**, placed after
+  `install_github()` so it is not upgraded back. It pins the *host*, not the
+  release, and stops working the day HuggingFace serves 26.06. The real fix is
+  a `version` argument in coasts driven by `metadata.fishbase.db_version`. That
+  config key was deliberately **not** added yet: nothing reads it, and an inert
+  key that looks like a pin is worse than none.
 
 ### 2. The two decisions the user made, with the numbers they were given
 
@@ -5243,7 +5270,9 @@ against the edited file: 4.0.0, 188 lines, no bleed into the 3.3.0 block.
 ### Files changed
 
 `R/model-taxa.R`, `R/nutrients.R`, `R/preprocess-metadata-tables.R`,
-`inst/config.yml`, `inst/config_template.yml`, `inst/extdata/` (new),
+`Dockerfile`, `Dockerfile.prod` (the rfishbase 5.0.1 pin, §1),
+`.claude/migration/NOTE-FISHBASE-PIN.md` (new — the brief for coasts and the
+WIO repos), `inst/config.yml`, `inst/config_template.yml`, `inst/extdata/` (new),
 `data-raw/refresh-morphometric-coefficients.R` (new),
 `data-raw/freeze-landings-v1.R` (comment), `tests/testthat/test-model-taxa.R`
 (new), `.gitignore`, `.Rbuildignore`, `NEWS.md`, `CLAUDE.md`,

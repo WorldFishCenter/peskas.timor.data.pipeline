@@ -744,76 +744,83 @@ objection was reaching for. Timor adopts it in Phase 12.
 
 ## Added by Timor's taxa-path session (2026-09-05)
 
-### C25. The FishBase fetch is unpinned and unverified — published catch moves between runs
+### C25. The FishBase read is unpinned — a new release changed published catch with no code change
 
 **This is the most serious item on this list. It is live in all four
-pipelines.**
+pipelines.** Diagnosed properly 2026-09-05 after a first, wrong diagnosis
+(recorded below, because the wrong one is instructive).
 
 `get_combined_tbl()` ([`R/fishbase.R:14`](../../../peskas.coasts/R/fishbase.R))
-calls `rfishbase::fb_tbl(tbl_name, server = ...)` with no `version`, so every
-pipeline run resolves whatever FishBase release is newest at that moment and
-reads its parquet **over HTTPS at run time** — `fb_urls()` hits the Hugging Face
-tree API for the release list, and `duckdbfs::open_dataset()` streams the file.
-Two consequences, one theoretical and one measured.
+calls `rfishbase::fb_tbl(tbl_name, server = ...)` with **no `version`**, so
+every run takes whatever FishBase release is newest at that moment.
 
-**Theoretical:** when FishBase publishes a release, every country's published
-catch changes with no code change and no record of what moved. Timor's own
-history shows why that matters — the five releases give materially different
-coefficients:
+**What made that bite:** `rfishbase` **5.0.3** moved the parquet host from
+HuggingFace to Source Cooperative, and the two carry different release sets:
 
-| release | `poplw` rows |
-|---|---|
-| 21.06 | 19,821 |
-| 23.01 | 22,840 |
-| 23.05 | 23,389 |
-| 24.07 | 24,326 |
-| 25.04 | 25,730 |
+| host | rfishbase | latest release |
+|---|---|---|
+| `huggingface.co/datasets/cboettig/fishbase` | ≤ 5.0.1 | **25.04** |
+| `us-west-2.opendata.source.coop/cboettig/fishbase` | ≥ 5.0.3 | **26.06** |
 
-**Measured, and worse:** two consecutive Timor dev runs one day apart, on
-identical code (`f38f31c` → `088d400` changed only Markdown, the workflow YAML
-and `DESCRIPTION`) and an identical assets snapshot, produced different national
-catch weight:
+So a container rebuild picking up a current rfishbase silently moved every
+pipeline from FishBase 25.04 to 26.06. **26.06 carries a taxonomic revision:**
 
-| run | artefact | national catch | `CJX` | `PWT` | `FLY` |
-|---|---|---|---|---|---|
-| 2026-09-03 | `..._20260903131649_f38f31c__` | **5,200.8 t** | 281.9 t | 25.8 t | 58.7 t |
-| 2026-09-04 | `..._20260904151856_088d400__` | **4,995.8 t** | **0 t** | **0 t** | 81.7 t |
-| 2026-08-18 | `..._20260818152854_968a486__` | 4,993.1 t | **0 t** | **0 t** | 81.7 t |
-| 2026-08-13 | `..._20260813195815_d7bf352__` | 5,197.4 t | 281.3 t | 25.6 t | 58.7 t |
+```
+Caesio, Pterocaesio      Caesionidae -> Lutjanidae
+Scarus, Chlorurus, ...   Scaridae    -> Labridae
+```
 
-Deriving the implied `a`/`b` back out of the two neighbouring artefacts: **41 of
-51 taxon codes differ**, by up to **+53.9%** (`ECN`), and **two codes vanish
-entirely** — `CJX` (*Caesionidae*, 2.1 M individuals, 5% of landed weight) and
-`PWT` (*Scaridae*). **`CJX` is one of the 13 `models.modelled_taxa`.** Nothing
-failed. A taxon with no coefficient pair simply yields `NA` weight, which sums
-to zero.
+`Caesionidae` and `Scaridae` still exist in the `families` table with **zero
+species assigned**. Any taxon whose reference name is one of those families
+expands to nothing, receives no coefficients, and weighs `NA` — which sums to
+zero. For Timor that is `CJX` (2.1 M individuals, 5% of landed weight, **one of
+the 13 `models.modelled_taxa`**) and `PWT`. Verified by reading the 26.06
+parquet directly: `Caesionidae` 0 species, `Scaridae` 0 species, `Clupeidae` 15
+and `Lethrinidae` 43 unchanged.
 
-The 2026-09-03 state reproduces **exactly** (mean error 0.0000 across all codes)
-against FishBase release **25.04**. The 2026-09-04 state matches **no** release
-— its pools are uniformly smaller and it is missing whole families — which
-points at a partial remote read rather than a version change.
+Timor's artefact history, now fully explained — every "good" run was local on
+rfishbase 5.0.1 / 25.04, every "bad" run was the container on 5.0.3 / 26.06:
+
+| run | where | national catch | `CJX` | `PWT` |
+|---|---|---|---|---|
+| 2026-08-13 | local, 25.04 | 5,197.4 t | 281.3 t | 25.6 t |
+| 2026-08-18 | container, 26.06 | 4,993.1 t | **0 t** | **0 t** |
+| 2026-09-03 | local, 25.04 | 5,200.8 t | 281.9 t | 25.8 t |
+| 2026-09-04 | container, 26.06 | 4,995.8 t | **0 t** | **0 t** |
+
+**The first diagnosis was "the fetch returns partial data non-deterministically".
+It was wrong**, and the evidence that looked like flakiness — 41 of 51 codes
+differing by up to 54% between neighbouring runs, and a bad state matching none
+of releases 23.01/23.05/24.07/25.04 — was simply the 25.04 → 26.06 diff seen
+without knowing 26.06 existed. It is fully deterministic. The lesson worth
+keeping: **"it varies between runs" and "it varies between environments" look
+identical from the artefacts alone.** Check the resolved release before
+concluding either.
 
 **Three asks, in order of value:**
 
 1. **Pin the release.** Give `get_combined_tbl()` a `version` argument sourced
    from configuration (`metadata.fishbase.db_version`, defaulting to `"latest"`
-   for compatibility), and thread it through `get_taxa_backbone()`,
-   `filter_by_fao_area()`, `get_length_weight_coeffs()` and
-   `get_length_length_coeffs()` so one run cannot mix releases. Published
-   fishery statistics should move when somebody decides they move.
-2. **Fail on a short read.** `get_combined_tbl()` should assert a plausible row
-   count per table and server and stop otherwise. Anything is better than
-   silently returning a subset.
-3. **Log what was used.** One `logger::log_info()` of the resolved release and
-   the row count per table, so an artefact can be traced to its inputs after the
-   fact.
+   for compatibility), and thread one resolved version from the top of
+   `get_taxa_morphometrics()` — it makes **8** independent reads (`species`,
+   `families`, `faoareas`, `poplw`, `popll`, `ecology`, `estimate`, `species`
+   again), so today a single run can mix snapshots. Validate per server:
+   FishBase has 21.06, SeaLifeBase does not. Published fishery statistics should
+   move when somebody decides they move.
+2. **Warn on an unmatched name** — see C26. `expand_taxonomic_info()`
+   inner-joins, so a name that matches nothing is dropped silently, and that is
+   the entire failure mode here.
+3. **Log the resolved release and the row count per table**, so an artefact can
+   be traced to its inputs after the fact.
 
-Timor has a **local guard only** — `assert_taxa_coverage()`
+Timor has a **local guard** — `assert_taxa_coverage()`
 ([`R/model-taxa.R`](../../R/model-taxa.R)) fails the run when any taxon except
 the two documented exemptions (`MZZ`, `SWX`) resolves to no coefficient pair.
-That would have caught the `CJX`/`PWT` disappearance. It cannot catch the 41
-codes that merely *moved*, and it does nothing for the other three countries.
-Only the pin does.
+**That guard is what caught this**; without it the pipeline stays green and
+publishes a hole, which is what happened on 2026-08-18 and 2026-09-04. Timor
+also pins `rfishbase` to 5.0.1 in both Dockerfiles as a stopgap — that pins the
+*host*, not the release, and stops working the day HuggingFace serves 26.06.
+Only ask 1 fixes it properly, and only for everyone.
 
 ### C26. `expand_taxonomic_info()` cannot match a rank between genus and family
 

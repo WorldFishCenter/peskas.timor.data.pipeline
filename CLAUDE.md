@@ -686,21 +686,28 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   PR #11 and in every release the workflow can resolve. The
   `log_threshold = logger::INFO` at each `coasts::` call site stays as a
   regression guard, deliberately; it is still live in the other three repos.
-- **The FishBase fetch is not reproducible, and it has already changed published
-  numbers.** `coasts::get_combined_tbl()` calls `rfishbase::fb_tbl()` with no
-  `version`, so each run resolves whatever release is newest *and streams the
-  parquet over HTTPS at run time*. Two consecutive dev runs a day apart on
-  identical code and an identical assets snapshot gave **5,200.8 t** and
-  **4,995.8 t** of national catch; 41 of 51 taxon codes differed, by up to
-  +53.9%, and `CJX` (5% of landed weight, one of the 13 `models.modelled_taxa`)
-  and `PWT` dropped out entirely and weighed **zero**. Nothing failed, because a
-  taxon with no coefficient pair yields `NA` weight, which sums to zero. The
-  2026-09-03 state reproduces exactly against release **25.04**; the 2026-09-04
-  state matches no release at all, which points at a partial remote read. So:
-  **never read a single run's catch total as the effect of a code change** —
-  re-run today's code and the candidate in the same session, against the same
-  snapshot, and diff those. Timor's `assert_taxa_coverage()` now fails the run on
-  a vanished taxon, but only a version pin in `coasts` fixes this properly, and
-  it is live in all four pipelines. COASTS-TODO **C25**.
+- **The FishBase read is unpinned, and a new release has already changed
+  published catch with no code change.** `coasts::get_combined_tbl()` calls
+  `rfishbase::fb_tbl()` with no `version`, so a run takes whatever release is
+  newest. `rfishbase` **5.0.3** moved the parquet host from HuggingFace (latest
+  **25.04**) to Source Cooperative (latest **26.06**), so a container rebuild
+  silently moved the pipeline to 26.06 — in which `Caesionidae` and `Scaridae`
+  exist with **zero species**, their genera having moved to `Lutjanidae` and
+  `Labridae`. `CJX` and `PWT` therefore weighed `NA`, which sums to zero, and
+  `CJX` — 5% of landed weight and one of the 13 `models.modelled_taxa` — was
+  **missing from `portal-taxa_aggregated`** on 2026-08-18 and 2026-09-04 with no
+  error. Two consequences:
+  - **Every number in `NEWS.md` and the 2026-09-05 STATE entry was measured on
+    25.04.** Adopting 26.06 is a separate change needing its own before/after.
+  - **`rfishbase` is pinned to 5.0.1 in both Dockerfiles**, placed *after*
+    `install_github()` so it is not upgraded back. It pins the **host**, not the
+    release, and stops working the day HuggingFace serves 26.06. The real fix is
+    a `version` argument in coasts driven by `metadata.fishbase.db_version` —
+    COASTS-TODO **C25**, live in all four pipelines. `assert_taxa_coverage()` is
+    the guard that caught this and it is the part worth keeping.
+  A trap worth naming: from the artefacts alone, **"varies between runs" and
+  "varies between environments" look identical**. The first diagnosis here was
+  "non-deterministic partial reads" and it was wrong. Check the resolved
+  FishBase release before concluding either.
 - Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.

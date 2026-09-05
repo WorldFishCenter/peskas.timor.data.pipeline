@@ -40,20 +40,29 @@ Measured 2026-09-05 against the live production set, with the FishBase snapshot
 held fixed on both sides — which matters, because it is not fixed in general
 (next section).
 
-### Known issue: published catch is not reproducible run to run
+### Known issue: the FishBase release is not pinned
 
 `peskas.coasts` reads FishBase over the network at pipeline time with no pinned
-release. Two Timor dev runs one day apart, on code differing only in Markdown
-and workflow YAML, produced national catch of **5,200.8 t** and **4,995.8 t**;
-41 of 51 taxon codes differed by up to 54%, and `CJX` — 5% of landed weight and
-one of the 13 modelled taxa — silently weighed zero in one of them and was
-**missing from `portal-taxa_aggregated` altogether**.
+release. `rfishbase` 5.0.3 moved the data host from HuggingFace (latest release
+**25.04**) to Source Cooperative (latest **26.06**), so rebuilding the container
+silently moves the pipeline to a newer FishBase. In 26.06 the families
+`Caesionidae` and `Scaridae` were emptied — their genera moved to `Lutjanidae`
+and `Labridae` — so `CJX` and `PWT` resolve to no coefficients and weigh `NA`,
+which sums to zero. `CJX` is 5% of landed weight and one of the 13 modelled
+taxa, and it went missing from `portal-taxa_aggregated` entirely on two runs.
 
-This release adds a local guard: `assert_taxa_coverage()` fails the run when any
-taxon but the two documented exemptions resolves to no coefficient pair, so a
-vanished taxon can no longer reach the portal. It does not make the numbers
-reproducible — that needs a version pin in `peskas.coasts`, filed as
-COASTS-TODO C25 and outstanding for all four country pipelines.
+Two things in this release:
+
+- `assert_taxa_coverage()` fails the run when any taxon but the two documented
+  exemptions resolves to no coefficient pair, so a vanished taxon can no longer
+  reach the portal silently. This is what caught the above.
+- `rfishbase` is pinned to 5.0.1 in both Dockerfiles, after the `install_github`
+  step so it is not upgraded back. **This is a stopgap** — it pins the host, not
+  the release. The real fix is a data-version argument in `peskas.coasts`, filed
+  as COASTS-TODO C25 and outstanding for all four country pipelines.
+
+**Every figure in the section above was measured on FishBase 25.04.** Adopting
+26.06 is a deliberate, separate change and needs its own before/after.
 
 ### Breaking changes
 

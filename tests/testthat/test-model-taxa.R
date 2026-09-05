@@ -1,10 +1,10 @@
 # The taxa/weight path's two guards and the alias table.
 #
-# `assert_taxa_coverage()` exists because a partial FishBase fetch silently
-# dropped `CJX` and `PWT` from a production coefficient table and their catch
-# weighed zero (COASTS-TODO C25). A guard that has only ever been run against
-# passing input is not a guard, so it is tested against the failure it was
-# written for.
+# `assert_taxa_coverage()` exists because FishBase release 26.06 emptied the
+# families `Caesionidae` and `Scaridae`, which silently dropped `CJX` and `PWT`
+# from the coefficient table and made their catch weigh zero (COASTS-TODO C25).
+# A guard that has only ever been run against passing input is not a guard, so
+# it is tested against the failure it was written for.
 
 test_that("assert_taxa_coverage() passes when every taxon resolves", {
   taxa <- dplyr::tibble(

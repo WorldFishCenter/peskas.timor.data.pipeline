@@ -213,13 +213,14 @@ curated_lw_coeffs <- function() {
 
 #' Fail the run when a taxon loses its coefficients
 #'
-#' The FishBase fetch is a live network read of a remote parquet dataset with no
-#' pinned release, and it has silently returned partial data in production: two
-#' consecutive dev runs one day apart differed by 4% in national catch weight,
-#' `CJX` and `PWT` dropped out of the coefficient table entirely, and 41 of 51
-#' codes moved by up to 54%. Nothing failed, because a taxon with no coefficient
-#' pair simply produces `NA` weight, which sums to zero. `CJX` is one of the 13
-#' `models.modelled_taxa`.
+#' The FishBase read is a live network read of a remote parquet dataset with no
+#' pinned release, so a new FishBase release reaches the pipeline the moment a
+#' container is rebuilt. Release **26.06** dissolved `Caesionidae` into
+#' `Lutjanidae` and `Scaridae` into `Labridae` — both family names survive with
+#' **zero species** — which took `CJX` and `PWT` to no coefficients at all.
+#' Nothing failed, because a taxon with no coefficient pair simply produces `NA`
+#' weight, which sums to zero: `CJX` is one of the 13 `models.modelled_taxa` and
+#' it went missing from `portal-taxa_aggregated` on two runs. COASTS-TODO C25.
 #'
 #' This turns that into a failed job. Two codes are expected to have no
 #' coefficients and are exempt: `MZZ` ("Marine fishes nei", the class
@@ -240,9 +241,12 @@ assert_taxa_coverage <- function(taxa, lw) {
     stop(
       "No length-weight coefficients resolved for: ",
       paste(sort(missing), collapse = ", "),
-      ". Every catch row of these taxa would weigh NA. This is usually a ",
-      "partial FishBase fetch rather than a code change: re-run before ",
-      "changing anything."
+      ". Every catch row of these taxa would weigh NA. Before changing any ",
+      "code, check which FishBase release was used: a new release can empty a ",
+      "family without removing its name, which is how CJX and PWT broke in ",
+      "26.06. `rfishbase` is pinned to 5.0.1 in the Dockerfiles for exactly ",
+      "this reason -- see COASTS-TODO C25. If the taxon's reference name is a ",
+      "family, add a genus-level alias in `taxa_search_aliases()`."
     )
   }
 
