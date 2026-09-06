@@ -5284,3 +5284,213 @@ WIO repos), `inst/config.yml`, `inst/config_template.yml`, `inst/extdata/` (new)
 (this entry).
 
 **Nothing committed. Nothing pushed. Nothing merged.**
+
+## Addendum — length types restated on a TL basis — 2026-09-06
+
+Branch: `feat/align-coasts-phase9`. Nothing committed, pushed or merged. Dev
+buckets and `validation-dev` written; no production bucket touched.
+
+### What prompted it
+
+Zanzibar 4.9.0 landed the same correction. Timor could not take it verbatim —
+Zanzibar calls `rfishbase` directly, Timor reads FishBase through
+`coasts::get_taxa_morphometrics()` — and the user asked for it minimal, with no
+new functions. Both constraints held: the change is ~30 lines inside
+`get_morphometric_tables()`.
+
+### The defect
+
+`get_taxa_morphometrics()` returns `length_weight` **and** `length_length`, and
+only the first was used. Combined with `summarise_lw_coeffs()` deliberately not
+filtering on `Type`, that pooled fits from different measurement axes into one
+number and applied it to a total length. Measured on Timor's taxa, of 3,702
+matched pairs:
+
+| `Type` | pairs |
+|---|---|
+| TL | 1,824 |
+| FL | 990 |
+| SL | 460 |
+| `NA` | 230 |
+| CL / ML / NG / BL / OT / ShL | 198 |
+
+**More than half the pool was not on the basis the surveys measure.** FL is
+0.958 TL and SL 0.827 TL at the median here, so applying those pairs to a TL
+reading overestimates weight — by roughly `(1/0.958)^3 = 1.14` and
+`(1/0.827)^3 = 1.77` respectively.
+
+### The fix
+
+`ratio = L_type / TL` from POPLL, then `W = a * ratio^b * TL^b` — **`b` is
+unchanged, only `a` is rescaled**. Three details that matter:
+
+- **POPLL fits `Length1 = aL + bL * Length2`; the second column is the
+  predictor.** Verified against the table rather than taken on trust: median
+  `bL` is 0.958 for `(FL, TL)` and 0.827 for `(SL, TL)`, both correctly below 1.
+  **coasts' roxygen states this backwards** — filed as COASTS-TODO **C28**.
+- `length_types = NULL` is now passed. The coasts default keeps only `TL`/`FL`
+  pairs and would have dropped 1,427 of 2,642 usable conversions — every `SL`
+  one, which is where the error is largest.
+- Fits with `|aL| > 1` cm are skipped as non-proportional; the median ratio per
+  species and type is used.
+
+**1,363 of 1,648 non-TL pairs convert. The other 285 are kept as published.**
+Dropping them was measured and rejected: it takes `MOO` down 92% and `SFA` 78%,
+because those taxa's fetched pairs carry them and what remains is a curated
+supplement fitted on yet another axis. Zanzibar converts only for taxa that
+would otherwise have nothing; Timor converts everything it can, which is the
+stronger version and removes any need for a `Type` filter. Curated rows are
+bound on **after** the conversion, so they are never restated — deliberate,
+since `CW`/`ShL`/`ML` have no FishBase conversion and field practice measures
+those taxa on total length anyway.
+
+### Verified
+
+| gate | result |
+|---|---|
+| portal contract vs golden | **0 structural failures**, 9/9 objects |
+| `devtools::check()` | 0 errors, 0 warnings, 3 NOTEs (one `@noRd` Rd link introduced and fixed) |
+| `testthat` | 40 pass |
+| tinytest, four suites | all green **against the new artefacts** |
+| taxon coverage | 54 codes, no new losses |
+| implementation vs the standalone measurement | `all.equal` TRUE on every `lw_a`/`lw_b` |
+
+**This change alone**: catch **−10.9%**, landing weight **−11.0%**, price/kg
+**+11.7%**, nutrient supply **−11.9%**, 45 of 93 numeric columns moved.
+
+**Cumulative, against the live production set** — this and the 2026-09-05 work
+together: catch **−18.4%**, landing weight **−15.3%**, price/kg **+17.8%**,
+revenue **−4.5%**, nutrient supply **−26.0%**, RDI **−20.3%**. `NEWS.md` now
+carries these and attributes them to the three separable corrections.
+
+Per modelled taxon, published catch in kt:
+
+| taxon | golden | before | after | this change | vs golden |
+|---|---|---|---|---|---|
+| `CLP` | 11,916.8 | 13,919.9 | 12,237.1 | −12.1% | +2.7% |
+| `TUN` | 7,854.0 | 6,442.9 | 5,895.0 | −8.5% | −24.9% |
+| `GZP` | 9,446.8 | 5,234.6 | 5,237.4 | +0.1% | −44.6% |
+| `FLY` | 4,712.1 | 5,997.2 | 5,081.5 | −15.3% | +7.8% |
+| `MZZ` | 5,566.3 | 5,116.4 | 4,583.4 | −10.4% | −17.7% |
+| `SDX` | 5,403.2 | 4,699.2 | 4,349.7 | −7.4% | −19.5% |
+| `CGX` | 3,564.2 | 3,282.1 | 2,809.9 | −14.4% | −21.2% |
+| `SNA` | 2,638.6 | 2,475.3 | 2,240.9 | −9.5% | −15.1% |
+| `MOO` | 3,290.0 | 2,026.9 | 2,067.6 | +2.0% | −37.2% |
+| `CJX` | 1,963.0 | 2,866.3 | 1,805.7 | −37.0% | −8.0% |
+| `BEN` | 1,545.4 | 1,026.2 | 971.2 | −5.4% | −37.2% |
+| `RAX` | 949.0 | 921.7 | 909.2 | −1.4% | −4.2% |
+| `LWX` | 954.9 | 718.9 | 583.6 | −18.8% | −38.9% |
+| **total** | 59,804.3 | 54,727.6 | 48,772.2 | −10.9% | −18.4% |
+
+`GZP` and `MOO` barely move: both are curated-driven, and curated rows are not
+restated.
+
+### Not adopted, deliberately
+
+- **Zanzibar's baseline-of-known-gaps in `assert_taxa_coverage()`.** Timor
+  already has the same thing — `exempt <- c("MZZ", "SWX")`, documented in the
+  function and in `CLAUDE.md`. Adding a second mechanism would duplicate it.
+- **Zanzibar's `Type == "TL"` filter on native FishBase pairs.** It discards
+  usable data for taxa that already resolve; converting everything is strictly
+  better and is why Timor needs no filter.
+- **The `rfishbase` 5.0.1 pin stays**, with its build-time assertion. It pins
+  the host, not the release, and cannot be replaced until COASTS-TODO C25 ships:
+  `rfishbase` has no global version option, so the version has to be a function
+  argument and only coasts can pass it. When C25 lands this becomes
+  `metadata.fishbase.db_version` in `inst/config.yml` and the Dockerfile lines
+  come out.
+
+### Note for whoever runs the next measurement
+
+This run was launched with the working directory **outside** the repo, so
+`add_version()` could not stamp a git sha and the dev artefacts are named
+`<prefix>__<timestamp>__.<ext>`. Harmless here, and
+`data-raw/compare-portal-json.R` still parses them, but run from the repo root
+if the artefacts need to be traceable to a commit.
+
+### Files changed
+
+`R/model-taxa.R`, `man/get_morphometric_tables.Rd`, `NEWS.md`, `CLAUDE.md`,
+`.claude/migration/COASTS-TODO.md` (C28),
+`.claude/migration/STATE.md` (this entry).
+
+## Addendum 2 — C25 shipped, the release pinned in config — 2026-09-06
+
+Branch: `feat/align-coasts-phase9`. Nothing committed, pushed or merged. No
+bucket written this session — the change is behaviour-neutral and was verified
+by re-running the coefficient path only.
+
+**coasts 4.10.0 closes C25, C28 and half of C26.** `resolve_db_version()` lands,
+shaped like `resolve_fao_areas()`; `get_taxa_morphometrics()` resolves the
+release once at the top and threads it through every read, so a run cannot mix
+snapshots; `expand_taxonomic_info()` now warns about names it drops; the POPLL
+direction in the roxygen is corrected.
+
+### What Timor changed
+
+- **`metadata.fishbase.db_version: "25.04"`** in `inst/config.yml`.
+- **`conf = conf` passed to both `coasts::get_taxa_morphometrics()` call
+  sites.** This is the easy mistake: without `conf`, coasts falls back to its
+  own `read_config()` and resolves `"latest"`, so the key sits there doing
+  nothing. `get_morphometric_tables()` and `get_taxa_expansion()` both pass it.
+- **The `rfishbase` 5.0.1 Dockerfile pin and its build assertion are deleted**,
+  and `rfishbase` goes back into `install2.r` unpinned. It was always a stopgap
+  for the *host*; the config key pins the *release*, which is the thing that
+  matters.
+- **coasts >= 4.10.0 is a hard floor**, replacing 4.6.0.
+
+### Verified
+
+- The two hosts serve **identical** 25.04 — 25,730 `poplw` rows and 27,211
+  `popll` rows on both, same `SpecCode` set, same family species counts
+  (`Caesionidae` 24, `Scaridae` 100, `Clupeidae` 15, `Dorosomatidae` 115). So
+  removing the package pin changes nothing, whichever `rfishbase` is installed.
+  **This was checked before the pin was removed, not after.**
+- `get_morphometric_tables()` re-run against coasts 4.10.0 with the key set:
+  log reads `FishBase / SeaLifeBase 25.04`, `Built 3702 length-weight and 5491
+  length-length rows for 3080 species`, `Restated 1363 of 1648`, `54 taxa`.
+  **Coefficients `all.equal` TRUE against the pre-pin run** — no re-baselining,
+  so the portal numbers in `NEWS.md` stand unchanged.
+- `devtools::check()` 0 errors, 0 warnings, 3 NOTEs; `testthat` 40 pass.
+
+### Expected new noise in the logs
+
+coasts 4.10.0's dropped-name warning fires on every Timor run and always names
+the same six: `Algae`, `Brachyura`, `Actinopterygii`,
+`Selachimorpha (Pleurotremata)`, `Leiognathus equulus`, `Thunnini`. **This is
+correct, not a fault.** `TUN`, `SKH`, `LGE` and `CLP`'s second family resolve
+through `taxa_search_aliases()` instead, `CRA` through the curated table, and
+only `MZZ` and `SWX` genuinely have nothing — both exempt in
+`assert_taxa_coverage()`. Recorded here so the next person does not chase it.
+
+### Still open
+
+- **C26's other half.** Only the silent-drop warning was fixed upstream. The
+  *additive alias* shape — extra search names per code, never a replacement, so
+  no published taxon is renamed — is still Timor-local and belongs in coasts so
+  every country gets it. Mozambique and Zanzibar still recode `catch_taxon` in
+  the data instead.
+- **C23**, the curated table's home in the hub. This is also where the residual
+  below would be fixed.
+- **The curated table's measurement axis is a known, unfixed residual.**
+  Measured 2026-09-06: **362 of 559 curated rows are fitted on a non-TL axis**
+  (CW 128, CL 119, ML 60, ShL 22, BL 18, FL 6, ShH 6, other 3) and are applied
+  to a total-length measurement — the same class of error the FishBase half just
+  had corrected. It cannot be fixed with available data: only **12 of 98**
+  curated species have any TL conversion in FishBase, the rest being molluscs and
+  crustaceans nobody has published one for. Bounded: the curated codes are ~4% of
+  national catch and the ones the curated rows actually dominate (`OCZ`, `FLY`,
+  `GZP`, `MOO`) are ~195 t of 5,522 t, **~3.5%**. The code comment calls the
+  exemption "deliberate", which is true of why it is not converted but understates
+  that a mismatch remains.
+- **The survey side is not affected** and was re-verified:
+  `data-raw/freeze-landings-v1.R` converts v1's fork lengths once via
+  `TL = aL + bL * L`, intercept included, and forces `OCZ`/`SLV`/`IAX`/`MOO` to
+  TL; v2 and v3 record TL natively. Every length reaching `join_weights()` is a
+  total length.
+
+### Files changed
+
+`inst/config.yml`, `R/model-taxa.R`, `Dockerfile`, `Dockerfile.prod`,
+`CLAUDE.md`, `NEWS.md`, `.claude/migration/COASTS-TODO.md`,
+`.claude/migration/STATE.md` (this entry).

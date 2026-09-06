@@ -744,7 +744,7 @@ objection was reaching for. Timor adopts it in Phase 12.
 
 ## Added by Timor's taxa-path session (2026-09-05)
 
-### C25. The FishBase read is unpinned — a new release changed published catch with no code change
+### C25. The FishBase read is unpinned — a new release changed published catch with no code change ✅ fixed in coasts 4.10.0 (2026-09-06)
 
 **This is the most serious item on this list. It is live in all four
 pipelines.** Diagnosed properly 2026-09-05 after a first, wrong diagnosis
@@ -822,7 +822,7 @@ also pins `rfishbase` to 5.0.1 in both Dockerfiles as a stopgap — that pins th
 *host*, not the release, and stops working the day HuggingFace serves 26.06.
 Only ask 1 fixes it properly, and only for everyone.
 
-### C26. `expand_taxonomic_info()` cannot match a rank between genus and family
+### C26. `expand_taxonomic_info()` cannot match a rank between genus and family — ✅ silent-drop half fixed in coasts 4.10.0
 
 `get_taxa_backbone()` pivots `sci_name`, `Genus`, `Family`, `Order` and `Class`,
 which is already richer than Mozambique's rank switch. But FAO's ASFIS list
@@ -869,3 +869,57 @@ told.
 Any `coasts` function that expands taxa for downstream use should report the
 codes it could not resolve. Timor now warns from `get_nutrients_table()` and
 errors from `assert_taxa_coverage()`.
+
+### C28. `get_length_length_coeffs()` documents the fit backwards (docs only) ✅ fixed in coasts 4.10.0
+
+The roxygen says the conversion is `Length2 = aL + bL * Length1`. FishBase's
+POPLL table fits **`Length1 = a + b * Length2`** — the *second* column is the
+predictor. Verified empirically against the table itself: the median `bL` is
+**0.958** for `Length1 = FL, Length2 = TL` and **0.827** for `SL, TL`, both
+correctly less than 1 because FL and SL are shorter than TL. Under the
+documented reading they would have to exceed 1.
+
+No code is wrong — coasts only passes the columns through — but anyone building
+a conversion from that sentence inverts every ratio, which silently changes
+weight by roughly `(1/r)^b / r^b`, a factor of ~1.1 for FL and ~1.8 for SL.
+
+Two lines while it is open:
+
+1. Fix the sentence.
+2. `length_types` defaults to `c("TL", "FL")`, which silently drops every `SL`
+   pair — for Timor's taxa that is 1,427 of 2,642 usable conversions, and `SL`
+   is where the correction is largest. Either default to `NULL` or say plainly
+   in the roxygen that the default cannot convert standard length.
+
+
+---
+
+## Closed by coasts 4.10.0 (2026-09-06)
+
+`resolve_db_version()` lands, shaped like `resolve_fao_areas()`: explicit
+argument, then `metadata.fishbase.db_version`, then `"latest"`, validated
+against `available_releases()` **per server**. `get_taxa_morphometrics()` and
+`enrich_taxa()` resolve it once at the top and thread that one value through
+every read, so a run cannot mix snapshots. `expand_taxonomic_info()` now logs
+dropped names at WARN. The POPLL direction in `get_length_length_coeffs()` is
+corrected.
+
+**What Timor did with it, same day:**
+
+- `metadata.fishbase.db_version: "25.04"` in `inst/config.yml`, and `conf` is
+  now passed to both `get_taxa_morphometrics()` call sites — **without `conf`
+  coasts falls back to its own `read_config()` and resolves `"latest"`**, which
+  is the drift the key exists to stop. That is the one easy mistake here.
+- The `rfishbase` 5.0.1 pin and its build assertion are **deleted** from both
+  Dockerfiles; `rfishbase` goes back into `install2.r` unpinned. The pin covered
+  the *host*; the config key covers the *release*, which is what actually
+  matters. Verified first that the two hosts serve identical 25.04 — 25,730
+  `poplw` rows and 27,211 `popll` rows on both — so dropping the package pin
+  changes nothing.
+- Re-ran `get_morphometric_tables()` against 4.10.0: **coefficients identical**
+  to the pre-pin run, so no re-baselining.
+- **coasts >= 4.10.0 is now a hard floor** for Timor.
+
+C26's remaining half is still open: the *additive alias* shape
+(`taxa_search_aliases()`) belongs upstream so every country gets it. Only the
+silent-drop warning was fixed.

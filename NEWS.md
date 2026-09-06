@@ -12,58 +12,70 @@ keys, nesting, categories and column types — is deliberately unchanged. The
 This release is a bias correction, not a re-skin. The first production run on it
 republishes the portal with, against the live production set:
 
-- **catch −8.5%**, **landing weight −4.9%**, **estimated tonnage −8.5%**;
-- **price per kg +5.4%**, **revenue −4.5%**;
-- **nutrient supply −16.0%**, **nutrient RDI −9.3%**;
+- **catch −18.4%**, **landing weight −15.3%**, **estimated tonnage −18.4%**;
+- **price per kg +17.8%**, **revenue −4.5%**;
+- **nutrient supply −26.0%**, **nutrient RDI −20.3%**.
 - North/South Coast revenue redistributed, Lautem now counted North.
 
 Object names, keys, categories, nesting and column types are unchanged — the
 contract gate reports **0 structural failures** — so nothing on the site breaks
 or empties.
 
-The cause is the length-weight path, rebuilt twice. `summarise_lw_coeffs()` now
-takes a central estimate per taxon — a geometric mean of FishBase's `a`, an
-arithmetic mean of `b`, over every study not flagged questionable — where the
-previous code selected a per-taxon percentile. The taxa path was then aligned to
-the WIO pipelines (see below), which moved the figures back most of the way:
-taken alone that second change is catch **+12.6%**, landing weight **+16.0%**,
-price per kg **−11.0%** and nutrient supply **+30.3%**.
+Three corrections to the length-weight path account for it, and they do not all
+push the same way:
 
-The largest per-taxon moves against production are `CJX` **+46%** (it was
-absent from the published object entirely in some runs — see below), `FLY`
-**+27%**, `CLP` **+17%**, `TUN` **−18%**, `MOO` **−38%** and `GZP` **−45%**.
-`GZP`'s fall is a correction: its coefficients came from a common-name lookup
-whose pool was topped by driftfishes and scads at 185–328 g while the actual
-garfish sit at 17–21 g.
+1. **A central estimate per taxon.** `summarise_lw_coeffs()` takes a geometric
+   mean of FishBase's `a` and an arithmetic mean of `b` over every study not
+   flagged questionable, where the previous code selected a per-taxon
+   percentile.
+2. **The right species behind each taxon.** Coefficients are now restricted to
+   FAO areas 57 and 71, `TUN` is the tribe *Thunnini* rather than a common-name
+   search, and `CLP` searches `Dorosomatidae` as well as `Clupeidae` — FishBase
+   moved the tropical sardines there in 2022, so Timor's second-largest taxon
+   had been priced off Atlantic herring. Taken alone this raised catch 12.6%.
+3. **One measurement basis.** A published `W = a * L^b` is fitted on whichever
+   axis the study used, and more than half of the matched pairs are not total
+   length — 990 fork-length and 460 standard-length against 1,824 TL. Pooling
+   them as published and applying the result to a TL measurement overestimates
+   weight, because FL and SL are shorter than TL. The length-length conversions
+   were already being fetched and discarded; 1,363 of 1,648 non-TL pairs are now
+   restated on a TL basis before pooling. Taken alone this lowered catch 10.9%.
 
-Measured 2026-09-05 against the live production set, with the FishBase snapshot
-held fixed on both sides — which matters, because it is not fixed in general
-(next section).
+The largest per-taxon moves against production are `FLY` **+8%**, `CLP`
+**+3%**, `CJX` **−8%**, `SNA` **−15%**, `MZZ` **−18%**, `SDX` **−20%**, `CGX`
+**−21%**, `TUN` **−25%**, `MOO` and `BEN` **−37%**, `LWX` **−39%** and `GZP`
+**−45%**. `GZP`'s fall is a correction: its coefficients came from a
+common-name lookup whose pool was topped by driftfishes and scads at 185–328 g
+while the actual garfish sit at 17–21 g.
 
-### Known issue: the FishBase release is not pinned
+Measured 2026-09-06 against the live production set, on FishBase release 25.04
+(see the next section).
 
-`peskas.coasts` reads FishBase over the network at pipeline time with no pinned
-release. `rfishbase` 5.0.3 moved the data host from HuggingFace (latest release
-**25.04**) to Source Cooperative (latest **26.06**), so rebuilding the container
-silently moves the pipeline to a newer FishBase. In 26.06 the families
-`Caesionidae` and `Scaridae` were emptied — their genera moved to `Lutjanidae`
-and `Labridae` — so `CJX` and `PWT` resolve to no coefficients and weigh `NA`,
-which sums to zero. `CJX` is 5% of landed weight and one of the 13 modelled
-taxa, and it went missing from `portal-taxa_aggregated` entirely on two runs.
+### The FishBase release is pinned
 
-Two things in this release:
+`peskas.coasts` read FishBase over the network with no pinned release, so the
+reference data moved whenever a container was rebuilt. `rfishbase` 5.0.3 changed
+the data host from HuggingFace (latest release **25.04**) to Source Cooperative
+(latest **26.06**), and in 26.06 the families `Caesionidae` and `Scaridae`
+survive with **zero species attached** — their genera having moved to
+`Lutjanidae` and `Labridae`. `CJX` and `PWT` therefore resolved to no
+coefficients and weighed `NA`, which sums to zero. `CJX` is 5% of landed weight
+and one of the 13 modelled taxa, and it went missing from
+`portal-taxa_aggregated` entirely on two runs, with no error.
 
-- `assert_taxa_coverage()` fails the run when any taxon but the two documented
-  exemptions resolves to no coefficient pair, so a vanished taxon can no longer
-  reach the portal silently. This is what caught the above.
-- `rfishbase` is pinned to 5.0.1 in both Dockerfiles, as the last install step
-  and followed by a version assertion, since `install_github()` and
-  `install_local(dependencies = TRUE)` both upgrade it back otherwise. **This is a stopgap** — it pins the host, not
-  the release. The real fix is a data-version argument in `peskas.coasts`, filed
-  as COASTS-TODO C25 and outstanding for all four country pipelines.
+- **`metadata.fishbase.db_version: "25.04"`** in `inst/config.yml`, read by
+  `coasts::resolve_db_version()` and resolved once per call so a run cannot mix
+  snapshots. This requires **coasts >= 4.10.0**, which is now a hard floor.
+  `conf` is passed to both `get_taxa_morphometrics()` call sites — without it
+  coasts resolves `"latest"` from its own configuration and the pin does
+  nothing.
+- **`assert_taxa_coverage()`** fails the run when any taxon but the two
+  documented exemptions resolves to no coefficient pair, so a vanished taxon
+  cannot reach the portal silently. This is what caught the above.
 
-**Every figure in the section above was measured on FishBase 25.04.** Adopting
-26.06 is a deliberate, separate change and needs its own before/after.
+Every figure in the section above was measured on 25.04. Moving the key
+re-baselines the portal and should be done deliberately, with
+`data-raw/compare-portal-json.R` run against the change.
 
 ### Breaking changes
 

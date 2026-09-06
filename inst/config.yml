@@ -280,6 +280,26 @@ default:
     fishbase:
       fao_areas: [57, 71]
 
+      # [new 2026-09-06] The FishBase / SeaLifeBase data release. Read by
+      # `coasts::resolve_db_version()` (coasts >= 4.10.0, COASTS-TODO C25) and
+      # resolved ONCE per `get_taxa_morphometrics()` call, so a single run
+      # cannot mix two snapshots.
+      #
+      # `"latest"` is NOT a fixed dataset — it follows whatever release the
+      # installed `rfishbase` points at, and the host moved: 5.0.3 reads Source
+      # Cooperative (which serves 26.06) where 5.0.1 read HuggingFace (which
+      # stops at 25.04). A container rebuild therefore moved Timor to 26.06,
+      # in which `Caesionidae` and `Scaridae` survive as family names with
+      # **zero species attached** — so `CJX` and `PWT` weighed `NA`, which sums
+      # to zero, and `CJX` vanished from the portal.
+      #
+      # 25.04 is what every figure in NEWS.md was measured on. The two hosts
+      # serve byte-identical 25.04 (verified 2026-09-06: 25,730 poplw rows and
+      # 27,211 popll rows on both), so this pin holds whichever rfishbase is
+      # installed. Moving it is a deliberate change that re-baselines the
+      # portal — run data-raw/compare-portal-json.R when you do.
+      db_version: "25.04"
+
     # `rfishtable:` went in Phase 11 — `ingest_rfish_table()` was deleted in
     # Phase 3 when the weight path moved onto `coasts::get_taxa_morphometrics()`.
     nutrients:

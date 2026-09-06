@@ -141,10 +141,43 @@ join_weights <- function(data, rfish_tab, nutrients_table) {
 #' `strip_parentheticals` is on because several FAO names carry a bracketed
 #' synonym (`"Haemulidae (=Pomadasyidae)"`) and match nothing as written.
 #'
+#' @section Length types:
+#' A published pair `W = a * L^b` is fitted on whichever axis the study used —
+#' `Type` is `TL`, `FL`, `SL`, `CL`, … — but every length reaching
+#' [join_weights()] is a **total length**. Pooling the pairs as published
+#' therefore averaged fork-length and standard-length fits into one number and
+#' applied it to TL, which overestimates weight, because FL and SL are shorter
+#' than TL (medians here: FL 0.958 TL, SL 0.827 TL).
+#'
+#' `length_length` is fetched by the same call and was previously discarded.
+#' It is now used to restate every convertible pair on a TL basis. POPLL fits
+#' `Length1 = aL + bL * Length2` — **the second column is the predictor** — so
+#' the ratio `L_type / TL` is `bL` when `Length2` is `TL` and `1 / bL` when
+#' `Length1` is. Substituting `L_type ~= ratio * TL` into `W = a * L_type^b`
+#' gives `W = a * ratio^b * TL^b`: **`b` is unchanged and only `a` is
+#' rescaled**. Fits with an intercept above 1 cm are not proportional and are
+#' skipped; per species and type the median ratio is used.
+#'
+#' `length_types = NULL` is passed for this reason. The coasts default keeps
+#' only `TL`/`FL` pairs, which would leave the 460 `SL` rows unconvertible —
+#' and `SL` is where the error is largest.
+#'
+#' Measured on Timor's taxa: of 1,648 non-TL pairs, 1,363 convert and 285 do
+#' not. **The 285 are kept as published rather than dropped.** Dropping them
+#' takes `MOO` down 92% and `SFA` 78% — those taxa's fetched pairs carry them,
+#' and what is left is a curated supplement fitted on a different axis again.
+#' Zanzibar 4.9.0 converts only for taxa that would otherwise have nothing;
+#' Timor converts everything it can, which is why no `Type` filter is needed
+#' here (see `summarise_lw_coeffs()`).
+#'
 #' @section What is pooled in:
 #' Timor's 559 curated rows over 11 mostly-invertebrate codes, from
 #' `curated_lw_coeffs()`. They carry no FAO area, so they are bound on **after**
-#' the filter and are never area-restricted.
+#' the filter and are never area-restricted — and, being bound after the
+#' conversion above, they are never restated either. That is deliberate: their
+#' `Type` values (`CW`, `ShL`, `ML`, `CL`) are invertebrate axes FishBase
+#' carries no conversion for, and field practice measures those taxa on total
+#' length anyway (confirmed 2026-08-10).
 #'
 #' @param conf The configuration file.
 #'
@@ -159,11 +192,62 @@ get_morphometric_tables <- function(conf) {
     taxa,
     fao_areas = conf$metadata$fishbase$fao_areas,
     filter_by_area = TRUE,
-    strip_parentheticals = TRUE
+    # Keep every length type, not just the TL/FL pairs coasts defaults to:
+    # the SL conversions are the ones that matter most. See "Length types".
+    length_types = NULL,
+    strip_parentheticals = TRUE,
+    # `conf` is what carries `metadata.fishbase.db_version`. Without it coasts
+    # falls back to its own `read_config()` and resolves "latest", which is the
+    # drift this key exists to stop.
+    conf = conf
+  )
+
+  # ratio = L_type / TL, from `Length1 = aL + bL * Length2`.
+  ratios <- m$length_length %>%
+    dplyr::filter(
+      !is.na(.data$bL),
+      .data$bL > 0,
+      !is.na(.data$aL),
+      abs(.data$aL) <= 1
+    ) %>%
+    dplyr::mutate(
+      Type = dplyr::case_when(
+        .data$Length2 == "TL" ~ .data$Length1,
+        .data$Length1 == "TL" ~ .data$Length2,
+        TRUE ~ NA_character_
+      ),
+      ratio = dplyr::case_when(
+        .data$Length2 == "TL" ~ .data$bL,
+        .data$Length1 == "TL" ~ 1 / .data$bL,
+        TRUE ~ NA_real_
+      )
+    ) %>%
+    dplyr::filter(!is.na(.data$Type), .data$Type != "TL", !is.na(.data$ratio)) %>%
+    dplyr::group_by(.data$species_found, .data$server, .data$Type) %>%
+    dplyr::summarise(ratio = stats::median(.data$ratio), .groups = "drop")
+
+  fetched <- m$length_weight %>%
+    dplyr::left_join(ratios, by = c("species_found", "server", "Type")) %>%
+    dplyr::mutate(
+      a = dplyr::if_else(
+        is.na(.data$ratio),
+        .data$a,
+        .data$a * .data$ratio^.data$b
+      ),
+      Type = dplyr::if_else(is.na(.data$ratio), .data$Type, "TL")
+    ) %>%
+    dplyr::select(-"ratio")
+
+  n_non_tl <- sum(m$length_weight$Type != "TL", na.rm = TRUE)
+  n_restated <- sum(fetched$Type == "TL", na.rm = TRUE) -
+    sum(m$length_weight$Type == "TL", na.rm = TRUE)
+  logger::log_info(
+    "Restated {n_restated} of {n_non_tl} non-TL length-weight pairs on a ",
+    "total-length basis"
   )
 
   lw <- summarise_lw_coeffs(
-    dplyr::bind_rows(m$length_weight, curated_lw_coeffs())
+    dplyr::bind_rows(fetched, curated_lw_coeffs())
   )
 
   assert_taxa_coverage(taxa, lw)
@@ -271,7 +355,8 @@ get_taxa_expansion <- function(conf, expanded = NULL) {
       get_taxa_list(conf),
       fao_areas = conf$metadata$fishbase$fao_areas,
       filter_by_area = TRUE,
-      strip_parentheticals = TRUE
+      strip_parentheticals = TRUE,
+      conf = conf
     )$expanded
   }
 
@@ -414,9 +499,12 @@ taxa_search_aliases <- function() {
 #' published values span orders of magnitude, so it is averaged in log space,
 #' while `b` is an exponent clustered near 3.
 #'
-#' No filtering on `Type` is applied. Restricting to `Type == "TL"` discards
-#' more than half the matched species for `CJX`, `EMP`, `MOB` and `YDX`.
-#' Low-quality studies (`EsQ == "yes"`) are dropped, as they were before.
+#' No filtering on `Type` is applied, and since 2026-09-06 none is needed:
+#' [get_morphometric_tables()] restates every convertible pair on a total-length
+#' basis before calling this, so the pool is one measurement basis rather than
+#' several. Filtering instead of converting would discard more than half the
+#' matched species for `CJX`, `EMP`, `MOB` and `YDX`. Low-quality studies
+#' (`EsQ == "yes"`) are dropped, as they were before.
 #'
 #' @param lw Length-weight rows from [coasts::get_length_weight_coeffs()].
 #' @return A tibble: `alpha3_code`, `n_studies`, `lw_a`, `lw_b`.

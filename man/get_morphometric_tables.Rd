@@ -39,11 +39,46 @@ species that do not occur in Timor: \code{CLP} was priced off 114 records of
 synonym (\code{"Haemulidae (=Pomadasyidae)"}) and match nothing as written.
 }
 
+\section{Length types}{
+
+A published pair \code{W = a * L^b} is fitted on whichever axis the study used —
+\code{Type} is \code{TL}, \code{FL}, \code{SL}, \code{CL}, … — but every length reaching
+\code{\link[=join_weights]{join_weights()}} is a \strong{total length}. Pooling the pairs as published
+therefore averaged fork-length and standard-length fits into one number and
+applied it to TL, which overestimates weight, because FL and SL are shorter
+than TL (medians here: FL 0.958 TL, SL 0.827 TL).
+
+\code{length_length} is fetched by the same call and was previously discarded.
+It is now used to restate every convertible pair on a TL basis. POPLL fits
+\code{Length1 = aL + bL * Length2} — \strong{the second column is the predictor} — so
+the ratio \code{L_type / TL} is \code{bL} when \code{Length2} is \code{TL} and \code{1 / bL} when
+\code{Length1} is. Substituting \verb{L_type ~= ratio * TL} into \code{W = a * L_type^b}
+gives \code{W = a * ratio^b * TL^b}: \strong{\code{b} is unchanged and only \code{a} is
+rescaled}. Fits with an intercept above 1 cm are not proportional and are
+skipped; per species and type the median ratio is used.
+
+\code{length_types = NULL} is passed for this reason. The coasts default keeps
+only \code{TL}/\code{FL} pairs, which would leave the 460 \code{SL} rows unconvertible —
+and \code{SL} is where the error is largest.
+
+Measured on Timor's taxa: of 1,648 non-TL pairs, 1,363 convert and 285 do
+not. \strong{The 285 are kept as published rather than dropped.} Dropping them
+takes \code{MOO} down 92\% and \code{SFA} 78\% — those taxa's fetched pairs carry them,
+and what is left is a curated supplement fitted on a different axis again.
+Zanzibar 4.9.0 converts only for taxa that would otherwise have nothing;
+Timor converts everything it can, which is why no \code{Type} filter is needed
+here (see \code{summarise_lw_coeffs()}).
+}
+
 \section{What is pooled in}{
 
 Timor's 559 curated rows over 11 mostly-invertebrate codes, from
 \code{curated_lw_coeffs()}. They carry no FAO area, so they are bound on \strong{after}
-the filter and are never area-restricted.
+the filter and are never area-restricted — and, being bound after the
+conversion above, they are never restated either. That is deliberate: their
+\code{Type} values (\code{CW}, \code{ShL}, \code{ML}, \code{CL}) are invertebrate axes FishBase
+carries no conversion for, and field practice measures those taxa on total
+length anyway (confirmed 2026-08-10).
 }
 
 \keyword{helper}

@@ -315,6 +315,33 @@ freshwater Lake Tanganyika sardine; `SIX` (*Sardinella* spp) resolves but
 narrows to 8 species, drops the herrings the label names, and renames a
 published taxon key.
 
+**Coefficients are restated on a total-length basis before pooling** (added
+2026-09-06, after Zanzibar 4.9.0). A published `W = a * L^b` is fitted on
+whichever axis the study used, and for Timor's taxa only 1,824 of 3,702 matched
+pairs are `TL` — 990 are `FL`, 460 `SL`. Pooling them as published and applying
+the result to a TL measurement overestimates weight, because FL and SL are
+shorter (medians 0.958 TL and 0.827 TL). `get_taxa_morphometrics()` already
+returned `length_length` and it was being discarded; it is now used to convert.
+Four things to know:
+
+- **POPLL fits `Length1 = aL + bL * Length2` — the second column is the
+  predictor.** coasts' roxygen states this backwards (COASTS-TODO **C28**).
+  Getting it wrong inverts every ratio.
+- Substituting `L_type ~= ratio * TL` gives `W = a * ratio^b * TL^b`, so **`b`
+  is unchanged and only `a` is rescaled**.
+- **`length_types = NULL` is passed deliberately.** The coasts default keeps
+  only `TL`/`FL` pairs, which would drop 1,427 of 2,642 usable conversions —
+  all the `SL` ones, where the correction is largest.
+- **The 285 pairs with no conversion are kept as published, not dropped**, and
+  the curated rows are bound on afterwards so they are never restated. Dropping
+  the unconvertible takes `MOO` down 92% and `SFA` 78%. Zanzibar converts only
+  for taxa that would otherwise have nothing; Timor converts everything it can,
+  which is why no `Type` filter is needed.
+
+Effect measured in isolation: national catch **−10.9%**, price/kg **+11.7%**,
+nutrient supply **−11.9%**; `CJX` −37%, `LWX` −19%, `FLY` −15%, `CGX` −14%,
+`CLP` −12%, `TUN` −8.5%; `GZP` and `MOO` unchanged, being curated-driven.
+
 **`rescue_by_common_name()` is gone**, and it was not a like-for-like removal —
 it was the *only* source of coefficients for `TUN`. It ran
 `rfishbase::common_to_sci()` on the literal strings `"Tuna"`, `"Shark"` and
@@ -686,31 +713,36 @@ first write to `peskas-api-prod`, which is a separate, unmade decision.
   PR #11 and in every release the workflow can resolve. The
   `log_threshold = logger::INFO` at each `coasts::` call site stays as a
   regression guard, deliberately; it is still live in the other three repos.
-- **The FishBase read is unpinned, and a new release has already changed
-  published catch with no code change.** `coasts::get_combined_tbl()` calls
-  `rfishbase::fb_tbl()` with no `version`, so a run takes whatever release is
-  newest. `rfishbase` **5.0.3** moved the parquet host from HuggingFace (latest
-  **25.04**) to Source Cooperative (latest **26.06**), so a container rebuild
-  silently moved the pipeline to 26.06 — in which `Caesionidae` and `Scaridae`
-  exist with **zero species**, their genera having moved to `Lutjanidae` and
-  `Labridae`. `CJX` and `PWT` therefore weighed `NA`, which sums to zero, and
+- **The FishBase release is pinned in config, and it must stay that way.**
+  `metadata.fishbase.db_version: "25.04"` (coasts >= 4.10.0). `"latest"` is not
+  a fixed dataset: `rfishbase` 5.0.3 moved the parquet host from HuggingFace
+  (which stops at **25.04**) to Source Cooperative (which serves **26.06**), so
+  a container rebuild silently moved the pipeline to 26.06 — in which
+  `Caesionidae` and `Scaridae` survive as family names with **zero species
+  attached**. `CJX` and `PWT` therefore weighed `NA`, which sums to zero, and
   `CJX` — 5% of landed weight and one of the 13 `models.modelled_taxa` — was
-  **missing from `portal-taxa_aggregated`** on 2026-08-18 and 2026-09-04 with no
-  error. Two consequences:
-  - **Every number in `NEWS.md` and the 2026-09-05 STATE entry was measured on
-    25.04.** Adopting 26.06 is a separate change needing its own before/after.
-  - **`rfishbase` is pinned to 5.0.1 in both Dockerfiles**, as the **last**
-    install step and followed by a `packageVersion()` assertion. It has to be
-    last: `install_github()` and, in `Dockerfile.prod`,
-    `remotes::install_local(dependencies = TRUE)` both upgrade it back, which
-    silently defeated the first attempt. It pins the **host**, not the
-    release, and stops working the day HuggingFace serves 26.06. The real fix is
-    a `version` argument in coasts driven by `metadata.fishbase.db_version` —
-    COASTS-TODO **C25**, live in all four pipelines. `assert_taxa_coverage()` is
-    the guard that caught this and it is the part worth keeping.
+  **missing from `portal-taxa_aggregated`** on two runs with no error. Four
+  things follow:
+  - **Pass `conf` to `coasts::get_taxa_morphometrics()`.** Without it coasts
+    falls back to its own `read_config()` and resolves `"latest"`, silently
+    undoing the pin. Both Timor call sites pass it.
+  - **Every number in `NEWS.md` was measured on 25.04.** Moving the key
+    re-baselines the portal; run `data-raw/compare-portal-json.R` when you do.
+  - The two hosts serve **identical** 25.04 (verified 2026-09-06: 25,730
+    `poplw` and 27,211 `popll` rows on both), so the pin holds whichever
+    `rfishbase` is installed. An earlier stopgap that pinned `rfishbase` to
+    5.0.1 in the Dockerfiles is **gone** — it pinned the host, not the release.
+  - `assert_taxa_coverage()` stays as the backstop. It is what caught this.
   A trap worth naming: from the artefacts alone, **"varies between runs" and
   "varies between environments" look identical**. The first diagnosis here was
-  "non-deterministic partial reads" and it was wrong. Check the resolved
-  FishBase release before concluding either.
-- Tests are Timor's advantage over the other pipelines. **Never delete an
+  "non-deterministic partial reads" and it was wrong. Resolve the release before
+  concluding either.
+- **`expand_taxonomic_info()` warns about names it cannot match** (coasts
+  4.10.0), and for Timor it always names six: `Algae`, `Brachyura`,
+  `Actinopterygii`, `Selachimorpha (Pleurotremata)`, `Leiognathus equulus`,
+  `Thunnini`. **That is expected, not a fault.** Four of them (`TUN`, `SKH`,
+  `LGE`, plus `CLP`'s second family) resolve through `taxa_search_aliases()`
+  instead, and `CRA` through the curated table; only `MZZ` and `SWX` genuinely
+  have nothing, and both are exempt in `assert_taxa_coverage()`.
+- Tests are Timor's advantage over the other pipelines.- Tests are Timor's advantage over the other pipelines. **Never delete an
   assertion to make a change pass** — update the expectation deliberately.
