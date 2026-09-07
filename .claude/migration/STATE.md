@@ -6,151 +6,87 @@ Append one entry per completed phase, newest at the bottom.
 
 ## Current position
 
-- **The 2026-08-18 alignment audit ran between Phase 10 and Phase 11.** Its
-  deliverable is [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md); read its §13
-  ("What Phase 11 may and may not delete") before touching anything in the
-  cutover, and its entry at the bottom of this file for the five documented
-  claims it found to be false. It also scoped a **Phase 12**, after the cutover.
-- **Read the 2026-09-05 taxa-path entry at the bottom before anything else.** It
-  rewrote the weight path (no Google Sheets, FAO areas 57/71, no common-name
-  rescue) and it found that **the FishBase release is not pinned**: `rfishbase`
-  5.0.3 moved the data host from HuggingFace (latest **25.04**) to Source
-  Cooperative (latest **26.06**), so a container rebuild silently moved the
-  pipeline to FishBase 26.06 — in which `Caesionidae` and `Scaridae` hold zero
-  species, so `CJX` (one of the 13 `modelled_taxa`) and `PWT` weighed nothing
-  and `CJX` vanished from `portal-taxa_aggregated`. COASTS-TODO **C25**;
-  `rfishbase` is pinned to 5.0.1 in both Dockerfiles as a stopgap.
-  **The `−22%` recorded below and in `NEWS.md` was measured on a 26.06 run.**
-  The current measured effect of merging, **on 25.04**, is **catch −8.5%**,
-  **price/kg +5.4%**, **nutrient supply −16.0%** against the live production
-  set. See [`NOTE-FISHBASE-PIN.md`](NOTE-FISHBASE-PIN.md), written to be sent to
-  coasts and the WIO repos.
-- **Phase:** **11b prepared, 2026-09-04 — the branch is ready to merge and the
-  merge is the user's to make.** Nothing is committed, pushed or published; the
-  only working-tree change is `NEWS.md`, left unstaged. Both production scripts
-  have now run (`freeze-landings-v1.R` and `convert-pds-tracks.R`), the whole
-  pipeline has been run against production **except the publish**, and the
-  measured effect of merging was recorded there as **catch and tonnage ≈ −22%,
-  price/kg ≈ +22%, nutrient supply −24% to −38%** — **superseded**, see the
-  2026-09-05 entry. Read the Phase 11b entry at the bottom before
-  anything else — its §4 is a decision the user has not yet made (**after the
-  merge, the API export ran nowhere; the user ruled that Timor should publish as
-  the other countries do, so the merge is **also** Timor's first
-  `peskas-api-prod` write**), and its §0 records that two consecutive sessions
-  skipped their STATE entry.
-- Phase 10's deliverable is somebody else's repo: PR
-  **[#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17)** against
-  `WorldFishCenter/peskas.coasts`, **merged 2026-08-13 as `989049c`** with
-  `--merge`, so all five commits survive and each item stays individually
-  revertible. Shipped in **v4.7.0**; coasts has since tagged **v4.8.0**, which
-  the container build resolves. Nothing in this repo changed in Phase 10.
-- **The Phase 11 release gate is met and spent.** Phase 11 could delete no local
-  copy of anything upstreamed until 4.7.0 was tagged and one green run made
-  against it; run **31778254836** (2026-08-14) was that run, and Phase 11a spent
-  the gate on the KoBo status client and the `ingest_assets()` hub mirror.
-  Remember why the run alone was never sufficient: **a package's own definitions
-  win over its imports**, so the delegation is only real once the local copy is
-  gone.
-- **CI is now nine workflows, not eleven.** Read the Phase 9 entry before
-  touching any of them, and in particular: the three `disabled_inactivity` ones
-  must not be re-enabled until after the Phase 11b merge, because a cron fires
-  from the default branch; `release.yaml` cuts `v4.0.0` the moment this work
-  lands on `main`; the two `if: ${{ !endsWith(github.ref, '/main') }}` lines on
-  the API export steps are the only thing standing between Timor and its first
-  `peskas-api-prod` write; and `R-CMD-check` / `pkgdown` / `test-coverage`
-  cannot run from a phase branch at all, so their first exercise is the Phase 11b
-  PR.
-- **Branches:** Phase 0 = `494a8d0`, Phase 1 = `ea7f253`, Phase 2 = `c6af91a`
-  (+ `a2c2881` weight rewrite, `7902012` docs), Phase 3 = `a89f96e` (+ `0e8ab28`
-  docs), Phase 4 = `ad58a87` (+ `7549763`, `36edc13`, `2814dff` docs).
-  Phase 5 = `75985a8` (+ `992bc6d` docs).
-  Phase 6 = `ec0b7e5` (+ `a16d60e` docs) on `feat/align-coasts-phase6`.
-  Phase 7 = **`76b7f71`** (+ `03a1d0f` the C21 leak fix) on
-  `feat/align-coasts-phase7`.
-  Phase 8 = **`c0207c3`** (renames) + **`c27c126`** (export path) on
-  `feat/align-coasts-phase8`.
-  Phase 9 = **`afff10c`** (workflows) + **`586db1d`** (pkgdown keywords) +
-  **`a1773cb`** (NEWS / README / CLAUDE.md) + **`fc8bc2c`** (the API export as
-  its own job) on `feat/align-coasts-phase9`, green on runs **31602163472** and
-  **31635228716**.
-  Phase 10 = no Timor branch; in `peskas.coasts`, `87b6f0d`
-  (`feat/kobo-validation-status`), `0ef43f6` (`feat/assets-country-column`),
-  `6440547` (`feat/resolve-api-storage`), `e5f3eeb` (`fix/track-id-extraction`),
-  `abe9104` (`feat/taxa-selenium`), all off `8addc96`.
-  Portal corrections = **`602a110`** (the coast rule) + **`5a83f11`**
-  (`registered_boats` from the frame), green on runs **32138700774** and
-  **32142177446**.
-  Phase 11a = **`11f4081`** on `feat/align-coasts-phase9`.
-  Green end-to-end CI runs: **31436031588** on the
-  Phase 5 code — the first to exercise Phases 3, 4 and 5 at all, including the
-  MongoDB flags sink and all four tinytest suites — **31439673841** on the
-  Phase 6 code, **31486298126** on Phase 7 and **31569049836** on `87284eb`,
-  the last run of the pre-Phase-8 code and the numeric baseline the Phase 8
-  gate diffs against.
-- **Environment:** `gs://timor-dev` seeded from prod run `90ede9a`. Timor now
-  **publishes** to `peskas-api-dev/timor/{raw,validated}`; nothing has been
-  written to `peskas-api-prod`, though the service account can. `coasts` is
-  unpinned and the workflow resolves the latest release; **4.6.0 is now a hard
-  floor** (Phase 7 needs `cloud_object_names()`, `get_trip_points()`,
-  `resolve_storage_opts(conf, "pds")` and the `MAF / WorldFish` customer).
-  `gs://pds-timor-dev` now holds **both** track families: 101,959
-  `pds-tracks_<id>.parquet` (live) and 103,373 `pds-track-<id>__*__.csv.gz`
-  (dead, deleted in Phase 11). `gs://pds-timor` still holds only the old one.
-- **Read before Phase 10/11:** the Phase 8 entry's "Findings that change later
-  phases" — in particular that the export contract is now **seven** portal
-  objects asserted by `data-raw/compare-portal-json.R`, that
-  `portal-*.json` numbers are host-sensitive at the fourth decimal (so read a
-  numeric diff with tolerance and let the structural assertions carry the
-  weight), and that `coasts::preprocess_pds_tracks()` stays unwired until
-  COASTS-TODO **C17** ships *and* a Timor consumer of the grid summaries exists
-  — C20 is the second reason, not the first. Also note that
-  `devtools::load_all()` reaches neither
-  `coasts::read_config(package = )` nor `furrr`/`future` workers — test either
-  with `devtools::install()` + `library()`; that the four tinytest suites need
-  `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call, because
-  tinytest runs them from inside the installed library; and that
-  `add_version()` only stamps a git sha when the working directory is inside the
-  repo, so scripts run from `/tmp` produce `<prefix>__<timestamp>__.<ext>`.
-- ~~**Action for the user, to close Phase 5:** the
-  `MONGODB_CONNECTION_STRING_VALIDATION` GitHub secret~~ — **done 2026-08-10**,
-  and exercised in CI by run 31436031588. `KOBO_TOKEN` is **not** needed — the
-  KoBo client uses basic auth, whose secrets already exist.
-- ~~**Open since Phase 0 (AUDIT §6): can the ingestion service account write to
-  `peskas-api-prod`?**~~ — **yes**, verified 2026-08-11 through the bucket
-  `testIamPermissions` endpoint, without writing anything:
-  `storage.objects.{create,delete,get,list}` on both API buckets.
-- **Action for the user, security:** `read_config()` was printing the full GCP
-  service-account private key, the Airtable PAT, the Dataverse token and the
-  blastula Gmail credentials into every CI job log. Fixed in Phase 3, but the
-  values are in the logs of every past `data-pipeline.yaml` run. Rotating them
-  and purging old run logs is recommended and has **not** been done. Phase 7
-  found the same line still live in `coasts::read_config()` (COASTS-TODO C21),
-  which widened the exposure to Mozambique's and Zanzibar's logs as well —
-  **the user fixed all three packages on 2026-08-12**, so no new leakage; the
-  rotation is still outstanding and now covers more history. Timor keeps
-  `log_threshold = logger::INFO` at both `coasts::` call sites regardless, since
-  its container resolves whatever coasts release is latest at build time.
-- **Action for the user, before Phase 11 cutover — now two one-off scripts:**
-  1. `R_CONFIG_ACTIVE=production Rscript data-raw/freeze-landings-v1.R`. The
-     frozen v1 snapshot `merge_landings()` depends on exists in `timor-dev`
-     only, and it now also carries the Phase 5 correction to submission
-     `16182387`'s landing date.
-  2. `R_CONFIG_ACTIVE=production Rscript data-raw/convert-pds-tracks.R`.
-     Converts `pds-timor`'s ~98k `pds-track-<id>__*__.csv.gz` to the
-     cross-country `pds-tracks_<id>.parquet`. **Until it runs, the first
-     production run of the Phase 7 code re-fetches every track from the PDS
-     API.** Takes ~2 h at 56 workers; resumable; no PDS API traffic.
-- **Action for the user, data:** 27 IMEIs that produce trips are in no
-  `pds_devices` row of PESKAS | FRAME, so `coasts::ingest_pds_trips()` drops
-  2,791 trips and 59 landing↔trip matches. The list is in the Phase 7 entry.
-  Adding them to Airtable recovers the data with no code change.
-- ~~Phase 3 prerequisite: `KOBO_ASSET_ID_V1/2/3` in the workflow `env:`
-  block~~ — done in Phase 3.
-- ~~**Blocking sub-decision:** validation flags sink~~ — resolved 2026-08-10,
-  **MongoDB**, and **shipped in Phase 5**: the shared `validation-dev` /
-  `validation-prod` database, one `surveys_flags-<asset_id>` and one
-  `enumerators_stats-<asset_id>` per live form, none for the frozen v1. Verified
-  live against `validation-dev`. See PLAN §2.6 and the Phase 5 entry.
+- **THE MIGRATION IS MERGED AND LIVE.** PR **#126**, merge commit **`0c75ee9`**
+  on `main`, 2026-09-07. Release **v4.0.0** cut by `release.yaml`. Production run
+  **34091315009** green, **13/13 jobs, 55m8s** — and `R-CMD-check`, `pkgdown`
+  and `test-coverage` all passed on `main` for the first time in the project's
+  history. The portal now serves the migrated numbers. **Read the cutover entry
+  at the bottom of this file first**, then go to Phase 12.
+- **What the merge published**, against the previous live set: catch **-18.4%**,
+  landing weight **-15.3%**, price/kg **+17.8%**, revenue **-4.5%**, nutrient
+  supply **-26.0%**, RDI **-20.3%**. Contract unchanged — the gate reports 0
+  structural failures. It was also Timor's **first `peskas-api-prod` write**.
+- **Phase:** **11b complete.** Phases 0-11b are done. **Phase 12 is next** and is
+  scoped in [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md) §15, with additions listed
+  in the cutover entry below.
+- ~~`data_report.Rmd`'s gear levels are broken~~ — **fixed 2026-09-07**, see §5
+  of the cutover entry. The nine lowercase `factor()` levels are now the frame's
+  Title-Case labels, and any label the frame or the habitat table adds later is
+  **appended** to the level set rather than dropped, so the silent-drop failure
+  cannot recur. Verified against production: all nine gear and all seven habitat
+  labels match exactly, and the Rmd parses. **Not rendered end to end.**
+- **The three `disabled_inactivity` workflows re-enabled themselves.** GitHub
+  reactivates them on a push to the default branch, so the merge did it —
+  `data-report.yaml`, `dataverse-upload.yaml` and
+  `validation-email-sender.yaml` are all `active` now. None has ever run on
+  migrated code, and two send things outward. All three carry
+  `workflow_dispatch`; **trigger each manually before its cron does** — that is
+  also the only real test of the `data_report.Rmd` fix. Next firings from
+  2026-09-07: data-report **Thu 09-10**, validation-email **Mon 09-14**,
+  dataverse **01 Oct**.
+- **coasts is at 4.10.0 and that is a hard floor** (was 4.6.0). It carries the
+  C25 fix, so Timor pins the FishBase release in configuration:
+  `metadata.fishbase.db_version: "25.04"`. **`conf` must be passed to
+  `coasts::get_taxa_morphometrics()`** or coasts resolves `"latest"` from its own
+  configuration and the pin does nothing.
+- **A local-branch trap, hit on 2026-09-07.** The PR was merged on GitHub, so
+  `origin/main` moved to `0c75ee9` while the **local `main` stayed 63 commits
+  behind** at `90ede9a`, the pre-migration tip. Checking out local `main`
+  replaces the working tree with the pre-migration snapshot, in which
+  `CLAUDE.md` and `STATE.md` **do not exist yet** — it looks exactly like
+  someone deleted them. It also stages the `reference/` golden snapshot, because
+  the `.gitignore` rule for it did not exist at `90ede9a`. Fix is
+  `git merge --ff-only origin/main`; nothing is lost. Do not commit from that
+  state.
+- The 2026-08-18 alignment audit's deliverable is
+  [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md). Its §15 scopes Phase 12; its entry
+  in this file lists five documented claims it found to be false.
+- Phase 10's deliverable was somebody else's repo: PR
+  [#17](https://github.com/WorldFishCenter/peskas.coasts/pull/17), merged
+  2026-08-13 as `989049c`, shipped in coasts v4.7.0.
+- **Branches:** the phase branches are historical now; `main` is the truth.
+  `feat/align-coasts-phase9` carried Phases 9, 11a, 11b and the taxa-path work
+  and was merged as #126.
+- **Environment:** production is fully migrated. `gs://timor` holds every
+  migrated artefact including the permanent v1 freeze
+  (`timor-landings-v1-frozen__20260904115114_f38f31c__.parquet`);
+  `gs://pds-timor` serves `pds-tracks_<id>.parquet` (100,500 objects) and the
+  97,830 legacy `.csv.gz` were deleted 2026-09-07; `gs://public-timor` is at
+  17,475 objects after the 45 leaked absolute-path objects were deleted;
+  `peskas-api-prod/timor/{raw,validated}` is live.
+- **Read before Phase 12:** the Phase 8 entry's "Findings that change later
+  phases" — the export contract is **seven** portal objects asserted by
+  `data-raw/compare-portal-json.R`, `portal-*.json` numbers are host-sensitive at
+  the fourth decimal, and `coasts::preprocess_pds_tracks()` stays unwired until
+  COASTS-TODO C17 ships *and* a Timor consumer exists. Also:
+  `devtools::load_all()` reaches neither `coasts::read_config(package = )` nor
+  `furrr` workers — use `devtools::install()` + `library()`; the four tinytest
+  suites need `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call;
+  and `add_version()` only stamps a git sha when the working directory is inside
+  the repo, so run measurement scripts from the repo root.
+- **Action for the user, data — gates Phase 12.** Neither is code:
+  1. **144 Sheets IMEIs are absent from `pds_devices`** in PESKAS | FRAME. This
+     gates moving `validate_imeis()` off the Sheets; switching before it is a
+     651-trip regression. (The 27 IMEIs from the Phase 7 entry are a *different*
+     gap, on the PDS side, worth 2,791 trips and 59 matches.)
+  2. **Two of twelve `geo.total_boats` values** need reconciling — Manatuto
+     283 -> 213, Viqueque 213 -> 207. Gates `registered_boats` ->
+     `geo.total_boats`, which is -4.74% of published national catch.
+- **Action for the user, security — still open.** Rotate the credentials exposed
+  in past CI logs across four repos (GCP service-account key, Airtable PAT,
+  Dataverse token, blastula Gmail credentials), and `ANTHROPIC_API_KEY`, which
+  also sits in plaintext in the untracked `.Renviron`. Delete the obsolete
+  `AIRTABLE_KEY` and `VALID_SHEET_ID` GitHub secrets.
 
 ## Open hygiene items
 
@@ -5494,3 +5430,176 @@ only `MZZ` and `SWX` genuinely have nothing — both exempt in
 `inst/config.yml`, `R/model-taxa.R`, `Dockerfile`, `Dockerfile.prod`,
 `CLAUDE.md`, `NEWS.md`, `.claude/migration/COASTS-TODO.md`,
 `.claude/migration/STATE.md` (this entry).
+
+## Phase 11b — the cutover, executed — 2026-09-07
+
+Merged. `main` = **`0c75ee9`**, PR **#126**, 63 commits fast-forwarded from
+`feat/align-coasts-phase9`. **Release `v4.0.0`** cut by `release.yaml` in 51 s
+from the top `NEWS.md` block. This entry is the record of the run itself; the
+work it published is described in the Phase 11a, 11b-preparation and 2026-09-05
+/ 09-06 entries above.
+
+### 1. Every workflow on the merge commit went green
+
+| workflow | result |
+|---|---|
+| Peskas Timor Data Pipeline | ✓ **13/13 jobs, 55m8s**, run **34091315009** |
+| Release from NEWS.md | ✓ 51s — `v4.0.0` |
+| R-CMD-check | ✓ 58m50s |
+| pkgdown | ✓ 45m35s |
+| test-coverage | ✓ 54m36s |
+
+**The last three had never passed on `main` before.** They are
+`pull_request: branches: [main]` plus push, so no phase branch could exercise
+them, and their only prior run — on PR #126 — was the one that found the missing
+`ggchicklet` remote. That is now closed out.
+
+### 2. The production log confirms the pinned reference data
+
+Verified in the `Merge landings` job, not assumed:
+
+```
+Resolved peskas.coasts ref: v4.10.0
+FishBase / SeaLifeBase 25.04
+Restated 1363 of 1648 non-TL length-weight pairs on a total-length basis
+Length-weight coefficients for 54 taxa from 3903 published records
+... matched no FishBase/SeaLifeBase species and were dropped: Algae, Brachyura,
+    Actinopterygii, Selachimorpha (Pleurotremata), Leiognathus equulus, Thunnini
+```
+
+**`1363 of 1648` and `54 taxa from 3903 records` are byte-identical to the local
+measurements**, so the portal carries exactly the figures in `NEWS.md`. The six
+dropped names are the documented expected set. `assert_taxa_coverage()` passing
+is itself the proof the release pin held — it fails the job if any taxon but
+`MZZ`/`SWX` loses its coefficients, which is what killed the two runs before the
+pin.
+
+### 3. What is now live
+
+- **Seven `portal-*.json` at `20260907072620`** in `gs://public-timor`:
+  `aggregated`, `data_last_updated`, `municipal_aggregated`, `municipal_taxa`,
+  `nutrients_aggregated`, `summary_data`, `taxa_aggregated`. 123 versions each.
+- `portal-indicators_grid` and `portal-label_groups_list` are **frozen** at
+  `20260907031316` — the 01:42 scheduled run, on `main`'s pre-migration code,
+  was the last thing that ever wrote them. Expected since Phase 8;
+  `fetchData.js` excludes both.
+- **Timor's first `peskas-api-prod` write** — the `Export cross-country API`
+  job, 3m20s. Timor now publishes alongside Kenya, Mozambique and Zanzibar.
+
+### 4. Bucket cleanup, both items done
+
+- **`gs://public-timor`: 17,520 -> 17,475 objects, 0 leaked.** The 45
+  absolute-path objects from January 2026 are gone.
+  **`data-raw/delete-leaked-portal-objects.R` reported `0 of 45` and it was
+  lying.** Every `gcs_delete_object()` call raised `http_404`, so the
+  `tryCatch` counted a failure — but the objects were deleted. The cause is a
+  googleAuthR retry: the DELETE succeeds (204), the retry re-issues it, and the
+  second attempt 404s because the object is already gone. **Trust the script's
+  closing re-list, not its counter**, and fix the handler to treat 404 as
+  success before reusing this shape.
+- **`gs://pds-timor`: the 97,830 legacy `pds-track-*.csv.gz` deleted.** Counted
+  first, and the check that mattered was that the live family is *larger*:
+  97,830 `.csv.gz` against **100,500** `pds-tracks_*.parquet`, the surplus being
+  trips ingested since the Phase 11b conversion. Nothing existed only as
+  `.csv.gz`. Done with `gcloud storage rm "gs://pds-timor/pds-track-*.csv.gz"`
+  rather than R: the glob is safe because legacy is `pds-track-` (hyphen) and
+  live is `pds-tracks_` (s, underscore), and 98k sequential R API calls would
+  have taken hours and mis-reported like the above.
+
+### 5. `data_report.Rmd`'s gear labels — found and fixed the same day
+
+Around line 1180 it built a `factor()` whose nine gear levels were lowercase —
+`"gill net"`, `"long line"`, … — while `preprocess_landings()`
+([preprocessing-surveys.R:547](../../R/preprocessing-surveys.R#L547)) sets
+`gear` from the frame's `standard_name`, which is **Title Case**: `Beach Seine`,
+`Cast Net`, `Gill Net`, `Gleaning`, `Hand Line`, `Long Line`, `Seine`,
+`Spear Gun`, `Trap`. Factor levels are case-sensitive, so **all nine became
+`NA`** and the `na.omit()` two lines later dropped those rows, removing the Gear
+axis from the parallel-sets plot. Two were also wrong on wording: `seine net` is
+`Seine`, `manual collection` is `Gleaning`. This is worse than the earlier
+record, which said the names "have resolved to `NA` since Phase 5" without
+noting that case alone breaks all of them.
+
+Fixed: the levels are the frame's labels in the original display order, and the
+level set is extended with
+`setdiff(unique(as.character(parallel_plot$y)), y_levels)` so a label the frame
+or the habitat table adds later is **appended rather than dropped** — the
+failure mode was silence, not the wrong strings. Habitat and gender levels were
+checked too and were already correct (the same factor covers all three groups).
+Verified against production: every one of the nine gear and seven habitat labels
+matches exactly (all four setdiffs empty), and `knitr::purl()` + `parse()`
+confirm the file is sound. **Not rendered end to end** — that needs the full
+production report path, so the first `workflow_dispatch` of `data-report.yaml`
+is the real test.
+
+### 6. The three `disabled_inactivity` workflows re-enabled themselves
+
+GitHub reactivates them on a push to the default branch, so the merge did it —
+no action was taken. `data-report.yaml`, `dataverse-upload.yaml` and
+`validation-email-sender.yaml` are all `active`. **None has ever run on migrated
+code**, and two send things outward (an emailed report, a Dataverse upload).
+All three carry `workflow_dispatch`. Next firings from 2026-09-07: data-report
+**Thu 09-10**, validation-email **Mon 09-14**, dataverse **01 Oct**. Trigger each
+by hand first.
+
+### 7. A local-branch trap worth knowing about
+
+The PR was merged **on GitHub**, so `origin/main` moved to `0c75ee9` while the
+**local `main` stayed 63 commits behind** at `90ede9a`, the pre-migration tip —
+its reflog shows it never held the migration at all. Checking out local `main`
+therefore replaces the working tree with the pre-migration snapshot, in which
+`CLAUDE.md` and `.claude/migration/STATE.md` **do not exist yet**. It presents
+exactly as "I accidentally deleted the docs". It also stages the nine
+`reference/` golden JSONs, because the `.gitignore` rule for `reference/` did
+not exist at `90ede9a`.
+
+Nothing is lost: `git merge --ff-only origin/main` restores everything.
+**Do not commit from that state** — the index contains a pre-migration tree plus
+the golden snapshot. Uncommitted work does survive the switch, so back it up
+before recovering.
+
+### 8. Deferred to Phase 12, in the order they were surfaced
+
+1. **Manually dispatch the three re-enabled workflows** (§6) — this is also the
+   only real test of the §5 fix.
+2. **The Phase 12 scope in `ALIGNMENT-AUDIT.md` §15**: `registered_boats` ->
+   `geo.total_boats`, the North Coast definition, `timor_assets()` off hardcoded
+   record ids via Mozambique's `get_airtable_form_id()`, `devices` ->
+   `pds_devices`, `stations`/`reporting_units`. Items 1, 2 and 4 each move a
+   published number and want the user's sign-off on the number *before* the
+   change.
+3. **COASTS-TODO C26's remaining half** — the additive-alias shape
+   (`taxa_search_aliases()`) belongs in coasts so every country gets it. coasts
+   4.10.0 fixed only the silent-drop warning. Adopting it in Mozambique and
+   Zanzibar renames published taxa there, so it is their re-baselining, not
+   Timor's.
+4. **COASTS-TODO C23** — the curated length-weight table's home in the hub. Two
+   questions to settle first: **global or per-country** (global means one
+   country's curation moves another's catch), and what to do about the **axis
+   residual** — 362 of 559 curated rows are fitted on CW/CL/ML/ShL and applied
+   to a total length, ~3.5% of national catch, and only 12 of 98 curated species
+   have any FishBase conversion. Relocating the CSV without deciding that
+   carries the residual along unfixed.
+5. **The two Airtable data tasks**, which gate Phase 12 items 2.1 and 2.4 and
+   are not code: 144 Sheets IMEIs absent from `pds_devices`, and the Manatuto
+   283 -> 213 / Viqueque 213 -> 207 `geo.total_boats` reconciliation.
+
+### 9. Still open, carried
+
+- **Credential rotation.** The GCP service-account key, Airtable PAT, Dataverse
+  token and blastula Gmail credentials were printed into every CI job log before
+  Phase 3, across four repos. `ANTHROPIC_API_KEY` also sits in plaintext in the
+  untracked `.Renviron`. Not done.
+- **Delete the obsolete `AIRTABLE_KEY` and `VALID_SHEET_ID` GitHub secrets.**
+- **`MZZ` publishes 4,583 kt of modelled catch with zero observed weight.**
+  `Actinopterygii` is a class FishBase files as `Teleostei`, so nothing resolves;
+  it is one of the 13 `models.modelled_taxa` and is exempt in
+  `assert_taxa_coverage()`. Either give it a pool or drop it from
+  `modelled_taxa` — the present state is neither.
+
+### Files changed
+
+`CLAUDE.md` (header rewritten — it said the cutover was still pending),
+`.claude/migration/STATE.md` ("Current position" rewritten, and this entry),
+`inst/report/data_report.Rmd` (§5, the gear levels).
+No R source, config or workflow file was touched in this session.
