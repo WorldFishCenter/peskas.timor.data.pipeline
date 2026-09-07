@@ -3,17 +3,53 @@
 Guidance for Claude Code (claude.ai/code) when working in this
 repository.
 
-> **This repo is mid-migration.** It is being aligned to the harmonized
-> Peskas standard (shared `peskas.coasts` hub, `.env` secrets, parquet
-> interchange, cross-country API). Before doing anything substantive,
-> read in order:
-> [.claude/migration/PLAN.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/PLAN.md),
-> [.claude/migration/STRUCTURAL-DIFF.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/STRUCTURAL-DIFF.md),
-> [.claude/migration/AUDIT.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/AUDIT.md),
-> [.claude/migration/STATE.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/STATE.md),
-> [.claude/migration/ALIGNMENT-AUDIT.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/ALIGNMENT-AUDIT.md).
+> **The migration is merged and live.** `main` carries it as of
+> **2026-09-07** — PR **\#126**, merge commit **`0c75ee9`**, release
+> **v4.0.0**, production run **34091315009** green 13/13. The repo is
+> aligned to the harmonized Peskas standard (shared `peskas.coasts` hub,
+> `.env` secrets, parquet interchange, cross-country API). **Phases
+> 0-11b are complete; Phase 12 is next.**
+>
+> Before doing anything substantive, read
+> [.claude/migration/STATE.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/STATE.md)
+> — its “Current position” and the cutover entry at the bottom — then
+> [.claude/migration/ALIGNMENT-AUDIT.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/ALIGNMENT-AUDIT.md)
+> §15, which scopes Phase 12.
+> [PLAN.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/PLAN.md),
+> [STRUCTURAL-DIFF.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/STRUCTURAL-DIFF.md)
+> and
+> [AUDIT.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/AUDIT.md)
+> are the pre-migration record and are now history: useful for *why*
+> something is shaped as it is, unreliable about what is there today.
 > **One migration phase per session — never two.** End every session by
 > appending a STATE.md entry.
+>
+> **What the merge published**, against the previous live portal: catch
+> **-18.4%**, landing weight **-15.3%**, price/kg **+17.8%**, nutrient
+> supply **-26.0%**. The seven-object contract is unchanged — the gate
+> reports 0 structural failures. It was also Timor’s first
+> `peskas-api-prod` write. `NEWS.md`’s top block attributes the movement
+> to three separable corrections.
+>
+> **One thing needs attention before Phase 12.** The three
+> `disabled_inactivity` workflows **re-enabled themselves** when the
+> merge pushed to the default branch — `data-report.yaml`,
+> `dataverse-upload.yaml`, `validation-email-sender.yaml`. None has ever
+> run on migrated code, and two send things outward (an emailed report,
+> a Dataverse upload). Each has `workflow_dispatch`; **trigger them
+> manually before their crons do.**
+>
+> `inst/report/data_report.Rmd`’s gear labels were fixed on 2026-09-07:
+> its [`factor()`](https://rdrr.io/r/base/factor.html) levels were
+> lowercase while
+> [`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
+> sets `gear` from the frame’s Title-Case `standard_name`, so all nine
+> resolved to `NA` and the following
+> [`na.omit()`](https://rdrr.io/r/stats/na.fail.html) dropped the rows,
+> removing the Gear axis from the parallel-sets plot. Unknown labels are
+> now appended to the level set instead of dropped, so it cannot fail
+> that way again. It has **not** been rendered end to end — the first
+> manual dispatch above is its real test.
 >
 > **`ALIGNMENT-AUDIT.md` (2026-08-18) corrects five claims made below
 > and in `AUDIT.md`. Trust it over this file where they disagree.** The
@@ -29,28 +65,7 @@ repository.
 > cannot be swapped onto the snapshot’s `country` column, which is
 > absent on `sites` and a record-id link on `geo` (COASTS-TODO C24).
 >
-> Everything below documents the repo **as it is today**, not the target
-> state. Where the target differs, the plan says so. Phases completed so
-> far: **0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11a** — so config, secrets,
-> the container, the **storage layer**, **ingestion**,
-> **preprocessing**, **validation**, the **cross-country API export**,
-> **PDS**, the **country modules + portal parity**, **CI, repo metadata
-> and docs**, the **upstreaming to coasts** and now the **legacy
-> cleanup** are done. What is left is the **cutover (Phase 11b: freeze
-> v1, convert the prod tracks, merge to `main`, first production run)**,
-> then the static-asset and label-source work the alignment audit scoped
-> as **Phase 12**.
->
-> **Phase 11a deleted ~2,900 lines and changed no published number.**
-> The KoBoToolbox validation-status functions now come from `coasts::`
-> (4.7.0, C15);
-> [`ingest_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_assets.md)
-> no longer mirrors the snapshot to the hub (C11); the second glmmTMB
-> estimator, the PDS map products and eleven other unreferenced
-> functions are gone, with the five Sheets tables that had no reader and
-> every `# [legacy]` config key. It touched no production bucket.
-> **Phase 11b is the cutover and is a separate session** — see
-> [.claude/migration/PROMPT-PHASE11B.md](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.claude/migration/PROMPT-PHASE11B.md).
+> Everything below documents the repo **as it is today**.
 
 ------------------------------------------------------------------------
 
