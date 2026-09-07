@@ -1,0 +1,55 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+#
+# Replaces `check-standard.yaml`, which was on the pre-2022 template
+# (`checkout@v2`, `setup-pandoc@v1`, hand-rolled `.github/depends.Rds` caching,
+# focal RSPM URLs) and failed in under 15 s.
+#
+# Two deliberate departures from the r-lib example:
+#
+# 1. **One runner, not five.** The example matrixes macOS / Windows /
+#    ubuntu-devel / release / oldrel-1. This package only ever executes inside
+#    the Linux container `data-pipeline.yaml` builds, and its dependency tree
+#    (arrow, sf, glmmTMB, rfishbase, mongolite, plus `coasts` and `ssfaitk`
+#    from GitHub) is expensive and fragile to resolve from source on the other
+#    platforms. Portability is not a property this package needs; a green check
+#    on the platform it runs on is.
+# 2. **`extra-packages` carries the GitHub dependencies.** `coasts` is not on
+#    CRAN, so without these two entries the check fails before it starts.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+name: R-CMD-check.yaml
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck, github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R, github::WorldFishCenter/peskas.coasts
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

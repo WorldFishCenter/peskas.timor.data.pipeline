@@ -1,11 +1,125 @@
-# Get a vector with imeis deployed in the field
-get_deployed_imeis <- function(metadata) {
-  metadata$devices %>%
-    dplyr::right_join(metadata$device_installs,
-      by = c("id" = "device_imei")
-    ) %>%
-    dplyr::filter(!is.na(.data$device_imei)) %>%
-    magrittr::extract2("device_imei")
+# ---------------------------------------------------------------------------
+# THE SHAPE
+# Every validator in this file reads the **flat long** weighted catch table of
+# [calculate_weights()] — one row per (submission, catch, length bin) — or the
+# one-row-per-submission view [validation_submissions()] derives from it, and
+# every one addresses columns by their standard names. Until migration Phase 5
+# they read raw KoBo names (`_id`, `trip_group/gear_type`, `total_catch_value`,
+# …) off a re-nested `species_group` / `length_individuals` artefact, and each
+# label validator carried its own Google Sheets join.
+#
+#
+# THE ALERT CODES
+# The codes are the contract — the flag strings they compose are published and
+# the shared validation UI keys off them. `inst/config.yml`'s
+# `validation.alerts` block is the authoritative description of each.
+#
+#   code             validator                       meaning
+#   1, 2, 3   [validate_imeis()]                IMEI too short / ambiguous / unknown
+#   4, 10     [validate_surveys_time()]         landing after submission / submitted too late
+#   5         [validate_surveys_time()]         implausible trip duration
+#   6         [validate_catch_price()]          revenue too large
+#   11        [validate_catch_params()]         individuals per catch an outlier
+#   12, 13    [validate_vessel_type()]          unknown vessel code / missing vessel
+#   14, 15    [validate_gear_type()]            unknown gear code / missing gear
+#   16        [validate_sites()]                landing site not known
+#   17        [validate_price_weight()]         price per kg outside the configured band
+#   18        [validate_n_fishers()]            crew size an outlier
+#   19        [validate_habitat()]              unknown habitat code
+#   20        [validate_mesh()]                 implausible mesh size
+#   21        [validate_gleaners()]             gleaner count an outlier
+#   22        [validate_landing_regularity()]   catch, revenue and individuals disagree
+#   23        [validate_fuel()]                 implausible fuel, or fuel without a boat
+#
+# Codes 23 (fuel), and the conservation and happiness frames, feed the
+# validated artefact but deliberately **not** the flag string — see
+# [validate_landings()].
+#
+# ---------------------------------------------------------------------------
+
+# The submission-level columns every validator works from. Constant within a
+# submission by construction, so `distinct()` yields exactly one row each.
+validation_submission_cols <- function() {
+  c(
+    "submission_id", "survey_version", "survey_id", "submitted_by",
+    "landing_date", "submission_date", "trip_duration", "tracker_imei",
+    "catch_price", "landing_site_code", "gear_code", "gear", "vessel_code",
+    "vessel_type", "habitat_code", "habitat", "has_boat", "mesh_size",
+    "n_gleaners", "fuel", "conservation_code", "happiness",
+    "no_men_fishers", "no_women_fishers", "no_child_fishers"
+  )
+}
+
+# The catch-level measurements a raised alert blanks: the estimated weight and
+# the nutrient masses derived from it.
+catch_value_cols <- function() {
+  c("weight", "Selenium_mu", "Zinc_mu", "Protein_mu", "Omega_3_mu",
+    "Calcium_mu", "Iron_mu", "Vitamin_A_mu")
+}
+
+#' One row per submission
+#'
+#' Collapses the long weighted catch table to its submission-level columns.
+#'
+#' @param landings The long weighted catch table from [get_weighted_landings()].
+#' @return A tibble with one row per submission.
+#' @keywords validation
+#' @export
+validation_submissions <- function(landings) {
+  landings %>%
+    dplyr::select(dplyr::all_of(validation_submission_cols())) %>%
+    dplyr::distinct() %>%
+    dplyr::mutate(submission_id = as.integer(.data$submission_id))
+}
+
+#' Generate an alert vector based on the `univOutl::LocScaleB()` function
+#'
+#' @param x numeric vector where outliers will be checked
+#' @param no_alert_value value to put in the output when there is no alert (x is within bounds)
+#' @param alert_if_larger alert for when x is above the bounds found by `univOutl::LocScaleB()`
+#' @param alert_if_smaller alert for when x is below the bounds found by `univOutl::LocScaleB()`
+#' @param ... arguments for `univOutl::LocScaleB()`
+#'
+#' @return a vector of the same lenght as x
+#' @keywords internal
+#' @importFrom stats mad
+alert_outlier <- function(x,
+                          no_alert_value = NA_real_,
+                          alert_if_larger = no_alert_value,
+                          alert_if_smaller = no_alert_value,
+                          ...) {
+  algo_args <- list(...)
+
+  # Helper function to check if everything is NA or zero
+  all_na_or_zero <- function(x) {
+    isTRUE(all(is.na(x) | x == 0))
+  }
+
+  # If everything is NA or zero there is nothing to compute
+  if (all_na_or_zero(x)) {
+    return(NA_real_)
+  }
+  # If the median absolute deviation is zero we shouldn't be using this algo
+  if (mad(x, na.rm = T) <= 0) {
+    return(NA_real_)
+  }
+  # If weights are specified and they are all NA or zero
+  if (!is.null(algo_args$weights)) {
+    if (all_na_or_zero(algo_args$weights)) {
+      return(NA_real_)
+    }
+  }
+
+  bounds <- univOutl::LocScaleB(x, ...) %>%
+    magrittr::extract2("bounds")
+
+  if (isTRUE(algo_args$logt)) bounds <- exp(bounds) - 1
+
+  dplyr::case_when(
+    x < bounds[1] ~ alert_if_smaller,
+    x > bounds[2] ~ alert_if_larger,
+    TRUE ~ no_alert_value
+  )
 }
 
 # Perform tests for a single imei and return the corrected value and the flag
@@ -47,104 +161,124 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
   }
 }
 
+#' Validate the tracker IMEIs recorded on a survey
+#'
+#' Enumerators record as many digits of the tracker IMEI as they can read, so
+#' a recorded value is matched against the deployed devices by **suffix**. A
+#' value short enough to be ambiguous, or matching no device, is flagged.
+#'
+#' The deployed-device list still comes from the Google Sheets `devices` table
+#' rather than the frame's `pds_devices`: measured 2026-08-10, the frame carries
+#' 442 Timor devices against the Sheets' 595, and switching would take alert 3
+#' from 824 to 1,475 submissions and strip the resolved IMEI — hence the
+#' matched trip — from 651 of them.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @param deployed_imeis Character vector of deployed device IMEIs.
+#' @return A tibble: `imei`, `alert_number`, `submission_id`.
+#' @keywords validation
+#' @export
+validate_imeis <- function(submissions, deployed_imeis) {
+  submissions$tracker_imei %>%
+    rlang::set_names(submissions$submission_id) %>%
+    purrr::imap(validate_this_imei, deployed_imeis) %>%
+    purrr::map_dfr(tibble::as_tibble)
+}
 
 #' Validate surveys' temporal parameters
 #'
-#' This function takes a preprocessed landings' matrix and validate temporal
-#' info associated to each survey.
+#' This function takes the submission-level view of the landings and validates
+#' the temporal info associated to each survey.
 #'
-#' @param data A preprocessed data frame
+#' @param submissions Output of [validation_submissions()].
 #' @param hrs Limit of trip duration in hours to be considered a valid catch
 #'   session.
 #' @param submission_delay Limit for maximum difference (in days) between the
-#'   survey submission date and the recorded landing datw
+#'   survey submission date and the recorded landing date.
 #'
 #' @return A list containing data frames with validated catch dates and catch
 #'   duration.
 #'
 #' @importFrom rlang .data
+#' @keywords validation
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
-#' validate_surveys_time(landings, hrs = 18)
+#' conf <- read_config()
+#' landings <- get_weighted_landings(conf)
+#' validate_surveys_time(validation_submissions(landings), hrs = 18, 28)
 #' }
-validate_surveys_time <- function(data, hrs = NULL, submission_delay) {
-  validated_time <- list(
-    validated_dates = data %>%
-      dplyr::select(.data$`_id`, .data$date, .data$`_submission_time`) %>%
-      dplyr::mutate(
-        `_submission_time` = lubridate::ymd_hms(.data$`_submission_time`),
-        submission_date = lubridate::with_tz(.data$`_submission_time`, "Asia/Dili"),
-        date = as.POSIXct(.data$date, tz = "Asia/Dili"),
-        d = date - .data$submission_date
-      ) %>%
+validate_surveys_time <- function(submissions, hrs = NULL, submission_delay) {
+  list(
+    validated_dates = submissions %>%
+      dplyr::select("submission_id", "landing_date", "submission_date") %>%
       dplyr::transmute(
-        # Alert needs to be checked before editing the date column
+        # Alert needs to be checked before editing the date column. The landing
+        # date is a calendar date; compare it at local midnight, as the raw
+        # character date always was.
+        date = as.POSIXct(as.character(.data$landing_date), tz = "Asia/Dili"),
         alert_number = dplyr::case_when(
           # test if submission date is prior catch date
           .data$date > .data$submission_date ~ 4,
-          .data$date < .data$submission_date - lubridate::duration(submission_delay, units = "days") ~ 10,
+          .data$date <
+            .data$submission_date -
+              lubridate::duration(submission_delay, units = "days") ~ 10,
           TRUE ~ NA_real_
         ),
         date = as.Date(.data$date, tz = "Asia/Dili"),
-        submission_id = as.integer(.data$`_id`)
-      ),
-    validated_duration = data %>%
-      dplyr::select(.data$`_id`, .data$`trip_group/duration`) %>%
-      dplyr::mutate(`trip_group/duration` = abs(as.numeric(.data$`trip_group/duration`))) %>%
+        submission_id = .data$submission_id
+      ) %>%
+      dplyr::select("alert_number", "date", "submission_id"),
+    validated_duration = submissions %>%
       dplyr::transmute(
-        trip_length = dplyr::case_when(
-          .data$`trip_group/duration` > hrs |
-            .data$`trip_group/duration` < 1 ~ NA_real_,
-          TRUE ~ .data$`trip_group/duration`
-        ), # test if catch duration is longer than n hours or minor than 1 hour
-        alert_number = dplyr::case_when(
-          .data$`trip_group/duration` > hrs |
-            .data$`trip_group/duration` < 1 ~ 5,
-          TRUE ~ NA_real_
+        duration = abs(.data$trip_duration),
+        # test if catch duration is longer than n hours or minor than 1 hour
+        trip_length = dplyr::if_else(
+          .data$duration > hrs | .data$duration < 1, NA_real_, .data$duration
         ),
-        submission_id = as.integer(.data$`_id`)
-      )
+        alert_number = dplyr::if_else(
+          .data$duration > hrs | .data$duration < 1, 5, NA_real_
+        ),
+        submission_id = .data$submission_id
+      ) %>%
+      dplyr::select("trip_length", "alert_number", "submission_id")
   )
-  validated_time
 }
 
+#' Validate the internal consistency of a landing
+#'
+#' A landing must agree with itself: a recorded no-catch cannot carry
+#' individuals or revenue, and a recorded catch cannot lack both.
+#'
+#' @param landings The long weighted catch table.
+#' @return A list with `regularity_alerts` (one row per submission) and
+#'   `regular_landings` (the long table, with the offending rows' measurements
+#'   blanked and `alert_number` set).
+#' @keywords validation
+#' @export
 validate_landing_regularity <- function(landings) {
   regularity_alerts <-
     landings %>%
-    dplyr::select(.data$`_id`, .data$total_catch_value, .data$species_group) %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
-    dplyr::select(.data$`_id`, .data$species, .data$total_catch_value, .data$n_individuals) %>%
-    dplyr::mutate(
-      total_catch_value = as.double(.data$total_catch_value),
-      total_catch_value = abs(.data$total_catch_value),
-      n_individuals = abs(.data$n_individuals)
-    ) %>%
-    dplyr::group_by(.data$`_id`) %>%
+    dplyr::group_by(.data$submission_id) %>%
     dplyr::summarise(
-      species = dplyr::first(.data$species),
-      total_catch_value = dplyr::first(.data$total_catch_value),
-      n_individuals = sum(.data$n_individuals, na.rm = T)
+      catch_taxon = dplyr::first(.data$catch_taxon),
+      catch_price = abs(dplyr::first(.data$catch_price)),
+      n_individuals = sum(abs(.data$n_individuals), na.rm = TRUE),
+      .groups = "drop"
     ) %>%
-    dplyr::ungroup() %>%
     dplyr::mutate(
       alert_regularity = dplyr::case_when(
-        .data$species == "0" & .data$n_individuals > 0 |
-          .data$species == "0" & .data$total_catch_value > 0 |
-          !.data$species == "0" & .data$n_individuals <= 0 |
-          !.data$species == "0" & .data$total_catch_value <= 0 |
-          .data$total_catch_value <= 0 & .data$n_individuals > 0 |
-          .data$total_catch_value > 0 & .data$n_individuals <= 0
-        # is.na(.data$total_catch_value) & .data$n_individuals >= 0 |
-        # is.na(.data$n_individuals) & .data$total_catch_value >= 0
+        .data$catch_taxon == "0" & .data$n_individuals > 0 |
+          .data$catch_taxon == "0" & .data$catch_price > 0 |
+          !.data$catch_taxon == "0" & .data$n_individuals <= 0 |
+          !.data$catch_taxon == "0" & .data$catch_price <= 0 |
+          .data$catch_price <= 0 & .data$n_individuals > 0 |
+          .data$catch_price > 0 & .data$n_individuals <= 0
         ~ 22, TRUE ~ NA_real_
-      )
-    ) %>%
-    dplyr::rename(submission_id = .data$`_id`)
+      ),
+      submission_id = as.integer(.data$submission_id)
+    )
 
   no_regular_ids <-
     regularity_alerts %>%
@@ -153,29 +287,15 @@ validate_landing_regularity <- function(landings) {
 
   regular_landings <-
     landings %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
     dplyr::mutate(
-      total_catch_value = as.double(.data$total_catch_value),
-      total_catch_value = abs(.data$total_catch_value),
+      submission_id = as.integer(.data$submission_id),
+      catch_price = abs(.data$catch_price),
       n_individuals = abs(.data$n_individuals),
-      alert_number = dplyr::case_when(
-        .data$`_id` %in% no_regular_ids ~ 22,
-        TRUE ~ NA_real_
-      ),
-      total_catch_value = dplyr::case_when(is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_),
-      n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
-      dplyr::across(
-        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
-          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
-        )
+      alert_number = dplyr::if_else(
+        .data$submission_id %in% no_regular_ids, 22, NA_real_
       )
     ) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
-    tidyr::nest(species_group = c(
-      .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
-      .data$photo, .data$length_individuals, .data$length_type
-    ))
+    blank_on_alert(c("catch_price", "n_individuals", catch_value_cols()))
 
   list(
     regularity_alerts = regularity_alerts,
@@ -183,269 +303,192 @@ validate_landing_regularity <- function(landings) {
   )
 }
 
+# A raised alert invalidates the measurements it was raised about. Every
+# validator that flags a row also blanks it, and always the same way.
+blank_on_alert <- function(x, cols) {
+  dplyr::mutate(
+    x,
+    dplyr::across(
+      dplyr::all_of(cols),
+      ~ dplyr::if_else(is.na(.data$alert_number), .x, NA_real_)
+    )
+  )
+}
+
 #' Validate surveys' total catch values
 #'
-#' This function takes a preprocessed landings' matrix and uses univariate
-#' techniques (see [univOutl::LocScaleB]) for the identification of outliers in
-#' the distribution of the total catch values associated to surveys.
+#' Flags implausibly large revenue. The `univOutl::LocScaleB()` route is kept in
+#' place, commented out, because the fixed threshold replaced it deliberately.
 #'
-#' @param data A preprocessed data frame
+#' @param regular_landings The long catch table from
+#'   [validate_landing_regularity()], carrying `catch_price` and the
+#'   `alert_number` raised so far.
 #' @inheritParams univOutl::LocScaleB
 #'
-#' @return A data frame containing validated catch values.
+#' @return A data frame containing validated catch values, one row per
+#'   submission.
+#' @keywords validation
 #' @export
 #'
 #' @importFrom rlang .data
-#'
-#' @examples
-#' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
-#' validate_catch_value(landings, method = "MAD", k = 13)
-#' }
-#'
-validate_catch_price <- function(data, method = NULL, k = NULL) {
+validate_catch_price <- function(regular_landings, method = NULL, k = NULL) {
+  # `catch_price` and `alert_number` are submission-level in this frame.
+  submissions <- dplyr::distinct(
+    regular_landings,
+    .data$submission_id, .data$catch_price, .data$alert_number
+  )
+
   validated_price <-
-    data %>%
+    submissions %>%
     dplyr::filter(is.na(.data$alert_number)) %>%
-    dplyr::select(.data$`_id`, .data$total_catch_value) %>%
     dplyr::transmute(
-      alert_number = ifelse(.data$total_catch_value > 1500, 6, NA_integer_),
+      alert_number = ifelse(.data$catch_price > 1500, 6, NA_integer_),
       # alert_number = alert_outlier(
-      #  x = .data$total_catch_value, alert_if_smaller = 9, alert_if_larger = 6,
+      #  x = .data$catch_price, alert_if_smaller = 9, alert_if_larger = 6,
       #  logt = TRUE, k = k, method = method
       # ),
-      total_catch_value = dplyr::case_when(
-        is.na(.data$alert_number) ~ .data$total_catch_value,
-        TRUE ~ NA_real_
+      catch_price = dplyr::if_else(
+        is.na(.data$alert_number), .data$catch_price, NA_real_
       ),
-      submission_id = as.integer(.data$`_id`)
+      submission_id = .data$submission_id
     )
 
-  data %>%
+  submissions %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
-    dplyr::select(.data$`_id`, .data$total_catch_value, .data$alert_number) %>%
-    dplyr::rename(submission_id = .data$`_id`) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
+    dplyr::select("submission_id", "catch_price", "alert_number") %>%
     dplyr::bind_rows(validated_price)
-}
-
-#' Generate an alert vector based on the `univOutl::LocScaleB()` function
-#'
-#' @param x numeric vector where outliers will be checked
-#' @param no_alert_value value to put in the output when there is no alert (x is within bounds)
-#' @param alert_if_larger alert for when x is above the bounds found by `univOutl::LocScaleB()`
-#' @param alert_if_smaller alert for when x is below the bounds found by `univOutl::LocScaleB()`
-#' @param ... arguments for `univOutl::LocScaleB()`
-#'
-#' @return a vector of the same lenght as x
-#' @importFrom stats mad
-alert_outlier <- function(x,
-                          no_alert_value = NA_real_,
-                          alert_if_larger = no_alert_value,
-                          alert_if_smaller = no_alert_value,
-                          ...) {
-  algo_args <- list(...)
-
-  # Helper function to check if everything is NA or zero
-  all_na_or_zero <- function(x) {
-    isTRUE(all(is.na(x) | x == 0))
-  }
-
-  # If everything is NA or zero there is nothing to compute
-  if (all_na_or_zero(x)) {
-    return(NA_real_)
-  }
-  # If the median absolute deviation is zero we shouldn't be using this algo
-  if (mad(x, na.rm = T) <= 0) {
-    return(NA_real_)
-  }
-  # If weights are specified and they are all NA or zero
-  if (!is.null(algo_args$weights)) {
-    if (all_na_or_zero(algo_args$weights)) {
-      return(NA_real_)
-    }
-  }
-
-  bounds <- univOutl::LocScaleB(x, ...) %>%
-    magrittr::extract2("bounds")
-
-  if (isTRUE(algo_args$logt)) bounds <- exp(bounds) - 1
-
-  dplyr::case_when(
-    x < bounds[1] ~ alert_if_smaller,
-    x > bounds[2] ~ alert_if_larger,
-    TRUE ~ no_alert_value
-  )
 }
 
 #' Validate surveys' catch parameters
 #'
-#' This function takes a preprocessed landings' matrix and uses univariate
-#' techniques (see [univOutl::LocScaleB]) for the identification of outliers in
-#' the distribution of the number of individuals per catch and their size. The
-#' function returns a data frame with the survey id, the alert number and
-#' a nested column `species_group` containing validated catches parameters.
+#' Uses univariate techniques (see [univOutl::LocScaleB]) to identify outliers
+#' in the number of individuals recorded per (gear, taxon) group, and blanks the
+#' weight and nutrients derived from an outlying count.
 #'
-#' @param data A preprocessed data frame
+#' Grouping is on the resolved `gear` label rather than the raw gear code; the
+#' two are one-to-one over all nine codes the live forms use, so the partition
+#' is identical.
+#'
+#' @param landings The long catch table from [validate_landing_regularity()],
+#'   carrying `alert_number`.
 #' @param k_ind Extension of bounds for the number of individuals
 #'
-#' @return A data frame containing the validated catches parameters.
+#' @return A list with `alerts` (one row per submission) and `catch` (the long
+#'   table with outlying counts and their weights blanked).
+#' @keywords validation
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' landings <- get_merged_landings(pars)
-#' validate_catch_params(landings, k = 3)
+#' conf <- read_config()
+#' landings <- get_weighted_landings(conf)
+#' validate_catch_params(validate_landing_regularity(landings)$regular_landings)
 #' }
-#'
-validate_catch_params <- function(data = NULL, k_ind = NULL) {
-  catches_dat_unnested <-
-    data %>%
-    dplyr::filter(is.na(alert_number)) %>%
-    dplyr::select(.data$`_id`, .data$`trip_group/gear_type`, .data$species_group) %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE)
+validate_catch_params <- function(landings = NULL, k_ind = NULL) {
+  already_alerted <- dplyr::filter(landings, !is.na(.data$alert_number))
 
-  validated_length <-
-    catches_dat_unnested %>%
-    dplyr::group_by(.data$`trip_group/gear_type`, .data$species) %>%
+  validated <-
+    landings %>%
+    dplyr::filter(is.na(.data$alert_number)) %>%
+    dplyr::group_by(.data$gear, .data$catch_taxon) %>%
     dplyr::mutate(
-      alert_n_individuals = alert_outlier(
+      alert_number = alert_outlier(
         x = .data$n_individuals,
         alert_if_larger = 11, logt = TRUE, k = k_ind
       ),
-      n_individuals = dplyr::case_when(
-        is.na(.data$alert_n_individuals) ~ .data$n_individuals,
-        TRUE ~ NA_real_
+      n_individuals = dplyr::if_else(
+        is.na(.data$alert_number), .data$n_individuals, NA_real_
       )
     ) %>%
-    dplyr::mutate(
-      alert_number = .data$alert_n_individuals,
-      submission_id = .data$`_id`
-    ) %>%
     dplyr::ungroup() %>%
-    # Adjusting weight and nutrients accordingly
+    # Adjusting weight and nutrients accordingly: a counted zero weighs zero,
+    # an outlying count weighs nothing we can trust.
     dplyr::mutate(
       dplyr::across(
-        c(.data$weight:.data$Vitamin_A_mu),
+        dplyr::all_of(catch_value_cols()),
         ~ dplyr::case_when(
           !is.na(.data$alert_number) ~ NA_real_,
           .data$n_individuals == 0 ~ 0,
-          TRUE ~ .data$.x
+          TRUE ~ .x
         )
       )
-    ) %>%
-    dplyr::select(-.data$alert_n_individuals, -.data$`_id`)
+    )
 
-  # extract alert number
-  alert_number <-
-    validated_length %>%
-    dplyr::select(.data$submission_id, .data$n, .data$alert_number) %>%
+  # One alert per submission: the worst raised across its catches.
+  alerts <-
+    validated %>%
     dplyr::group_by(.data$submission_id) %>%
-    dplyr::arrange(dplyr::desc(alert_number), .by_group = TRUE) %>%
-    dplyr::filter(dplyr::row_number() == 1) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-.data$n) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id))
+    dplyr::summarise(
+      alert_number = if (all(is.na(.data$alert_number))) {
+        NA_real_
+      } else {
+        max(.data$alert_number, na.rm = TRUE)
+      },
+      .groups = "drop"
+    )
 
-  # nest validated data
-  validated_length_nested <-
-    validated_length %>%
-    dplyr::select(-.data$alert_number) %>%
-    dplyr::group_by(.data$submission_id, .data$n, .data$species) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu))
-
-  # replace validated catches params in original data
-  validated_catch_params <-
-    data %>%
-    dplyr::filter(is.na(.data$alert_number)) %>%
-    dplyr::rename(submission_id = .data$`_id`) %>%
-    dplyr::select(.data$submission_id, .data$species_group) %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    dplyr::mutate(length_individuals = validated_length_nested$length_individuals) %>%
-    dplyr::group_by(.data$submission_id) %>%
-    tidyr::nest() %>%
-    dplyr::rename("species_group" = "data") %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
-    dplyr::left_join(alert_number, by = "submission_id")
-
-
-  data %>%
-    dplyr::filter(!is.na(alert_number)) %>%
-    dplyr::select(.data$`_id`, .data$species_group, .data$alert_number) %>%
-    dplyr::rename(submission_id = .data$`_id`) %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
-    dplyr::bind_rows(validated_catch_params)
+  list(
+    alerts = dplyr::bind_rows(
+      already_alerted %>%
+        dplyr::distinct(.data$submission_id, .data$alert_number),
+      alerts
+    ),
+    catch = dplyr::bind_rows(already_alerted, validated)
+  )
 }
 
-#' Outlier identification based on Cook's distance
+#' Outlier identification of the price-weight relation
 #'
-#' This function adds an additional alert to both price and catch alert dataframes
-#' when the relation between the price and weight assume abnormal values relatively
-#' to each species. The relationship between weight and price is mostly linear,
-#' this function identifies the survey IDs where the Cook's distance is higher than
-#' cook_dist * mean_cook, where cook_dist is a multiplicative coefficient and
-#' cook_dist is the average Cook's distance relatively to each species.
+#' Flags submissions whose revenue per kilo of estimated catch falls outside the
+#' configured band, and propagates the regularity, revenue and
+#' individuals-count alerts onto both the price and the catch frames so that a
+#' single alert number per submission survives the assembly.
 #'
-#' Currently, cook_dist is set to 21 as default value.
+#' The relationship between weight and price is mostly linear, and this function
+#' used to also compute a per-submission Cook's distance from a
+#' `log(price) ~ log(weight)` fit. That term has been commented out of the
+#' threshold for as long as the fixed band has existed, so the fit — a
+#' `stats::lm()` plus a `broom` augmentation over ~90k submissions, one of the two
+#' most expensive steps in validation — was deleted in migration Phase 5. The
+#' `cook_dist` parameter is retained because `config.yml` still supplies it.
 #'
-#' @param catch_alerts The dataframe of catch alerts.
-#' @param price_alerts The dataframe of price alerts.
-#' @param non_regular_ids The dataframe of landings regularity alerts.
-#' @param cook_dist A number that go in the formula cook_dist * (mean(cooksd)).
+#' @param catch_params Output of [validate_catch_params()]: `alerts`
+#'   (one row per submission) and `catch` (the long table).
+#' @param price_alerts The data frame of price alerts.
+#' @param non_regular_ids The data frame of landings regularity alerts.
+#' @param cook_dist Unused. See above.
 #' @param price_weight_min Min price per weight value threshold.
 #' @param price_weight_max Max price per weight value threshold.
-#' @return The price and catch alert' dataframes including outlier identification
-#' based on Cook's distance.
+#' @return A list with `alerts` (one row per submission, carrying the validated
+#'   `catch_price`) and `catch` (the long table with blanked measurements).
+#' @keywords validation
 #' @export
 #'
-validate_price_weight <- function(catch_alerts = NULL,
+validate_price_weight <- function(catch_params = NULL,
                                   price_alerts = NULL,
                                   non_regular_ids = NULL,
                                   cook_dist = NULL,
                                   price_weight_min = NULL,
                                   price_weight_max = NULL) {
-  # Extract single catches IDs
-  single_catches <-
-    catch_alerts %>%
-    dplyr::mutate(n = purrr::map_dbl(.data$species_group, nrow)) %>%
-    dplyr::filter(.data$n == 1) %>%
-    magrittr::extract2("submission_id")
-
-  # Extract IDs with abnormal price weight relation based on Cook's distance
+  # Extract IDs with an abnormal price per kilo of estimated catch
   price_per_weight_alerts <-
-    dplyr::left_join(price_alerts, catch_alerts, by = "submission_id") %>%
-    # dplyr::filter(.data$submission_id %in% single_catches) %>%
-    tidyr::unnest(.data$species_group) %>%
-    tidyr::unnest(.data$length_individuals) %>%
-    dplyr::select(.data$submission_id, .data$species, .data$total_catch_value, .data$weight) %>%
-    dplyr::filter(!is.na(.data$weight) & !is.na(.data$total_catch_value) & .data$weight != 0) %>%
-    # dplyr::group_by(.data$submission_id, .data$species) %>%
+    catch_params$catch %>%
+    dplyr::select("submission_id", "weight") %>%
+    dplyr::left_join(
+      dplyr::select(price_alerts, "submission_id", "catch_price"),
+      by = "submission_id"
+    ) %>%
+    dplyr::filter(
+      !is.na(.data$weight), !is.na(.data$catch_price), .data$weight != 0
+    ) %>%
     dplyr::group_by(.data$submission_id) %>%
     dplyr::summarise(
-      total_catch_value = dplyr::first(.data$total_catch_value),
-      weight = sum(.data$weight, na.rm = T),
+      catch_price = dplyr::first(.data$catch_price),
+      weight = sum(.data$weight, na.rm = TRUE),
+      .groups = "drop"
     ) %>%
-    # dplyr::group_by(.data$species) %>%
-    dplyr::mutate(model = broom::augment(stats::lm(formula = log(.data$total_catch_value + 1)
-    ~ log(.data$weight / 1000 + 1)))) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(cooksd = .data$model$`.cooksd`) %>%
-    dplyr::select(-.data$model) %>%
-    dplyr::mutate(
-      weight_kg = .data$weight / 1000,
-      pk = .data$total_catch_value / .data$weight_kg,
-      alert_number = dplyr::case_when( # .data$cooksd > (cook_dist * mean(.data$cooksd)) |
-        .data$pk < price_weight_min |
-          .data$pk > price_weight_max
-        ~ 17, TRUE ~ NA_real_
-      )
-    ) %>%
-    dplyr::ungroup() %>%
-    dplyr::filter(!is.na(.data$alert_number)) %>%
+    dplyr::mutate(pk = .data$catch_price / (.data$weight / 1000)) %>%
+    dplyr::filter(.data$pk < price_weight_min | .data$pk > price_weight_max) %>%
     magrittr::extract2("submission_id")
 
   regularity_alerts <-
@@ -454,7 +497,7 @@ validate_price_weight <- function(catch_alerts = NULL,
     magrittr::extract2("submission_id")
 
   n_individuals_alert <-
-    catch_alerts %>%
+    catch_params$alerts %>%
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
 
@@ -463,314 +506,366 @@ validate_price_weight <- function(catch_alerts = NULL,
     dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
 
-  # Integrate new alert to prices and weights
-  price_alerts %<>%
+  # Integrate the new alert into prices and into the catches.
+  #
+  # Note the scope: this pass blanks a submission's catch measurements from its
+  # **submission-level** alert, so a single outlying individuals count (alert 11)
+  # discards every catch of that landing, not merely the outlying one. That is
+  # the long-standing behaviour — `validate_catch_params()` used to return one
+  # nested row per submission, so un-nesting it spread the alert over every
+  # row — and it is worth 845 submissions and 1.44% of validated catch weight.
+  # Narrowing it to the offending rows is defensible and easy (drop the join
+  # below and keep `catch_params$catch`'s own row-level `alert_number`), but it
+  # would change published aggregates, so it is a decision rather than a side
+  # effect of this phase.
+  propagate_catch <- function(x) {
+    dplyr::mutate(
+      x,
+      alert_number = dplyr::case_when(
+        .data$submission_id %in% price_per_weight_alerts ~ 17,
+        .data$submission_id %in% regularity_alerts ~ 22,
+        .data$submission_id %in% revenue_alert ~ 6,
+        TRUE ~ .data$alert_number
+      )
+    )
+  }
+
+  price_alerts <-
+    price_alerts %>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
         .data$submission_id %in% price_per_weight_alerts ~ 17,
         .data$submission_id %in% regularity_alerts ~ 22,
         .data$submission_id %in% n_individuals_alert ~ 11,
         TRUE ~ .data$alert_number
-      ),
-      total_catch_value = dplyr::case_when(
-        is.na(.data$alert_number) ~ .data$total_catch_value, TRUE ~ NA_real_
       )
-    )
+    ) %>%
+    blank_on_alert("catch_price")
 
-  catch_alerts %<>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
+  catch_alerts <- propagate_catch(catch_params$alerts)
+
+  list(
+    alerts = dplyr::full_join(
+      catch_alerts,
+      price_alerts %>%
+        dplyr::select("submission_id", "catch_price", "alert_number"),
+      by = "submission_id"
+    ) %>%
+      dplyr::mutate(
+        alert_number = dplyr::coalesce(
+          .data$alert_number.x, .data$alert_number.y
+        )
+      ) %>%
+      dplyr::select(-"alert_number.x", -"alert_number.y"),
+    catch = catch_params$catch %>%
+      dplyr::select(-"alert_number") %>%
+      dplyr::left_join(catch_alerts, by = "submission_id") %>%
+      blank_on_alert(c("n_individuals", catch_value_cols()))
+  )
+}
+
+#' Validate the recorded vessel type
+#'
+#' Reads the `vessel_type` label [preprocess_landings()] resolves from the
+#' PESKAS | FRAME frame, which is authoritative for vessels (PLAN §2.5). Both
+#' codes the live forms use resolve, so alert 12 is currently never raised; the
+#' Google Sheets `vessel_types` table it replaced additionally carried a code 3
+#' "gleaning" that no submission has ever recorded.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @return A tibble: `vessel_type`, `alert_number`, `submission_id`.
+#' @keywords validation
+#' @export
+validate_vessel_type <- function(submissions) {
+  submissions %>%
     dplyr::mutate(
       alert_number = dplyr::case_when(
-        .data$submission_id %in% price_per_weight_alerts ~ 17,
-        .data$submission_id %in% regularity_alerts ~ 22,
-        .data$submission_id %in% revenue_alert ~ 6,
-        TRUE ~ .data$alert_number
+        # A code was recorded that the frame does not know
+        !is.na(.data$vessel_code) & is.na(.data$vessel_type) ~ 12,
+        # A boat was declared but its type was never recorded
+        .data$has_boat == "TRUE" & is.na(.data$vessel_type) ~ 13,
+        TRUE ~ NA_real_
       ),
-      n_individuals = dplyr::case_when(is.na(.data$alert_number) ~ .data$n_individuals, TRUE ~ NA_real_),
-      dplyr::across(
-        c(.data$weight:.data$Vitamin_A_mu), ~ dplyr::case_when(
-          is.na(.data$alert_number) ~ .data$.x, TRUE ~ NA_real_
-        )
+      vessel_type = dplyr::if_else(
+        is.na(.data$alert_number), .data$vessel_type, NA_character_
       )
     ) %>%
-    tidyr::nest(length_individuals = c(.data$mean_length:.data$Vitamin_A_mu)) %>%
-    tidyr::nest(species_group = c(
-      .data$n, .data$species, .data$food_or_sale, .data$other_species_name,
-      .data$photo, .data$length_individuals, .data$length_type
-    ))
-
-  dplyr::full_join(catch_alerts, price_alerts, by = c("submission_id")) %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$alert_number.x, .data$alert_number.y)) %>%
-    dplyr::select(-.data$alert_number.x, -.data$alert_number.y)
+    dplyr::select("vessel_type", "alert_number", "submission_id")
 }
 
-# Ideally this function would in the future, check for the integrity of the boat type
-validate_vessel_type <- function(landings, metadata_vessel_table) {
-  landings %>%
-    dplyr::rename(
-      submission_id = .data$`_id`,
-      boat_code = .data$`trip_group/boat_type`
-    ) %>%
-    dplyr::mutate(boat_code = as.integer(.data$boat_code)) %>%
-    dplyr::left_join(metadata_vessel_table, by = "boat_code") %>%
-    dplyr::rename(vessel_type = .data$boat_type) %>%
-    # If no vessel type is not what we expected
+#' Validate the recorded gear type
+#'
+#' Reads the `gear` label [preprocess_landings()] resolves from the
+#' PESKAS | FRAME frame. Note the frame's labels are Title Case where the
+#' retired Google Sheets `gear_types` table was lower case, and `MC` is
+#' "Gleaning" where the Sheets said "manual collection".
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @return A tibble: `gear_type`, `alert_number`, `submission_id`.
+#' @keywords validation
+#' @export
+validate_gear_type <- function(submissions) {
+  submissions %>%
     dplyr::mutate(
-      not_valid_code = !is.na(.data$boat_code) & is.na(.data$vessel_type),
-      alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 12, NA_real_)
+      alert_number = dplyr::case_when(
+        !is.na(.data$gear_code) & is.na(.data$gear) ~ 14,
+        .data$has_boat == "TRUE" & is.na(.data$gear_code) ~ 15,
+        TRUE ~ NA_real_
+      ),
+      gear_type = dplyr::if_else(
+        is.na(.data$alert_number), .data$gear, NA_character_
+      )
     ) %>%
-    # If no vessel type was recorded when it should have
-    dplyr::mutate(
-      no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$vessel_type),
-      alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 13, NA_real_)
-    ) %>%
-    # Fixing types
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
-    dplyr::select(.data$vessel_type, .data$alert_number, .data$submission_id)
+    dplyr::select("gear_type", "alert_number", "submission_id")
 }
 
-validate_gear_type <- function(landings, metadata_gear_table) {
-  landings %>%
-    dplyr::rename(
-      submission_id = .data$`_id`,
-      gear_code = .data$`trip_group/gear_type`
-    ) %>%
-    dplyr::left_join(metadata_gear_table, by = "gear_code") %>%
-    # If no vessel type is not what we expected
-    dplyr::mutate(
-      not_valid_code = !is.na(.data$gear_code) & is.na(.data$gear_id),
-      alert_number = dplyr::if_else(isTRUE(.data$not_valid_code), 14, NA_real_)
-    ) %>%
-    # If no gear type was recorded when it should have
-    dplyr::mutate(
-      no_vessel_type = .data$`trip_group/has_boat` == "TRUE" & is.na(.data$gear_code),
-      alert_number = dplyr::if_else(isTRUE(.data$no_vessel_type), 15, NA_real_)
-    ) %>%
-    # Fixing types
-    dplyr::mutate(submission_id = as.integer(.data$submission_id)) %>%
-    dplyr::select(.data$gear_id, .data$alert_number, .data$submission_id) %>%
-    dplyr::rename(gear_type = .data$gear_id)
-}
-
-validate_sites <- function(landings, metadata_stations, metadata_reporting_units) {
+#' Validate the recorded landing site
+#'
+#' Alert 16 fires when the recorded station code is in neither reference source.
+#'
+#' Unlike gear and vessels this validator **keeps** its Google Sheets join, and
+#' deliberately. The published `municipality` is Timor's own reporting unit,
+#' which is not the frame's `gaul_1_name` — Atauro is its own reporting unit
+#' while GAUL puts it inside Dili — and `format_public_data()` hardcodes both
+#' the reporting-unit names and five Sheets spellings of `landing_site` when it
+#' classifies the north coast. Measured 2026-08-10: 11 of 40 site names differ
+#' between the two sources, two of them among those five. Reconciling the labels
+#' is migration Phase 8's, together with the portal parity gate; moving them
+#' here would silently reclassify published aggregates.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @param metadata_stations The Google Sheets `stations` table.
+#' @param metadata_reporting_units The Google Sheets `reporting_unit` table.
+#' @return A tibble: `submission_id`, `station_code`, `station_name`,
+#'   `reporting_region`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_sites <- function(submissions,
+                           metadata_stations,
+                           metadata_reporting_units) {
   sites_df <-
     metadata_stations %>%
     dplyr::filter(!is.na(.data$station_code)) %>%
     dplyr::inner_join(metadata_reporting_units, by = "reporting_unit") %>%
-    dplyr::select(.data$station_code, .data$station_name, .data$reporting_unit) %>%
-    dplyr::mutate(station_code = as.character(.data$station_code)) %>%
-    dplyr::mutate(station_name = trimws(.data$station_name)) %>%
-    dplyr::rename(reporting_region = .data$reporting_unit) %>%
+    dplyr::select("station_code", "station_name", "reporting_unit") %>%
+    dplyr::mutate(
+      station_code = as.character(.data$station_code),
+      station_name = trimws(.data$station_name)
+    ) %>%
+    dplyr::rename(reporting_region = "reporting_unit") %>%
     dplyr::distinct()
 
-  landings %>%
-    dplyr::rename(submission_id = .data$`_id`) %>%
-    dplyr::mutate(station_code = as.character(.data$landing_site_name)) %>%
-    dplyr::select(.data$submission_id, .data$station_code) %>%
+  submissions %>%
+    dplyr::select("submission_id", station_code = "landing_site_code") %>%
     dplyr::left_join(sites_df, by = "station_code") %>%
     # If the station is not known to us
-    dplyr::mutate(alert_number = dplyr::if_else(is.na(.data$station_name) | is.na(.data$reporting_region), 16, NA_real_)) %>%
-    # Fixing types
-    dplyr::mutate(submission_id = as.integer(.data$submission_id))
-}
-
-
-validate_n_fishers <- function(landings, method, k) {
-  landings %>%
-    dplyr::select(
-      submission_id = .data$`_id`,
-      fisher_number_child = .data$`trip_group/no_fishers/no_child_fishers`,
-      fisher_number_man = .data$`trip_group/no_fishers/no_men_fishers`,
-      fisher_number_woman = .data$`trip_group/no_fishers/no_women_fishers`
-    ) %>%
-    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), as.numeric)) %>%
-    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), list(alert = alert_outlier), alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T, method = method)) %>%
-    dplyr::mutate(alert_number = dplyr::coalesce(.data$fisher_number_child_alert, .data$fisher_number_man_alert, .data$fisher_number_woman_alert)) %>%
-    dplyr::mutate(dplyr::across(tidyselect::starts_with("fisher"), ~ dplyr::if_else(!is.na(alert_number), NA_real_, .))) %>%
-    dplyr::select(-tidyselect::ends_with("alert")) %>%
-    # Fixing types
-    dplyr::mutate(submission_id = as.integer(.data$submission_id))
-}
-
-
-validate_habitat <- function(landings, metadata_habitat) {
-  landings %>%
-    dplyr::rename(
-      submission_id = .data$`_id`,
-      habitat_code = .data$`trip_group/habitat`
-    ) %>%
     dplyr::mutate(
-      habitat_code = as.numeric(.data$habitat_code),
-      habitat_type = dplyr::case_when(
-        habitat_code == 1 ~ "Reef",
-        habitat_code == 2 ~ "FAD",
-        habitat_code == 3 ~ "Deep",
-        habitat_code == 4 ~ "Beach",
-        habitat_code == 5 ~ "Traditional FAD",
-        habitat_code == 6 ~ "Mangrove",
-        habitat_code == 7 ~ "Seagrass",
-        TRUE ~ NA_character_
+      alert_number = dplyr::if_else(
+        is.na(.data$station_name) | is.na(.data$reporting_region), 16, NA_real_
       )
-    ) %>%
-    dplyr::select(.data$submission_id, .data$habitat_code, .data$habitat_type) %>%
-    dplyr::mutate(
-      alert_number = dplyr::case_when(
-        !.data$habitat_code %in% c(metadata_habitat$habitat_code, NA_integer_) ~ 19,
-        TRUE ~ NA_real_
-      ),
-      habitat_type = dplyr::case_when(
-        is.na(alert_number) ~ .data$habitat_type,
-        TRUE ~ NA_character_
-      ),
-      submission_id = as.integer(.data$submission_id)
     )
 }
 
-validate_mesh <- function(landings, mesh_limit) {
-  landings %>%
+#' Validate the recorded crew size
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @inheritParams univOutl::LocScaleB
+#' @return A tibble: `submission_id` and the three `fisher_number_*` columns.
+#' @keywords validation
+#' @export
+validate_n_fishers <- function(submissions, method, k) {
+  submissions %>%
     dplyr::select(
-      submission_id = .data$`_id`,
-      .data$`trip_group/mesh_size`,
-      .data$`trip_group/mesh_size_other`
+      "submission_id",
+      fisher_number_child = "no_child_fishers",
+      fisher_number_man = "no_men_fishers",
+      fisher_number_woman = "no_women_fishers"
     ) %>%
-    dplyr::mutate(
-      `trip_group/mesh_size` = dplyr::case_when(
-        `trip_group/mesh_size` == "seluk" ~ NA_character_, TRUE ~ .data$`trip_group/mesh_size`
-      ),
-      mesh_size = dplyr::coalesce(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`),
-      mesh_size = as.double(.data$mesh_size),
-      mesh_size = .data$mesh_size * 25.4, # convert in mm
-      alert_number = dplyr::case_when(
-        .data$mesh_size < 0 | .data$mesh_size > mesh_limit ~ 20,
-        TRUE ~ NA_real_
-      ),
-      mesh_size = dplyr::case_when(
-        is.na(alert_number) ~ .data$mesh_size,
-        TRUE ~ NA_real_
-      ),
-      submission_id = as.integer(.data$submission_id)
-    ) %>%
-    dplyr::select(-c(.data$`trip_group/mesh_size`, .data$`trip_group/mesh_size_other`))
+    dplyr::mutate(dplyr::across(
+      tidyselect::starts_with("fisher"),
+      list(alert = alert_outlier),
+      alert_if_larger = 18, alert_if_smaller = 18, k = k, logt = T,
+      method = method
+    )) %>%
+    dplyr::mutate(alert_number = dplyr::coalesce(
+      .data$fisher_number_child_alert,
+      .data$fisher_number_man_alert,
+      .data$fisher_number_woman_alert
+    )) %>%
+    dplyr::mutate(dplyr::across(
+      tidyselect::starts_with("fisher"),
+      ~ dplyr::if_else(!is.na(.data$alert_number), NA_real_, .)
+    )) %>%
+    dplyr::select(-tidyselect::ends_with("alert"))
 }
 
+#' Validate the recorded habitat
+#'
+#' Habitat is the one label with no frame equivalent, so
+#' [preprocess_landings()] resolves it from the Google Sheets `habitat` table.
+#' This validator therefore only has to notice a code that table does not
+#' cover — the seven-way `case_when()` it used to duplicate was verified
+#' identical to the resolved column over all 97,347 submissions before being
+#' deleted.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @return A tibble: `submission_id`, `habitat_code`, `habitat_type`,
+#'   `alert_number`.
+#' @keywords validation
+#' @export
+validate_habitat <- function(submissions) {
+  submissions %>%
+    dplyr::transmute(
+      .data$submission_id,
+      .data$habitat_code,
+      habitat_type = .data$habitat,
+      alert_number = dplyr::if_else(
+        !is.na(.data$habitat_code) & is.na(.data$habitat), 19, NA_real_
+      ),
+      habitat_type = dplyr::if_else(
+        is.na(.data$alert_number), .data$habitat_type, NA_character_
+      )
+    )
+}
 
-validate_gleaners <- function(landings, method, k_gleaners) {
-  landings %>%
-    dplyr::select(
-      submission_id = .data$`_id`,
-      n_gleaners = .data$how_many_gleaners_today
-    ) %>%
-    dplyr::mutate(
-      n_gleaners = as.double(.data$n_gleaners),
-      n_gleaners = abs(.data$n_gleaners),
+#' Validate the recorded mesh size
+#'
+#' The unit conversion moved to [preprocess_landings()] in migration Phase 5;
+#' `mesh_size` reaches this function in millimetres.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @param mesh_limit Largest plausible mesh size, in millimetres.
+#' @return A tibble: `submission_id`, `mesh_size`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_mesh <- function(submissions, mesh_limit) {
+  submissions %>%
+    dplyr::transmute(
+      .data$submission_id,
+      .data$mesh_size,
+      alert_number = dplyr::if_else(
+        .data$mesh_size < 0 | .data$mesh_size > mesh_limit, 20, NA_real_
+      ),
+      mesh_size = dplyr::if_else(
+        is.na(.data$alert_number), .data$mesh_size, NA_real_
+      )
+    )
+}
+
+#' Validate the recorded number of gleaners
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @inheritParams univOutl::LocScaleB
+#' @param k_gleaners Extension of bounds for the number of gleaners.
+#' @return A tibble: `submission_id`, `n_gleaners`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_gleaners <- function(submissions, method, k_gleaners) {
+  submissions %>%
+    dplyr::transmute(
+      .data$submission_id,
+      .data$n_gleaners,
       alert_number = alert_outlier(
         x = .data$n_gleaners,
         alert_if_larger = 21, logt = TRUE, k = k_gleaners
       ),
-      n_gleaners = dplyr::case_when(
-        is.na(alert_number) ~ .data$n_gleaners,
-        TRUE ~ NA_real_
-      ),
-      submission_id = as.integer(.data$submission_id)
+      n_gleaners = dplyr::if_else(
+        is.na(.data$alert_number), .data$n_gleaners, NA_real_
+      )
     )
 }
 
-validate_fuel <- function(landings, method, k_fuel) {
-  landings %>%
-    dplyr::select(
-      submission_id = .data$`_id`,
-      has_boat = .data$`trip_group/has_boat`,
-      fuel = .data$fuel_L
-    ) %>%
-    dplyr::mutate(
-      submission_id = as.integer(.data$submission_id),
-      fuel = as.double(.data$fuel),
+#' Validate the recorded fuel use
+#'
+#' Alert 23 never reaches a flag string: fuel is one of the three frames that
+#' feed the validated artefact but not the flag composition in
+#' [validate_landings()].
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @inheritParams univOutl::LocScaleB
+#' @param k_fuel Extension of bounds for the fuel volume.
+#' @return A tibble: `submission_id`, `fuel`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_fuel <- function(submissions, method, k_fuel) {
+  submissions %>%
+    dplyr::transmute(
+      .data$submission_id,
+      .data$fuel,
       alert_number.1 = ifelse(.data$fuel < 0, 23, NA_real_),
       alert_number.2 = alert_outlier(
         x = .data$fuel,
         alert_if_larger = 23, logt = TRUE, k = k_fuel
       ),
-      alert_number.3 = dplyr::case_when(.data$fuel > 0 & isFALSE(.data$has_boat) ~ 23, TRUE ~ NA_real_),
-      alert_number = dplyr::coalesce(.data$alert_number.1, .data$alert_number.2, .data$alert_number.3),
-      fuel = dplyr::case_when(
-        is.na(alert_number) ~ .data$fuel,
-        TRUE ~ NA_real_
-      )
+      alert_number.3 = dplyr::case_when(
+        .data$fuel > 0 & isFALSE(.data$has_boat) ~ 23, TRUE ~ NA_real_
+      ),
+      alert_number = dplyr::coalesce(
+        .data$alert_number.1, .data$alert_number.2, .data$alert_number.3
+      ),
+      fuel = dplyr::if_else(is.na(.data$alert_number), .data$fuel, NA_real_)
     ) %>%
-    dplyr::select(.data$submission_id, .data$fuel, .data$alert_number)
+    dplyr::select("submission_id", "fuel", "alert_number")
 }
 
-validate_conservation <- function(landings, metadata_conservation) {
-  landings %>%
-    dplyr::select(
-      submission_id = .data$`_id`,
-      conservation_code = .data$`group_conservation_trading/conservation`
-    ) %>%
-    dplyr::full_join(metadata_conservation, by = "conservation_code") %>%
-    dplyr::select(-.data$conservation_code) %>%
-    dplyr::mutate(
-      submission_id = as.integer(.data$submission_id),
+#' Resolve the recorded catch-preservation method
+#'
+#' Conservation has no frame equivalent, so the Google Sheets `conservation`
+#' table stays. Raises no alert.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @param metadata_conservation The Google Sheets `conservation` table.
+#' @return A tibble: `submission_id`, `conservation_place`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_conservation <- function(submissions, metadata_conservation) {
+  submissions %>%
+    dplyr::select("submission_id", conservation_code = "conservation_code") %>%
+    dplyr::left_join(metadata_conservation, by = "conservation_code") %>%
+    dplyr::select(-"conservation_code") %>%
+    dplyr::mutate(alert_number = NA_real_)
+}
+
+#' Carry through the recorded happiness rating
+#'
+#' Raises no alert; it is here so the rating reaches the validated artefact
+#' alongside everything else.
+#'
+#' @param submissions Output of [validation_submissions()].
+#' @return A tibble: `submission_id`, `happiness`, `alert_number`.
+#' @keywords validation
+#' @export
+validate_happiness <- function(submissions) {
+  submissions %>%
+    dplyr::transmute(
+      .data$submission_id,
+      .data$happiness,
       alert_number = NA_real_
     )
 }
 
-validate_happiness <- function(landings) {
-  landings %>%
-    dplyr::select(
-      submission_id = .data$`_id`,
-      happiness = .data$happiness_rating
-    ) %>%
-    dplyr::mutate(
-      submission_id = as.integer(.data$submission_id),
-      happiness = as.integer(.data$happiness),
-      alert_number = NA_real_
-    )
-}
+# ---------------------------------------------------------------------------
+# KoBoToolbox validation status
+# ---------------------------------------------------------------------------
+# `kobo_request()`, `kobo_validation_url()`, `list_validation_statuses()`,
+# `get_validation_status()` and `update_validation_status()` lived here from
+# migration Phase 5, ported from Mozambique. Phase 10 upstreamed them (COASTS-TODO
+# C15) and coasts 4.7.0 shipped them; migration Phase 11 deleted the local
+# copies. `R/validation.R` calls `coasts::list_validation_statuses()` and
+# `coasts::update_validation_status()`.
 
-
-get_bounds_table <- function(data = NULL, metadata_table = NULL, k_ind = NULL) {
-  get_bounds <- function(x) {
-    bounds <-
-      univOutl::LocScaleB(x$n_individuals, logt = TRUE, k = k_ind) %>%
-      magrittr::extract2("bounds")
-    bounds
-  }
-
-  data %>%
-    dplyr::filter(is.na(.data$alert_number)) %>%
-    dplyr::select(.data$`_id`, .data$`trip_group/gear_type`, .data$species_group) %>%
-    tidyr::unnest(.data$species_group, keep_empty = TRUE) %>%
-    tidyr::unnest(.data$length_individuals, keep_empty = TRUE) %>%
-    dplyr::filter(!.data$species == "0" & .data$n_individuals > 0) %>%
-    split(interaction(.$species, .$`trip_group/gear_type`)) %>%
-    purrr::discard(~ nrow(.) == 0) %>%
-    purrr::map(get_bounds) %>%
-    dplyr::bind_rows(.id = "taxa") %>%
-    dplyr::mutate(upper.up = exp(.data$upper.up)) %>%
-    tidyr::separate(col = "taxa", into = c("taxa", "gear_type")) %>%
-    dplyr::select(.data$taxa, .data$gear_type, max_individuals = .data$upper.up) %>%
-    dplyr::mutate(max_individuals = round(.data$max_individuals, 1)) %>%
-    dplyr::arrange(.data$taxa) %>%
-    dplyr::left_join(
-      metadata_table$gear_types %>%
-        dplyr::select(
-          gear_type = .data$gear_code,
-          gear = .data$gear_id
-        ),
-      by = "gear_type"
-    ) %>%
-    dplyr::select(-.data$gear_type) %>%
-    tidyr::pivot_wider(names_from = .data$gear, values_from = .data$max_individuals) %>%
-    dplyr::left_join(
-      metadata_table$catch_types %>%
-        dplyr::select(
-          taxa = .data$interagency_code,
-          taxa_group = .data$catch_name_en
-        ),
-      by = "taxa"
-    ) %>%
-    dplyr::select("taxa group" = .data$taxa_group, dplyr::everything(), -.data$taxa) %>%
-    dplyr::filter(!.data$`taxa group` %in% c("Herring", "Unknown", "Surgeonfish", "Bannerfish")) %>%
-    dplyr::arrange(.data$`taxa group`)
-}
+# NOTE: `get_deployed_imeis()` and `get_bounds_table()` lived here until
+# migration Phase 5.
+#
+#   get_deployed_imeis()  joined `devices` to `device_installs` to narrow the
+#                         valid-IMEI list to devices actually installed on a
+#                         boat. `validate_landings()` has had the call commented
+#                         out in favour of every deployed IMEI for years.
+#   get_bounds_table()    built a (taxon x gear) table of maximum plausible
+#                         individual counts. `validate_landings()` assigned it
+#                         and never read it, and a repo-wide grep found no other
+#                         caller — while it was one of the two most expensive
+#                         steps in the pipeline, running `univOutl::LocScaleB()`
+#                         over ~600 groups of 1.65M rows. If the table is ever
+#                         wanted for reporting, restore it from git history and
+#                         give it a caller.

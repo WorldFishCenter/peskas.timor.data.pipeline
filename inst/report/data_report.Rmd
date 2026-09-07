@@ -44,11 +44,11 @@ metadata <- peskas.timor.data.pipeline::get_preprocessed_sheets(pars)
 nutrients_table <- peskas.timor.data.pipeline::get_nutrients_table(pars)
 estimates <- peskas.timor.data.pipeline::get_models(pars)
 
-vessels_stats <-
-  metadata$vessels_stats %>%
-  dplyr::group_by(.data$reporting_region) %>%
-  dplyr::summarise(n_boats = sum(.data$n_boats)) %>%
-  dplyr::ungroup()
+# Registered boats per reporting region, from the PESKAS | FRAME snapshot --
+# the same source `estimate_fishery_indicators()` uses. The Google Sheets
+# `fishing_vessel_statistics` table this used to summarise was dropped in
+# migration Phase 11.
+vessels_stats <- peskas.timor.data.pipeline:::get_registered_boats(pars)
 
 # palettes
 year_palette <-
@@ -176,42 +176,6 @@ kobo_trips %>%
 # Fishery profile
 
 This section contains information of the Timor-Leste SSF' fleet and the main characteristics of the fishing trips. The information is based on the data collected during the Peskas' surveys.
-
-## Boats information
-
-```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
-metadata$boats %>%
-  dplyr::select(.data$boat_length, .data$boat_engine_power) %>%
-  tidyr::pivot_longer(cols = tidyr::everything()) %>%
-  dplyr::mutate(value = as.numeric(value)) %>%
-  ggplot() +
-  theme_minimal(12) +
-  facet_grid(
-    . ~ name,
-    scales = "free",
-    labeller = as_labeller(c(
-      boat_engine_power = "Boat horspower (hp)",
-      boat_length = "Boat length (m)"
-    ))
-  ) +
-  geom_histogram(
-    mapping = aes(x = value),
-    bins = 30,
-    binwidth = 0.5,
-    fill = "#447597",
-    alpha = 0.5
-  ) +
-  scale_x_continuous(n.breaks = 10) +
-  theme(
-    text = element_text(family = "Helvetica"),
-    plot.subtitle = element_text(size = 9, color = "darkslategrey"),
-    panel.grid = element_blank()
-  ) +
-  labs(
-    x = "",
-    y = "N. observations"
-  )
-```
 
 ## Gear used and boats type
 
@@ -1343,6 +1307,9 @@ cowplot::plot_grid(p1, p2, p3, ncol = 1)
 Boat movements are tracked by [Pelagic Data System](https://www.pelagicdata.com/) tracking system, and a proprietary algorithm is used to determine when a trip occurs. Tracks are recorded by GPS devices mounted on the boats. The heatmap refer to the boats' movements tracked along the Timor coast with a grid resolution of 10 x 10 meters. The tracks are filtered for outliers and some potential algorithm errors. Specifically, we do not take into account geo-referenced tracks characterized by large anomalies in the quality of the tracking signal, the speed of the boats, and the distance and time travelled.
 
 ```{r, echo=FALSE}
+# Frozen content: `ingest_kepler_tracks()` wrote this object and was deleted in
+# migration Phase 11 (no workflow had called it since 2021). The object is still
+# in the bucket, so the iframe renders, but it is not regenerated.
 htmltools::tags$iframe(
   src = "https://storage.googleapis.com/public-timor/kepler_pds_map.html",
   width = "100%",

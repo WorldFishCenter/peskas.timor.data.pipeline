@@ -12,12 +12,12 @@
 #'   `data_last_updated` (POSIXlt) indicating the timestamp extracted from the filename.
 #'
 #' @details
-#' Requires configuration from `read_config()`. Uses `cloud_object_name()` to
-#' resolve the object name and `download_cloud_file()` to download it. Assumes
+#' Requires configuration from `read_config()`. Uses `coasts::cloud_object_name()` to
+#' resolve the object name and `coasts::download_cloud_file()` to download it. Assumes
 #' filenames follow a convention like `..._<timestamp>_...` where `<timestamp>`
 #' is in `%Y%m%d%H%M` format and located at position 4 after splitting on `_`.
 #'
-#' @seealso read_config, cloud_object_name, download_cloud_file
+#' @seealso read_config, coasts::cloud_object_name, coasts::download_cloud_file
 #' @export
 #'
 #' @keywords internal
@@ -27,18 +27,18 @@
 #' attr(x, "data_last_updated")
 #' }
 get_file <- function(prefix) {
-  pars <- read_config()
-  filename <- cloud_object_name(
+  conf <- read_config()
+  filename <- coasts::cloud_object_name(
     prefix = prefix,
-    provider = pars$public_storage$google$key,
+    provider = conf$public_storage$google$key,
     extension = "rds",
-    options = pars$public_storage$google$options,
+    options = conf$public_storage$google$options,
     exact_match = TRUE
   )
-  download_cloud_file(
+  coasts::download_cloud_file(
     name = filename,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 
   x <- readRDS(filename)
@@ -134,48 +134,6 @@ format_aggregated_data <- function(
   aggregated
 }
 
-#' Build a lookup list of taxa names grouped by fish group
-#'
-#' From an input table containing `catch_taxon` and `fish_group`, constructs a
-#' named list where each element corresponds to one `fish_group` and contains
-#' the unique taxa (from `catch_taxon`) observed in that group.
-#'
-#' @param x A data frame/data.table with at least columns `catch_taxon` and
-#'   `fish_group`.
-#'
-#' @return A named list. Names are fish group labels; values are lists of unique
-#'   taxa strings belonging to each group.
-#'
-#' @details
-#' Internally converts to a `data.table`, unique-ifies taxa within group, and
-#' uses `split()` to produce the group-wise list.
-#'
-#' @seealso data.table::data.table, split
-#' @keywords internal
-#' @export
-#' @examples
-#' \dontrun{
-#' grid <- get_file("indicators_gridded")
-#' groups <- label_taxa_groups(grid)
-#' names(groups)
-#' groups[["Small pelagics"]]
-#' }
-label_taxa_groups <- function(x) {
-  label_groups <-
-    dplyr::tibble(
-      taxa = x$catch_taxon,
-      group = x$fish_group
-    ) |>
-    dplyr::distinct(.data$group, .data$taxa)
-
-  label_groups_list <- split(label_groups$taxa, label_groups$group)
-
-  # make each element a list of 1-length character vectors (data.table-like)
-  label_groups_list <- lapply(label_groups_list, as.list)
-
-  label_groups_list
-}
-
 #' Rename fields to match the portal ontology
 #'
 #' Standardizes column names by applying a set of pattern-based substitutions:
@@ -215,31 +173,33 @@ rename_ontology <- function(x) {
 #'    `get_file()`.
 #' 2) Standardizes column names via `rename_ontology()`.
 #' 3) Formats time-binned tables via `format_aggregated_data()`.
-#' 4) Builds taxa group lookup via `label_taxa_groups()`.
-#' 5) Computes summary tables (`estimated_tons`, `estimated_revenue`) and a
+#' 4) Computes summary tables (`estimated_tons`, `estimated_revenue`) and a
 #'    curated `summary_data` list for portal use.
-#' 6) Writes each object to pretty-printed JSON with versioned filenames and
+#' 5) Writes each object to pretty-printed JSON with versioned filenames and
 #'    uploads them to public cloud storage.
 #'
 #' @return Invisibly returns `NULL`. Called for its side effects (JSON creation
 #'   and upload).
 #'
 #' @details
-#' Exported JSON objects include (at minimum):
+#' The exported JSON objects are exactly the seven the live portal consumes:
 #' `aggregated`, `taxa_aggregated`, `municipal_aggregated`, `municipal_taxa`,
-#' `nutrients_aggregated`, `data_last_updated`, `indicators_grid`,
-#' `label_groups_list`, and `summary_data`.
+#' `nutrients_aggregated`, `data_last_updated` and `summary_data`. The contract
+#' is **discovery-based** — `peskas.timor.portal.v2/scripts/fetchData.js` lists
+#' the bucket for the `portal-` prefix and keeps the newest version of each — so
+#' renaming or dropping one of these seven does not fail a build, it silently
+#' removes a page from the live site.
 #'
 #' The function expects `summary_data` (downloaded) to contain fields such as
 #' `n_surveys`, `catch_norm`, `catch_price_norm`, `nutrients_per_catch`,
 #' `nutrients_norm`, `conservation`, `cpue_df`, and `timor_shape`.
 #'
 #' Assumes a configured public Google cloud storage provider in
-#' `pars$public_storage$google` and relies on helper functions such as
-#' `add_version()`, `upload_cloud_file()`, and JSON serialization via `toJSON()`.
+#' `conf$public_storage$google` and relies on helper functions such as
+#' `add_version()`, `coasts::upload_cloud_file()`, and JSON serialization via `toJSON()`.
 #'
-#' @seealso get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
-#'   upload_cloud_file, add_version
+#' @seealso get_file, rename_ontology, format_aggregated_data,
+#'   coasts::upload_cloud_file, add_version
 #'
 #' @keywords workflow
 #' @export
@@ -248,7 +208,7 @@ rename_ontology <- function(x) {
 #' export_files()
 #' }
 export_files <- function() {
-  pars <- read_config()
+  conf <- read_config()
   aggregated <- get_file("timor_aggregated")
   data_last_updated <- attr(aggregated, "data_last_updated")
   aggregated <- aggregated %>% purrr::map(rename_ontology)
@@ -261,9 +221,17 @@ export_files <- function() {
     purrr::map(., ~ dplyr::filter(.x, !nutrient == "selenium"))
   summary_data <- get_file("summary_data")
 
-  indicators_grid <- get_file("indicators_gridded") %>%
-    data.table::as.data.table()
-  label_groups_list <- label_taxa_groups(indicators_grid)
+  # NOTE: `portal-indicators_grid` and `portal-label_groups_list` were emitted
+  # here until migration Phase 8 and are not any more. They were the **two
+  # objects `peskas.timor.portal.v2/scripts/fetchData.js` explicitly excludes**
+  # (AUDIT §3), rebuilt on every run from `indicators_gridded.rds` — an object
+  # last written 2024-07-27 in production and 2023-05-21 in dev, by
+  # `ingest_pds_map()`, which no workflow had called in two years and which
+  # Phase 11 deleted. So the export
+  # was publishing a fresh version number over two-year-old content that nothing
+  # read. Dropping them leaves the seven objects the portal actually consumes,
+  # and is reversible: no history was deleted, and re-adding the two lines
+  # restores the family. See the Phase 8 STATE entry.
 
   boats <- sum(unique(municipal_aggregated$n_boats))
 
@@ -355,20 +323,34 @@ export_files <- function() {
     dplyr::mutate(tons = round(.data$tons, 0)) %>%
     dplyr::arrange(-.data$tons)
 
+  # Coast is a property of the landing site, not the municipality, but by this
+  # point the model has collapsed the data to municipality and the site is gone.
+  # `get_summary_data()` in format-public-data.R has the site-level rescue list;
+  # this list is its municipality-level approximation. With "Lautem" the two
+  # rules agree on all but 3 of 76k landings (Lore 2, Welaluhu 1).
+  # The durable fix is one site->coast table read by both call sites: Phase 12.
+  # See .claude/migration/ALIGNMENT-AUDIT.md §11 (L3).
   estimated_revenue <-
     municipal_aggregated %>%
     dplyr::mutate(
       Area = dplyr::case_when(
         .data$region %in%
-          c("Oecusse", "Bobonaro", "Liquica", "Dili", "Manatuto", "Baucau") ~
+          c(
+            "Oecusse",
+            "Bobonaro",
+            "Liquica",
+            "Dili",
+            "Manatuto",
+            "Baucau",
+            "Lautem"
+          ) ~
           "North Coast",
         .data$region == "Atauro" ~ "Atauro island",
         TRUE ~ "South Coast"
       )
     ) %>%
     dplyr::group_by(.data$Area) %>%
-    dplyr::summarise(`Estimated revenue` = sum(.data$revenue, na.rm = T)) %>%
-    dplyr::mutate(`Estimated revenue` = round(`Estimated revenue`, 0))
+    dplyr::summarise(`Estimated revenue` = round(sum(.data$revenue, na.rm = T), 0))
 
   summary_data <-
     list(
@@ -410,8 +392,6 @@ export_files <- function() {
     municipal_taxa = municipal_taxa,
     nutrients_aggregated = nutrients_aggregated,
     data_last_updated = data_last_updated,
-    indicators_grid = indicators_grid,
-    label_groups_list = label_groups_list,
     summary_data = summary_data
   )
 
@@ -429,8 +409,8 @@ export_files <- function() {
   purrr::walk2(
     files,
     filenames,
-    upload_cloud_file,
-    provider = pars$public_storage$google$key,
-    options = pars$public_storage$google$options
+    coasts::upload_cloud_file,
+    provider = conf$public_storage$google$key,
+    options = conf$public_storage$google$options
   )
 }

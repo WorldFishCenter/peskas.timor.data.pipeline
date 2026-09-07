@@ -1,2 +1,21 @@
-.github
 .git
+.github
+.Rproj.user
+.Rhistory
+.venv
+
+## Credentials — never into an image layer
+auth
+.env
+.env.example
+.Renviron
+
+## Reference copy of the Mozambique pipeline (migration only)
+peskas.mozambique.data.pipeline
+
+## Regenerated or irrelevant to the build
+docs
+reference
+*.parquet
+*.rds
+*.tar.gz

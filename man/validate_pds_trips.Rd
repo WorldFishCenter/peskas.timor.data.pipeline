@@ -13,12 +13,17 @@ validate_pds_trips(log_threshold = logger::DEBUG)
 no outputs. This function is used for it's side effects
 }
 \description{
-Downloads the preprocessed version of pds trips and pds tracks disgnostics
-from cloud storage services and validates a range of information so that it
-can be safely used for analysis.
+Reads the trips parquet written by \code{coasts::ingest_pds_trips()} and the
+per-trip descriptors written by \code{\link[=describe_pds_tracks]{describe_pds_tracks()}}, merges trips that
+are really one, and flags anomalous duration, distance and signal quality.
 }
 \details{
-The parameters needed in the config file are those required for
-\code{preprocess_pds_trips()}, as well as parameters needed to identify anomalous
-trips.
+Kept as a Timor function in migration Phase 7 — \code{coasts} has no
+consecutive-trip merging and no distance or outlier logic — and listed as an
+upstream candidate for Phase 10.
+
+The parameters needed in the config file are \verb{pds.pds_trips.*},
+\verb{pds.pds_tracks.descriptors.*} and the \code{validation.pds_trips} coefficients.
 }
+\keyword{validation}
+\keyword{workflow}

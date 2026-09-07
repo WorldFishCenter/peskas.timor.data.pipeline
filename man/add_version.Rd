@@ -37,3 +37,4 @@ if (git2r::in_repository()) {
   add_version("my_file", "csv")
 }
 }
+\keyword{helper}

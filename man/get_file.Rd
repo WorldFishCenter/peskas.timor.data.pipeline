@@ -21,8 +21,8 @@ attribute parsed from the object filename (expected to contain a timestamp as
 the 4th underscore-separated token in \verb{\%Y\%m\%d\%H\%M} format).
 }
 \details{
-Requires configuration from \code{read_config()}. Uses \code{cloud_object_name()} to
-resolve the object name and \code{download_cloud_file()} to download it. Assumes
+Requires configuration from \code{read_config()}. Uses \code{coasts::cloud_object_name()} to
+resolve the object name and \code{coasts::download_cloud_file()} to download it. Assumes
 filenames follow a convention like \verb{..._<timestamp>_...} where \verb{<timestamp>}
 is in \verb{\%Y\%m\%d\%H\%M} format and located at position 4 after splitting on \verb{_}.
 }
@@ -33,6 +33,6 @@ attr(x, "data_last_updated")
 }
 }
 \seealso{
-read_config, cloud_object_name, download_cloud_file
+read_config, coasts::cloud_object_name, coasts::download_cloud_file
 }
 \keyword{internal}

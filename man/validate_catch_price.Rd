@@ -4,10 +4,12 @@
 \alias{validate_catch_price}
 \title{Validate surveys' total catch values}
 \usage{
-validate_catch_price(data, method = NULL, k = NULL)
+validate_catch_price(regular_landings, method = NULL, k = NULL)
 }
 \arguments{
-\item{data}{A preprocessed data frame}
+\item{regular_landings}{The long catch table from
+\code{\link[=validate_landing_regularity]{validate_landing_regularity()}}, carrying \code{catch_price} and the
+\code{alert_number} raised so far.}
 
 \item{method}{
 		character identifying how to estimate the scale of the distribution. Available choices are:
@@ -38,18 +40,11 @@ validate_catch_price(data, method = NULL, k = NULL)
 }
 }
 \value{
-A data frame containing validated catch values.
+A data frame containing validated catch values, one row per
+submission.
 }
 \description{
-This function takes a preprocessed landings' matrix and uses univariate
-techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) for the identification of outliers in
-the distribution of the total catch values associated to surveys.
+Flags implausibly large revenue. The \code{univOutl::LocScaleB()} route is kept in
+place, commented out, because the fixed threshold replaced it deliberately.
 }
-\examples{
-\dontrun{
-pars <- read_config()
-landings <- get_merged_landings(pars)
-validate_catch_value(landings, method = "MAD", k = 13)
-}
-
-}
+\keyword{validation}

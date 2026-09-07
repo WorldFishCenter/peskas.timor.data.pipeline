@@ -17,7 +17,6 @@ Orchestrates the portal data export workflow:
 \code{get_file()}.
 \item Standardizes column names via \code{rename_ontology()}.
 \item Formats time-binned tables via \code{format_aggregated_data()}.
-\item Builds taxa group lookup via \code{label_taxa_groups()}.
 \item Computes summary tables (\code{estimated_tons}, \code{estimated_revenue}) and a
 curated \code{summary_data} list for portal use.
 \item Writes each object to pretty-printed JSON with versioned filenames and
@@ -25,18 +24,21 @@ uploads them to public cloud storage.
 }
 }
 \details{
-Exported JSON objects include (at minimum):
+The exported JSON objects are exactly the seven the live portal consumes:
 \code{aggregated}, \code{taxa_aggregated}, \code{municipal_aggregated}, \code{municipal_taxa},
-\code{nutrients_aggregated}, \code{data_last_updated}, \code{indicators_grid},
-\code{label_groups_list}, and \code{summary_data}.
+\code{nutrients_aggregated}, \code{data_last_updated} and \code{summary_data}. The contract
+is \strong{discovery-based} — \code{peskas.timor.portal.v2/scripts/fetchData.js} lists
+the bucket for the \verb{portal-} prefix and keeps the newest version of each — so
+renaming or dropping one of these seven does not fail a build, it silently
+removes a page from the live site.
 
 The function expects \code{summary_data} (downloaded) to contain fields such as
 \code{n_surveys}, \code{catch_norm}, \code{catch_price_norm}, \code{nutrients_per_catch},
 \code{nutrients_norm}, \code{conservation}, \code{cpue_df}, and \code{timor_shape}.
 
 Assumes a configured public Google cloud storage provider in
-\code{pars$public_storage$google} and relies on helper functions such as
-\code{add_version()}, \code{upload_cloud_file()}, and JSON serialization via \code{toJSON()}.
+\code{conf$public_storage$google} and relies on helper functions such as
+\code{add_version()}, \code{coasts::upload_cloud_file()}, and JSON serialization via \code{toJSON()}.
 }
 \examples{
 \dontrun{
@@ -44,7 +46,7 @@ export_files()
 }
 }
 \seealso{
-get_file, rename_ontology, format_aggregated_data, label_taxa_groups,
-upload_cloud_file, add_version
+get_file, rename_ontology, format_aggregated_data,
+coasts::upload_cloud_file, add_version
 }
 \keyword{workflow}

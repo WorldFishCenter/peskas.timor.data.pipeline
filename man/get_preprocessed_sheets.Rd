@@ -4,11 +4,12 @@
 \alias{get_preprocessed_sheets}
 \title{Download Peskas metadata}
 \usage{
-get_preprocessed_sheets(pars)
+get_preprocessed_sheets(conf)
 }
 \arguments{
-\item{pars}{The configuration file}
+\item{conf}{The configuration file}
 }
 \description{
 Download preprocessed Peskas metadata from Google Sheets
 }
+\keyword{storage}

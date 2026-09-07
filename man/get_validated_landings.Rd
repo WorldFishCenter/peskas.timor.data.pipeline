@@ -2,16 +2,30 @@
 % Please edit documentation in R/get-cloud-files.R
 \name{get_validated_landings}
 \alias{get_validated_landings}
-\title{Download Peskas validated landings}
+\title{Download Peskas validated landings, in the nested portal shape}
 \usage{
-get_validated_landings(log_threshold = logger::DEBUG)
+get_validated_landings(conf)
 }
 \arguments{
-\item{log_threshold}{The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more details}
+\item{conf}{The configuration file.}
 }
 \value{
-A dataframe of validated survey landings.
+A tibble of validated survey landings, one row per submission.
 }
 \description{
-Download validated Peskas data from Google Cloud.
+One row per submission, with the catch as the \code{landing_catch} /
+\code{length_frequency} list-columns that \code{\link[=merge_trips]{merge_trips()}}, \code{format_public_data()}
+and \code{estimate_fishery_indicators()} read.
 }
+\details{
+Until migration Phase 8 this read a second stored artefact,
+\code{timor-landings-merged_validated__*.rds}, written by \code{\link[=validate_landings]{validate_landings()}}
+beside the long parquet. That artefact is gone: this is now a \strong{view} over
+\code{\link[=get_validated_landings_long]{get_validated_landings_long()}}, rebuilt by \code{nest_landing_catch()}. The two
+were proven interchangeable before the switch — 97,360 submissions and
+1,648,016 catch rows compared column by column, every column equal, with
+1,599 catch weights differing by at most 2.9e-11 g (one ULP of the
+grams → kg → grams round trip) and the national total unchanged to 20
+significant digits.
+}
+\keyword{storage}

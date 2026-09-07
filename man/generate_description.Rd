@@ -15,3 +15,4 @@ A list with the description of each variable of each uploaded dataset.
 \description{
 This function generate the description of the data useful for the README file.
 }
+\keyword{export}

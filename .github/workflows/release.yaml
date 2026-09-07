@@ -1,0 +1,72 @@
+# Cuts a GitHub release from the top block of NEWS.md when one does not exist
+# for that version yet. Ported from the reference pipeline in migration Phase 9
+# **with its tag bug fixed**: the original writes `tag_name=v$version` to
+# `$GITHUB_OUTPUT` and then uses `v${{ steps.changelog.outputs.tag_name }}`,
+# producing `vv4.0.0`, and `check_tag` compounds it with a third `v`. Here the
+# step emits a bare `version` and the single `v` is added at each use site.
+#
+# `fetch-tags` matters: without it the shallow checkout has no tags, `check_tag`
+# always reports `exists=false`, and the release step fails on an existing tag.
+name: Release from NEWS.md
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-tags: true
+
+      - name: Extract version and changelog from NEWS.md
+        id: changelog
+        run: |
+          version=$(grep -m1 -oP '^# peskas\.timor\.data\.pipeline \K[0-9]+\.[0-9]+\.[0-9]+' NEWS.md)
+          if [ -z "$version" ]; then
+            echo "No version heading found in NEWS.md" >&2
+            exit 1
+          fi
+          echo "Extracted version: $version"
+
+          # Everything between the first version heading and the next one.
+          changelog=$(awk '
+            BEGIN { print_mode=0 }
+            /^# peskas\.timor\.data\.pipeline / {
+              if (print_mode == 1) exit
+              if (print_mode == 0) { print_mode=1; next }
+            }
+            print_mode == 1 { print }
+          ' NEWS.md)
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.changelog.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.changelog.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

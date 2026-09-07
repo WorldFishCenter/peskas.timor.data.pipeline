@@ -1,6 +1,9 @@
-## Authentication
+## Authentication and Environment Variables
+## NB: .env.example IS committed — do not widen this to .env*
 auth/*
-.env*
+.env
+.env.local
+.env.*.local
 
 ## R & Rstudio
 .Rhistory
@@ -43,3 +46,21 @@ docs
 *.xlsx
 *.csv
 *.tsv
+*.parquet
+*.geojson
+/.quarto/
+
+## …except reference data the package ships. The curated length-weight
+## coefficients are package data, not a downloaded artefact.
+!inst/extdata/*.csv
+
+## Golden-output snapshots for the coasts migration
+reference/
+
+## Claude Code — track .claude/migration/, not local settings
+.claude/settings.local.json
+
+## Reference copy of the Mozambique pipeline (migration only)
+
+# Preview left behind by rendering README.Rmd
+README.html

@@ -22,3 +22,4 @@ in a specific Dataverse repository.
 publish_last_dataset(key = "my_key", dataverse = "my_dataverse", server = "dataverse.example.com")
 }
 }
+\keyword{export}

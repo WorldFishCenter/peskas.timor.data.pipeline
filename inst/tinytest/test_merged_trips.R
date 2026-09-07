@@ -4,9 +4,9 @@ logger::log_threshold(logger::ERROR)
 # Adjust the working directory so that when running localy the authentication
 # details in the config file load properly
 setwd("../..")
-pars <- peskas.timor.data.pipeline::read_config()
+conf <- peskas.timor.data.pipeline::read_config()
 
-merged_trips <- peskas.timor.data.pipeline:::get_merged_trips(pars)
+merged_trips <- peskas.timor.data.pipeline:::get_merged_trips(conf)
 
 expect_equal(
   length(na.omit(merged_trips$landing_id)),

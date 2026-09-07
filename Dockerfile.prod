@@ -1,4 +1,4 @@
-FROM rocker/geospatial:4.4
+FROM rocker/geospatial:4.5
 
 # Tidyverse system requirements
 RUN apt-get update -qq && apt-get -y --no-install-recommends install \
@@ -12,84 +12,93 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     libssh2-1-dev && \
   rm -rf /var/lib/apt/lists/*
 
-# Install imports
+# Imports (DESCRIPTION Imports:)
+#
 RUN install2.r --error --skipinstalled \
+    arrow \
+    blastula \
     config \
+    data.table \
+    dataverse \
+    digest \
+    dotenv \
     dplyr \
+    furrr \
+    future \
+    geosphere \
+    ggplot2 \
     git2r \
+    glue \
     googleAuthR \
     googleCloudStorageR \
     googledrive \
+    googlesheets4 \
     httr \
+    httr2 \
     jsonlite \
     logger \
     lubridate \
     magrittr \
     purrr \
-    RCurl \
     readr \
+    remotes \
+    reticulate \
+    rfishbase \
+    rlang \
+    sf \
     stringr \
     tibble \
     tidyr \
-    rlang \
-    googlesheets4 \
-    httr2
-
-# Install suggests
-RUN install2.r --error --skipinstalled \
-    covr \
-    pkgdown \
-    sessioninfo \
-    testthat \
-    roxygen2 \
     tidyselect \
-    textclean \
-    dataverse \
-    rmarkdown \
-    geosphere \
-    broom \
-    zoo \
-    kableExtra \
-    ggplot2 \
-    bookdown \
-    cowplot \
-    broom \
-    ggpubr \
-    furrr \
-    future \
-    univOutl \
-    taxize \
-    tinytest \
-    remotes \
-    tidytext \
-    zip \
-    leaflet \
-    htmltools \
+    univOutl
+
+# Suggests exercised by the pipeline, the tinytest suites and the Rmd reports
+RUN install2.r --error --skipinstalled \
     Amelia \
-    mice \
-    blastula \
-    glue \
-    mime \
-    janitor \
-    reactable \
-    reactablefmtr \
-    kableExtra \
-    reticulate \
     apexcharter \
+    bookdown \
+    broom \
+    covr \
+    cowplot \
     ggforce \
+    ggpubr \
+    htmltools \
+    imputeTS \
+    janitor \
+    kableExtra \
+    leaflet \
+    mice \
+    mime \
+    pkgdown \
+    RCurl \
+    reactable \
+    readxl \
+    rmarkdown \
+    roxygen2 \
+    sessioninfo \
+    taxize \
+    testthat \
+    textclean \
+    tidytext \
+    tinytest \
     treemapify \
-    sf
+    zip \
+    zoo
 
-# Install specific version of rfishbase
-RUN Rscript -e 'remotes::install_version("rfishbase", version = "5.0.1")'
-
-# Install GitHub packages
+# GitHub packages. COASTS_REF has no default: the workflow resolves the latest
+# peskas.coasts release and passes it in, so a build always records which hub
+# release it used. Local builds must pass --build-arg COASTS_REF=<tag>.
+ARG COASTS_REF
+RUN test -n "$COASTS_REF" && \
+    Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
-RUN installGithub.r glmmTMB/glmmTMB/glmmTMB
+
 
 # Install local package
 COPY . /home
 WORKDIR /home
 RUN Rscript -e 'remotes::install_local(dependencies = TRUE)'
+
+
 
 ENTRYPOINT ["Rscript"]

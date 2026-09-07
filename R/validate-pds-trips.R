@@ -1,35 +1,39 @@
 #' Validate Pelagic Data System trips
 #'
-#' Downloads the preprocessed version of pds trips and pds tracks disgnostics
-#' from cloud storage services and validates a range of information so that it
-#' can be safely used for analysis.
+#' Reads the trips parquet written by `coasts::ingest_pds_trips()` and the
+#' per-trip descriptors written by [describe_pds_tracks()], merges trips that
+#' are really one, and flags anomalous duration, distance and signal quality.
 #'
-#' The parameters needed in the config file are those required for
-#' `preprocess_pds_trips()`, as well as parameters needed to identify anomalous
-#' trips.
+#' Kept as a Timor function in migration Phase 7 — `coasts` has no
+#' consecutive-trip merging and no distance or outlier logic — and listed as an
+#' upstream candidate for Phase 10.
+#'
+#' The parameters needed in the config file are `pds.pds_trips.*`,
+#' `pds.pds_tracks.descriptors.*` and the `validation.pds_trips` coefficients.
 #'
 #' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #'
 #' @return no outputs. This function is used for it's side effects
+#' @keywords workflow validation
 #' @export
 #' @importFrom rlang .data
 #'
 validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
-  pars <- read_config()
-  pds_trips <- get_preprocessed_trips(pars)
-  pds_tracks <- get_preprocessed_tracks(pars)
+  conf <- read_config()
+  pds_trips <- get_pds_trips(conf)
+  pds_tracks <- get_track_descriptors(conf)
 
 
   # call validation coefficients
-  max_hrs <- pars$validation$pds_trips$max_trip_hours
-  min_hrs <- pars$validation$pds_trips$min_trip_hours
-  km <- pars$validation$pds_trips$trip_km
-  se_km <- pars$validation$pds_trips$start_end_km
-  outl <- pars$validation$pds_trips$outliers
-  timet <- pars$validation$pds_trips$timetrace
-  consecutive_time <- pars$validation$pds_trips$consecutive_time
-  consecutive_distance <- pars$validation$pds_trips$consecutive_distance
+  max_hrs <- conf$validation$pds_trips$max_trip_hours
+  min_hrs <- conf$validation$pds_trips$min_trip_hours
+  km <- conf$validation$pds_trips$trip_km
+  se_km <- conf$validation$pds_trips$start_end_km
+  outl <- conf$validation$pds_trips$outliers
+  timet <- conf$validation$pds_trips$timetrace
+  consecutive_time <- conf$validation$pds_trips$consecutive_time
+  consecutive_distance <- conf$validation$pds_trips$consecutive_distance
 
 
   # remove duplicated trips, join trips with tracks diagnostics and merge consecutive trips
@@ -93,7 +97,7 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
       tracker_trip_distance = .data$`Distance (Meters)`
     )
 
-  validated_trips_filename <- paste(pars$pds$trips$file_prefix,
+  validated_trips_filename <- paste(conf$pds$pds_trips$file_prefix,
     "validated",
     sep = "_"
   ) %>%
@@ -105,10 +109,10 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
   )
 
   logger::log_info("Uploading {validated_trips_filename} to cloud sorage")
-  upload_cloud_file(
+  coasts::upload_cloud_file(
     file = validated_trips_filename,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
   )
   logger::log_success("File upload succeded")
 }
@@ -136,13 +140,14 @@ validate_pds_trips <- function(log_threshold = logger::DEBUG) {
 #' @return A list containing data frames with validated catch duration and
 #' catch distance traveled
 #'
+#' @keywords validation
 #' @export
 #' @importFrom rlang .data
 #'
 #' @examples
 #' \dontrun{
-#' pars <- read_config()
-#' pds_trips <- get_preprocessed_trips()
+#' conf <- read_config()
+#' pds_trips <- get_pds_trips(conf)
 #' validate_pds(pds_trips)
 #' }
 #'
@@ -203,21 +208,36 @@ validate_pds_data <- function(data,
   validated_pds_list
 }
 
-get_preprocessed_trips <- function(pars) {
-  pds_trips_rds <- cloud_object_name(
-    prefix = paste(pars$pds$trips$file_prefix, "preprocessed", sep = "_"),
-    provider = pars$storage$google$key,
-    extension = "rds",
-    version = pars$pds$trips$version$preprocess,
-    options = pars$storage$google$options
-  )
-  logger::log_info("Downloading {pds_trips_rds}...")
-  download_cloud_file(
-    name = pds_trips_rds,
-    provider = pars$storage$google$key,
-    options = pars$storage$google$options
-  )
-  readr::read_rds(file = pds_trips_rds)
+# The typed, Dili-local view of the trips parquet `coasts::ingest_pds_trips()`
+# writes. There is no preprocessed trips artefact any more — Phase 7 deleted
+# `preprocess_pds_trips()`, which existed only to apply exactly this — and the
+# WIO pipelines have never had one.
+#
+# The coercions are not cosmetic. `coasts::get_trips()` leaves the API's CSV to
+# readr's guesser, which returns `IMEI` as a double, and `tracker_imei` is the
+# character key `merge_trips()` joins landings to trips on. `Trip` and `Boat`
+# come back as doubles for the same reason. This is what the
+# `col_types = "iTTicccdddccc"` spec used to pin.
+get_pds_trips <- function(conf) {
+  coasts::download_parquet_from_cloud(
+    prefix = conf$pds$pds_trips$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country"),
+    version = conf$pds$pds_trips$version
+  ) %>%
+    dplyr::mutate(
+      Trip = as.integer(.data$Trip),
+      Boat = as.integer(.data$Boat),
+      IMEI = as.character(.data$IMEI),
+      `Boat Gear` = as.character(.data$`Boat Gear`),
+      Started = lubridate::with_tz(.data$Started, "Asia/Dili"),
+      Ended = lubridate::with_tz(.data$Ended, "Asia/Dili"),
+      `Last Seen` = lubridate::as_datetime(
+        .data$`Last Seen`,
+        format = "%a %b %d %X UTC %Y",
+        tz = "UTC"
+      )
+    )
 }
 
 
@@ -239,6 +259,7 @@ get_preprocessed_trips <- function(pars) {
 #' @export
 #'
 
+#' @keywords helper
 merge_consecutive_trips <- function(x,
                                     consecutive_time = NULL,
                                     consecutive_distance = NULL) {
@@ -315,6 +336,7 @@ merge_consecutive_trips <- function(x,
 #' @param x A data frame containing trips coordinates.
 #'
 #' @return A vector of distances in meters
+#' @keywords helper
 #' @export
 #'
 get_distance <- function(x) {

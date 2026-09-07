@@ -27,3 +27,4 @@ different trips. This function calculates the temporal and the geographical
 distance between two consecutive trips for each boat, merging those consecutive
 trips that start before 180 minutes from the following within a range of 2 km.
 }
+\keyword{helper}

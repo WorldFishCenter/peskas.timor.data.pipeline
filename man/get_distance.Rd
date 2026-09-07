@@ -16,3 +16,4 @@ A vector of distances in meters
 This function calculates the geographical distance in meters between the end
 and the start of two consecutive trips.
 }
+\keyword{helper}

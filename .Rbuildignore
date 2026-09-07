@@ -3,7 +3,6 @@
 ^peskas\.timor\.data\.pipeline\.Rproj$
 ^LICENSE\.md$
 ^README\.Rmd$
-^cran-comments\.md$
 ^\.github$
 ^codecov\.yml$
 ^_pkgdown\.yml$
@@ -13,5 +12,31 @@
 ^docker-compose.yaml$
 ^.dockerignore$
 ^rstudio-prefs.json$
-^auth$
 ^.DS_Store$
+^\.env$
+^\.env\.example$
+^\.Renviron$
+^\.Rhistory$
+^\.claude$
+^CLAUDE\.md$
+^\.venv$
+^reference$
+^data-raw$
+^.*\.parquet$
+^.*\.rds$
+# `format_public_data()` writes the tsv half of the public family into the
+# working directory before uploading it, so a local run leaves them at the repo
+# root exactly as it leaves the .rds above.
+^.*\.tsv$
+# Narrowed on 2026-09-05: `inst/extdata/` is package data that must ship —
+# `curated_lw_coeffs()` reads morphometric-coefficients.csv through
+# system.file(). The blanket `^.*\.csv$` would have silently stripped it from
+# the tarball, so stray CSVs are excluded by location instead. TRE regex has no
+# negative lookahead, hence two rules rather than one.
+^[^/]*\.csv$
+^(data-raw|reference|docs)/.*\.csv$
+^.*\.csv\.gz$
+# `rmarkdown::render("README.Rmd")` leaves a README.html preview beside the
+# README.md it generates. `devtools::build_readme()` does not, but the NOTE it
+# causes in R CMD check is not worth re-learning. Added in migration Phase 9.
+^README\.html$

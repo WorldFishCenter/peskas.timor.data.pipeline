@@ -4,28 +4,33 @@
 \alias{validate_catch_params}
 \title{Validate surveys' catch parameters}
 \usage{
-validate_catch_params(data = NULL, k_ind = NULL)
+validate_catch_params(landings = NULL, k_ind = NULL)
 }
 \arguments{
-\item{data}{A preprocessed data frame}
+\item{landings}{The long catch table from \code{\link[=validate_landing_regularity]{validate_landing_regularity()}},
+carrying \code{alert_number}.}
 
 \item{k_ind}{Extension of bounds for the number of individuals}
 }
 \value{
-A data frame containing the validated catches parameters.
+A list with \code{alerts} (one row per submission) and \code{catch} (the long
+table with outlying counts and their weights blanked).
 }
 \description{
-This function takes a preprocessed landings' matrix and uses univariate
-techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) for the identification of outliers in
-the distribution of the number of individuals per catch and their size. The
-function returns a data frame with the survey id, the alert number and
-a nested column \code{species_group} containing validated catches parameters.
+Uses univariate techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) to identify outliers
+in the number of individuals recorded per (gear, taxon) group, and blanks the
+weight and nutrients derived from an outlying count.
+}
+\details{
+Grouping is on the resolved \code{gear} label rather than the raw gear code; the
+two are one-to-one over all nine codes the live forms use, so the partition
+is identical.
 }
 \examples{
 \dontrun{
-pars <- read_config()
-landings <- get_merged_landings(pars)
-validate_catch_params(landings, k = 3)
+conf <- read_config()
+landings <- get_weighted_landings(conf)
+validate_catch_params(validate_landing_regularity(landings)$regular_landings)
 }
-
 }
+\keyword{validation}

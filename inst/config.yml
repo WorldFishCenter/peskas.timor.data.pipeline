@@ -1,0 +1,561 @@
+# =============================================================================
+# PESKAS TIMOR-LESTE — PIPELINE CONFIGURATION
+# =============================================================================
+#
+# Derived from the cross-country spec in `inst/config_template.yml`
+# (the PESKAS UNIFIED CONFIGURATION TEMPLATE). Read that file for the rationale
+# behind the harmonized key names.
+#
+# NO LONGER A SUPERSET — Phase 11 deleted the legacy half.
+# ---------------------------------------------------------
+# Through the migration (see `.claude/migration/PLAN.md`) this file carried
+# every key the *then-current* code read, marked `# [legacy]`, beside the
+# harmonized keys that replaced them, marked
+#
+#     # [new]
+#
+# **Every legacy key is gone as of Phase 11**, each deleted after its last
+# reader. What is left is read by this package, by `coasts::` through
+# `read_config(package = "peskas.timor.data.pipeline")`, or is part of the
+# harmonized shape `inst/config_template.yml` defines.
+#
+# ENVIRONMENTS
+# ------------
+#   default     -> the *-dev buckets. Used locally and by every CI run that is
+#                  not on `main`.
+#   production  -> the live buckets. Set by CI only on `main`
+#                  (`R_CONFIG_ACTIVE=production`).
+#
+# There is no `local` environment any more. Local runs use `default` and read
+# their secrets from `.env` (loaded by `read_config()` via dotenv). Copy
+# `.env.example` to `.env` and fill it in. The former `auth/` directory of
+# plaintext credential files is gone.
+#
+# ON `version: preprocess:`
+# -------------------------
+# The unified template dropped the per-source `version: preprocess: latest`
+# field. Timor reads it on `surveys.landings_{1,2,3}`, `pds.trips`,
+# `pds.tracks`, `metadata` and `validation`, so it is kept on each of those
+# legacy keys. The new tree does not re-add it: harmonized code reads the
+# per-stage `version:` field instead. See the Phase 1 entry in
+# `.claude/migration/STATE.md` for the per-key reasoning.
+# =============================================================================
+
+default:
+
+  # [new] Country slug. Used by coasts helpers and by the cross-country API
+  # path (`timor/raw`, `timor/validated`).
+  country: timor
+
+  # ===========================================================================
+  # [new] INGESTION — data-source credentials
+  # ===========================================================================
+  # The three KoBo forms are versions of one source, `landings`:
+  #   v1  SSF Landings  aur3fK7mtJem5Cg8Wi2SPd  frozen, last submission 2020-08-28
+  #   v2  peskAAS       aaztUDtRzb9SpSV7i9iptb  live (low volume, offline backfills)
+  #   v3  PeskAAS 2     aEoWV7aprG47Q4uTpaopgD  live (the current form)
+  # All three are deployed and active on eu.kobotoolbox.org.
+  # ===========================================================================
+  ingestion:
+    landings:
+      v3:
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V3')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+      v2:
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V2')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+      v1:
+        asset_id: !expr Sys.getenv('KOBO_ASSET_ID_V1')
+        username: !expr Sys.getenv('KOBO_USERNAME')
+        password: !expr Sys.getenv('KOBO_PASSWORD')
+        token: !expr Sys.getenv('KOBO_TOKEN')
+
+  # ===========================================================================
+  # SURVEYS — pipeline stages
+  # ===========================================================================
+  surveys:
+
+    # The legacy flat keys — `kobo_username`/`kobo_password`, `landings_1/2/3`,
+    # `merged_landings` and `validated_landings` — went in Phase 11. Their
+    # readers moved to `ingestion.landings.<v>` above and to `landings.*` below
+    # over Phases 3-8.
+
+    # [new] harmonized shape: {source}: {version}: raw / preprocessed / validated.
+    # File prefixes deliberately match the object families already in
+    # `gs://timor`, so the migration changes the serialization format
+    # (.csv/.rds -> parquet) without orphaning eleven years of history.
+    landings:
+      v3:
+        raw:
+          file_prefix: timor-landings-v3_raw
+          version: latest
+        preprocessed:
+          file_prefix: timor-landings-v3_preprocessed
+          version: latest
+        validated:
+          file_prefix: timor-landings-v3_validated
+          version: latest
+      v2:
+        raw:
+          file_prefix: timor-landings-v2_raw
+          version: latest
+        preprocessed:
+          file_prefix: timor-landings-v2_preprocessed
+          version: latest
+        validated:
+          file_prefix: timor-landings-v2_validated
+          version: latest
+      # v1 is frozen. `ingest_landings()` no longer fetches it and
+      # `preprocess_legacy_landings()` is gone; `merge_landings()` reads the
+      # one-off snapshot below, written by `data-raw/freeze-landings-v1.R`.
+      # `raw`/`preprocessed` are kept because the objects they name are the
+      # provenance of the snapshot; nothing writes them any more.
+      v1:
+        raw:
+          file_prefix: timor-landings-v1_raw
+          version: latest
+        preprocessed:
+          file_prefix: timor-landings-v1_preprocessed
+          version: latest
+        frozen:
+          file_prefix: timor-landings-v1-frozen
+          version: latest
+      # Cross-version products.
+      merged:
+        file_prefix: timor-landings-merged
+        version: latest
+      weight:
+        file_prefix: timor-landings-merged_weight
+        version: latest
+      # The one validated artefact since Phase 8: flat, long, parquet. Written
+      # by `validate_landings()`, read by the API export, by
+      # `get_validated_landings()` and so by the whole portal path.
+      validated_long:
+        file_prefix: timor-landings-merged_validated_long
+        version: latest
+      # Validation flags. `validation_alerts` is the object family the current
+      # Google Sheets sink also mirrors to cloud storage; the sink itself is
+      # decided in migration Phase 5.
+      validation:
+        flags:
+          file_prefix: validation_alerts
+          version: latest
+
+  # ===========================================================================
+  # PDS — Pelagic Data Systems (vessel tracking)
+  # ===========================================================================
+  pds:
+
+    # [new] credentials at the source level, as the template and coasts expect.
+    token: !expr Sys.getenv('PDS_TOKEN')
+    secret: !expr Sys.getenv('PDS_SECRET')
+    #
+    # How a country claims its devices out of the shared PDS account:
+    # `coasts::ingest_pds_trips()` narrows the API response to the frame's
+    # `pds_devices` rows whose `customer_name` is listed here. Mozambique lists
+    # two, Kenya three; Timor's devices sit under three.
+    #
+    # `Traders` and `FSSP2: Traders` are excluded from *coasts'* own list
+    # because they carry `Asia/Kuala_Lumpur` devices that would widen the
+    # filter for every country. Listed here they are safe — Timor's token only
+    # ever returns Timor's devices — and they are worth 12 IMEIs.
+    #
+    # Measured 2026-08-11 against the 449 IMEIs the token returns: this list
+    # covers 422 of them, 95,681 of 98,472 trips (97.2%) and 546,963 of
+    # 561,482 tracked hours (97.4%). The 27 it misses are in **no** frame
+    # customer at all — real gaps in PESKAS | FRAME, worth 2,791 trips and 59
+    # of the 6,999 landing-to-trip matches. Adding those rows to Airtable
+    # recovers them; the list is in the Phase 7 STATE entry.
+    customers:
+      - "MAF / WorldFish"
+      - "Traders"
+      - "FSSP2: Traders"
+    # [new] stage artefacts, read by `coasts::ingest_pds_trips()`,
+    # `coasts::ingest_pds_tracks()` and `coasts::preprocess_pds_tracks()`.
+    # The track prefix is the standard's plural `pds-tracks` since Phase 7,
+    # which renamed the object family:
+    # `pds-track-<id>__<version>__.csv.gz` -> `pds-tracks_<id>.parquet`. The
+    # 99,219 historical objects were converted in place by
+    # `data-raw/convert-pds-tracks.R` rather than re-fetched.
+    pds_trips:
+      file_prefix: pds-trips
+      version: latest
+    pds_tracks:
+      file_prefix: pds-tracks
+      version: latest
+      # Timor-only, and the one PDS product coasts has no equivalent for:
+      # the per-trip track descriptors `validate_pds_trips()` joins on.
+      # `coasts::preprocess_pds_tracks()` emits spatial grid summaries
+      # instead, and Phase 7 wires that in beside this one.
+      descriptors:
+        file_prefix: pds-tracks-descriptors
+        version: latest
+
+    # The legacy `trips:` / `tracks:` pair went in Phase 11 with the last of
+    # their readers: Phase 7 moved ingestion onto `coasts::*`, and Phase 8's
+    # drop of `indicators_gridded` from `export_files()` left `tracks.map`,
+    # `tracks.complete` and `tracks.bucket_content` feeding only the map
+    # functions, which Phase 11 deleted.
+
+  # ===========================================================================
+  # [new] API — cross-country trip interchange
+  # ===========================================================================
+  # Written to the `options_api` bucket below. `timor/raw/` and
+  # `timor/validated/` already exist in both peskas-api-dev and
+  # peskas-api-prod. Kenya, Mozambique and Zanzibar already publish here;
+  # Timor joins in migration Phase 6.
+  # ===========================================================================
+  api:
+    trips:
+      raw:
+        file_prefix: trips-raw
+        cloud_path: timor/raw
+      validated:
+        file_prefix: trips-validated
+        cloud_path: timor/validated
+
+  # ===========================================================================
+  # METADATA — reference data and lookup tables
+  # ===========================================================================
+  metadata:
+    google_sheets:
+      name: metadata-tables
+      sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
+      tables:
+        # Airtable is authoritative wherever the two overlap (PLAN §2.5), so
+        # this list shrinks as each join moves onto the frame. `fao_catch` went
+        # in Phase 4; `vessel_types` and `gear_types` went in Phase 5, when
+        # `validate_vessel_type()` and `validate_gear_type()` moved onto the
+        # labels `preprocess_landings()` resolves from the frame. Phase 11
+        # dropped the five with no reader left: `vms_installs` and
+        # `centro_pescas` (never read), `boats` and `fishing_vessel_statistics`
+        # (only `data_report.Rmd`, whose boats section went with them), and
+        # `registered_boats` (`get_registered_boats()` reads the frame's
+        # `geo.total_boats`).
+        #
+        # `morphometric_table` went on 2026-09-05: its 559 curated rows are a
+        # package snapshot now (inst/extdata/morphometric-coefficients.csv,
+        # refreshed by data-raw/refresh-morphometric-coefficients.R), which is
+        # what took the last Google Sheet off the weight path. Their permanent
+        # home is still COASTS-TODO C23.
+        #
+        # The six left all have a live reader, measured in
+        # .claude/migration/ALIGNMENT-AUDIT.md §0. Moving any of them is
+        # Phase 12 and each is blocked on Airtable data, not on code:
+        - devices             # 595 IMEIs against the frame's 442. Switching
+                              # moves alert 3 from 824 to 1,475 submissions and
+                              # unmatches 651 trackers (Airtable task A).
+        - catch_types         # the display names and interagency_code
+        - stations            # the published `landing_site` label.
+                              # 11 of 40 names differ from the frame and
+                              # format_public_data() hardcodes 5 of them.
+        - reporting_units     # the published `municipality`, i.e.
+                              # Timor's reporting unit — Atauro is its own,
+                              # while GAUL puts it inside Dili.
+        - habitat             # no frame equivalent (proposed, ALIGNMENT-AUDIT §14 D)
+        - conservation        # no frame equivalent (proposed, ALIGNMENT-AUDIT §14 D)
+    version:
+      preprocess: latest
+
+    # [new] The FAO ASFIS list, read from the country bucket by
+    # `get_taxa_list()` — the same object and the same access path Mozambique
+    # uses. 13,615 rows; the weight path joins it on `Alpha3_Code` to get each
+    # taxon's scientific name. Present in both `timor` and `timor-dev`.
+    asfis:
+      file_prefix: asfis
+
+    # [new] FAO major fishing areas the length-weight coefficients are
+    # restricted to. Timor-Leste straddles **57** (Indian Ocean, Eastern) and
+    # **71** (Pacific, Western Central).
+    #
+    # This key MUST be set. `coasts::resolve_fao_areas()` falls back to
+    # `c(51, 57)` — the Indian Ocean pair the WIO pipelines use — so leaving it
+    # unset would filter Timor on one wrong area and miss the Pacific one
+    # entirely, with no error. It was absent and read as NULL from Phase 3 until
+    # 2026-09-05, which was harmless only because `filter_by_area` was FALSE.
+    fishbase:
+      fao_areas: [57, 71]
+
+      # [new 2026-09-06] The FishBase / SeaLifeBase data release. Read by
+      # `coasts::resolve_db_version()` (coasts >= 4.10.0, COASTS-TODO C25) and
+      # resolved ONCE per `get_taxa_morphometrics()` call, so a single run
+      # cannot mix two snapshots.
+      #
+      # `"latest"` is NOT a fixed dataset — it follows whatever release the
+      # installed `rfishbase` points at, and the host moved: 5.0.3 reads Source
+      # Cooperative (which serves 26.06) where 5.0.1 read HuggingFace (which
+      # stops at 25.04). A container rebuild therefore moved Timor to 26.06,
+      # in which `Caesionidae` and `Scaridae` survive as family names with
+      # **zero species attached** — so `CJX` and `PWT` weighed `NA`, which sums
+      # to zero, and `CJX` vanished from the portal.
+      #
+      # 25.04 is what every figure in NEWS.md was measured on. The two hosts
+      # serve byte-identical 25.04 (verified 2026-09-06: 25,730 poplw rows and
+      # 27,211 popll rows on both), so this pin holds whichever rfishbase is
+      # installed. Moving it is a deliberate change that re-baselines the
+      # portal — run data-raw/compare-portal-json.R when you do.
+      db_version: "25.04"
+
+    # `rfishtable:` went in Phase 11 — `ingest_rfish_table()` was deleted in
+    # Phase 3 when the weight path moved onto `coasts::get_taxa_morphometrics()`.
+    nutrients:
+      resource: "https://raw.githubusercontent.com/mamacneil/NutrientFishbase/master/model/Species_Nutrient_Predictions.csv"
+      RDI:
+        convert: TRUE
+        name:
+          calcium: 1
+          iron: 0.0294
+          selenium: 0.000026
+          zinc: 0.0049
+          protein: 46
+          vitaminA: 0.0005
+          omega3: 2.939
+    # [new] Cloud-storage prefix of the Airtable assets snapshot written by
+    # `coasts::ingest_assets()`. coasts reads `name` in most places and
+    # `assets` in `model-fishery.R`; both are provided. See the `airtable`
+    # block below. Safe to add only because Phase 1 deleted the broken
+    # duplicate `get_preprocessed_metadata()` that read
+    # `metadata$airtable$name` — nothing in Timor reads this key today.
+    airtable:
+      name: assets
+      assets: assets
+      # The snapshot is cross-country and carries no `country` column (coasts'
+      # `ingest_assets()` does not select one). These are the record ids of
+      # Timor's two forms in the frame `forms` table — `PeskAAS 2` (v3) and
+      # `peskAAS` (v2) — and they are the only key that isolates Timor's taxa,
+      # gear, vessel and site rows. Every other country's rows carry different
+      # ids. Drop this when `country` is added upstream.
+      form_ids:
+        - recY5MD03ZDwJUBB3
+        - rechg17V73uqnVu2T
+
+  # ===========================================================================
+  # [new] AIRTABLE — the cross-country frame
+  # ===========================================================================
+  # The PESKAS | FRAME base is the harmonization layer: it maps each country's
+  # raw form labels to `standard_name` / `alpha3_code` / FAO codes. Timor's
+  # rows, re-measured 2026-08-09: 60 taxa over 56 distinct `alpha3_code`s
+  # (matching `models.all_taxa` exactly), 9 gears, 2 vessels, 40 landing sites
+  # all carrying lat/lon, 457 pds_devices. `survey_label` is populated on every
+  # taxa, gear and vessel row.
+  #
+  # `coasts::ingest_assets()` snapshots taxa/gears/vessels/landing_sites/forms
+  # to `<metadata.airtable.name>__<version>__.rds`; the rest of the coasts
+  # pipeline reads that snapshot rather than hitting the API. Where Airtable
+  # and Timor's Google Sheets tables overlap, **Airtable is authoritative**
+  # (decided 2026-07-31, PLAN §2.5). After Phase 11 the Sheets keep seven
+  # tables, of which `morphometric_table`, `habitat` and `conservation` have no
+  # frame equivalent at all and the other four are blocked on frame data.
+  #
+  # Key placement follows **coasts**, not Mozambique. coasts' `fetch_asset()`
+  # reads `conf$airtable$frame$base_id` / `conf$airtable$token` (top level),
+  # while Mozambique nests the same values under `metadata.airtable` because it
+  # vendors its own copy of the Airtable module. Timor imports `coasts` and
+  # calls it directly, so it uses the hub's key paths and keeps no local copy.
+  #
+  # `AIRTABLE_TOKEN` is the BARE `pat…` — coasts does paste("Bearer", token).
+  # Timor's retired `air_get_records()` passed the value verbatim as the
+  # header, so any credential inherited from the old `auth/airtable-key`
+  # carries a "Bearer " prefix that must be stripped.
+  # ===========================================================================
+  airtable:
+    token: !expr Sys.getenv('AIRTABLE_TOKEN')
+    frame:
+      base_id: !expr Sys.getenv('AIRTABLE_BASE_ID_FRAME')
+      tables:
+        countries: countries
+        pds_devices: pds_devices
+
+  peskas_mail:
+    key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
+
+  # ===========================================================================
+  # VALIDATION — thresholds and flag sink
+  # ===========================================================================
+  validation:
+    landings:
+      default:
+        method: MAD
+        k: 3
+        max: 20
+        min: 0
+      survey_time:
+        max_duration: 96
+        submission_delay: 28
+      catch:
+        n_individuals:
+          k: 2.5
+      cook_dist: 5
+      price_per_weight:
+        min_limit: 0.25
+        max_limit: 30
+      mesh: 200
+      gleaners:
+        k: 1.5
+      fuel:
+        k: 3
+    # [new] The alert dictionary, carried over verbatim from the `alerts` tab of
+    # the retired validation Google Sheet in Phase 5 — it is static reference
+    # data and belongs with the thresholds, not in a spreadsheet. Read by
+    # `send_validation_mail()`; the codes themselves are the contract, see
+    # `R/validation-functions.R`.
+    #
+    # Codes 7, 8, 9 and 13/15/18 have no live producer: 7 and 9 were retired
+    # thresholds, 8 is covered by taking the absolute value, and 13/15/18 are
+    # reachable but have never fired on Timor's data.
+    alerts:
+      "0": No alert
+      "1": Not enough digits recorded to match IMEI
+      "2": More than one valid IMEI can be matched to the record
+      "3": None of the deployed devices has an IMEI matching the record
+      "4": Submission date is prior to landing date
+      "5": Trip duration is too long
+      "6": Total catch value is too large
+      "7": Recorded length is too large for the catch type
+      "8": Total catch value is negative
+      "9": Total catch value is too small
+      "10": Survey submitted more than 28 days after landing date
+      "11": Number of individuals is too large
+      "12": Boat type specified doesn't match previous records
+      "13": No boat type recorded for a trip that declared a boat
+      "14": Gear type specified doesn't match previous records
+      "15": No gear type recorded for a trip that declared a boat
+      "16": Site not valid
+      "17": Abnormal price-weight relation
+      "18": Anomalous number of fishers
+      "19": Habitat not valid
+      "20": Anomalous mesh size
+      "21": Anomalous gleaners number
+      "22": No catch associated to non-null revenue / invdividuals or viceversa
+      "23": Anomalous fuel value or associated to unmotorized boat
+    pds_trips:
+      max_trip_hours: 96
+      min_trip_hours: 0.5
+      trip_km: 200
+      start_end_km: 3
+      outliers : 10
+      timetrace: 1400
+      consecutive_time: 3
+      consecutive_distance: 2
+    # The `google_sheets:` flags sheet (`VALID_SHEET_ID`) and
+    # `version.preprocess` lost their last readers in Phase 5, when the flags
+    # sink became MongoDB, and went in Phase 11.
+
+  merged_trips:
+    file_prefix: all_trips
+
+  models:
+    file_prefix: model_predictions
+    all_taxa: [APO, BAR, BEN, BGX, BWH, CBA, CGX, CJX, CLP, COZ, CRA, CUX, DOS, DOX, DRZ, DSF, ECN, EMP, FLY, GOX, GPX, GRX, GZP, IAX,IHX, KYX, LGE, LWX, MHL, MIL, MOB, MOJ, MOO, MUI, MUL, OCZ, PEZ, PUX, PWT, RAX, SDX, SFA, SKH, SLV, SNA, SPI, SRX, SUR, SWX, THF, THO, TRI, TUN, WRA, YDX, MZZ]
+    modelled_taxa: [CLP, GZP, TUN, SDX, FLY, CGX, MOO, SNA, CJX, BEN, RAX, LWX, MZZ]
+
+  export:
+    file_prefix: timor
+
+  export_dataverse:
+    server: 'dataverse.harvard.edu'
+    dataverse_id: 'peskas'
+    token: !expr Sys.getenv('DATAVERSE_TOKEN')
+    # The `metadata:` block went in Phase 11 with `generate_metadata()`, its
+    # only reader. `upload_dataverse()` posts
+    # `inst/export/dataset-fields.json` instead.
+
+  report:
+    file_prefix: data_report
+    summary_data: summary_data
+
+  # ===========================================================================
+  # STORAGE
+  # ===========================================================================
+  storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+      # [new] shared cross-country hub bucket (coasts helpers).
+      options_coasts:
+        project: peskas
+        bucket: peskas-coasts-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+      # [new] cross-country API bucket. See the `api` block above.
+      options_api:
+        project: peskas
+        bucket: peskas-api-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+    # -------------------------------------------------------------------------
+    # MongoDB — [new] enabled in Phase 2.
+    # -------------------------------------------------------------------------
+    # Safe to declare only because Phase 2 narrowed every call site that used to
+    # iterate `purrr::map(conf$storage, ...)` — treating each child of `storage`
+    # as a storage *provider* — down to `conf$storage$google`. Nothing walks
+    # `storage`'s children any more, so a `mongodb` sibling is inert until a
+    # reader is written. The flags sink itself is decided in Phase 5.
+    #
+    # There is no `dashboard` database: Timor's portal is served from
+    # versioned `portal-*.json` in the public bucket, not from MongoDB.
+    # That is a locked decision (PLAN §2.1).
+    mongodb:
+      connection_strings:
+        main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
+        validation: !expr Sys.getenv('MONGODB_CONNECTION_STRING_VALIDATION')
+      databases:
+        pipeline:
+          database_name: timor-dev
+          collections:
+            export: export
+        validation:
+          database_name: validation-dev
+          collections:
+            flags: surveys_flags
+            enumerators_stats: enumerators_stats
+
+  pds_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: pds-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+  # Timor-only: the portal contract bucket. No other country has this.
+  public_storage:
+    google:
+      key: gcs
+      options:
+        project: peskas
+        bucket: public-timor-dev
+        service_account_key: !expr Sys.getenv('GCP_SA_KEY')
+
+# =============================================================================
+# PRODUCTION — overrides only
+# =============================================================================
+production:
+  storage:
+    google:
+      options:
+        bucket: timor
+      options_coasts:
+        bucket: peskas-coasts
+      options_api:
+        bucket: peskas-api-prod
+    mongodb:
+      databases:
+        pipeline:
+          database_name: timor-prod
+        validation:
+          database_name: validation-prod
+  pds_storage:
+    google:
+      options:
+        bucket: pds-timor
+  public_storage:
+    google:
+      options:
+        bucket: public-timor

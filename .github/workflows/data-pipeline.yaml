@@ -6,17 +6,35 @@ on:
     - cron:  '0 0 */2 * *'
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   KOBO_PASSWORD: ${{ secrets.KOBO_PASSWORD }}
   KOBO_USERNAME: ${{ secrets.KOBO_USERNAME }}
-  KOBO_PESKAS1: ${{ secrets.KOBO_PESKAS1 }}
-  KOBO_PESKAS2: ${{ secrets.KOBO_PESKAS2 }}
-  KOBO_PESKAS3: ${{ secrets.KOBO_PESKAS3 }}
+  # Read by the harmonized `ingestion.landings.<v>` block. The *secrets* keep
+  # their legacy names: secret values are write-only, so renaming them to
+  # `KOBO_ASSET_ID_V<n>` means re-entering the three asset ids by hand for no
+  # behavioural gain. Decided in Phase 9; the legacy config keys that read
+  # `KOBO_PESKAS<n>` directly went in Phase 11, this mapping stays.
+  KOBO_ASSET_ID_V1: ${{ secrets.KOBO_PESKAS1 }}
+  KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}
+  KOBO_ASSET_ID_V3: ${{ secrets.KOBO_PESKAS3 }}
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
-  AIRTABLE_KEY: ${{ secrets.AIRTABLE_KEY }}
+  AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+  AIRTABLE_BASE_ID_FRAME: ${{ secrets.AIRTABLE_BASE_ID_FRAME }}
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
-  VALID_SHEET_ID: ${{ secrets.VALID_SHEET_ID }}
   GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+  # The validation flags sink since migration Phase 5, exercised in CI since
+  # run 31436031588. Absent → `validate_landings()` warns and the versioned
+  # flags snapshot in cloud storage is the only record of a run.
+  MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
+  # Optional, and has no secret. Present: manual approvals entered in
+  # KoBoToolbox survive a run. Absent: they are overwritten by the pipeline's
+  # own flags. `sync_validation_status()` is not wired in either way.
+  KOBO_TOKEN: ${{ secrets.KOBO_TOKEN }}
+  # `VALID_SHEET_ID` is not passed and no longer read: the validation flags
+  # sheet lost its last reader in Phase 5 and `validation.google_sheets` went
+  # from `inst/config.yml` in Phase 11. Deleting the GitHub secret itself is a
+  # user action, with `AIRTABLE_KEY`.
 
 jobs:
   build-container:
@@ -24,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -33,12 +51,26 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve latest peskas.coasts release
+        id: coasts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ref=$(gh api repos/WorldFishCenter/peskas.coasts/releases/latest --jq .tag_name)
+          if [ -z "$ref" ] || [ "$ref" = "null" ]; then
+            echo "Failed to resolve latest peskas.coasts release" >&2
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "Resolved peskas.coasts ref: $ref"
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.prod
           push: true
+          build-args: |
+            COASTS_REF=${{ steps.coasts.outputs.ref }}
           tags: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
           cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
           cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max
@@ -46,7 +78,7 @@ jobs:
   ingest-preprocess-metadata-tables:
     name: Ingest metadata tables
     needs: build-container
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -60,14 +92,13 @@ jobs:
         run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
       - name: Call preprocess_metadata_tables()
         run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-      - name: Call ingest_rfish_table()
-        continue-on-error: true
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_rfish_table()'
+      - name: Call ingest_assets()
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_assets()'
 
-  ingest-preprocess-landings-v1-v3:
-    name: Ingest and preprocess legacy and ongoing landings
+  ingest-landings:
+    name: Ingest landings
     needs: build-container
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -78,16 +109,12 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call ingest_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings_v1v3()'
-      - name: Call preprocess_legacy_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_legacy_landings()'
-      - name: Call preprocess_updated_landings()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_updated_landings()'
+        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings()'
 
-  ingest-preprocess-v2-landings-step1:
-    name: "Ingest-process landings 1/2"
-    needs: build-container
-    runs-on: ubuntu-22.04
+  preprocess-landings:
+    name: Preprocess landings
+    needs: [ingest-landings, ingest-preprocess-metadata-tables]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -97,31 +124,13 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_landings_v2()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_landings_v2()'
-      - name: Call preprocess_landings_step_1()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_1()'
-
-  ingest-preprocess-v2-landings-step2:
-    name: "Ingest-process landings 2/2"
-    needs: ingest-preprocess-v2-landings-step1
-    runs-on: ubuntu-22.04
-    container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_landings_step_2()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings_step_2()'
+      - name: Call preprocess_landings()
+        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_landings()'
 
   merge-landings:
     name: Merge landings
-    needs: [ingest-preprocess-v2-landings-step2, ingest-preprocess-landings-v1-v3, ingest-preprocess-metadata-tables]
-    runs-on: ubuntu-22.04
+    needs: [preprocess-landings]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -139,7 +148,7 @@ jobs:
   validate-landings:
     name: Validate landings
     needs: [merge-landings]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -154,10 +163,29 @@ jobs:
       - name: Test validated landings
         run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
 
-  ingest-pds-data:
-    name: Ingest pds data
-    needs: build-container
-    runs-on: ubuntu-22.04
+  # The cross-country API export, wired in migration Phase 9. Its own job, and
+  # deliberately a **leaf**: nothing needs it. Putting these two calls inside
+  # merge-landings and validate-landings — where their inputs are written — would
+  # have made the portal path, the live product, depend on a two-phase-old export
+  # succeeding. It reads the weight artefact and the validated long parquet, so it
+  # waits for both jobs; `merge-trips` and everything after it run in parallel
+  # with it and are unaffected if it fails.
+  #
+  # The steps carry no `if:` of their own, which matches Kenya, Mozambique and
+  # Zanzibar exactly: the only gate is the shared "Set env to production" step
+  # above, so the bucket follows `storage.google.options_api` — `peskas-api-dev`
+  # on a branch, `peskas-api-prod` on `main`.
+  #
+  # Through Phases 9-11a these two steps were additionally gated
+  # `if: ${{ !endsWith(github.ref, '/main') }}`, which published to `-dev` only
+  # and, on `main`, skipped the export altogether rather than promoting it. That
+  # was deliberate while Timor's first write to `peskas-api-prod` was an unmade
+  # decision; it was made on 2026-09-04, so Timor now publishes on the same terms
+  # as the other three countries.
+  export-api:
+    name: Export cross-country API
+    needs: [merge-landings, validate-landings]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -167,15 +195,45 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call export_api_raw()
+        run: Rscript -e 'peskas.timor.data.pipeline::export_api_raw()'
+      - name: Call export_api_validated()
+        run: Rscript -e 'peskas.timor.data.pipeline::export_api_validated()'
+
+  ingest-pds-data:
+    name: Ingest pds data
+    needs: build-container
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      # `log_threshold = logger::INFO` stays, deliberately. It used to be
+      # load-bearing: `coasts::read_config()` ended with
+      # `logger::log_debug("Running with parameters {conf}")` and every coasts
+      # workflow function defaults to `logger::DEBUG`, so a default call printed
+      # the service-account private key, the MongoDB connection string, the KoBo
+      # password and the PDS and Dataverse tokens into this job's log —
+      # COASTS-TODO C21, the leak Phase 3 removed from Timor's own
+      # `read_config()`, arriving through the delegation. C21 was fixed upstream
+      # in coasts PR #11 and is in every release this workflow can resolve, so
+      # the argument is now a guard against a regression rather than a fix.
+      # Phase 11 kept it on that basis: it costs nothing and the failure mode is
+      # a secret in a public log.
       - name: Call ingest_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_trips()'
+        run: Rscript -e 'coasts::ingest_pds_trips(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
       - name: Call ingest_pds_tracks()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_pds_tracks()'
+        run: Rscript -e 'coasts::ingest_pds_tracks(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
 
   preprocess-pds-data:
     name: Preprocess pds data
     needs: [ingest-pds-data]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -185,15 +243,32 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call preprocess_pds_trips()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_trips()'
-      - name: Call preprocess_pds_tracks()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_pds_tracks()'
+      # `coasts::preprocess_pds_tracks()` — the spatial grid summaries the other
+      # three countries also run here — is deliberately not wired in, and
+      # migration Phase 8 decided to leave it that way rather than run its first
+      # pass out of band as Phase 7 did for the track conversion.
+      #
+      # Two reasons, in order. **Its output has no reader in Timor.** It exists
+      # to feed `coasts::summarize_data()`, and that is what Kenya, Mozambique
+      # and Zanzibar use it for; Timor's portal is the `public-timor` JSON
+      # contract, which PLAN §2.1 keeps as-is, and `summarize_data()` is blocked
+      # for Timor anyway on COASTS-TODO C17 (it resolves `asfis` and the grid
+      # summaries from the country bucket, where Timor has neither). Producing
+      # ~1.4 M grid rows and ~0.8 GB per run for nothing to read is not a
+      # migration step. Second, it cannot complete in CI: it reads *every* track
+      # in the bucket on its first pass with `parallel::detectCores() - 1`
+      # workers, which is **one** on a 2-core runner — measured 2026-08-11,
+      # Timor's 102k tracks are ~4 h at 13 workers locally. COASTS-TODO C20.
+      #
+      # Wire it in when C17 ships and Timor actually adopts a coasts consumer of
+      # the grid summaries, not before.
+      - name: Call describe_pds_tracks()
+        run: Rscript -e 'peskas.timor.data.pipeline::describe_pds_tracks()'
 
   validate-pds-data:
     name: Validate pds data
     needs: preprocess-pds-data
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -211,7 +286,7 @@ jobs:
   merge-trips:
     name: Merge trips
     needs: [validate-landings, validate-pds-data]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -229,7 +304,7 @@ jobs:
   model-indicators:
     name: Estimate fishery indicators
     needs: [merge-trips]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
@@ -245,7 +320,7 @@ jobs:
   export-trips:
     name: Export trips
     needs: [merge-trips, model-indicators]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
       credentials:
