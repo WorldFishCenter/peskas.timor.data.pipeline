@@ -1,7 +1,9 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 #
-# `extra-packages` carries the two GitHub dependencies (`coasts` is not on CRAN)
+# `extra-packages` carries the GitHub dependencies (`coasts` is not on CRAN, and
+# `ssfaitk` — which it imports — is only reachable via its own remote, because
+# pak does not read the `Remotes` field of a dependency package)
 # plus `local::.`, because the reference index is built from the installed
 # package. The reference sections themselves are keyword-driven — see
 # `_pkgdown.yml`; `pkgdown::check_pkgdown()` fails on any exported
@@ -40,7 +42,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, github::WorldFishCenter/peskas.coasts, local::.
+          extra-packages: any::pkgdown, github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R, github::WorldFishCenter/peskas.coasts, local::.
           needs: website
 
       - name: Build site
