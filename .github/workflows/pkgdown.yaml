@@ -3,8 +3,8 @@
 #
 # `extra-packages` carries the two GitHub dependencies (`coasts` is not on CRAN)
 # plus `local::.`, because the reference index is built from the installed
-# package. The reference sections themselves are keyword-driven since migration
-# Phase 9 — see `_pkgdown.yml`; `pkgdown::check_pkgdown()` fails on any exported
+# package. The reference sections themselves are keyword-driven — see
+# `_pkgdown.yml`; `pkgdown::check_pkgdown()` fails on any exported
 # topic no section claims, so run it before pushing changes to roxygen keywords.
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R, github::WorldFishCenter/peskas.coasts, local::.
+          extra-packages: any::pkgdown, github::WorldFishCenter/peskas.coasts, local::.
           needs: website
 
       - name: Build site

@@ -26,7 +26,7 @@ convert catch  labels according to the FAO nomenclature
 
 \strong{Every length reaching this function is a total length.} v2 and v3 record
 TL; v1 recorded fork length and was converted once, at the freeze
-(\code{data-raw/freeze-landings-v1.R}).
+(done once in the freeze).
 }
 
 \section{Input and output shape}{

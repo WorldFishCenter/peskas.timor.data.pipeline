@@ -74,7 +74,7 @@ default:
           file_prefix: timor-landings-v2_validated
           version: latest
       # v1 is frozen: `merge_landings()` reads the one-off `frozen` snapshot,
-      # written by `data-raw/freeze-landings-v1.R`. Nothing writes
+      # written once out of band. Nothing writes
       # `raw`/`preprocessed`; they name the snapshot's provenance.
       v1:
         raw:
@@ -163,7 +163,8 @@ default:
     # matching that fragment against this roster.
     #
     # It spans retired and redeployed devices, because a submission from any
-    # year can reference one. Refreshed by `data-raw/refresh-tracker-imeis.R`.
+    # year can reference one. `tracker_imeis()` maintains it, unioning the
+    # stored archive with the frame's current devices.
     tracker_imeis:
       file_prefix: tracker-imeis
       # The frame's device table is cross-country, so the current half of the
@@ -241,9 +242,7 @@ default:
       db_version: "25.04"
 
     nutrients:
-      resource: "https://raw.githubusercontent.com/mamacneil/NutrientFishbase/master/model/Species_Nutrient_Predictions.csv"
       RDI:
-        convert: TRUE
         name:
           calcium: 1
           iron: 0.0294
@@ -276,9 +275,6 @@ default:
     token: !expr Sys.getenv('AIRTABLE_TOKEN')
     frame:
       base_id: !expr Sys.getenv('AIRTABLE_BASE_ID_FRAME')
-      tables:
-        countries: countries
-        pds_devices: pds_devices
 
   peskas_mail:
     key: !expr Sys.getenv("PESKAS_GMAIL_KEY")

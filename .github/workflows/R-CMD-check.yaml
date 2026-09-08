@@ -46,7 +46,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck, github::WorldFishCenter/ssf-ai-toolkit/Rplug@plug-R, github::WorldFishCenter/peskas.coasts
+          extra-packages: any::rcmdcheck, github::WorldFishCenter/peskas.coasts
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2

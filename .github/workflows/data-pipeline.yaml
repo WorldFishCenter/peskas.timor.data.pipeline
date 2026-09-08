@@ -285,7 +285,17 @@ jobs:
       - name: Call format_public_data()
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Call export_files()
-        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'        
+        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'
+      # The portal contract is discovery-based: it lists `portal-*` and keeps
+      # the newest of each name, so a renamed object or a dropped key removes a
+      # section from the live site without failing anything. This compares the
+      # set just written against the golden shape and fails on any structural
+      # difference; numbers are printed, never failed.
+      - name: Test portal contract
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_portal_contract.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
       - name: Test public data
         run: >
           Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_public_data.R",

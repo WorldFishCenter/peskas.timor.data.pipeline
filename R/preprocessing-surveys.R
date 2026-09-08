@@ -40,7 +40,7 @@
 #'
 #' @param versions Character vector of form versions to pre-process. Defaults to
 #'   the live forms, `c("v2", "v3")`. `v1` is frozen — see
-#'   `data-raw/freeze-landings-v1.R`.
+#'   a one-off freeze script, out of band.
 #' @param log_threshold The (standard Apache logj4) log level used as a
 #'   threshold for the logging infrastructure. See [logger::log_levels].
 #'
@@ -132,7 +132,7 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   merged <- dplyr::bind_rows(
     # v1 is frozen: one snapshot of the last pre-processed output, reshaped and
     # with its fork lengths already converted to total length. See
-    # `data-raw/freeze-landings-v1.R`.
+    # the one-off freeze, out of band.
     read_source(
       conf$surveys$landings$v1$frozen$file_prefix,
       conf$surveys$landings$v1$frozen$version

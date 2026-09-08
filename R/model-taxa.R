@@ -71,7 +71,7 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' @section Length types:
 #' **Every length reaching this function is a total length.** v2 and v3 record
 #' TL; v1 recorded fork length and was converted once, at the freeze
-#' (`data-raw/freeze-landings-v1.R`).
+#' (done once in the freeze).
 #'
 #' @section Input and output shape:
 #' Both are the **flat long** table — one row per (submission, catch, length

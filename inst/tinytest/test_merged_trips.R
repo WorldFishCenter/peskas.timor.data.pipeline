@@ -19,6 +19,3 @@ expect_equal(
   dplyr::n_distinct(na.omit(merged_trips$tracker_trip_id)),
   info = "Tracking trip ids might be duplicated"
 )
-
-
-

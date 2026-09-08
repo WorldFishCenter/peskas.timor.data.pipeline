@@ -9,7 +9,7 @@ preprocess_landings(versions = c("v2", "v3"), log_threshold = logger::DEBUG)
 \arguments{
 \item{versions}{Character vector of form versions to pre-process. Defaults to
 the live forms, \code{c("v2", "v3")}. \code{v1} is frozen — see
-\code{data-raw/freeze-landings-v1.R}.}
+a one-off freeze script, out of band.}
 
 \item{log_threshold}{The (standard Apache logj4) log level used as a
 threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels}.}

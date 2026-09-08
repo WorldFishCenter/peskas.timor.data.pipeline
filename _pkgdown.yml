@@ -1,10 +1,8 @@
-# Reference sections are keyword-driven since migration Phase 9. They used to be
-# name patterns — `matches("get")`, `matches("ingest")`, `matches("pds")` — which
-# mis-sorted after the Phase 2–8 renames: `matches("get")` swept every accessor
-# into "Cloud storage", `matches("pds")` claimed map functions that no longer
-# exist, and a renamed function silently changed section.
+# Reference sections are keyword-driven, not name patterns: `matches("get")`
+# swept every accessor into "Cloud storage" and a renamed function silently
+# changed section.
 #
-# `@keywords` is now the single source of truth, matching the other country
+# `@keywords` is the single source of truth, matching the other country
 # pipelines: workflow, storage, ingestion, preprocessing, validation, export,
 # helper. A topic may appear in more than one section (the pipeline entry points
 # are tagged `workflow <module>` and show up under both), but every exported
@@ -38,9 +36,8 @@ reference:
 - title: Cloud storage
   desc: >
     Accessors over the versioned artefacts in Google Cloud Storage. The storage
-    layer itself is `coasts::*` since migration Phase 2; these resolve the
-    latest version of each artefact and give it back in the shape its readers
-    expect.
+    layer itself is `coasts::*`; these resolve the latest version of each
+    artefact and give it back in the shape its readers expect.
   contents:
   - has_keyword("storage")
 

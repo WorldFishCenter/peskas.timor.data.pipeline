@@ -2,10 +2,9 @@ library(peskas.timor.data.pipeline)
 
 logger::log_threshold(logger::ERROR)
 # Local runs read their credentials from `.env`; CI supplies them as real
-# environment variables, where this is a no-op. (Until migration Phase 5 this
-# was a `setwd("../..")`, which never worked from an installed package —
+# environment variables, where this is a no-op. Not a `setwd("../..")`:
 # tinytest sets the working directory to the test file's own directory, so
-# `../..` landed inside the R library.)
+# that lands inside the R library.
 if (file.exists(".env")) dotenv::load_dot_env()
 conf <- peskas.timor.data.pipeline::read_config()
 
@@ -34,14 +33,9 @@ catch <- validated_landings %>%
 
 # Landing columns ---------------------------------------------------------
 
-# NOTE: four of these assertions named columns the validated artefact has never
-# had — `trip_duration`, `landing_value`, `catch_purpose` and `individuals`, a
-# schema that was never shipped. Reading a missing column returns NULL, so they
-# passed vacuously (and `catch_purpose` failed outright on the empty compare)
-# while warning "Unknown or uninitialised column". Pointed at the real columns
-# in migration Phase 5. No assertion was dropped or weakened: `trip_length`,
-# `catch_price`, `catch_use` and `number_of_fish` are the same quantities under
-# the names `format_public_data()` reads.
+# Name the columns the artefact actually has: reading a missing one returns
+# NULL, so an assertion over it passes vacuously while warning "Unknown or
+# uninitialised column".
 
 expect_false(
   any_negative(na.omit(validated_landings$trip_length)),
