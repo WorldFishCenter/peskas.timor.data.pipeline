@@ -86,9 +86,8 @@ load_dotenv <- function(file = ".env") {
 #' convenience.
 #'
 #' Environment variables are loaded from `.env` first (see [load_dotenv()]), so
-#' local runs and CI resolve the *same* configuration branch and differ only by
-#' `R_CONFIG_ACTIVE`. The former `local:` environment, which read plaintext
-#' files from `auth/`, no longer exists.
+#' local runs and CI resolve the same configuration branch and differ only by
+#' `R_CONFIG_ACTIVE`.
 #'
 #' The configuration file is `inst/config.yml`. `conf.yml` is still accepted as
 #' a fallback so that an older installed copy of the package keeps resolving.

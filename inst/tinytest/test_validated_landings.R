@@ -11,6 +11,7 @@ conf <- peskas.timor.data.pipeline::read_config()
 
 validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
 metadata <- peskas.timor.data.pipeline:::get_preprocessed_sheets(conf)
+assets <- peskas.timor.data.pipeline::get_assets(conf)
 
 # Function to check if there are negative values in a vector
 any_negative <- . %>% magrittr::is_less_than(0) %>% any() %>% isTRUE()
@@ -67,7 +68,7 @@ expect_equal(
 expect_true(
   {
     landing_codes <- na.omit(catch$catch_taxon)
-    valid_codes <- c(na.omit(metadata$catch_types$interagency_code), "0")
+    valid_codes <- c(na.omit(assets$taxa$alpha3_code), "0")
     all(landing_codes %in% valid_codes)
   },
   "Catch codes has unepected values"

@@ -2,16 +2,11 @@
 % Please edit documentation in R/nutrients.R
 \name{nutrients}
 \alias{nutrients}
-\title{Nutrient composition and RDI — Timor's own, deliberately}
+\title{Nutrient composition and RDI}
 \description{
-Renamed from \code{R/calculate-nutrients.R} in migration Phase 8. The plan's §4b
-test was "delete Timor's if it agrees with \code{coasts::enrich_taxa()}", and it
-fails on four counts, measured in Phase 4 and restated in
-\verb{.claude/migration/COASTS-4.6.0.md}: coasts emits \strong{six} nutrients against
-Timor's seven, has \strong{no selenium}, does \strong{no unit conversion} (Timor's
-\code{convert = TRUE} normalises mg/μg/g per 100 g to grams), and carries \strong{no
-FAO food-composition override} for the six invertebrates FishBase cannot
-estimate (\code{OCZ}, \code{IAX}, \code{COZ}, \code{PEZ}, \code{CRA}, \code{SLV}) or the hardcoded \code{FLY}
-row. Nothing below changed with the rename; upstreaming it is Phase 10.
+Kept here rather than delegated to \code{coasts::enrich_taxa()}, which emits six
+nutrients against Timor's seven, has no selenium, does no unit conversion,
+and has no FAO food-composition override for the invertebrates FishBase
+cannot estimate.
 }
 \keyword{internal}

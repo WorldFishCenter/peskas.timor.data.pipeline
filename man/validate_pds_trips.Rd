@@ -18,10 +18,6 @@ per-trip descriptors written by \code{\link[=describe_pds_tracks]{describe_pds_t
 are really one, and flags anomalous duration, distance and signal quality.
 }
 \details{
-Kept as a Timor function in migration Phase 7 — \code{coasts} has no
-consecutive-trip merging and no distance or outlier logic — and listed as an
-upstream candidate for Phase 10.
-
 The parameters needed in the config file are \verb{pds.pds_trips.*},
 \verb{pds.pds_tracks.descriptors.*} and the \code{validation.pds_trips} coefficients.
 }

@@ -14,9 +14,7 @@ A tibble: \code{vessel_type}, \code{alert_number}, \code{submission_id}.
 }
 \description{
 Reads the \code{vessel_type} label \code{\link[=preprocess_landings]{preprocess_landings()}} resolves from the
-PESKAS | FRAME frame, which is authoritative for vessels (PLAN §2.5). Both
-codes the live forms use resolve, so alert 12 is currently never raised; the
-Google Sheets \code{vessel_types} table it replaced additionally carried a code 3
-"gleaning" that no submission has ever recorded.
+Airtable frame. Both codes the live forms use resolve, so alert 12 is
+currently never raised.
 }
 \keyword{validation}

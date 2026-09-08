@@ -69,35 +69,6 @@ ingest_landings <- function(versions = c("v2", "v3"),
   })
 }
 
-#' Ingest the Airtable frame assets snapshot
-#'
-#' Thin wrapper over [coasts::ingest_assets()], which pulls taxa, gears,
-#' vessels, landing sites, districts, forms, PDS devices and the fleet frame
-#' from the PESKAS | FRAME base and writes one versioned `assets__*.rds`.
-#'
-#' Airtable is authoritative wherever it overlaps the Google Sheets metadata
-#' tables (taxa, gears, vessels, landing sites, districts, PDS devices); the
-#' Sheets keep only the five tables the frame does not cover.
-#'
-#' Until coasts 4.7.0 the delegated call wrote the snapshot to the country
-#' bucket while every reader resolved the hub, so this function mirrored it
-#' afterwards. COASTS-TODO C11 fixed that upstream — `coasts::ingest_assets()`
-#' now writes the hub itself — and migration Phase 11 deleted the mirror.
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels].
-#'
-#' @return No output. This function is used for its side effects.
-#' @keywords workflow ingestion metadata
-#' @export
-#'
-ingest_assets <- function(log_threshold = logger::DEBUG) {
-  coasts::ingest_assets(
-    log_threshold = log_threshold,
-    package = "peskas.timor.data.pipeline"
-  )
-}
-
 # Flatten one KoBo submission into a single-row tibble.
 flatten_row <- function(x) {
   x %>%

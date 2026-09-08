@@ -27,11 +27,7 @@
 #' (`submission_id`, `landing_date`, `gaul_*`, `landing_site`, `n_fishers`,
 #' `trip_duration`, `gear`, `vessel_type`, `habitat`, `catch_outcome`,
 #' `n_catch`, `catch_taxon`, `scientific_name`, `length`, `catch_price`,
-#' `mesh_size`, `n_gleaners`, `fuel`, `happiness`, …) it carries every raw KoBo
-#' column, reconciled across form versions exactly as `merge_versions()` used
-#' to reconcile them after the merge. Nothing reads the raw columns any more —
-#' [validate_landings()] moved onto the standard names in migration Phase 5 —
-#' and they are dropped with the other legacy passthrough in Phase 11.
+#' `mesh_size`, `n_gleaners`, `fuel`, `happiness`, …).
 #'
 #' The raw form codes are kept beside their resolved labels
 #' (`landing_site_code`, `gear_code`, `vessel_code`, `habitat_code`) because
@@ -39,12 +35,8 @@
 #' 16 and 19 report.
 #'
 #' @section Labels:
-#' Taxa, gear, vessels and landing sites are resolved from the PESKAS | FRAME
-#' assets snapshot, which is authoritative wherever it overlaps the Google
-#' Sheets tables. Habitat has no frame equivalent and stays on the Sheets, as
-#' does the per-taxon `length_type` (descriptive only — see [join_weights()]).
-#' The snapshot is cross-country and carries no `country` column, so every read
-#' is narrowed with [timor_assets()].
+#' Taxa, gear, vessels and landing sites are resolved from the Airtable frame
+#' via [get_assets()]. Habitat is a fixed code-to-label lookup.
 #'
 #' @param versions Character vector of form versions to pre-process. Defaults to
 #'   the live forms, `c("v2", "v3")`. `v1` is frozen — see
@@ -155,15 +147,40 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
     )
   )
 
+  # The frozen v1 snapshot still carries the raw KoBo columns, so it is narrowed
+  # here as well. `any_of()` because that snapshot predates any later column.
+  merged <- dplyr::select(merged, dplyr::any_of(landing_cols()))
+
   logger::log_info(
     "Merged {dplyr::n_distinct(merged$submission_id)} submissions, ",
-    "{nrow(merged)} catch rows"
+    "{nrow(merged)} catch rows, {ncol(merged)} columns"
   )
   coasts::upload_parquet_to_cloud(
     data = merged,
     prefix = conf$surveys$landings$merged$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country")
+  )
+}
+
+# The standard columns of the preprocessed landings table, and the only ones
+# stored. The raw KoBo columns are consumed to derive these and then dropped.
+landing_cols <- function() {
+  c(
+    # submission
+    "submission_id", "survey_id", "survey_version", "submitted_by",
+    "landing_date", "submission_date",
+    # place
+    "landing_site", "landing_site_code",
+    "gaul_1_code", "gaul_1_name", "gaul_2_code", "gaul_2_name",
+    # effort
+    "n_fishers", "no_men_fishers", "no_women_fishers", "no_child_fishers",
+    "trip_duration", "gear", "gear_code", "vessel_type", "vessel_code",
+    "habitat", "habitat_code", "has_boat", "mesh_size", "n_gleaners", "fuel",
+    "conservation_code", "happiness", "tracker_imei",
+    # catch
+    "catch_price", "catch_outcome", "n_catch", "catch_taxon",
+    "scientific_name", "catch_use", "length", "n_individuals"
   )
 }
 
@@ -218,22 +235,13 @@ reshape_landings <- function(raw, version, labels) {
     resolve_catch_taxa(labels) %>%
     resolve_survey_labels(labels) %>%
     trim_free_text() %>%
-    dplyr::relocate(
-      "submission_id", "survey_id", "survey_version", "landing_date",
-      "submission_date", "gaul_1_code", "gaul_1_name", "gaul_2_code",
-      "gaul_2_name", "landing_site", "n_fishers", "no_men_fishers",
-      "no_women_fishers", "no_child_fishers", "trip_duration", "gear",
-      "vessel_type", "habitat", "catch_outcome", "tracker_imei", "catch_price",
-      "n_catch", "catch_taxon", "scientific_name", "catch_use", "length_type",
-      "length", "n_individuals"
-    )
+        dplyr::select(dplyr::all_of(landing_cols()))
 }
 
 #' Reconcile one form version's submission-level columns
 #'
-#' Carries the raw KoBo columns through under the names the rest of the pipeline
-#' already reads — the work `clean_updated_landings()` and `merge_versions()`
-#' used to do — and derives the standard columns beside them.
+#' Coalesces the differently-spelled KoBo questions of each form version into
+#' one set of names, then derives the standard columns from them.
 #'
 #' @param raw A raw landings table.
 #' @param version Form version, `"v2"` or `"v3"`.
@@ -410,11 +418,6 @@ harmonise_v3 <- function(x) {
     )
 }
 
-# NOTE: `standard_survey_cols()` lived here until migration Phase 5. It listed
-# the standard submission columns `join_weights()` dropped so that validation
-# could keep reading the raw KoBo names off a re-nested artefact. Validation
-# reads the standard columns off the long table now, so both halves are gone.
-
 # "seluk__hakerek" means "other, written in"; the reason is then in the free
 # text field.
 reason_no_fishing <- function(reason, other) {
@@ -441,14 +444,12 @@ sum_fishers <- function(...) {
 #' (`survey_label`) to an FAO 3-alpha code and a scientific name. `0` is the
 #' form's "no catch" sentinel and has no frame row.
 #'
-#' The `MZZ` / `0` rules are the ones `join_weights()` used to apply after
-#' un-nesting: an unrecognised catch that still landed individuals or revenue is
-#' "marine fishes nei", and an unrecognised catch with neither is a genuine
-#' no-catch trip.
+#' An unrecognised catch that still landed individuals or revenue becomes
+#' `MZZ`, "marine fishes nei"; one with neither is a genuine no-catch trip.
 #'
 #' @param x A long catch table carrying `species` and `total_catch_value`.
 #' @param labels Output of [survey_labels()].
-#' @return `x` with `catch_taxon`, `scientific_name` and `length_type` resolved.
+#' @return `x` with `catch_taxon` and `scientific_name` resolved.
 #' @keywords preprocessing
 #' @noRd
 resolve_catch_taxa <- function(x, labels) {
@@ -475,12 +476,6 @@ resolve_catch_taxa <- function(x, labels) {
             .data$n_individuals == 0 &
             .data$total_catch_value == "0" ~ "0",
         TRUE ~ .data$catch_taxon
-      ),
-      # Descriptive only: enumerators measure every taxon on total length.
-      length_type = dplyr::case_when(
-        .data$catch_taxon %in% c("OCZ", "SLV", "IAX", "MOO") ~ "TL",
-        !is.na(.data$length_type) ~ .data$length_type,
-        TRUE ~ "TL"
       )
     ) %>%
     dplyr::select(-"species")
@@ -489,10 +484,7 @@ resolve_catch_taxa <- function(x, labels) {
 #' Label lookup tables for preprocessing
 #'
 #' Taxa, gear, vessels and landing sites come from the PESKAS | FRAME assets
-#' snapshot; habitat and the per-taxon `length_type` have no frame equivalent
-#' and come from the Google Sheets. Every frame table is narrowed to Timor with
-#' [timor_assets()] first — the snapshot is cross-country and all 56 of Timor's
-#' `alpha3_code`s are used by another country too.
+#' snapshot.
 #'
 #' @param conf The configuration file.
 #' @return A named list of lookup tibbles keyed on the raw form value.
@@ -500,10 +492,8 @@ resolve_catch_taxa <- function(x, labels) {
 #' @export
 survey_labels <- function(conf) {
   assets <- get_assets(conf)
-  sheets <- get_preprocessed_sheets(conf)
 
   sites <- assets$sites %>%
-    timor_assets(conf) %>%
     dplyr::transmute(
       landing_site_code = as.character(.data$site_code),
       # One frame site name carries an embedded newline. These are labels and
@@ -514,7 +504,6 @@ survey_labels <- function(conf) {
     dplyr::distinct()
 
   geo <- assets$geo %>%
-    timor_assets(conf) %>%
     dplyr::transmute(
       gaul_2_code = as.character(.data$gaul_2_code),
       .data$gaul_2_name,
@@ -525,41 +514,40 @@ survey_labels <- function(conf) {
 
   list(
     taxa = assets$taxa %>%
-      timor_assets(conf) %>%
       dplyr::transmute(
         survey_label = as.character(.data$survey_label),
         catch_taxon = as.character(.data$alpha3_code),
         .data$scientific_name
       ) %>%
-      dplyr::distinct() %>%
-      dplyr::left_join(
-        dplyr::transmute(
-          sheets$catch_types,
-          survey_label = as.character(.data$catch_number),
-          .data$length_type
-        ),
-        by = "survey_label"
-      ),
+      dplyr::distinct(),
     gear = assets$gear %>%
-      timor_assets(conf) %>%
       dplyr::transmute(
         gear_code = as.character(.data$survey_label),
         gear = .data$standard_name
       ) %>%
       dplyr::distinct(),
     vessel = assets$vessels %>%
-      timor_assets(conf) %>%
       dplyr::transmute(
         vessel_code = as.character(.data$survey_label),
         vessel_type = .data$standard_name
       ) %>%
       dplyr::distinct(),
     site = dplyr::left_join(sites, geo, by = "gaul_2_code"),
-    habitat = dplyr::transmute(
-      sheets$habitat,
-      habitat_code = as.character(.data$habitat_code),
-      habitat = .data$habitat_type
-    )
+    habitat = habitat_labels()
+  )
+}
+
+# The habitat code -> label lookup recorded on the survey form.
+habitat_labels <- function() {
+  tibble::tribble(
+    ~habitat_code, ~habitat,
+    "1", "Reef",
+    "2", "FAD",
+    "3", "Deep",
+    "4", "Beach",
+    "5", "Traditional FAD",
+    "6", "Mangrove",
+    "7", "Seagrass"
   )
 }
 

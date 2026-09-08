@@ -48,8 +48,8 @@ therefore averaged fork-length and standard-length fits into one number and
 applied it to TL, which overestimates weight, because FL and SL are shorter
 than TL (medians here: FL 0.958 TL, SL 0.827 TL).
 
-\code{length_length} is fetched by the same call and was previously discarded.
-It is now used to restate every convertible pair on a TL basis. POPLL fits
+\code{length_length}, fetched by the same call, restates every convertible pair on
+a TL basis. POPLL fits
 \code{Length1 = aL + bL * Length2} — \strong{the second column is the predictor} — so
 the ratio \code{L_type / TL} is \code{bL} when \code{Length2} is \code{TL} and \code{1 / bL} when
 \code{Length1} is. Substituting \verb{L_type ~= ratio * TL} into \code{W = a * L_type^b}
@@ -78,7 +78,7 @@ the filter and are never area-restricted — and, being bound after the
 conversion above, they are never restated either. That is deliberate: their
 \code{Type} values (\code{CW}, \code{ShL}, \code{ML}, \code{CL}) are invertebrate axes FishBase
 carries no conversion for, and field practice measures those taxa on total
-length anyway (confirmed 2026-08-10).
+length anyway.
 }
 
 \keyword{helper}

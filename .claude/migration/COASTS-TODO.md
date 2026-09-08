@@ -923,3 +923,75 @@ corrected.
 C26's remaining half is still open: the *additive alias* shape
 (`taxa_search_aliases()`) belongs upstream so every country gets it. Only the
 silent-drop warning was fixed.
+
+---
+
+### C29. The assets snapshot cannot resolve a KoBo asset id to a form record id
+
+Filed 2026-09-07 (Timor migration Phase 12).
+
+`coasts::get_assets()` takes `form_ids` — Airtable **record** ids — and its own
+roxygen points at `get_airtable_form_id()` to obtain them. That function is not
+in `coasts`. **Each of Kenya, Mozambique and Zanzibar carries its own local
+copy** (`R/airtable.R`, `R/preprocessing-surveys.R:975`,
+`R/airtable-helpers.R:18`), and Timor was asked in ALIGNMENT-AUDIT §15 to adopt
+a fourth. Three copies of a lookup is the signal it belongs in the hub.
+
+Worse, the lookup cannot be done from the snapshot at all. `ingest_assets()`
+writes a `forms` table with exactly two columns:
+
+```
+forms: form_id | form_name
+```
+
+where `form_id` is the **KoBo asset id** — not the Airtable record id, which is
+what every *other* table's `form_id` column contains. So the same column name
+means two different things across the snapshot, and the mapping between them is
+absent from the object being filtered. `geo` does carry `airtable_id`; `forms`
+does not.
+
+The consequence is that resolving ids at run time requires a **live Airtable
+call**, which is what the three WIO copies do — putting an Airtable round trip
+on jobs that are otherwise pure GCS reads, and allowing a resolved id that is
+not present in the snapshot version being read.
+
+**Two changes, both small:**
+
+1. `ingest_assets()` should keep `airtable_id` on `forms`, as it already does on
+   `geo`. Then the mapping travels with the data.
+2. `get_assets()` should accept KoBo asset ids and do the lookup itself from
+   that column, keeping `form_ids` for callers that already hold record ids.
+
+**What Timor did, 2026-09-07:** adopted the live-API lookup, so it now matches
+Kenya, Mozambique and Zanzibar exactly — `get_airtable_form_id()` +
+`timor_form_ids()` in [`R/get-cloud-files.R`](../../R/get-cloud-files.R), and
+`metadata.airtable.form_ids` is **deleted**. Verified the lookup returns
+precisely the two ids that were hardcoded, one per form, with the asset tables
+unchanged (60/9/2/40/37). `timor_form_ids()` caches per session because
+`timor_assets()` is called ten times a run; measured at one round trip (1.4 s)
+with later calls at 0.002 s.
+
+So this is now a **cleanup, not a blocker**: it is a fourth copy of the same
+lookup and a live Airtable dependency on three jobs that are otherwise pure GCS
+reads. Landing C29 lets all four countries resolve from the snapshot and delete
+all four copies.
+
+**Update 2026-09-07: the read-side delegation shipped, and it was never blocked
+by this.** Timor's `get_assets()` now calls `coasts::get_assets()` and
+`timor_assets()` is deleted. The earlier note below claimed the swap was blocked
+because `get_assets()` cannot return `forms` — that only held while the ids were
+to be resolved *from the snapshot*. Resolving them from the live API makes the
+snapshot's `forms` table irrelevant. C29 remains worth doing to remove the API
+call and the four duplicate lookups, but it blocks nothing.
+
+**Verified for Timor:**
+`coasts::get_assets()`'s defaults are exactly right here. Its five tables
+(`taxa`, `gear`, `vessels`, `sites`, `geo`) cover **every** reader in the
+package — the snapshot's `forms`, `devices` and `frame` have none, and
+`metadata$devices` in `validate_landings()` is the *Google Sheets* table, not
+the frame's. Its `drop_cols = c("country", "latitude", "longitude")` is safe:
+`country` rides on `taxa`/`gear`/`vessels`/`geo` and `latitude`/`longitude` on
+`sites`, no reader touches any of them, and dropping them before `distinct()`
+changes no row count (37 geo / 60 taxa / 9 gear / 2 vessels / 40 sites either
+way). The only thing blocking the swap is that `get_assets()` cannot return
+`forms`, which Timor would need in the same download to resolve its own ids.

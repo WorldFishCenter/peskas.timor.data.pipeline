@@ -3,11 +3,7 @@
 # Every validator in this file reads the **flat long** weighted catch table of
 # [calculate_weights()] — one row per (submission, catch, length bin) — or the
 # one-row-per-submission view [validation_submissions()] derives from it, and
-# every one addresses columns by their standard names. Until migration Phase 5
-# they read raw KoBo names (`_id`, `trip_group/gear_type`, `total_catch_value`,
-# …) off a re-nested `species_group` / `length_individuals` artefact, and each
-# label validator carried its own Google Sheets join.
-#
+# every one addresses columns by their standard names.
 #
 # THE ALERT CODES
 # The codes are the contract — the flag strings they compose are published and
@@ -167,11 +163,8 @@ validate_this_imei <- function(this_imei, this_id = NULL, valid_imeis) {
 #' a recorded value is matched against the deployed devices by **suffix**. A
 #' value short enough to be ambiguous, or matching no device, is flagged.
 #'
-#' The deployed-device list still comes from the Google Sheets `devices` table
-#' rather than the frame's `pds_devices`: measured 2026-08-10, the frame carries
-#' 442 Timor devices against the Sheets' 595, and switching would take alert 3
-#' from 824 to 1,475 submissions and strip the resolved IMEI — hence the
-#' matched trip — from 651 of them.
+#' The roster spans every device ever deployed, since a submission from any year
+#' can reference one.
 #'
 #' @param submissions Output of [validation_submissions()].
 #' @param deployed_imeis Character vector of deployed device IMEIs.
@@ -444,13 +437,8 @@ validate_catch_params <- function(landings = NULL, k_ind = NULL) {
 #' individuals-count alerts onto both the price and the catch frames so that a
 #' single alert number per submission survives the assembly.
 #'
-#' The relationship between weight and price is mostly linear, and this function
-#' used to also compute a per-submission Cook's distance from a
-#' `log(price) ~ log(weight)` fit. That term has been commented out of the
-#' threshold for as long as the fixed band has existed, so the fit — a
-#' `stats::lm()` plus a `broom` augmentation over ~90k submissions, one of the two
-#' most expensive steps in validation — was deleted in migration Phase 5. The
-#' `cook_dist` parameter is retained because `config.yml` still supplies it.
+#' The `cook_dist` parameter is unused and retained only because `config.yml`
+#' still supplies it.
 #'
 #' @param catch_params Output of [validate_catch_params()]: `alerts`
 #'   (one row per submission) and `catch` (the long table).
@@ -567,10 +555,8 @@ validate_price_weight <- function(catch_params = NULL,
 #' Validate the recorded vessel type
 #'
 #' Reads the `vessel_type` label [preprocess_landings()] resolves from the
-#' PESKAS | FRAME frame, which is authoritative for vessels (PLAN §2.5). Both
-#' codes the live forms use resolve, so alert 12 is currently never raised; the
-#' Google Sheets `vessel_types` table it replaced additionally carried a code 3
-#' "gleaning" that no submission has ever recorded.
+#' Airtable frame. Both codes the live forms use resolve, so alert 12 is
+#' currently never raised.
 #'
 #' @param submissions Output of [validation_submissions()].
 #' @return A tibble: `vessel_type`, `alert_number`, `submission_id`.
@@ -621,38 +607,40 @@ validate_gear_type <- function(submissions) {
 
 #' Validate the recorded landing site
 #'
-#' Alert 16 fires when the recorded station code is in neither reference source.
-#'
-#' Unlike gear and vessels this validator **keeps** its Google Sheets join, and
-#' deliberately. The published `municipality` is Timor's own reporting unit,
-#' which is not the frame's `gaul_1_name` — Atauro is its own reporting unit
-#' while GAUL puts it inside Dili — and `format_public_data()` hardcodes both
-#' the reporting-unit names and five Sheets spellings of `landing_site` when it
-#' classifies the north coast. Measured 2026-08-10: 11 of 40 site names differ
-#' between the two sources, two of them among those five. Reconciling the labels
-#' is migration Phase 8's, together with the portal parity gate; moving them
-#' here would silently reclassify published aggregates.
+#' Resolves the site name and reporting region from the Airtable frame by site
+#' code. Alert 16 fires when the recorded code matches no known site.
 #'
 #' @param submissions Output of [validation_submissions()].
-#' @param metadata_stations The Google Sheets `stations` table.
-#' @param metadata_reporting_units The Google Sheets `reporting_unit` table.
+#' @param frame_sites The frame `sites` table from [get_assets()].
+#' @param frame_geo The frame `geo` table from [get_assets()].
 #' @return A tibble: `submission_id`, `station_code`, `station_name`,
 #'   `reporting_region`, `alert_number`.
 #' @keywords validation
 #' @export
 validate_sites <- function(submissions,
-                           metadata_stations,
-                           metadata_reporting_units) {
-  sites_df <-
-    metadata_stations %>%
-    dplyr::filter(!is.na(.data$station_code)) %>%
-    dplyr::inner_join(metadata_reporting_units, by = "reporting_unit") %>%
-    dplyr::select("station_code", "station_name", "reporting_unit") %>%
-    dplyr::mutate(
-      station_code = as.character(.data$station_code),
-      station_name = trimws(.data$station_name)
+                           frame_sites,
+                           frame_geo) {
+  regions <-
+    frame_geo %>%
+    frame_reporting_region() %>%
+    dplyr::transmute(
+      gaul_2_code = as.character(.data$gaul_2_code),
+      .data$reporting_region
     ) %>%
-    dplyr::rename(reporting_region = "reporting_unit") %>%
+    dplyr::distinct()
+
+  sites_df <-
+    frame_sites %>%
+    dplyr::filter(!is.na(.data$site_code)) %>%
+    dplyr::transmute(
+      station_code = as.character(.data$site_code),
+      # One frame site name carries an embedded newline, and these are
+      # published labels -- squish rather than merely trim.
+      station_name = stringr::str_squish(.data$site),
+      gaul_2_code = as.character(.data$gaul_2_code)
+    ) %>%
+    dplyr::left_join(regions, by = "gaul_2_code") %>%
+    dplyr::select("station_code", "station_name", "reporting_region") %>%
     dplyr::distinct()
 
   submissions %>%
@@ -703,10 +691,8 @@ validate_n_fishers <- function(submissions, method, k) {
 #'
 #' Habitat is the one label with no frame equivalent, so
 #' [preprocess_landings()] resolves it from the Google Sheets `habitat` table.
-#' This validator therefore only has to notice a code that table does not
-#' cover — the seven-way `case_when()` it used to duplicate was verified
-#' identical to the resolved column over all 97,347 submissions before being
-#' deleted.
+#' This validator therefore only has to notice a code the lookup does not
+#' cover.
 #'
 #' @param submissions Output of [validation_submissions()].
 #' @return A tibble: `submission_id`, `habitat_code`, `habitat_type`,
@@ -730,8 +716,8 @@ validate_habitat <- function(submissions) {
 
 #' Validate the recorded mesh size
 #'
-#' The unit conversion moved to [preprocess_landings()] in migration Phase 5;
-#' `mesh_size` reaches this function in millimetres.
+#' `mesh_size` reaches this function in millimetres, converted by
+#' [preprocess_landings()].
 #'
 #' @param submissions Output of [validation_submissions()].
 #' @param mesh_limit Largest plausible mesh size, in millimetres.
@@ -810,20 +796,30 @@ validate_fuel <- function(submissions, method, k_fuel) {
 
 #' Resolve the recorded catch-preservation method
 #'
-#' Conservation has no frame equivalent, so the Google Sheets `conservation`
-#' table stays. Raises no alert.
+#' Maps the recorded code to its label. Raises no alert.
 #'
 #' @param submissions Output of [validation_submissions()].
-#' @param metadata_conservation The Google Sheets `conservation` table.
 #' @return A tibble: `submission_id`, `conservation_place`, `alert_number`.
 #' @keywords validation
 #' @export
-validate_conservation <- function(submissions, metadata_conservation) {
+validate_conservation <- function(submissions) {
   submissions %>%
     dplyr::select("submission_id", conservation_code = "conservation_code") %>%
-    dplyr::left_join(metadata_conservation, by = "conservation_code") %>%
+    dplyr::left_join(conservation_labels(), by = "conservation_code") %>%
     dplyr::select(-"conservation_code") %>%
     dplyr::mutate(alert_number = NA_real_)
+}
+
+# The catch-preservation code -> label lookup recorded on the survey form.
+conservation_labels <- function() {
+  tibble::tribble(
+    ~conservation_code, ~conservation_place,
+    "1", "Open",
+    "2", "Shade",
+    "3", "Box",
+    "4", "Ice box",
+    "5", "Other"
+  )
 }
 
 #' Carry through the recorded happiness rating
@@ -843,29 +839,3 @@ validate_happiness <- function(submissions) {
       alert_number = NA_real_
     )
 }
-
-# ---------------------------------------------------------------------------
-# KoBoToolbox validation status
-# ---------------------------------------------------------------------------
-# `kobo_request()`, `kobo_validation_url()`, `list_validation_statuses()`,
-# `get_validation_status()` and `update_validation_status()` lived here from
-# migration Phase 5, ported from Mozambique. Phase 10 upstreamed them (COASTS-TODO
-# C15) and coasts 4.7.0 shipped them; migration Phase 11 deleted the local
-# copies. `R/validation.R` calls `coasts::list_validation_statuses()` and
-# `coasts::update_validation_status()`.
-
-# NOTE: `get_deployed_imeis()` and `get_bounds_table()` lived here until
-# migration Phase 5.
-#
-#   get_deployed_imeis()  joined `devices` to `device_installs` to narrow the
-#                         valid-IMEI list to devices actually installed on a
-#                         boat. `validate_landings()` has had the call commented
-#                         out in favour of every deployed IMEI for years.
-#   get_bounds_table()    built a (taxon x gear) table of maximum plausible
-#                         individual counts. `validate_landings()` assigned it
-#                         and never read it, and a repo-wide grep found no other
-#                         caller — while it was one of the two most expensive
-#                         steps in the pipeline, running `univOutl::LocScaleB()`
-#                         over ~600 groups of 1.65M rows. If the table is ever
-#                         wanted for reporting, restore it from git history and
-#                         give it a caller.

@@ -14,9 +14,6 @@ A named list of lookup tibbles keyed on the raw form value.
 }
 \description{
 Taxa, gear, vessels and landing sites come from the PESKAS | FRAME assets
-snapshot; habitat and the per-taxon \code{length_type} have no frame equivalent
-and come from the Google Sheets. Every frame table is narrowed to Timor with
-\code{\link[=timor_assets]{timor_assets()}} first — the snapshot is cross-country and all 56 of Timor's
-\code{alpha3_code}s are used by another country too.
+snapshot.
 }
 \keyword{preprocessing}

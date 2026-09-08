@@ -16,8 +16,7 @@
 #' length_cm, catch_kg, catch_price, tot_catch_kg, tot_catch_price
 #' ```
 #'
-#' Three Timor-specific decisions, all recorded in the migration Phase 6 entry
-#' of `.claude/migration/STATE.md`:
+#' Three things to know about the mapping:
 #'
 #' * **Grain.** The API is one row per (trip, catch); Timor's long tables are one
 #'   row per (submission, catch, **length bin**). The bins are collapsed:
@@ -175,8 +174,8 @@ upload_api_trips <- function(trips, spec, conf) {
   coasts::upload_cloud_file(
     file = filename,
     provider = conf$storage$google$key,
-    # `resolve_storage_opts()` knows "coasts", "country", "pds" and "public"
-    # but not "api" — see COASTS-TODO C16.
+    # `resolve_storage_opts()` has no "api" type, so the options are read
+    # directly.
     options = conf$storage$google$options_api,
     name = cloud_path
   )

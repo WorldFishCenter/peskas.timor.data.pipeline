@@ -16,9 +16,25 @@ Append one entry per completed phase, newest at the bottom.
   landing weight **-15.3%**, price/kg **+17.8%**, revenue **-4.5%**, nutrient
   supply **-26.0%**, RDI **-20.3%**. Contract unchanged — the gate reports 0
   structural failures. It was also Timor's **first `peskas-api-prod` write**.
-- **Phase:** **11b complete.** Phases 0-11b are done. **Phase 12 is next** and is
-  scoped in [`ALIGNMENT-AUDIT.md`](ALIGNMENT-AUDIT.md) §15, with additions listed
-  in the cutover entry below.
+- **Phase:** **12 complete, on an unmerged branch.** Phases 0-12 are done.
+  `migration-phase12` (off `597385d`) moved the site and municipality labels
+  onto the PESKAS | FRAME base — `validate_sites()` was overwriting the frame
+  labels `preprocess_landings()` had already resolved — and collapsed the two
+  rival "North Coast" definitions into one `metadata.coast_areas` table. **Both
+  published figures move by zero**; the outward-visible change is the
+  cross-country API's `landing_site`, which now carries the frame's spellings
+  like the other three countries. **Read the Phase 12 entry at the bottom.**
+- **The one thing Phase 12 still needs: a dev pipeline run.** Its gates were run
+  against artefacts built by the *old* code, because the new `landing_site`
+  labels only reach an artefact once `validate_landings()` runs. **Push the
+  branch** (any push to a non-main branch runs the whole pipeline against
+  `-dev`), then `data-raw/compare-portal-json.R`. Expect 0 structural failures
+  and no numeric movement, the sole exception being Welaluhu's single landing
+  moving Manatuto → Manufahi.
+- **`ALIGNMENT-AUDIT.md` §15's Phase 12 list is now stale in both directions**:
+  its items 1 and 2 shipped *before* Phase 11, and items 2, 3, 5, 6 and 7
+  shipped *in* Phase 12. [`PROMPT-PHASE12.md`](PROMPT-PHASE12.md) is the
+  accurate scope. What is left of it is **item C** only.
 - ~~`data_report.Rmd`'s gear levels are broken~~ — **fixed 2026-09-07**, see §5
   of the cutover entry. The nine lowercase `factor()` levels are now the frame's
   Title-Case labels, and any label the frame or the habitat table adds later is
@@ -74,14 +90,21 @@ Append one entry per completed phase, newest at the bottom.
   suites need `dotenv::load_dot_env('<repo>/.env')` in the same `Rscript` call;
   and `add_version()` only stamps a git sha when the working directory is inside
   the repo, so run measurement scripts from the repo root.
-- **Action for the user, data — gates Phase 12.** Neither is code:
+- **Action for the user, data — now gates only Phase 12 item C.** Not code:
   1. **144 Sheets IMEIs are absent from `pds_devices`** in PESKAS | FRAME. This
      gates moving `validate_imeis()` off the Sheets; switching before it is a
      651-trip regression. (The 27 IMEIs from the Phase 7 entry are a *different*
      gap, on the PDS side, worth 2,791 trips and 59 matches.)
-  2. **Two of twelve `geo.total_boats` values** need reconciling — Manatuto
-     283 -> 213, Viqueque 213 -> 207. Gates `registered_boats` ->
-     `geo.total_boats`, which is -4.74% of published national catch.
+  2. ~~**Two of twelve `geo.total_boats` values** need reconciling — Manatuto
+     283 -> 213, Viqueque 213 -> 207~~ — **moot, and it shipped.**
+     `get_registered_boats()` has read `geo.total_boats` since `5a83f11`, so the
+     frame's values are already live and already published: verified 2026-09-07
+     that the 12 rows carry Manatuto **213** and Viqueque **207**. The -4.74%
+     national catch correction is in production, not pending. Airtable is
+     authoritative (user decision 2026-08-18) and no further reconciliation is
+     needed unless the frame's two values are themselves wrong — the transposed
+     -pair suspicion (frame Manatuto 213 == Sheets Viqueque 213) was never
+     resolved, only overtaken.
 - **Action for the user, security — still open.** Rotate the credentials exposed
   in past CI logs across four repos (GCP service-account key, Airtable PAT,
   Dataverse token, blastula Gmail credentials), and `ANTHROPIC_API_KEY`, which
@@ -5603,3 +5626,496 @@ before recovering.
 `.claude/migration/STATE.md` ("Current position" rewritten, and this entry),
 `inst/report/data_report.Rmd` (§5, the gear levels).
 No R source, config or workflow file was touched in this session.
+
+---
+
+## Phase 12 — the frame takes the labels, and the coast becomes one table — 2026-09-07
+
+Branch: `migration-phase12` (off `597385d`, which is `main`). **Not committed,
+not pushed, not merged** — handed back to the user.
+
+**The session's premise changed once, and the user was right to change it.**
+The prompt framed item A as a decision about where a site→coast table should
+live, on the assumption that the published `landing_site` vocabulary was the
+Google Sheets one and would stay that way until item D. The user rejected that:
+*"in airtable there is the landing_sites table. Other WIO packages use that. The
+migration core idea is to align timor package with others."* Checking Mozambique
+settled it, and the finding is the spine of this entry.
+
+### 1. Timor's preprocessing was already aligned; validation un-aligned it
+
+`preprocess_landings()` resolves `landing_site` and the GAUL columns from the
+frame through `survey_labels()` → `resolve_survey_labels()`, doing the same four
+joins in the same order as Moz's `map_surveys()`. Then
+[`validate_landings()`](../../R/validation.R) did:
+
+```r
+landing_site = "station_name",      # Google Sheets `stations`
+municipality = "reporting_region",  # Google Sheets `reporting_unit`
+```
+
+and **threw the frame labels away**. That single `select()` is the whole reason
+Timor was the only country publishing a non-frame `landing_site` (§8 L5). The
+fix is `validate_sites()` reading the frame, not a reconciliation project.
+
+### 2. The switch is far smaller than ALIGNMENT-AUDIT §10 implied
+
+Measured against the live dev snapshot before changing anything:
+
+| | result |
+|---|---|
+| site codes, Sheets vs frame | **40/40 match**, zero orphans either way |
+| municipality vocabulary | **identical sets** — the same twelve names |
+| sites whose municipality changes | **1 of 40** |
+| landings whose municipality changes | **1 of 95,669** |
+| site names that differ | **11 of 40**, worth 53,961 landings |
+| portal objects containing `landing_site` | **0 of 7** |
+
+§10 recorded "18 of 40 municipality disagreements". That number is real but it
+compares the Sheets to the frame's **raw** `gaul_1_name`. Applying the four-case
+recode `get_registered_boats()` already carried — Atauro by `gaul_2_name`, then
+`Lautém`/`Liquiçá`/`Oecussi` — collapses 17 of the 18. What is left is site 33
+**Welaluhu**: Sheets `Manatuto`, frame `Manufahi / Fatuberliu`. Airtable is
+authoritative (PLAN §2.5, user decision 2026-08-18), it is one landing, and both
+spellings sit on the south coast, so no published `Area` moves.
+
+**`landing_site` appearing in none of the seven portal objects is the fact that
+made this phase possible** — verified against the Phase 0 golden set, not
+assumed. The 11 label changes land on the cross-country API only, which is
+precisely the divergence §8 L5 wanted closed.
+
+### 3. The coast: one table, and it is behaviour-neutral
+
+`metadata.coast_areas` in `inst/config.yml` — 40 entries over `North Coast` (20)
+/ `South Coast` (12) / `Atauro island` (8), keyed on the **frame's** site names.
+`get_summary_data()` joins it; `export_files()`, which cannot see the site
+because the model has collapsed the data to municipality by then, is handed a
+municipality→coast map that `get_summary_data()` derives from the same table by
+**submission-weighted majority** and passes in the intermediate `summary_data`
+rds.
+
+That intermediate is not the published object — `export_files()` rebuilds the
+portal `summary_data` from an explicit nine-key whitelist — so the new
+`area_lookup` field cannot leak into the contract. Verified before relying on it.
+
+**Both published figures move by zero**, run through the shipped code path on
+frame-relabelled data:
+
+| | old | new | delta |
+|---|---|---|---|
+| `n_surveys` Atauro island | 39,544 | 39,544 | **0** |
+| `n_surveys` North Coast | 37,691 | 37,691 | **0** |
+| `n_surveys` South Coast | 18,434 | 18,434 | **0** |
+| `estimated_revenue` all three areas | — | — | **0** |
+
+and the derived North set is `identical()` to the seven-name list `export_files()
+`used to hardcode: `Baucau, Bobonaro, Dili, Lautem, Liquica, Manatuto, Oecusse`.
+
+**Two things to know about that majority.** It must be **submission**-weighted,
+not site-count-weighted: by site count Manatuto is 1 north (Comando, 2,919
+landings) / 2 south (Welaluhu 1, Natarbora 0) and would **flip**, changing
+`estimated_revenue`. And a site absent from the table now **warns** rather than
+silently becoming South Coast — the join replaced a `case_when()` whose final
+`TRUE ~ "South Coast"` would have swallowed it, which is the same silent-drop
+shape that removed the Gear axis from `data_report.Rmd` and cost `TUN` its
+coefficients.
+
+The `is.na(.data$municipality)` written three times in one branch is gone with
+the `case_when()`.
+
+**Three guards, and two of them came out of reviewing my own diff rather than
+out of the plan.** Replacing a `case_when()` with a join removes a total
+function's `TRUE ~ "South Coast"` fallback, and each way that can now go wrong
+is silent and lands on a published number:
+
+- a landing site absent from the table → **warns**, and the landing drops out of
+  `n_surveys`;
+- a site listed under **two** areas → **errors** in `site_coast()`; the join
+  would fan every one of its landings out to two rows and inflate `n_surveys`;
+- a `municipal_aggregated` region the derived map does not cover → **errors** in
+  `export_files()`; `Area` would be `NA` and `group_by()` would publish a
+  **fourth, null-named area** inside `summary_data$estimated_revenue`.
+
+The third is the one that would actually have reached the portal, and the old
+`case_when()` could not produce it. Worth stating plainly: swapping a
+`case_when()` for a join changes a total function into a partial one, and on the
+export path that difference is a contract risk, not a style question.
+
+### 4. `frame_reporting_region()` — the label sources are consolidated
+
+The four-case recode existed once, in `get_registered_boats()`, whose own
+comment said *"Same three spellings as `get_timor_boundaries()` in pds-maps.R;
+consolidating the label sources is Phase 12."* It is now one `@noRd` helper in
+[model-fishery.R](../../R/model-fishery.R) that `get_registered_boats()` and
+`validate_sites()` both call. Verified against live data: all 12
+`geo.total_boats` rows resolve to the 12 published region names.
+
+`get_timor_boundaries()` in `pds-maps.R` keeps its own three-case recode
+deliberately — it maps the **shapefile's** `ADM1_EN` spellings, a different
+input vocabulary, to the same published output. Merging them would mean one
+function taking two unrelated shapes.
+
+### 5. `reporting_units` lost its last reader, so it is gone
+
+`validate_sites()` was it — the table's `fisher_numbers` and `registered_boats`
+columns have no reader (`registered_boats` moved to `geo.total_boats` in
+`5a83f11`). Dropped from `metadata.google_sheets.tables` and
+`pt_validate_reporting_unit()` deleted, following the pattern Phase 11 set.
+Grepped `coasts` first: the hub references neither `reporting_unit` nor
+`stations`. **Five Sheets tables remain**, and only `devices` is still blocked on
+Airtable data.
+
+An incidental fix: the config name was `reporting_units` (plural) while
+`preprocess_metadata_tables()` indexed `metadata_tables$reporting_unit`
+(singular). `$` on a list partial-matches, so it worked by accident. The
+remaining five are all exact matches.
+
+### 6. The enumerators report is deleted, and `stations` went with it
+
+First pass of this session kept `stations` and left the report alone, because
+its last reader was `enumerators_summary.Rmd` and re-keying the 10 site-name
+abbreviations it uses for its plot axes could not be verified without rendering
+it. **The user then challenged whether the report is useful at all**, saying it
+looked like dead code now that validation is handled by a separate application.
+
+**Their premise was wrong and their conclusion was right.** The report is not
+about validation — its own stated aim is *"the number of surveys submitted, the
+number of working days, and the estimated working hours per day"* per landing
+site. Enumerator **workforce** monitoring, with no alerts or flags in it, so the
+validation app never replaced it. But it has no consumer either:
+
+| | |
+|---|---|
+| runs | every pipeline run, last step of `export-trips` |
+| writes | `gs://public-timor/enumerators_summary_report.html`, 2 Mb, **fixed name, no `add_version()`** |
+| last written | 2026-09-07 09:35, i.e. it was live |
+| linked from the portal | **no** — absent from `src` and `dist` |
+| linked anywhere | **no** |
+
+Deleted at the user's direction: the Rmd, `generate_enumerators_report.R`, the
+`knit.md` build artefact and the workflow step. The bucket object was **left in
+place** and is now frozen; the workflow carries a comment saying where to
+restore it from. The one thing not knowable from here is whether a person opens
+that URL directly — removing the code stops it updating, it does not delete
+what is there.
+
+`stations` then had no reader at all, so it left
+`metadata.google_sheets.tables` too. **Four Sheets tables remain** (`devices`,
+`catch_types`, `habitat`, `conservation`) from twelve pre-migration, and only
+`devices` is still blocked on Airtable data.
+
+### 6b. The 59-column raw passthrough — unblocked, then removed
+
+`enumerators_summary.Rmd` was the **only** reader of the raw KoBo columns.
+Verified this session, not inherited: `Ita_koleta_dadus_husi_atividad`,
+`reason_no_activity`, `no_boats` and `landing_site_name` are read nowhere else
+(`preprocessing-surveys.R` and `freeze-landings-v1.R` *produce* them), and
+`api_submission_extras()` selects only `submission_id`, `survey_version` and the
+four `gaul_*` columns.
+
+So **ALIGNMENT-AUDIT §7's "the passthrough has a live reader and is not
+deletable" is now superseded**, as is the Phase 11 note that rests on it. Both
+were true; the report they depended on is gone. Dropping the passthrough would
+make the preprocessed table the standard columns only, like the WIO repos, and
+it is the last non-standard thing about that table.
+
+**Then done, later in the same session, at the user's instruction.**
+
+`reshape_landings()` ended with a `relocate()` — which orders columns but keeps
+every raw one. Zanzibar ends its `preprocess_landings()` with an explicit
+`select()` of the standard set; that is the whole difference. Timor now has
+`landing_cols()` (39 columns) and `reshape_landings()` selects it.
+
+`merge_landings()` applies the same list **again** after `bind_rows()`, and that
+is not belt-and-braces: the **frozen v1 snapshot carries the raw columns too**
+(82 of them) and is a permanent artefact that must not be rebuilt, so the
+narrowing has to happen after the bind as well. Checked first that all three
+sources carry all 39 — v1 82 cols, v2 90, v3 89, none missing any.
+
+**The user caught a real error in my plan.** I had listed `_submitted_by` as
+droppable KoBo noise. They said the WIO repos use it for validation, and they
+were right: Moz and Zanzibar both rename `_submitted_by` to a **standard**
+`submitted_by`, and Zanzibar's `validation.R` joins it onto the flags by
+`submission_id` so the validation app knows which enumerator to show. Timor
+already does the same — `push_validation_flags()` reads `submitted_by` — so it
+was never droppable. Only the raw duplicate goes. Had I trusted my own grep
+("nothing reads the raw columns") I would have kept the standard column by luck
+rather than by reasoning, and might have dropped it while "tidying".
+
+**Verified by running the real code, not by grep** (grep failed me twice here —
+first on substring matches, then because zsh does not word-split unquoted
+variables, which silently made every file lookup a no-op and reported all 98
+columns as "referenced"):
+
+- `reshape_landings()` re-run on both live raw forms: **same row counts**,
+  exactly 39 columns, **every shared value identical**.
+- On the weighted table: `validation_submissions()`, `api_submission_extras()`,
+  `validate_landing_regularity()` and `validate_catch_params()` all identical;
+  the sole difference anywhere was the 59 columns no longer carried along.
+
+Also gone: `deviceid` (a phone IMEI) and `_submitted_by` were being carried into
+a stored artefact for no reader — worth naming, since that is operational
+identifiers riding along by accident rather than by design.
+
+### 7. Item B — done in full, at the user's direction
+
+`timor_assets()` now delegates matching to `coasts::form_id_pattern()` (a
+whole-element match on the comma-separated linked-record field, where it did a
+substring test) and **errors on zero rows**.
+
+**And the two hardcoded record ids are gone.** The first pass of this session
+left them in place and filed the upstream ask; the user then asked plainly
+whether Timor could just be aligned with the others, and the answer was yes with
+**nothing needed from them** — `AIRTABLE_TOKEN` and `AIRTABLE_BASE_ID_FRAME` are
+workflow-level `env:` so every job already had them, and the KoBo asset ids were
+already in `ingestion.landings.{v2,v3}.asset_id`.
+
+So `get_airtable_form_id()` was added, matching Kenya's, Mozambique's and
+Zanzibar's, reading `conf$airtable$*` (coasts' key paths, not Moz's nesting —
+Timor keeps no local Airtable module). `metadata.airtable.form_ids` is deleted.
+
+**`timor_form_ids()` caches per session, and that is not optional.**
+`timor_assets()` is called ten times in a run — eight inside `survey_labels()`
+alone, plus `get_taxa_list()` and `get_registered_boats()` — so resolving on each
+call would be ten Airtable round trips per workflow step for an answer that
+cannot change mid-run. Measured: first call 1.4 s, subsequent 0.002 s, one cache
+entry. Each pipeline step is its own `Rscript` process, so session lifetime is
+exactly right.
+
+Verified behaviour-neutral, live: the lookup returns **exactly** the two ids that
+were hardcoded (`peskAAS` → `rechg17V73uqnVu2T` = v2, `PeskAAS 2` →
+`recY5MD03ZDwJUBB3` = v3, one record each); asset tables unchanged at
+60/9/2/40/37; `survey_labels()` still emits `landing_site` and all four `gaul_*`;
+`get_registered_boats()` still resolves 12 regions.
+
+**Three self-inflicted `check()` regressions, caught and fixed** — worth
+recording because all three are silent-until-`check()`: a non-ASCII em-dash
+inside a `stop()` **string literal** (comments are exempt, code is not), `.env$`
+used without an rlang import (Moz refers to the argument directly, which is
+unambiguous since the frame has no such column), and a `[timor_form_ids()]` link
+to an `@noRd` function. Back to 0/0/3.
+
+**COASTS-TODO C29 is now a cleanup rather than a blocker** — see below.
+
+### 7b. `timor_assets()` deleted — `get_assets()` delegates to the hub
+
+Also not in the plan; the user asked *"there is no mozambique_assets(), is there
+any reason why timor has timor_assets()?"* There was not.
+
+The reason it existed is a shape difference, not a requirement. Kenya,
+Mozambique and Zanzibar filter the snapshot **during** the download — Moz does
+`read_rds() |> keep_at(5 tables) |> map(filter(form_id, pattern)) |>
+map(select(-drop_cols) |> distinct())` inline. Timor downloaded all eight tables
+unfiltered and narrowed afterwards, so it needed a helper, and that helper then
+had to be applied to every table — ten calls a run.
+
+`coasts::get_assets()` (4.9.0) is the hub's version of exactly Moz's inline
+block. None of the three uses it yet — they all predate it — but it is the same
+operation, maintained once. `get_assets()` is now a six-line binding over it and
+**`timor_assets()` is gone**, along with five `%>% timor_assets(conf)` steps in
+`survey_labels()` and one each in `get_taxa_list()`, `get_registered_boats()`
+and `validate_landings()`.
+
+**The session cache went with it.** It existed because `timor_assets()` was
+called ten times per run; `get_assets()` is called once per workflow function,
+each its own `Rscript` process, so `timor_form_ids()` is now just the
+two-element `vapply` that Zanzibar writes inline.
+
+The Timor-specific zero-row **error** also went: `coasts::get_assets()` warns,
+and matching the hub is the point.
+
+Verified identical after the swap: 60 taxa / 9 gear / 2 vessels / 40 sites /
+37 geo; `survey_labels()` emits `landing_site` and all four `gaul_*`;
+`get_registered_boats()` 12 regions and 3,796 boats; `get_taxa_list()` 56
+distinct codes; coast figures still delta 0.
+
+**A correction to what I wrote earlier in this session.** I recorded that
+delegating to `coasts::get_assets()` was blocked because it cannot return
+`forms`, which Timor needed to resolve its own ids. That was true only while the
+ids were going to be resolved *from the snapshot*. Once `get_airtable_form_id()`
+resolves them from the **live API**, the snapshot's `forms` table is not needed
+at all and the blocker disappears. COASTS-TODO C29 is updated accordingly.
+
+### 7c. `ingest_assets()` deleted — Timor was writing a cross-country object
+
+Not in the plan; found because the user asked why Timor has a wrapper at all and
+whether the others do. They do not.
+
+- Kenya, Mozambique and Zanzibar have **no** `ingest_assets()` in `R/` and **no**
+  workflow step calling one. They only read the snapshot.
+- `coasts`' own pipeline runs `coasts::ingest_assets()` daily (cron `0 0 * * *`,
+  production gated on `/main`).
+- Timor's was a four-line wrapper, called from `ingest-preprocess-metadata-tables`
+  on every run.
+
+Confirmed in the bucket, which is what settles it: `peskas-coasts` holds
+`assets__20260907090525_597385d__.rds` and `..._0c75ee9__.rds` — **Timor's own
+commit shas** — interleaved with coasts' `5a26118` / `e32ea0b`. A country
+pipeline was publishing shared cross-country state on every run.
+
+Deleted: the function, its `@export`, `man/ingest_assets.Rd`, and the workflow
+step. Both files carry a comment saying why and where to restore from.
+
+**Consequence to know:** `peskas-coasts-dev` is written only by coasts'
+non-main pushes (and, until now, Timor's dev runs), so a Timor dev run may read
+an older snapshot than before. Identical to the other three countries' exposure,
+and the frame is reference data. Flagged rather than worked around.
+
+### 7d. The Google Sheets are down to one table
+
+Prompted by the user asking why `catch_types` still existed at all, and pointing
+out that the WIO packages solve small mappings internally rather than in
+Airtable. Both challenges were correct.
+
+**`habitat` and `conservation` are now fixed lookups in R.** All three WIO repos
+hold theirs as a `case_when()` — Moz and Zanzibar even use the same numeric
+codes Timor does. I had told the user these would need new tables in the shared
+Airtable base; that was wrong. `habitat_labels()` (7 rows) and
+`conservation_labels()` (5) reproduce the spreadsheets exactly, verified with
+`all.equal()`.
+
+**`catch_types` is deleted**, and this is the measurement that settled it:
+
+- `interagency_code` vs the frame's `alpha3_code`: **0 disagreements**, the same
+  **56** codes, nothing in one and not the other. The taxa mapping was already
+  entirely on Airtable. `test_validated_landings.R`'s valid-code assertion now
+  reads the frame.
+- `convert_taxa_names()` joined `catch_name_en` on and then did
+  `select(-catch_taxon) |> rename(catch_taxon = "Common name")` — so its output
+  column named `catch_taxon` held a common *name*. The one caller uses only
+  `fish_group`, a fixed `case_when()` over the code. The join and the rename
+  were both dead; removing them also removed the accidental de-duplicator the
+  earlier audit flagged (five hand-picked names that happened to make four
+  duplicated codes unique).
+- `length_type` was its last real contribution. Descriptive only, selects and
+  converts nothing, absent from all seven portal objects and the 22 API columns
+  (checked against the golden set, not assumed). With the Sheets join gone its
+  `case_when()` collapses to a constant `"TL"` for every taxon but `CRA` and
+  `COZ`. Removed.
+
+So `landing_cols()` is **38** and the validated table **39**. `devices` is the
+only Google Sheets table left, from twelve.
+
+**One local test is red, and it is stale data rather than a defect.**
+`test_validated_landings.R` fails with *"did not collapse to one row per
+submission: 332 duplicates"* — the guard in `get_validated_landings()` doing
+exactly its job. The stored validated parquet still has `length_type` (40 cols),
+so `select(-all_of(long_catch_cols()))` now leaves a catch-level column in the
+submission rows. Proved it is the sole cause: dropping `length_type` as well
+gives **0** duplicates. It resolves itself in CI, where `validate-landings` runs
+`validate_landings()` — writing the new 39-column parquet — *before* the test
+step reads the newest version. **Do not weaken the guard to make it pass
+locally.**
+
+### 7e. Comments trimmed at the user's instruction
+
+The user pointed out that comments I had added were long, referenced the
+migration, and defined things by contrast — *"Reads the PESKAS | FRAME snapshot,
+**not** the Google Sheets"* tells a stranger nothing. Rewritten across nine
+files to at most two sentences each, describing what the code does rather than
+what it used to do. No reference to a migration phase remains in `R/`,
+`inst/config.yml` or the workflow from this session's work.
+
+**112 such references remain from earlier phases** — "Phase 9", "Phase 11",
+links into `ALIGNMENT-AUDIT.md`. Same problem, not mine, and the user has said
+to leave the general cleanup until the work is settled.
+
+### 8. Item E — both written down
+
+- **`coasts::generate_fleet_analysis()`: assessed, and Timor should not call
+  it.** In [CLAUDE.md](../../CLAUDE.md), with three ordered reasons. (i) It
+  **cannot run** — its `monthly_summaries` input comes from
+  `coasts::summarize_data()`, which Timor deliberately does not run. (ii) It
+  would **rename all twelve published regions**: it keys `boat_registry` on
+  `gaul_2_name`, and Timor's twelve `total_boats` rows sit on sub-districts —
+  verified live as `Alas, Atabae, Atauro, Barique/Natarbora, Baucau, Bazartete,
+  Cristo Rei, Hatu-Udo, Iliomar, Nitibe, Suai, Uato-Lari`, of which only
+  `Atauro` and `Baucau` coincide with the published vocabulary. (iii) PLAN §2.3
+  keeps Timor's modelling. It is the standard's analogue of
+  `estimate_fishery_indicators()` — same job, same input field, different
+  estimator.
+- **`harmonise_v2()`/`harmonise_v3()` vs `map_surveys()`** — in CLAUDE.md. Not
+  counterparts: `map_surveys()` resolves *labels*, `harmonise_*()` reconcile
+  *form versions*, and Timor's real counterpart to `map_surveys()` is
+  `resolve_survey_labels()`. Deliberate, from PLAN §2.2.
+
+### 9. Verified
+
+- **`summary_data$n_surveys` and `$estimated_revenue`: delta 0** on all three
+  areas, through the shipped `get_summary_data()` on frame-relabelled data.
+- Derived municipality→coast map `identical()` to the removed hardcoded list;
+  all 12 municipalities mapped.
+- **Four tinytest suites green**: 10/0, 7/0, 2/0, 1/0. No assertion weakened.
+- **`devtools::check()`: 0 errors, 0 warnings, 3 NOTEs** — the baseline.
+  `testthat` **40 pass**, 0 warnings.
+- Frame resolves cleanly: 40 sites, **0 NA** municipalities, 40 distinct codes.
+- Form-id lookup returns exactly the two previously-hardcoded ids; asset tables
+  unchanged at **60 / 9 / 2 / 40 / 37**; one cached Airtable round trip per
+  session (1.4 s, then 0.002 s).
+- `coasts` is installed locally from the sibling repo at **exactly `v4.10.0`**
+  (clean tree, `HEAD == v4.10.0`), so these measurements are on the release the
+  pipeline resolves.
+
+**Not verified, and this is the gap to close first:** no dev pipeline run. The
+new `landing_site` labels only exist in an artefact once `validate_landings()`
+runs, so the tinytest suites and `compare-portal-json.R` were run against
+artefacts built by the **old** code. They confirm nothing broke structurally;
+they do not exercise the new labels. **Push the branch** — any push to a non-main
+branch runs the whole pipeline against `-dev` — then run
+`data-raw/compare-portal-json.R`. Expect **0 structural failures and no numeric
+movement**, with the sole exception of Welaluhu's single landing moving Manatuto
+→ Manufahi.
+
+### 10. Not done
+
+- **Item C, `devices` → `pds_devices`: untouched, hard-blocked.** The 144 Sheets
+  IMEIs are still absent from the frame. Switching first is a 651-trip
+  regression. Unchanged.
+- **The three re-enabled workflows: not dispatched.** The user chose to dispatch
+  them personally. **`data-report` is now more urgent than "test the gear
+  fix":** the portal's home page links
+  `storage.googleapis.com/public-timor/data_report.html`
+  ([`Home.tsx:56`](https://github.com/WorldFishCenter/peskas.timor.portal.v2)),
+  and that object in **production is dated 2026-06-01** — three months stale,
+  because `data-report.yaml` sat disabled by inactivity. The live site is
+  serving a three-month-old report right now. Found while checking whether the
+  enumerators report had a consumer.
+- **Dropping the 59-column raw passthrough** (§6b) — unblocked by this session,
+  scoped out of it on purpose.
+- Everything under "Carried" in `PROMPT-PHASE12.md` — C23, C26's second half,
+  `MZZ`'s empty coefficient pool, the `delete-leaked-portal-objects.R`
+  404-as-failure handler, credential rotation, the two obsolete GitHub secrets.
+
+### 11. One process note
+
+While measuring I ran `str(conf$ingestion)` and **printed the resolved KoBo
+username, password and token into the session transcript**. Nothing was written
+to a file or sent anywhere, and the values were already in the local `.env` — but
+it is exactly what CLAUDE.md's "Never log the resolved config" exists to prevent,
+and `read_config()` logs key *names* only for that reason. When inspecting
+config, print the keys you need, never a whole branch.
+
+### Files changed
+
+`R/validation-functions.R` (`validate_sites()` → frame),
+`R/validation.R` (passes the frame tables),
+`R/model-fishery.R` (`frame_reporting_region()` added, `get_registered_boats()`
+refactored onto it),
+`R/format-public-data.R` (`site_coast()` added; `get_summary_data()`'s coast rule
+is a join, derives `area_lookup`, warns on unclassified sites),
+`R/export.R` (reads `area_lookup`, hard-fails without it; hardcoded list gone),
+`R/get-cloud-files.R` (`timor_assets()` → `coasts::form_id_pattern()` + zero-row
+error; `get_airtable_form_id()` and the cached `timor_form_ids()` added),
+`R/preprocess-metadata-tables.R` (`pt_validate_reporting_unit()` deleted),
+`R/preprocess-metadata-tables.R` (`pt_validate_stations()` deleted too),
+`inst/config.yml` (`metadata.coast_areas` added; `reporting_units` and
+`stations` dropped — four tables left; `metadata.airtable.form_ids` deleted),
+`.github/workflows/data-pipeline.yaml` (the enumerators-report step removed),
+**deleted:** `inst/report/enumerators_summary.Rmd`,
+`inst/report/generate_enumerators_report.R`,
+`inst/report/enumerators_summary.knit.md`,
+`NEWS.md` + `DESCRIPTION` (**4.1.0** — note `release.yaml` cuts a release from
+the top NEWS block on a push to `main`),
+`CLAUDE.md`, `.claude/migration/COASTS-TODO.md` (C29),
+`.claude/migration/STATE.md` (this entry),
+`man/` (regenerated, incl. new `get_airtable_form_id.Rd`), `NAMESPACE`.

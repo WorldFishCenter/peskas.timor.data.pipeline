@@ -1,37 +1,24 @@
 #' Validate landings
 #'
-#' Downloads the weighted long catch table from cloud storage, runs every
-#' validator in `R/validation-functions.R`, and publishes two things: the validated
-#' landings artefacts, and the per-submission flags the enumerators act on.
-#'
-#' By default outlier identification uses the median absolute deviation (MAD).
+#' Downloads the weighted long catch table, runs every validator in
+#' `R/validation-functions.R`, and publishes the validated landings and the
+#' per-submission flags. Outlier identification uses the median absolute
+#' deviation by default.
 #'
 #' @section Outputs:
-#' * `<surveys.landings.validated.file_prefix>__*.rds` — the **nested**
-#'   artefact, one row per submission with the `landing_catch` list-column. This
-#'   is the portal's input and its column names are load-bearing:
-#'   `format_public_data()` reads `municipality`, `landing_site`,
-#'   `propulsion_gear`, `trip_length`, `catch_preservation` and the
-#'   `fisher_number_*` trio by name. Unchanged by migration Phase 5.
-#' * `<...>_long__*.parquet` — the same content in the **flat long** shape, one
-#'   row per (submission, catch, length bin), under the standard column names.
-#'   Written for migration Phase 6's API export; nothing reads it yet.
+#' * `<...>_validated_long__*.parquet` — one row per (submission, catch, length
+#'   bin) under the standard column names.
 #' * `<surveys.landings.validation.flags.file_prefix>__*.parquet` — a versioned
 #'   snapshot of the flags. [coasts::mdb_collection_push()] replaces a
 #'   collection wholesale, so this is the only history of what was flagged when.
 #'
 #' @section Flags sink:
-#' Flags go to the **shared** cross-country validation database
-#' (`storage.mongodb.databases.validation`), one
+#' Flags go to the shared cross-country validation database, one
 #' `surveys_flags-<asset_id>` collection per live form plus the matching
-#' `enumerators_stats-<asset_id>`. v1 is frozen and gets neither. This replaced
-#' the Google Sheets `flags` tab in migration Phase 5.
+#' `enumerators_stats-<asset_id>`; v1 is frozen and gets neither.
 #'
-#' Where a token is configured, the current KoBoToolbox validation status of the
-#' already-flagged submissions is read first, so an approval an enumerator
-#' entered by hand is preserved rather than overwritten. Writing a status *back*
-#' to KoBoToolbox is [sync_validation_status()], which the recurring pipeline
-#' deliberately does not call.
+#' Where a token is configured the current KoBoToolbox validation status is read
+#' first, so an approval entered by hand is preserved rather than overwritten.
 #'
 #' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #' @keywords workflow validation
@@ -45,6 +32,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   conf <- read_config()
   metadata <- get_preprocessed_sheets(conf)
+  assets <- get_assets(conf)
   landings <- get_weighted_landings(conf)
   submissions <- validation_submissions(landings)
 
@@ -95,7 +83,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   gear_type_alerts <- validate_gear_type(submissions)
   site_alerts <- validate_sites(
     submissions,
-    metadata$stations, metadata$reporting_unit
+    frame_sites = assets$sites,
+    frame_geo = assets$geo
   )
   n_fishers_alerts <- validate_n_fishers(
     submissions,
@@ -116,10 +105,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     method = default_method,
     k_fuel = conf$validation$landings$fuel$k
   )
-  conservation_alerts <- validate_conservation(
-    submissions,
-    metadata_conservation = metadata$conservation
-  )
+  conservation_alerts <- validate_conservation(submissions)
   happiness_alerts <- validate_happiness(submissions)
 
   # CREATE VALIDATED OUTPUT -----------------------------------------------
@@ -166,10 +152,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       "happiness"
     )
 
-  # The one validated artefact since migration Phase 8. Until then a second,
-  # nested `.rds` was written beside it for the portal path; that path now gets
-  # the same shape from `get_validated_landings()`, which re-nests this table on
-  # read. The two were proven interchangeable first — see that function.
+  # The only stored validated artefact; the portal path gets its nested shape
+  # from `get_validated_landings()`, which re-nests this table on read.
   logger::log_info("Uploading the long validated catch table")
   coasts::upload_parquet_to_cloud(
     data = long_validated_landings(
@@ -398,10 +382,8 @@ kobo_validation_status <- function(conf, version) {
 #' queue in the form itself. Only submissions whose status differs are patched.
 #'
 #' **Not part of the recurring pipeline, on purpose.** There is no development
-#' KoBoToolbox instance, so this mutates the two live forms whatever
-#' `R_CONFIG_ACTIVE` says — running it from a migration branch would change
-#' production review state. Wire it into a workflow once that is a deliberate
-#' decision rather than a side effect.
+#' KoBoToolbox instance, so this mutates the live forms whatever
+#' `R_CONFIG_ACTIVE` says.
 #'
 #' @param versions Form versions to synchronise. v1 is frozen and has no
 #'   collection.
@@ -467,10 +449,8 @@ sync_validation_status <- function(versions = c("v2", "v3"),
   invisible(results)
 }
 
-# The validated catch columns, under the names the portal has always used.
-# `catch_outcome` and `scientific_name` ride along for the long table and the
-# API export; `nest_landing_catch()` — now in get-cloud-files.R, since Phase 8
-# reshapes on read rather than on write — drops them again.
+# The validated catch columns, under the names the portal uses. `catch_outcome`
+# and `scientific_name` ride along for the long table and the API export.
 rename_validated_catch <- function(catch) {
   catch %>%
     dplyr::transmute(
@@ -480,7 +460,6 @@ rename_validated_catch <- function(catch) {
       .data$catch_use,
       .data$catch_outcome,
       .data$scientific_name,
-      .data$length_type,
       .data$length,
       number_of_fish = .data$n_individuals,
       catch = .data$weight,
@@ -488,15 +467,9 @@ rename_validated_catch <- function(catch) {
     )
 }
 
-# The flat long validated table, and since migration Phase 8 the only one: the
-# validated submission columns joined back onto the validated catch rows, under
-# standard names. `catch_kg` rather than grams, because that is what the
-# cross-country API schema migration Phase 6 conforms to publishes.
-#
-# `submission_extras` carries the columns the retired *nested* artefact never
-# had — the form version and the GAUL administrative codes — so that
-# `export_api_validated()` is a projection of this table rather than a second
-# reconstruction of it.
+# The one stored validated artefact: the validated submission columns joined
+# back onto the validated catch rows. `catch_kg` rather than grams, because that
+# is what the cross-country API publishes.
 long_validated_landings <- function(validated_catch,
                                     validated_landings,
                                     submission_extras) {
@@ -524,7 +497,6 @@ long_validated_landings <- function(validated_catch,
           .data$scientific_name,
           .data$catch_use,
           .data$catch_outcome,
-          .data$length_type,
           .data$length,
           n_individuals = .data$number_of_fish,
           catch_kg = .data$catch / 1000,
@@ -546,22 +518,3 @@ api_submission_extras <- function(landings) {
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
 }
 
-# NOTE: three dead helpers used to live here, all removed in migration Phase 1
-# (AUDIT.md §8.1 and §8.2):
-#
-#   get_preprocessed_metadata()  a second, broken definition reading the
-#                                long-removed `conf$metadata$airtable$name`.
-#                                Collation put this file after
-#                                get-cloud-files.R, so it *shadowed* the
-#                                correct exported definition at
-#                                get-cloud-files.R:110. That one now wins.
-#   get_validation_tables()      read `conf$validation$airtable$*`, removed
-#                                with the orphaned air_* Airtable client.
-#   get_preprocessed_landings()  read `conf$surveys$landings$file_prefix`,
-#                                a key that has never existed.
-#
-# None were exported and none were called.
-
-# NOTE: `get_merged_landings()` moved to get-cloud-files.R with the other
-# storage accessors in migration Phase 4, and split in two: the merged table is
-# parquet now, and so is the weight artefact since Phase 5.

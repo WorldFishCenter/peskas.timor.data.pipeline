@@ -23,10 +23,8 @@ queue in the form itself. Only submissions whose status differs are patched.
 }
 \details{
 \strong{Not part of the recurring pipeline, on purpose.} There is no development
-KoBoToolbox instance, so this mutates the two live forms whatever
-\code{R_CONFIG_ACTIVE} says — running it from a migration branch would change
-production review state. Wire it into a workflow once that is a deliberate
-decision rather than a side effect.
+KoBoToolbox instance, so this mutates the live forms whatever
+\code{R_CONFIG_ACTIVE} says.
 }
 \keyword{validation}
 \keyword{workflow}

@@ -2,20 +2,19 @@
 % Please edit documentation in R/get-cloud-files.R
 \name{get_assets}
 \alias{get_assets}
-\title{Download the Airtable frame assets snapshot}
+\title{Download the Airtable frame mapping tables for Timor}
 \usage{
 get_assets(conf)
 }
 \arguments{
-\item{conf}{The configuration file}
+\item{conf}{The configuration file.}
 }
 \value{
-A named list of asset tables (\code{taxa}, \code{gear}, \code{vessels}, \code{sites},
-\code{geo}, \code{forms}, \code{devices}, \code{frame}).
+A named list of five tibbles: \code{taxa}, \code{gear}, \code{vessels}, \code{sites},
+\code{geo}.
 }
 \description{
-Reads the versioned \code{assets__*.rds} written by \code{\link[=ingest_assets]{ingest_assets()}} from the
-shared coasts hub bucket. The snapshot is \strong{cross-country}: use
-\code{\link[=timor_assets]{timor_assets()}} to narrow a table to Timor's rows.
+Wraps \code{\link[coasts:get_assets]{coasts::get_assets()}}, which downloads the shared snapshot and returns
+only the rows belonging to Timor's survey forms.
 }
 \keyword{storage}

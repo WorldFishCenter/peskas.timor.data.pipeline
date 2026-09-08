@@ -14,8 +14,6 @@ A tibble, one row per (submission, catch, length bin).
 }
 \description{
 The flat long catch table of \code{\link[=merge_landings]{merge_landings()}} with \code{weight} (grams) and the
-seven per-catch nutrient columns added by \code{\link[=calculate_weights]{calculate_weights()}}. Parquet
-since migration Phase 5, when the re-nesting that validation used to need
-was deleted.
+seven per-catch nutrient columns added by \code{\link[=calculate_weights]{calculate_weights()}}.
 }
 \keyword{storage}
