@@ -15,7 +15,7 @@ A tibble: \code{submission_id}, \code{habitat_code}, \code{habitat_type},
 }
 \description{
 Habitat is the one label with no frame equivalent, so
-\code{\link[=preprocess_landings]{preprocess_landings()}} resolves it from the Google Sheets \code{habitat} table.
+\code{\link[=preprocess_landings]{preprocess_landings()}} resolves it from a fixed code-to-label lookup.
 This validator therefore only has to notice a code the lookup does not
 cover.
 }

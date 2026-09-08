@@ -19,7 +19,6 @@ env:
   AIRTABLE_BASE_ID_FRAME: ${{ secrets.AIRTABLE_BASE_ID_FRAME }}
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
-  GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
   # The validation flags sink. Absent → `validate_landings()` warns and the
   # versioned flags snapshot in cloud storage is the only record of a run.
   MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
@@ -67,26 +66,6 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
           cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max
 
-  ingest-preprocess-metadata-tables:
-    name: Ingest metadata tables
-    needs: build-container
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-      - name: Call preprocess_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-        # The Airtable assets snapshot is written daily by the peskas.coasts
-        # pipeline; this pipeline only reads it.
-
   ingest-landings:
     name: Ingest landings
     needs: build-container
@@ -105,7 +84,7 @@ jobs:
 
   preprocess-landings:
     name: Preprocess landings
-    needs: [ingest-landings, ingest-preprocess-metadata-tables]
+    needs: [ingest-landings]
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
@@ -153,7 +132,10 @@ jobs:
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
       - name: Test validated landings
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
   # The cross-country API export, deliberately a leaf so the portal path never
   # depends on it. It reads the weight artefact and the validated long parquet,
@@ -245,7 +227,10 @@ jobs:
       - name: Call validate_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
       - name: Test validated PDS trips
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
   merge-trips:
     name: Merge trips
@@ -263,7 +248,10 @@ jobs:
       - name: Call merge_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
       - name: Test merged_trips
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_merged_trips.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
   model-indicators:
     name: Estimate fishery indicators
@@ -299,5 +287,8 @@ jobs:
       - name: Call export_files()
         run: Rscript -e 'peskas.timor.data.pipeline::export_files()'        
       - name: Test public data
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_public_data.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 

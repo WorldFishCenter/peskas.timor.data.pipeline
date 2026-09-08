@@ -10,8 +10,20 @@ if (file.exists(".env")) dotenv::load_dot_env()
 conf <- peskas.timor.data.pipeline::read_config()
 
 validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
-metadata <- peskas.timor.data.pipeline:::get_preprocessed_sheets(conf)
 assets <- peskas.timor.data.pipeline::get_assets(conf)
+
+# Submissions carrying alert 4, "landing date after submission date". The alert
+# string is a hyphen-separated list, so split it rather than matching "4" inside
+# "14" or "24".
+flagged_dates <-
+  coasts::download_parquet_from_cloud(
+    prefix = conf$surveys$landings$validation$flags$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country")
+  ) |>
+  subset(vapply(strsplit(alert, "-"), function(x) "4" %in% x, logical(1))) |>
+  getElement("submission_id") |>
+  as.integer()
 
 # Function to check if there are negative values in a vector
 any_negative <- . %>% magrittr::is_less_than(0) %>% any() %>% isTRUE()
@@ -39,9 +51,18 @@ expect_false(
   any_negative(na.omit(validated_landings$catch_price)),
   "Negative values in landings")
 
+# A landing date after the submission date is flagged (alert 4) and kept, not
+# blanked: `landing_date` is the merge key and every time aggregation reads it,
+# so dropping the row would hide a correctable typo. The guarantee is therefore
+# that no future date escapes *unflagged*, which is what this asserts.
 expect_false(
-  any(na.omit(validated_landings$landing_date) > (lubridate::with_tz(Sys.Date() + 1, "Asia/Dili"))),
-  "Landing dates larger than current date + 1")
+  any(
+    !is.na(validated_landings$landing_date) &
+      validated_landings$landing_date >
+        as.Date(lubridate::with_tz(Sys.time(), "Asia/Dili")) + 1 &
+      !validated_landings$landing_id %in% flagged_dates
+  ),
+  "Unflagged landing dates larger than current date + 1")
 
 expect_false(
   any(na.omit(validated_landings$landing_date) <

@@ -12,7 +12,6 @@
 #
 # State: `disabled_inactivity`. Re-enabling is a Phase 11 action — the schedule
 # fires from the default branch, which is still pre-migration code and would
-# mail from the retired Google Sheet.
 name: Send validation summary email
 
 on:

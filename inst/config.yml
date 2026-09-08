@@ -155,22 +155,22 @@ default:
   # METADATA — reference data and lookup tables
   # ===========================================================================
   metadata:
-    google_sheets:
-      name: metadata-tables
-      sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
-      tables:
-        # The tracker IMEI roster, spanning every device ever deployed.
-        # Everything the Airtable frame covers is read from there instead.
-        - devices
-    version:
-      preprocess: latest
-
-    # The FAO ASFIS list, read from the country bucket by
-    # `get_taxa_list()` — the same object and the same access path Mozambique
-    # uses. 13,615 rows; the weight path joins it on `Alpha3_Code` to get each
-    # taxon's scientific name. Present in both `timor` and `timor-dev`.
     asfis:
       file_prefix: asfis
+
+    # Every tracker IMEI Timor has deployed. Enumerators write down 7 of a
+    # tracker's 15 digits, so `validate_imeis()` reconstructs the full number by
+    # matching that fragment against this roster.
+    #
+    # It spans retired and redeployed devices, because a submission from any
+    # year can reference one. Refreshed by `data-raw/refresh-tracker-imeis.R`.
+    tracker_imeis:
+      file_prefix: tracker-imeis
+      # The frame's device table is cross-country, so the current half of the
+      # roster is narrowed to Timor's fishing customer. `Traders` and
+      # `FSSP2: Traders` are bicycle projects and are deliberately absent.
+      customers:
+        - "MAF / WorldFish"
 
     # Which coast each landing site is on. Coast is a property of the site, not
     # the municipality, and latitude cannot derive it: two municipalities have

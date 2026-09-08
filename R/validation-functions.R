@@ -583,7 +583,7 @@ validate_vessel_type <- function(submissions) {
 #'
 #' Reads the `gear` label [preprocess_landings()] resolves from the
 #' PESKAS | FRAME frame. Note the frame's labels are Title Case where the
-#' retired Google Sheets `gear_types` table was lower case, and `MC` is
+#' older reference table was lower case, and `MC` is
 #' "Gleaning" where the Sheets said "manual collection".
 #'
 #' @param submissions Output of [validation_submissions()].
@@ -690,7 +690,7 @@ validate_n_fishers <- function(submissions, method, k) {
 #' Validate the recorded habitat
 #'
 #' Habitat is the one label with no frame equivalent, so
-#' [preprocess_landings()] resolves it from the Google Sheets `habitat` table.
+#' [preprocess_landings()] resolves it from a fixed code-to-label lookup.
 #' This validator therefore only has to notice a code the lookup does not
 #' cover.
 #'

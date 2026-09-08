@@ -42,7 +42,6 @@ Imports:
     geosphere,
     git2r,
     glue,
-    googlesheets4,
     httr,
     jsonlite,
     logger,

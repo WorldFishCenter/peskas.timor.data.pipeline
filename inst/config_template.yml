@@ -210,7 +210,6 @@ default:
     # calls fire a second time with NULL provider/options.
     #
     # The block is inert until a reader exists: the validation flags sink
-    # decision (Google Sheets -> MongoDB) is migration Phase 5.
     mongodb:
       connection_strings:
         main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
@@ -264,11 +263,9 @@ default:
   #     `standard_name` / `alpha3_code` comparable between countries, and
   #     therefore what makes the `api` block above meaningful rather than
   #     merely schema-shaped.
-  #   Google Sheets keeps only what Airtable does not cover: Timor's
   #     `habitat` and `conservation`. `morphometric_table` left on 2026-09-05
   #     — its 559 curated length-weight rows are package data now
   #     (`inst/extdata/morphometric-coefficients.csv`), which took the last
-  #     Google Sheet off the weight path; their permanent home is a curated
   #     table in coasts, COASTS-TODO C23. `fishing_vessel_statistics` and
   #     `registered_boats` left in Phase 11.
   #
@@ -278,11 +275,6 @@ default:
   # coasts — no other country implements it.
   # ===========================================================================
   metadata:
-    google_sheets:
-      name: metadata-tables
-      sheet_id: !expr Sys.getenv("GOOGLE_SHEET_ID")
-      tables:
-        - '{table_name}'                                   # 15 today, 5 after Phase 3
     airtable:
       name: assets                                         # prefix of the assets snapshot
       assets: assets                                       # coasts reads both spellings
@@ -333,10 +325,6 @@ default:
   validation:
     landings: {}                                           # thresholds, see config.yml
     pds_trips: {}                                          # trip-level thresholds
-    google_sheets:                                         # current flag sink (Phase 5 decides)
-      file_prefix: validation_alerts
-      sheet_id: !expr Sys.getenv("VALID_SHEET_ID")
-      flags_table: flags
     version:
       preprocess: latest                                   # re-added: Timor reads it
 

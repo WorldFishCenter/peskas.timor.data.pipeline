@@ -6,6 +6,46 @@ into one table. **No published portal figure moves**; the change that is
 outward-visible is the cross-country API's `landing_site` column, which now
 carries the frame's spellings like Kenya, Mozambique and Zanzibar.
 
+### No Google Sheet anywhere
+
+The last table, `devices`, was the tracker IMEI roster. Enumerators write down
+as many digits of a tracker's 15-digit IMEI as they can read — 7 in most
+submissions — so `validate_imeis()` reconstructs the full number by matching
+that fragment against a roster of every device Timor has deployed. It resolves
+**38,973** submissions.
+
+The Airtable frame cannot supply it: `pds_devices` records who owns a device
+*now*, and 144 of these are no longer Timor's. Since coasts 4.11.0 recovered
+those devices' trips, 26 of them have **2,722 trips** in the pipeline, so
+dropping the roster would leave those trips unmatched to any landing.
+
+The roster is a cloud artefact now, `tracker-imeis`, in the country bucket
+beside `asfis`. `tracker_imeis()` unions two halves: the stored archive, which
+holds devices the frame no longer lists, and the frame's current devices, so a
+newly deployed tracker needs no manual step. The archive is immutable and the
+frame half keeps it current — there is nothing to remember to refresh. 595
+IMEIs, 0 suffix-match ambiguity, unchanged resolution.
+
+Gone with it: `ingest_metadata_tables()`, `preprocess_metadata_tables()`,
+`get_preprocessed_sheets()`, the `googlesheets4` dependency, `GOOGLE_SHEET_ID`,
+the `metadata.google_sheets` config block and the
+`ingest-preprocess-metadata-tables` job. **The pipeline is 12 jobs, from 13.**
+
+### A test that could not fail, and an assertion that was wrong
+
+`tinytest::run_test_file()` does not set a non-zero exit status, so all four
+test steps reported success whatever they found. One assertion had in fact been
+failing in CI unnoticed. Each step now exits 1 on failure.
+
+The failing assertion was itself wrong. It required no landing date beyond
+today + 1, which the pipeline never guaranteed: a landing date after the
+submission date raises **alert 4** — 107 submissions today — and the date is
+deliberately kept rather than blanked, because `landing_date` is the merge key
+and drives every time aggregation, so dropping the row would hide a correctable
+typo. The assertion now tests the guarantee that is actually made — no future
+date escapes *unflagged* — reading alert 4 from the flags artefact. Verified
+non-vacuous against the one live case.
+
 ### Site and municipality labels now come from the frame
 
 `preprocess_landings()` already resolved `landing_site` and the GAUL columns
@@ -31,8 +71,8 @@ Measured before the change, against the live dev snapshot:
 The four-case municipality recode (Atauro, plus `Lautém` / `Liquiçá` /
 `Oecussi`) was duplicated in `get_registered_boats()`; it is now the single
 `frame_reporting_region()` helper both call. `reporting_units` was that table's
-last reader, so it leaves `metadata.google_sheets.tables` (see below for
-`stations`, which followed it — four tables remain).
+last reader, so it leaves the Google Sheets metadata tables, as `stations` does
+below.
 
 ### One site→coast table, read by both call sites
 
@@ -60,7 +100,7 @@ join would inflate `n_surveys`); and a region the derived map does not cover
 **errors** in `export_files()`, where an `NA` `Area` would otherwise reach the
 portal as a fourth, null-named area.
 
-### Only one Google Sheets table is left
+### The Google Sheets metadata tables are dismantled
 
 `habitat` and `conservation` are fixed code-to-label lookups — 7 rows and 5 —
 and Kenya, Mozambique and Zanzibar all hold theirs as a `case_when()` in R
@@ -82,8 +122,8 @@ rather than in a spreadsheet. Timor now does the same, in `habitat_labels()` and
   `"TL"` for every taxon but two. Removed, so the preprocessed table is **38
   columns** and the validated table **39**.
 
-That leaves `devices`, the tracker IMEI roster, as the only Google Sheets table
-— from twelve before this work.
+That left `devices`, the tracker IMEI roster, as the last one — see the top of
+this release for how it went too.
 
 ### The raw KoBo passthrough is gone
 

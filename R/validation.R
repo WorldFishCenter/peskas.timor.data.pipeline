@@ -31,7 +31,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_threshold(log_threshold)
 
   conf <- read_config()
-  metadata <- get_preprocessed_sheets(conf)
   assets <- get_assets(conf)
   landings <- get_weighted_landings(conf)
   submissions <- validation_submissions(landings)
@@ -44,7 +43,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 
   # Every deployed IMEI, not only those with an install record: the
   # `device_installs` narrowing has been switched off for years.
-  deployed_imeis <- na.omit(metadata$devices$device_imei)
+  deployed_imeis <- tracker_imeis(conf)
 
   logger::log_info("Validating IMEIs...")
   imei_alerts <- validate_imeis(submissions, deployed_imeis)

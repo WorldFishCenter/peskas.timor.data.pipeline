@@ -247,9 +247,7 @@ get_morphometric_tables <- function(conf) {
 #' crustaceans, echinoderms and seaweed, plus flyingfish. Roughly 4% of national
 #' catch weight rests on them.
 #'
-#' They lived in the Google Sheets `morphometric_table` until 2026-09-05 and are
-#' now a package snapshot, refreshed by
-#' `data-raw/refresh-morphometric-coefficients.R`.
+#' A hand-curated table shipped with the package; edit the CSV directly.
 #'
 #' @return A tibble in [coasts::get_length_weight_coeffs()] shape:
 #'   `alpha3_code`, `species_found`, `Type`, `EsQ`, `a`, `b`.

@@ -338,17 +338,50 @@ timor_form_ids <- function(conf) {
   )
 }
 
-#' Download Peskas metadata
+#' Every tracker IMEI Timor has deployed
 #'
-#' Download preprocessed Peskas metadata from Google Sheets
+#' The roster `validate_imeis()` reconstructs a full IMEI from the digits an
+#' enumerator wrote down. Two sources, unioned: the stored archive, which holds
+#' devices the frame no longer lists because they were retired or transferred,
+#' and the frame's current devices, so a newly deployed tracker needs no manual
+#' step. The archive is immutable; the frame half keeps it current.
 #'
-#' @param conf The configuration file
-#' @keywords storage
-#' @export
-get_preprocessed_sheets <- function(conf) {
-  download_versioned_rds(
-    prefix = paste(conf$metadata$google_sheets$name, "preprocessed", sep = "_"),
+#' The frame's device table is cross-country, so it is narrowed by customer
+#' name. A wider roster is not harmless: enumerators write only part of an IMEI,
+#' and more devices means more chance a fragment matches two.
+#'
+#' @param conf The configuration file.
+#' @return A character vector of IMEIs.
+#' @keywords helper
+#' @noRd
+tracker_imeis <- function(conf) {
+  archive <- coasts::download_parquet_from_cloud(
+    prefix = conf$metadata$tracker_imeis$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country")
+  )$device_imei
+
+  coasts_opts <- coasts::resolve_storage_opts(conf, "coasts")
+  snapshot <- coasts::cloud_object_name(
+    prefix = conf$metadata$airtable$name,
+    provider = conf$storage$google$key,
+    version = "latest",
+    extension = "rds",
+    options = coasts_opts
   )
+  coasts::download_cloud_file(
+    name = snapshot,
+    provider = conf$storage$google$key,
+    options = coasts_opts
+  )
+  devices <- readr::read_rds(snapshot)$devices
+  unlink(snapshot)
+
+  current <- devices$imei[devices$customer_name %in% conf$metadata$tracker_imeis$customers]
+
+  unique(c(
+    as.character(archive),
+    as.character(current[!is.na(current) & nzchar(current)])
+  ))
 }
+

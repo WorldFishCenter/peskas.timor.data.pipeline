@@ -713,12 +713,23 @@ A real upstreaming candidate that should have been on the Phase 10 list.
 
 Timor pools **559** manual coefficient rows over 11 mostly-invertebrate codes
 (`COZ CRA CUX FLY GZP IAX MOO OCZ PEZ SFA SLV`, 98 species) with the FishBase
-fetch, and **4.14%** of national catch weight depends on them. They live in the
-Google Sheets `morphometric_table`, which is why that table cannot be deleted —
-Phase 11a kept it for exactly this reason. The PESKAS | FRAME base is a
-label-mapping layer and is the wrong home; the right one is a coasts-side
-curated table that `get_taxa_morphometrics()` pools automatically. No other
-country has anywhere to put such rows either.
+fetch, and **4.14%** of national catch weight depends on them.
+
+**Updated 2026-09-08:** they are `inst/extdata/morphometric-coefficients.csv`,
+shipped with the package and hand-edited. The earlier note that they "live in
+the Google Sheets `morphometric_table`, which is why that table cannot be
+deleted" is superseded — Timor reads no Google Sheet at all now. So this is no
+longer blocking anything; it is an improvement.
+
+The PESKAS | FRAME base is a label-mapping layer and is the wrong home; the
+right one is a coasts-side curated table that `get_taxa_morphometrics()` pools
+automatically. No other country has anywhere to put such rows either.
+
+Two questions to settle before moving it, unchanged: whether the table is
+**global or per-country** (global means one country's curation moves another's
+published catch), and what happens to the **axis residual** — 362 of the 559
+rows are fitted on CW/CL/ML/ShL and applied to a total length, ~3.5% of national
+catch, and only 12 of 98 curated species have any FishBase conversion.
 
 ### C24. `geo.country` is a record-id link, like `landing_sites.Country`
 
