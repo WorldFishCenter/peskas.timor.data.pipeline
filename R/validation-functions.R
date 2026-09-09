@@ -57,15 +57,36 @@ catch_value_cols <- function() {
 #'
 #' Collapses the long weighted catch table to its submission-level columns.
 #'
+#' `submitted_by` is set to the reporting region, not the KoBo account. One
+#' enumerator covers each of the twelve reporting regions — Atauro has its own,
+#' separate from the rest of Dili — but they share logins: 10 accounts cover
+#' 97,753 submissions and one of them carries 87% of those across every
+#' municipality, so the account name does not identify who collected a landing.
+#' The region does, which is why this uses [frame_reporting_region()] rather
+#' than `gaul_1_name`: that would fold Atauro's 39,968 submissions into Dili's
+#' and merge two enumerators into one.
+#'
+#' Where no region resolves the account name is kept, and the column keeps its
+#' name because the validation app reads it by that name.
+#'
 #' @param landings The long weighted catch table from [get_weighted_landings()].
 #' @return A tibble with one row per submission.
 #' @keywords validation
 #' @export
 validation_submissions <- function(landings) {
   landings %>%
-    dplyr::select(dplyr::all_of(validation_submission_cols())) %>%
+    dplyr::select(dplyr::all_of(
+      c(validation_submission_cols(), "gaul_1_name", "gaul_2_name")
+    )) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(submission_id = as.integer(.data$submission_id))
+    frame_reporting_region() %>%
+    dplyr::mutate(
+      submission_id = as.integer(.data$submission_id),
+      submitted_by = dplyr::coalesce(
+        .data$reporting_region, .data$submitted_by
+      )
+    ) %>%
+    dplyr::select(dplyr::all_of(validation_submission_cols()))
 }
 
 #' Generate an alert vector based on the `univOutl::LocScaleB()` function
