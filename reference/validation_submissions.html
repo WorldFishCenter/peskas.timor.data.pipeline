@@ -54,6 +54,19 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with one row per submission.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>submitted_by</code> is set to the reporting region, not the KoBo account. One
+enumerator covers each of the twelve reporting regions — Atauro has its own,
+separate from the rest of Dili — but they share logins: 10 accounts cover
+97,753 submissions and one of them carries 87% of those across every
+municipality, so the account name does not identify who collected a landing.
+The region does, which is why this uses <code>frame_reporting_region()</code> rather
+than <code>gaul_1_name</code>: that would fold Atauro's 39,968 submissions into Dili's
+and merge two enumerators into one.</p>
+<p>Where no region resolves the account name is kept, and the column keeps its
+name because the validation app reads it by that name.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
