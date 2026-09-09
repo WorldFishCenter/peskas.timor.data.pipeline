@@ -294,9 +294,11 @@ push_validation_flags <- function(conf, flags) {
       collection_name = collection
     )
 
+    # Every submission, not only the flagged ones: the dashboard divides alerted
+    # rows by all rows, so filtering here reports a 100% alert rate. Kenya,
+    # Mozambique and Zanzibar all push the full set.
     coasts::mdb_collection_push(
       data = out %>%
-        dplyr::filter(!is.na(.data$alert_flag)) %>%
         tidyr::separate_rows("alert_flag", sep = ",\\s*") %>%
         dplyr::select(-tidyselect::starts_with("valid")),
       connection_string = mdb$connection_strings$validation,

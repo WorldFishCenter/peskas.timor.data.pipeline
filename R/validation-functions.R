@@ -62,7 +62,7 @@ catch_value_cols <- function() {
 #' separate from the rest of Dili — but they share logins: 10 accounts cover
 #' 97,753 submissions and one of them carries 87% of those across every
 #' municipality, so the account name does not identify who collected a landing.
-#' The region does, which is why this uses [frame_reporting_region()] rather
+#' The region does, which is why this uses `frame_reporting_region()` rather
 #' than `gaul_1_name`: that would fold Atauro's 39,968 submissions into Dili's
 #' and merge two enumerators into one.
 #'
