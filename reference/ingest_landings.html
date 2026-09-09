@@ -11,7 +11,7 @@ to the country bucket."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@ threshold for the logging infrastructure. See <a href="https://daroczig.github.i
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Only the <strong>live</strong> forms are ingested. <code>v1</code> (SSF Landings) received its last
 submission on 2020-08-28 and is frozen: its preprocessed output was snapshot
-once by <code>data-raw/freeze-landings-v1.R</code> and is read from
+once, out of band, and is read from
 <code>surveys.landings.v1.frozen</code> thereafter.</p>
 <p>The parameters needed in <code>config.yml</code> are:</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>ingestion<span class="sc">:</span></span>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,31 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.0.0" id="peskastimordatapipeline-500">peskas.timor.data.pipeline 5.0.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-500"></a></h2>
+<p>This release completes the move to a single source of reference data. Landing site names, municipalities, gears, vessels and species codes now all come from the shared Peskas reference base, the same one Kenya, Mozambique and Zanzibar use, so a site or species means the same thing in every country’s data. The spreadsheets that used to hold some of this are gone.</p>
+<div class="section level3">
+<h3 id="what-changes-in-the-published-data-5-0-0">What changes in the published data<a class="anchor" aria-label="anchor" href="#what-changes-in-the-published-data-5-0-0"></a></h3>
+<ul><li><p><strong>Landing site names</strong> now use the shared spellings. Eleven of the forty sites are affected. These names appear in the cross-country dataset, not on the Timor portal, so the portal’s own figures are unaffected.</p></li>
+<li><p><strong>One landing site was filed under the wrong municipality.</strong> Welaluhu was recorded as being in Manatuto and is in fact in Manufahi. It is a single landing out of roughly 95,000, but because municipal figures are averages, correcting it shifts the reported catch and average landing weight for both municipalities. It does not move any coast-level or national total, since both municipalities are on the south coast.</p></li>
+<li><p><strong>North and south coast are now decided by the landing site, not the municipality.</strong> Two municipalities have landing sites on both coasts, so deciding by municipality misfiled some of them. National and coast totals come out identical to before this change, but the rule now has one definition instead of two that had drifted apart.</p></li>
+<li><p><strong>GPS tracking data is more complete.</strong> Around 2,800 fishing trips had been dropped because their tracker had since been reassigned to a different project; they are back. In the other direction, around 1,400 journeys that were not fishing trips at all — bicycle trips from a separate transport project sharing the same tracking account — are now excluded. Both affect reported fishing effort, and municipalities differ in how much.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="for-anyone-running-the-pipeline-5-0-0">For anyone running the pipeline<a class="anchor" aria-label="anchor" href="#for-anyone-running-the-pipeline-5-0-0"></a></h3>
+<p>This is a major version because installed function names and stored table layouts changed.</p>
+<ul><li><p><strong>No Google Sheets access is needed.</strong> <code>GOOGLE_SHEET_ID</code> is no longer used, and the pipeline step that read the spreadsheets is gone. The one thing they still held — the roster of tracker serial numbers, which is needed because fieldworkers can only note down part of each number — is now kept in cloud storage and maintained by the pipeline itself, so it needs no manual updates.</p></li>
+<li><p><strong>Functions removed:</strong> <code>ingest_metadata_tables()</code>, <code>preprocess_metadata_tables()</code>, <code>get_preprocessed_sheets()</code>, <code>timor_assets()</code>, <code>ingest_assets()</code>. Reference data is read with <code><a href="../reference/get_assets.html">get_assets()</a></code>; the shared reference snapshot is now written by the hub package rather than by this pipeline, as it already was for the other countries.</p></li>
+<li><p><strong>The stored survey table is narrower</strong>, 38 columns instead of 98. The removed columns were untranslated copies of columns that already existed, survey-software bookkeeping nothing read, and a field carrying the fieldworker’s phone identifier, which had no reason to be stored.</p></li>
+<li><p><strong><code><a href="../reference/check_portal_contract.html">check_portal_contract()</a></code></strong> is new and exported. It compares a set of published portal files against a reference and reports any change in structure.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="reliability-fixes-5-0-0">Reliability fixes<a class="anchor" aria-label="anchor" href="#reliability-fixes-5-0-0"></a></h3>
+<ul><li><p><strong>Published files are now checked on every run.</strong> The website finds its data files by searching for them by name, so a renamed file or a dropped field would have quietly removed a section of the site with nothing failing. Each run now compares what it just published against a reference structure and stops if they differ.</p></li>
+<li><p><strong>Four checks could not fail.</strong> The pipeline’s data checks reported success regardless of what they found, because of how their results were read. They now stop the run. One check had in fact been failing unnoticed — and was itself wrong: it objected to future-dated catches, which the pipeline deliberately keeps and flags for review rather than discarding. It now verifies that no future date goes unflagged.</p></li>
+<li><p><strong>Two errors that pointed at the wrong cause.</strong> A failed download used to surface as an unrelated file-format error, and a missing reference-data setting used to be silently substituted with the wrong region. Both now say what actually went wrong.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="4.0.0" id="peskastimordatapipeline-400">peskas.timor.data.pipeline 4.0.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-400"></a></h2>
 <p>Alignment of the Timor pipeline to the harmonized Peskas standard shared with the Mozambique, Kenya and Zanzibar pipelines. Timor was the first Peskas pipeline and predates the conventions the others share, so most of this release is structural. The portal <em>contract</em> — the seven <code>portal-*.json</code> objects, their keys, nesting, categories and column types — is deliberately unchanged. The <strong>figures inside it move</strong>, and that is the first section below.</p>
@@ -63,7 +88,7 @@
 <strong><code>metadata.fishbase.db_version: "25.04"</code></strong> in <code>inst/config.yml</code>, read by <code><a href="https://rdrr.io/pkg/coasts/man/resolve_db_version.html" class="external-link">coasts::resolve_db_version()</a></code> and resolved once per call so a run cannot mix snapshots. This requires <strong>coasts &gt;= 4.10.0</strong>, which is now a hard floor. <code>conf</code> is passed to both <code>get_taxa_morphometrics()</code> call sites — without it coasts resolves <code>"latest"</code> from its own configuration and the pin does nothing.</li>
 <li>
 <strong><code>assert_taxa_coverage()</code></strong> fails the run when any taxon but the two documented exemptions resolves to no coefficient pair, so a vanished taxon cannot reach the portal silently. This is what caught the above.</li>
-</ul><p>Every figure in the section above was measured on 25.04. Moving the key re-baselines the portal and should be done deliberately, with <code>data-raw/compare-portal-json.R</code> run against the change.</p>
+</ul><p>Every figure in the section above was measured on 25.04. Moving the key re-baselines the portal and should be done deliberately, with the portal contract check run against the change.</p>
 </div>
 <div class="section level4">
 <h4 id="breaking-changes-4-0-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-4-0-0"></a></h4>
@@ -74,7 +99,7 @@
 <li><p><strong>Interchange format is flat long parquet</strong>, one row per (submission, catch, length bin), from raw through validated. No <code>.rds</code> artefact is left on the survey path; <code><a href="../reference/get_validated_landings.html">get_validated_landings()</a></code> re-nests the parquet on read for the portal path, which is why that path did not change.</p></li>
 <li><p><strong>KoBo retrieval, PDS ingestion and the Airtable frame are delegated.</strong> <code>ingest-pds-data.R</code>, <code>retrieve-pds-data.R</code>, <code>retrieve-survey-data.R</code>, <code>preprocess_pds_trips()</code> and Timor’s own <code>air_*</code> client are deleted; the pipeline calls <code><a href="https://rdrr.io/pkg/coasts/man/get_kobo_data.html" class="external-link">coasts::get_kobo_data()</a></code>, <code><a href="https://rdrr.io/pkg/coasts/man/ingest_pds_trips.html" class="external-link">coasts::ingest_pds_trips()</a></code>, <code><a href="https://rdrr.io/pkg/coasts/man/ingest_pds_tracks.html" class="external-link">coasts::ingest_pds_tracks()</a></code> and <code><a href="https://rdrr.io/pkg/coasts/man/ingest_assets.html" class="external-link">coasts::ingest_assets()</a></code>.</p></li>
 <li><p><strong>Validation flags go to MongoDB</strong>, one <code>surveys_flags-&lt;asset_id&gt;</code> collection per live form in the shared <code>validation-{dev,prod}</code> database, replacing the Google Sheets sink. This is what puts Timor into the cross-country validation UI.</p></li>
-<li><p><strong>The v1 form is frozen</strong> (last submission 2020-08-28). It is neither ingested nor preprocessed; <code><a href="../reference/merge_landings.html">merge_landings()</a></code> reads a snapshot produced once per environment by <code>data-raw/freeze-landings-v1.R</code>, which also converted v1’s fork lengths to total length.</p></li>
+<li><p><strong>The v1 form is frozen</strong> (last submission 2020-08-28). It is neither ingested nor preprocessed; <code><a href="../reference/merge_landings.html">merge_landings()</a></code> reads a snapshot produced once per environment by <code>inst/freeze-landings-v1.R</code>, which also converted v1’s fork lengths to total length.</p></li>
 <li><p>Reference data is now the shared <strong>PESKAS | FRAME</strong> Airtable base wherever it overlaps the Google Sheets metadata tables — taxa, gears, vessels, landing sites, districts and PDS devices. The Sheets shrink accordingly.</p></li>
 <li><p>The resolved configuration is named <code>conf</code> throughout, not <code>pars</code>.</p></li>
 </ul></div>
@@ -355,7 +380,7 @@
 <div class="section level4">
 <h4 id="new-features-0-6-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h4>
 <ul><li>Added <code>air_get_records()</code> and <code>air_records_to_tibble()</code> to retrieve and process records from Airtable</li>
-<li>Added <code>pt_validate_boats()</code>, <code><a href="../reference/pt_validate_devices.html">pt_validate_devices()</a></code>, and <code>pt_validate_vms_installs()</code> to perform basic data validation from the metadata tables</li>
+<li>Added <code>pt_validate_boats()</code>, <code>pt_validate_devices()</code>, and <code>pt_validate_vms_installs()</code> to perform basic data validation from the metadata tables</li>
 </ul></div>
 <div class="section level4">
 <h4 id="improvements-0-6-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-6-0"></a></h4>
@@ -365,15 +390,15 @@
 <div class="section level4">
 <h4 id="breaking-changes-0-6-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-6-0"></a></h4>
 <ul><li>
-<code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> and <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> now use logic to use Airtable instead og Google Sheets</li>
+<code>ingest_metadata_tables()</code> and <code>preprocess_metadata_tables()</code> now use logic to use Airtable instead og Google Sheets</li>
 </ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="peskastimordatapipeline-050">peskas.timor.data.pipeline 0.5.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-050"></a></h2>
 <div class="section level4">
 <h4 id="new-features-0-5-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-5-0"></a></h4>
-<ul><li>Added <code><a href="../reference/ingest_metadata_tables.html">ingest_metadata_tables()</a></code> to ingest data about boats, species, municipalities, etc.</li>
-<li>Added <code><a href="../reference/preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code> to preprocess the data from the metadata ingestion.</li>
+<ul><li>Added <code>ingest_metadata_tables()</code> to ingest data about boats, species, municipalities, etc.</li>
+<li>Added <code>preprocess_metadata_tables()</code> to preprocess the data from the metadata ingestion.</li>
 <li>Added <code>pt_get_devices_table()</code> and <code>pt_validate_flags()</code> as helper functions for the metadata preprocessing.</li>
 </ul></div>
 <div class="section level4">

@@ -1,14 +1,8 @@
 # Extract per-trip descriptors from PDS tracks
 
-The one PDS product `coasts` has no equivalent for, and the reason Timor
-still has a track-preprocessing step at all after migration Phase 7
-moved ingestion to `coasts::*`.
-[`coasts::preprocess_pds_tracks()`](https://rdrr.io/pkg/coasts/man/preprocess_pds_tracks.html)
-aggregates track points into 500 m and 1 km spatial grid cells for the
-shared effort products;
+One row per trip, carrying the geometry and signal-quality measures
 [`validate_pds_trips()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_trips.md)
-needs something different — one row per trip carrying the geometry and
-signal-quality measures its alerts are built on:
+builds its alerts on:
 
 ## Usage
 

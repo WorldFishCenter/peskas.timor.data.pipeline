@@ -3,8 +3,8 @@
 Reads the `gear` label
 [`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
 resolves from the PESKAS \| FRAME frame. Note the frame's labels are
-Title Case where the retired Google Sheets `gear_types` table was lower
-case, and `MC` is "Gleaning" where the Sheets said "manual collection".
+Title Case where the older reference table was lower case, and `MC` is
+"Gleaning" where the Sheets said "manual collection".
 
 ## Usage
 

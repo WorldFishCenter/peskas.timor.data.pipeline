@@ -2,11 +2,8 @@
 
 Reads the `vessel_type` label
 [`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
-resolves from the PESKAS \| FRAME frame, which is authoritative for
-vessels (PLAN §2.5). Both codes the live forms use resolve, so alert 12
-is currently never raised; the Google Sheets `vessel_types` table it
-replaced additionally carried a code 3 "gleaning" that no submission has
-ever recorded.
+resolves from the Airtable frame. Both codes the live forms use resolve,
+so alert 12 is currently never raised.
 
 ## Usage
 

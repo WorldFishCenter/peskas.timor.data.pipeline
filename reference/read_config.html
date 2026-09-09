@@ -9,7 +9,7 @@ convenience."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,9 +52,8 @@ convenience.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Environment variables are loaded from <code>.env</code> first (see <code><a href="load_dotenv.html">load_dotenv()</a></code>), so
-local runs and CI resolve the <em>same</em> configuration branch and differ only by
-<code>R_CONFIG_ACTIVE</code>. The former <code>local:</code> environment, which read plaintext
-files from <code>auth/</code>, no longer exists.</p>
+local runs and CI resolve the same configuration branch and differ only by
+<code>R_CONFIG_ACTIVE</code>.</p>
 <p>The configuration file is <code>inst/config.yml</code>. <code>conf.yml</code> is still accepted as
 a fallback so that an older installed copy of the package keeps resolving.</p>
     </div>

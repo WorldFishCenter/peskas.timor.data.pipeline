@@ -1,11 +1,9 @@
-# Download the Airtable frame assets snapshot
+# Download the Airtable frame mapping tables for Timor
 
-Reads the versioned `assets__*.rds` written by
-[`ingest_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_assets.md)
-from the shared coasts hub bucket. The snapshot is **cross-country**:
-use
-[`timor_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/timor_assets.md)
-to narrow a table to Timor's rows.
+Wraps
+[`coasts::get_assets()`](https://rdrr.io/pkg/coasts/man/get_assets.html),
+which downloads the shared snapshot and returns only the rows belonging
+to Timor's survey forms.
 
 ## Usage
 
@@ -17,9 +15,8 @@ get_assets(conf)
 
 - conf:
 
-  The configuration file
+  The configuration file.
 
 ## Value
 
-A named list of asset tables (`taxa`, `gear`, `vessels`, `sites`, `geo`,
-`forms`, `devices`, `frame`).
+A named list of five tibbles: `taxa`, `gear`, `vessels`, `sites`, `geo`.

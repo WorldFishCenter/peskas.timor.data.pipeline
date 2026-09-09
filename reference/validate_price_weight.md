@@ -53,11 +53,5 @@ A list with `alerts` (one row per submission, carrying the validated
 
 ## Details
 
-The relationship between weight and price is mostly linear, and this
-function used to also compute a per-submission Cook's distance from a
-`log(price) ~ log(weight)` fit. That term has been commented out of the
-threshold for as long as the fixed band has existed, so the fit — a
-[`stats::lm()`](https://rdrr.io/r/stats/lm.html) plus a `broom`
-augmentation over ~90k submissions, one of the two most expensive steps
-in validation — was deleted in migration Phase 5. The `cook_dist`
-parameter is retained because `config.yml` still supplies it.
+The `cook_dist` parameter is unused and retained only because
+`config.yml` still supplies it.

@@ -28,10 +28,6 @@ no outputs. This function is used for it's side effects
 
 ## Details
 
-Kept as a Timor function in migration Phase 7 — `coasts` has no
-consecutive-trip merging and no distance or outlier logic — and listed
-as an upstream candidate for Phase 10.
-
 The parameters needed in the config file are `pds.pds_trips.*`,
 `pds.pds_tracks.descriptors.*` and the `validation.pds_trips`
 coefficients.

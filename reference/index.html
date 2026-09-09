@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,24 +92,10 @@
 
         <dt>
 
-          <code><a href="ingest_assets.html">ingest_assets()</a></code>
-
-        </dt>
-        <dd>Ingest the Airtable frame assets snapshot</dd>
-
-        <dt>
-
           <code><a href="ingest_landings.html">ingest_landings()</a></code>
 
         </dt>
         <dd>Ingest landings surveys from KoboToolbox</dd>
-
-        <dt>
-
-          <code><a href="ingest_metadata_tables.html">ingest_metadata_tables()</a></code>
-
-        </dt>
-        <dd>Ingest metadata tables</dd>
 
         <dt>
 
@@ -131,13 +117,6 @@
 
         </dt>
         <dd>Pre-process the landing surveys into a flat long catch table</dd>
-
-        <dt>
-
-          <code><a href="preprocess_metadata_tables.html">preprocess_metadata_tables()</a></code>
-
-        </dt>
-        <dd>Preprocess metadata tables</dd>
 
         <dt>
 
@@ -169,7 +148,7 @@
       </dl></div><div class="section level2">
       <h2 id="cloud-storage">Cloud storage<a class="anchor" aria-label="anchor" href="#cloud-storage"></a></h2>
 
-      <div class="section-desc"><p>Accessors over the versioned artefacts in Google Cloud Storage. The storage layer itself is <code>coasts::*</code> since migration Phase 2; these resolve the latest version of each artefact and give it back in the shape its readers expect.</p></div>
+      <div class="section-desc"><p>Accessors over the versioned artefacts in Google Cloud Storage. The storage layer itself is <code>coasts::*</code>; these resolve the latest version of each artefact and give it back in the shape its readers expect.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -181,7 +160,7 @@
           <code><a href="get_assets.html">get_assets()</a></code>
 
         </dt>
-        <dd>Download the Airtable frame assets snapshot</dd>
+        <dd>Download the Airtable frame mapping tables for Timor</dd>
 
         <dt>
 
@@ -203,13 +182,6 @@
 
         </dt>
         <dd>Download models estimates</dd>
-
-        <dt>
-
-          <code><a href="get_preprocessed_sheets.html">get_preprocessed_sheets()</a></code>
-
-        </dt>
-        <dd>Download Peskas metadata</dd>
 
         <dt>
 
@@ -249,13 +221,6 @@
 
 
       <dl><dt>
-
-          <code><a href="ingest_assets.html">ingest_assets()</a></code>
-
-        </dt>
-        <dd>Ingest the Airtable frame assets snapshot</dd>
-
-        <dt>
 
           <code><a href="ingest_landings.html">ingest_landings()</a></code>
 
@@ -298,20 +263,6 @@
 
         </dt>
         <dd>Pre-process the landing surveys into a flat long catch table</dd>
-
-        <dt>
-
-          <code><a href="pt_validate_catch_types.html">pt_validate_catch_types()</a></code>
-
-        </dt>
-        <dd>Parse and validate catch types table</dd>
-
-        <dt>
-
-          <code><a href="pt_validate_devices.html">pt_validate_devices()</a></code>
-
-        </dt>
-        <dd>Parse and validate devices table</dd>
 
         <dt>
 
@@ -508,6 +459,13 @@
 
       <dl><dt>
 
+          <code><a href="check_portal_contract.html">check_portal_contract()</a></code>
+
+        </dt>
+        <dd>Check the portal JSON contract</dd>
+
+        <dt>
+
           <code><a href="export_api_raw.html">export_api_raw()</a></code>
 
         </dt>
@@ -576,7 +534,7 @@
           <code><a href="convert_taxa_names.html">convert_taxa_names()</a></code>
 
         </dt>
-        <dd>Convert taxa codes to common names</dd>
+        <dd>Assign each taxon code to a broad species group</dd>
 
         <dt>
 
@@ -584,6 +542,13 @@
 
         </dt>
         <dd>Fill missing regions</dd>
+
+        <dt>
+
+          <code><a href="get_airtable_form_id.html">get_airtable_form_id()</a></code>
+
+        </dt>
+        <dd>Resolve a KoBo asset id to its Airtable form record id</dd>
 
         <dt>
 
@@ -640,13 +605,6 @@
 
         </dt>
         <dd>Read configuration file</dd>
-
-        <dt>
-
-          <code><a href="timor_assets.html">timor_assets()</a></code>
-
-        </dt>
-        <dd>Keep only Timor's rows of an assets table</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -13,7 +13,7 @@ of a, arithmetic mean of b."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,8 +93,8 @@ synonym (<code>"Haemulidae (=Pomadasyidae)"</code>) and match nothing as written
 therefore averaged fork-length and standard-length fits into one number and
 applied it to TL, which overestimates weight, because FL and SL are shorter
 than TL (medians here: FL 0.958 TL, SL 0.827 TL).</p>
-<p><code>length_length</code> is fetched by the same call and was previously discarded.
-It is now used to restate every convertible pair on a TL basis. POPLL fits
+<p><code>length_length</code>, fetched by the same call, restates every convertible pair on
+a TL basis. POPLL fits
 <code>Length1 = aL + bL * Length2</code> — <strong>the second column is the predictor</strong> — so
 the ratio <code>L_type / TL</code> is <code>bL</code> when <code>Length2</code> is <code>TL</code> and <code>1 / bL</code> when
 <code>Length1</code> is. Substituting <code>L_type ~= ratio * TL</code> into <code>W = a * L_type^b</code>
@@ -122,7 +122,7 @@ the filter and are never area-restricted — and, being bound after the
 conversion above, they are never restated either. That is deliberate: their
 <code>Type</code> values (<code>CW</code>, <code>ShL</code>, <code>ML</code>, <code>CL</code>) are invertebrate axes FishBase
 carries no conversion for, and field practice measures those taxa on total
-length anyway (confirmed 2026-08-10).</p>
+length anyway.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

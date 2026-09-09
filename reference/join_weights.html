@@ -13,7 +13,7 @@ convert catch  labels according to the FAO nomenclature
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,15 +77,7 @@ convert catch  labels according to the FAO nomenclature
 
 <p><strong>Every length reaching this function is a total length.</strong> v2 and v3 record
 TL; v1 recorded fork length and was converted once, at the freeze
-(<code>data-raw/freeze-landings-v1.R</code>, migration Phase 3).</p>
-<p><code>length_type</code> is carried through from <code>catch_types</code> and is <strong>descriptive
-only</strong> — it selects nothing and converts nothing. It is non-<code>NA</code> for five
-invertebrate taxa (<code>SLV</code> CL, <code>OCZ</code> ML, <code>IAX</code> ML, <code>CRA</code> CW, <code>COZ</code> ShL), but
-enumerators measure those on total length in the field, which is what the
-<code>OCZ</code>/<code>SLV</code>/<code>IAX</code>/<code>MOO</code> overrides below encode. Confirmed 2026-08-10.</p>
-<p>The prose this replaced claimed the opposite of the code — "total length
-(TL) in survey version 1 and fork length (FL) in survey version 2" — and an
-<code>SRX</code> → disk-width rule that was never implemented. Both were wrong.</p>
+(done once in the freeze).</p>
     </div>
     <div class="section level2">
     <h2 id="input-and-output-shape">Input and output shape<a class="anchor" aria-label="anchor" href="#input-and-output-shape"></a></h2>
@@ -95,11 +87,6 @@ enumerators measure those on total length in the field, which is what the
 bin) — with the taxon already resolved from the assets snapshot by
 <code><a href="preprocess_landings.html">preprocess_landings()</a></code>. The output adds <code>weight</code> (grams) and the seven
 per-catch nutrient columns and changes nothing else.</p>
-<p>Until migration Phase 5 this function also re-nested the catch columns into
-<code>species_group</code> / <code>length_individuals</code> and dropped the standard submission
-columns, purely so the validators could keep reading raw KoBo names off a
-legacy-shaped artefact. <code><a href="validate_landings.html">validate_landings()</a></code> reads the long table now, so
-the bridge is gone and the artefact is parquet like every stage before it.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

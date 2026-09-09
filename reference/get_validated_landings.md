@@ -26,14 +26,6 @@ A tibble of validated survey landings, one row per submission.
 
 ## Details
 
-Until migration Phase 8 this read a second stored artefact,
-`timor-landings-merged_validated__*.rds`, written by
-[`validate_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.md)
-beside the long parquet. That artefact is gone: this is now a **view**
-over
+This is a view over
 [`get_validated_landings_long()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validated_landings_long.md),
-rebuilt by `nest_landing_catch()`. The two were proven interchangeable
-before the switch — 97,360 submissions and 1,648,016 catch rows compared
-column by column, every column equal, with 1,599 catch weights differing
-by at most 2.9e-11 g (one ULP of the grams → kg → grams round trip) and
-the national total unchanged to 20 significant digits.
+re-nested on read; there is no separate stored artefact in this shape.

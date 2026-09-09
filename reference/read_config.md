@@ -17,9 +17,8 @@ the environment parameters
 
 Environment variables are loaded from `.env` first (see
 [`load_dotenv()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/load_dotenv.md)),
-so local runs and CI resolve the *same* configuration branch and differ
-only by `R_CONFIG_ACTIVE`. The former `local:` environment, which read
-plaintext files from `auth/`, no longer exists.
+so local runs and CI resolve the same configuration branch and differ
+only by `R_CONFIG_ACTIVE`.
 
 The configuration file is `inst/config.yml`. `conf.yml` is still
 accepted as a fallback so that an older installed copy of the package

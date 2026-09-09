@@ -13,7 +13,7 @@ into its standard label along the way."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +58,7 @@ into its standard label along the way.</p>
 <dl><dt id="arg-versions">versions<a class="anchor" aria-label="anchor" href="#arg-versions"></a></dt>
 <dd><p>Character vector of form versions to pre-process. Defaults to
 the live forms, <code>c("v2", "v3")</code>. <code>v1</code> is frozen — see
-<code>data-raw/freeze-landings-v1.R</code>.</p></dd>
+a one-off freeze script, out of band.</p></dd>
 
 
 <dt id="arg-log-threshold">log_threshold<a class="anchor" aria-label="anchor" href="#arg-log-threshold"></a></dt>
@@ -94,11 +94,7 @@ threshold for the logging infrastructure. See <a href="https://daroczig.github.i
 (<code>submission_id</code>, <code>landing_date</code>, <code>gaul_*</code>, <code>landing_site</code>, <code>n_fishers</code>,
 <code>trip_duration</code>, <code>gear</code>, <code>vessel_type</code>, <code>habitat</code>, <code>catch_outcome</code>,
 <code>n_catch</code>, <code>catch_taxon</code>, <code>scientific_name</code>, <code>length</code>, <code>catch_price</code>,
-<code>mesh_size</code>, <code>n_gleaners</code>, <code>fuel</code>, <code>happiness</code>, …) it carries every raw KoBo
-column, reconciled across form versions exactly as <code>merge_versions()</code> used
-to reconcile them after the merge. Nothing reads the raw columns any more —
-<code><a href="validate_landings.html">validate_landings()</a></code> moved onto the standard names in migration Phase 5 —
-and they are dropped with the other legacy passthrough in Phase 11.</p>
+<code>mesh_size</code>, <code>n_gleaners</code>, <code>fuel</code>, <code>happiness</code>, …).</p>
 <p>The raw form codes are kept beside their resolved labels
 (<code>landing_site_code</code>, <code>gear_code</code>, <code>vessel_code</code>, <code>habitat_code</code>) because
 validation needs both: an unrecognised code is exactly what alerts 12, 14,
@@ -108,12 +104,8 @@ validation needs both: an unrecognised code is exactly what alerts 12, 14,
     <h2 id="labels">Labels<a class="anchor" aria-label="anchor" href="#labels"></a></h2>
 
 
-<p>Taxa, gear, vessels and landing sites are resolved from the PESKAS | FRAME
-assets snapshot, which is authoritative wherever it overlaps the Google
-Sheets tables. Habitat has no frame equivalent and stays on the Sheets, as
-does the per-taxon <code>length_type</code> (descriptive only — see <code><a href="join_weights.html">join_weights()</a></code>).
-The snapshot is cross-country and carries no <code>country</code> column, so every read
-is narrowed with <code><a href="timor_assets.html">timor_assets()</a></code>.</p>
+<p>Taxa, gear, vessels and landing sites are resolved from the Airtable frame
+via <code><a href="get_assets.html">get_assets()</a></code>. Habitat is a fixed code-to-label lookup.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -212,20 +212,14 @@ from `.github/workflows/data-pipeline.yaml` by name.
   storage
 - [`format_public_data()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/format_public_data.md)
   : Format public data
-- [`ingest_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_assets.md)
-  : Ingest the Airtable frame assets snapshot
 - [`ingest_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_landings.md)
   : Ingest landings surveys from KoboToolbox
-- [`ingest_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_metadata_tables.md)
-  : Ingest metadata tables
 - [`merge_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_landings.md)
   : Merge the pre-processed landings of every form version
 - [`merge_trips()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_trips.md)
   : Merge trips
 - [`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
   : Pre-process the landing surveys into a flat long catch table
-- [`preprocess_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_metadata_tables.md)
-  : Preprocess metadata tables
 - [`sync_validation_status()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/sync_validation_status.md)
   : Write validation statuses back to KoBoToolbox
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
@@ -238,20 +232,17 @@ from `.github/workflows/data-pipeline.yaml` by name.
 ## Cloud storage
 
 Accessors over the versioned artefacts in Google Cloud Storage. The
-storage layer itself is `coasts::*` since migration Phase 2; these
-resolve the latest version of each artefact and give it back in the
-shape its readers expect.
+storage layer itself is `coasts::*`; these resolve the latest version of
+each artefact and give it back in the shape its readers expect.
 
 - [`get_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_assets.md)
-  : Download the Airtable frame assets snapshot
+  : Download the Airtable frame mapping tables for Timor
 - [`get_merged_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_landings.md)
   : Download the merged landings
 - [`get_merged_trips()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_merged_trips.md)
   : Download Peskas surveys and PDS data
 - [`get_models()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_models.md)
   : Download models estimates
-- [`get_preprocessed_sheets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_preprocessed_sheets.md)
-  : Download Peskas metadata
 - [`get_tracks_descriptors()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_tracks_descriptors.md)
   : Extract summaries from one pds track
 - [`get_validated_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validated_landings.md)
@@ -265,8 +256,6 @@ shape its readers expect.
 
 Functions dedicated to the ingestion module.
 
-- [`ingest_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_assets.md)
-  : Ingest the Airtable frame assets snapshot
 - [`ingest_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_landings.md)
   : Ingest landings surveys from KoboToolbox
 
@@ -283,10 +272,6 @@ Functions dedicated to the preprocessing module.
   : Merge the pre-processed landings of every form version
 - [`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
   : Pre-process the landing surveys into a flat long catch table
-- [`pt_validate_catch_types()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_catch_types.md)
-  : Parse and validate catch types table
-- [`pt_validate_devices()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_devices.md)
-  : Parse and validate devices table
 - [`reshape_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/reshape_landings.md)
   : Reshape one raw landings table into the flat long catch table
 - [`reshape_species_groups()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/reshape_species_groups.md)
@@ -352,6 +337,8 @@ Publication of processed and analysed fisheries data — the portal JSON
 contract, the cross-country API parquet, Dataverse and the emailed
 reports.
 
+- [`check_portal_contract()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/check_portal_contract.md)
+  : Check the portal JSON contract
 - [`export_api_raw()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_raw.md)
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
@@ -374,9 +361,11 @@ Reshaping, taxonomy, geometry and configuration helpers.
 - [`add_version()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/add_version.md)
   : Add timestamp and sha string to a file name
 - [`convert_taxa_names()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/convert_taxa_names.md)
-  : Convert taxa codes to common names
+  : Assign each taxon code to a broad species group
 - [`fill_missing_regions()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/fill_missing_regions.md)
   : Fill missing regions
+- [`get_airtable_form_id()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_airtable_form_id.md)
+  : Resolve a KoBo asset id to its Airtable form record id
 - [`get_distance()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_distance.md)
   : Estimate distance between consecutive trips
 - [`get_fao_composition()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_fao_composition.md)
@@ -393,6 +382,4 @@ Reshaping, taxonomy, geometry and configuration helpers.
   : Merge short intervalled trips
 - [`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
   : Read configuration file
-- [`timor_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/timor_assets.md)
-  : Keep only Timor's rows of an assets table
 

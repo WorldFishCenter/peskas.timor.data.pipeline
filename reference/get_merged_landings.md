@@ -2,8 +2,7 @@
 
 The merged table is the flat long catch table produced by
 [`merge_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_landings.md):
-one row per (submission, catch, length bin), parquet since migration
-Phase 4.
+one row per (submission, catch, length bin).
 
 ## Usage
 

@@ -31,7 +31,7 @@ No output. This function is used for its side effects.
 
 Only the **live** forms are ingested. `v1` (SSF Landings) received its
 last submission on 2020-08-28 and is frozen: its preprocessed output was
-snapshot once by `data-raw/freeze-landings-v1.R` and is read from
+snapshot once, out of band, and is read from
 `surveys.landings.v1.frozen` thereafter.
 
 The parameters needed in `config.yml` are:

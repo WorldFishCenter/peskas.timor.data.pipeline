@@ -55,15 +55,14 @@ fork-length and standard-length fits into one number and applied it to
 TL, which overestimates weight, because FL and SL are shorter than TL
 (medians here: FL 0.958 TL, SL 0.827 TL).
 
-`length_length` is fetched by the same call and was previously
-discarded. It is now used to restate every convertible pair on a TL
-basis. POPLL fits `Length1 = aL + bL * Length2` — **the second column is
-the predictor** — so the ratio `L_type / TL` is `bL` when `Length2` is
-`TL` and `1 / bL` when `Length1` is. Substituting `L_type ~= ratio * TL`
-into `W = a * L_type^b` gives `W = a * ratio^b * TL^b`: **`b` is
-unchanged and only `a` is rescaled**. Fits with an intercept above 1 cm
-are not proportional and are skipped; per species and type the median
-ratio is used.
+`length_length`, fetched by the same call, restates every convertible
+pair on a TL basis. POPLL fits `Length1 = aL + bL * Length2` — **the
+second column is the predictor** — so the ratio `L_type / TL` is `bL`
+when `Length2` is `TL` and `1 / bL` when `Length1` is. Substituting
+`L_type ~= ratio * TL` into `W = a * L_type^b` gives
+`W = a * ratio^b * TL^b`: **`b` is unchanged and only `a` is rescaled**.
+Fits with an intercept above 1 cm are not proportional and are skipped;
+per species and type the median ratio is used.
 
 `length_types = NULL` is passed for this reason. The coasts default
 keeps only `TL`/`FL` pairs, which would leave the 460 `SL` rows
@@ -85,4 +84,4 @@ Timor's 559 curated rows over 11 mostly-invertebrate codes, from
 after the conversion above, they are never restated either. That is
 deliberate: their `Type` values (`CW`, `ShL`, `ML`, `CL`) are
 invertebrate axes FishBase carries no conversion for, and field practice
-measures those taxa on total length anyway (confirmed 2026-08-10).
+measures those taxa on total length anyway.

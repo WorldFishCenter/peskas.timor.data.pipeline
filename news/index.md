@@ -1,5 +1,92 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.0.0
+
+This release completes the move to a single source of reference data.
+Landing site names, municipalities, gears, vessels and species codes now
+all come from the shared Peskas reference base, the same one Kenya,
+Mozambique and Zanzibar use, so a site or species means the same thing
+in every country’s data. The spreadsheets that used to hold some of this
+are gone.
+
+### What changes in the published data
+
+- **Landing site names** now use the shared spellings. Eleven of the
+  forty sites are affected. These names appear in the cross-country
+  dataset, not on the Timor portal, so the portal’s own figures are
+  unaffected.
+
+- **One landing site was filed under the wrong municipality.** Welaluhu
+  was recorded as being in Manatuto and is in fact in Manufahi. It is a
+  single landing out of roughly 95,000, but because municipal figures
+  are averages, correcting it shifts the reported catch and average
+  landing weight for both municipalities. It does not move any
+  coast-level or national total, since both municipalities are on the
+  south coast.
+
+- **North and south coast are now decided by the landing site, not the
+  municipality.** Two municipalities have landing sites on both coasts,
+  so deciding by municipality misfiled some of them. National and coast
+  totals come out identical to before this change, but the rule now has
+  one definition instead of two that had drifted apart.
+
+- **GPS tracking data is more complete.** Around 2,800 fishing trips had
+  been dropped because their tracker had since been reassigned to a
+  different project; they are back. In the other direction, around 1,400
+  journeys that were not fishing trips at all — bicycle trips from a
+  separate transport project sharing the same tracking account — are now
+  excluded. Both affect reported fishing effort, and municipalities
+  differ in how much.
+
+### For anyone running the pipeline
+
+This is a major version because installed function names and stored
+table layouts changed.
+
+- **No Google Sheets access is needed.** `GOOGLE_SHEET_ID` is no longer
+  used, and the pipeline step that read the spreadsheets is gone. The
+  one thing they still held — the roster of tracker serial numbers,
+  which is needed because fieldworkers can only note down part of each
+  number — is now kept in cloud storage and maintained by the pipeline
+  itself, so it needs no manual updates.
+
+- **Functions removed:** `ingest_metadata_tables()`,
+  `preprocess_metadata_tables()`, `get_preprocessed_sheets()`,
+  `timor_assets()`, `ingest_assets()`. Reference data is read with
+  [`get_assets()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_assets.md);
+  the shared reference snapshot is now written by the hub package rather
+  than by this pipeline, as it already was for the other countries.
+
+- **The stored survey table is narrower**, 38 columns instead of 98. The
+  removed columns were untranslated copies of columns that already
+  existed, survey-software bookkeeping nothing read, and a field
+  carrying the fieldworker’s phone identifier, which had no reason to be
+  stored.
+
+- **[`check_portal_contract()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/check_portal_contract.md)**
+  is new and exported. It compares a set of published portal files
+  against a reference and reports any change in structure.
+
+### Reliability fixes
+
+- **Published files are now checked on every run.** The website finds
+  its data files by searching for them by name, so a renamed file or a
+  dropped field would have quietly removed a section of the site with
+  nothing failing. Each run now compares what it just published against
+  a reference structure and stops if they differ.
+
+- **Four checks could not fail.** The pipeline’s data checks reported
+  success regardless of what they found, because of how their results
+  were read. They now stop the run. One check had in fact been failing
+  unnoticed — and was itself wrong: it objected to future-dated catches,
+  which the pipeline deliberately keeps and flags for review rather than
+  discarding. It now verifies that no future date goes unflagged.
+
+- **Two errors that pointed at the wrong cause.** A failed download used
+  to surface as an unrelated file-format error, and a missing
+  reference-data setting used to be silently substituted with the wrong
+  region. Both now say what actually went wrong.
+
 ## peskas.timor.data.pipeline 4.0.0
 
 Alignment of the Timor pipeline to the harmonized Peskas standard shared
@@ -83,8 +170,8 @@ entirely on two runs, with no error.
   taxon cannot reach the portal silently. This is what caught the above.
 
 Every figure in the section above was measured on 25.04. Moving the key
-re-baselines the portal and should be done deliberately, with
-`data-raw/compare-portal-json.R` run against the change.
+re-baselines the portal and should be done deliberately, with the portal
+contract check run against the change.
 
 #### Breaking changes
 
@@ -145,8 +232,8 @@ re-baselines the portal and should be done deliberately, with
   ingested nor preprocessed;
   [`merge_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/merge_landings.md)
   reads a snapshot produced once per environment by
-  `data-raw/freeze-landings-v1.R`, which also converted v1’s fork
-  lengths to total length.
+  `inst/freeze-landings-v1.R`, which also converted v1’s fork lengths to
+  total length.
 
 - Reference data is now the shared **PESKAS \| FRAME** Airtable base
   wherever it overlaps the Google Sheets metadata tables — taxa, gears,
@@ -534,10 +621,9 @@ Adding option to produce Timor map filtered by fishing trips
 
 - Added `air_get_records()` and `air_records_to_tibble()` to retrieve
   and process records from Airtable
-- Added `pt_validate_boats()`,
-  [`pt_validate_devices()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/pt_validate_devices.md),
-  and `pt_validate_vms_installs()` to perform basic data validation from
-  the metadata tables
+- Added `pt_validate_boats()`, `pt_validate_devices()`, and
+  `pt_validate_vms_installs()` to perform basic data validation from the
+  metadata tables
 
 #### Improvements
 
@@ -546,21 +632,17 @@ Adding option to produce Timor map filtered by fishing trips
 
 #### Breaking changes
 
-- [`ingest_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_metadata_tables.md)
-  and
-  [`preprocess_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_metadata_tables.md)
-  now use logic to use Airtable instead og Google Sheets
+- `ingest_metadata_tables()` and `preprocess_metadata_tables()` now use
+  logic to use Airtable instead og Google Sheets
 
 ## peskas.timor.data.pipeline 0.5.0
 
 #### New features
 
-- Added
-  [`ingest_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/ingest_metadata_tables.md)
-  to ingest data about boats, species, municipalities, etc.
-- Added
-  [`preprocess_metadata_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_metadata_tables.md)
-  to preprocess the data from the metadata ingestion.
+- Added `ingest_metadata_tables()` to ingest data about boats, species,
+  municipalities, etc.
+- Added `preprocess_metadata_tables()` to preprocess the data from the
+  metadata ingestion.
 - Added `pt_get_devices_table()` and `pt_validate_flags()` as helper
   functions for the metadata preprocessing.
 

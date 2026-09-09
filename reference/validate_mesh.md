@@ -1,8 +1,7 @@
 # Validate the recorded mesh size
 
-The unit conversion moved to
-[`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md)
-in migration Phase 5; `mesh_size` reaches this function in millimetres.
+`mesh_size` reaches this function in millimetres, converted by
+[`preprocess_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/preprocess_landings.md).
 
 ## Usage
 

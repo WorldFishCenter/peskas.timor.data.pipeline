@@ -38,8 +38,7 @@ Zanzibar, raw and validated alike:
     catch_habitat, catch_outcome, n_catch, catch_taxon, scientific_name,
     length_cm, catch_kg, catch_price, tot_catch_kg, tot_catch_price
 
-Three Timor-specific decisions, all recorded in the migration Phase 6
-entry of `.claude/migration/STATE.md`:
+Three things to know about the mapping:
 
 - **Grain.** The API is one row per (trip, catch); Timor's long tables
   are one row per (submission, catch, **length bin**). The bins are

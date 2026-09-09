@@ -11,7 +11,7 @@ uploads it to conf$api$trips$raw$cloud_path."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">4.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,8 +71,7 @@ raw and validated alike:</p>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>gaul_2_name, landing_site, n_fishers, trip_duration_hrs, gear, vessel_type,</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>catch_habitat, catch_outcome, n_catch, catch_taxon, scientific_name,</span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>length_cm, catch_kg, catch_price, tot_catch_kg, tot_catch_price</span></code></pre><p></p></div>
-<p>Three Timor-specific decisions, all recorded in the migration Phase 6 entry
-of <code>.claude/migration/STATE.md</code>:</p><ul><li><p><strong>Grain.</strong> The API is one row per (trip, catch); Timor's long tables are one
+<p>Three things to know about the mapping:</p><ul><li><p><strong>Grain.</strong> The API is one row per (trip, catch); Timor's long tables are one
 row per (submission, catch, <strong>length bin</strong>). The bins are collapsed:
 <code>catch_kg</code> is their sum and <code>length_cm</code> their mean weighted by the number of
 individuals counted in each bin. Empty bins are kept in the input and

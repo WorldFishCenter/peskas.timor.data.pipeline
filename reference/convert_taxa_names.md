@@ -1,11 +1,11 @@
-# Convert taxa codes to common names
+# Assign each taxon code to a broad species group
 
-Convert taxa codes to common names
+Assign each taxon code to a broad species group
 
 ## Usage
 
 ``` r
-convert_taxa_names(data, conf)
+convert_taxa_names(data)
 ```
 
 ## Arguments
@@ -14,10 +14,6 @@ convert_taxa_names(data, conf)
 
   A dataframe with taxa codes under a column named "catch_taxon"
 
-- conf:
-
-  The config file
-
 ## Value
 
-A dataframe with taxa common names
+`data` with a `fish_group` column

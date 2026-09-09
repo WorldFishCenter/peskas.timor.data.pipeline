@@ -3,8 +3,7 @@
 The same content as
 [`get_validated_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_validated_landings.md),
 one row per (submission, catch, length bin) under the standard column
-names and with `catch_kg` in kilograms. Written beside the nested
-artefact since migration Phase 5 and read by
+names and with `catch_kg` in kilograms. Read by
 [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md).
 
 ## Usage
