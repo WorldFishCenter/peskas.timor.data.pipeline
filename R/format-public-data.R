@@ -704,34 +704,83 @@ where <- function(fn) {
   }
 }
 
+# The site -> coast lookup, from `metadata.coast_areas`.
+site_coast <- function(conf) {
+  areas <- conf$metadata$coast_areas
+  if (length(areas) == 0) {
+    stop(
+      "`metadata.coast_areas` is empty or absent. Without it every landing ",
+      "falls to one Area and `summary_data` is silently wrong.",
+      call. = FALSE
+    )
+  }
+  out <- purrr::imap(
+    areas,
+    ~ tibble::tibble(landing_site = as.character(unlist(.x)), Area = .y)
+  ) %>%
+    purrr::list_rbind()
+
+  # A site listed under two areas would duplicate its landings and inflate the
+  # published `n_surveys`.
+  dupes <- out$landing_site[duplicated(out$landing_site)]
+  if (length(dupes) > 0) {
+    stop(
+      "Landing site(s) listed under more than one `metadata.coast_areas` ",
+      "area: ", paste(unique(dupes), collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+
+  out
+}
+
 get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
-  # This is the authoritative coast rule: municipality plus a site-level rescue
-  # list, because coast is a property of the site. `export_files()` carries a
-  # municipality-only approximation of it that must be kept in step.
-  # The durable fix is one site->coast table read by both call sites: Phase 12.
-  # See .claude/migration/ALIGNMENT-AUDIT.md §11 (L3).
+  # Coast is a property of the landing site. `export_files()` cannot see the
+  # site, so the municipality-level map it needs is derived here and returned.
   data_area <-
     data %>%
     fill_missing_regions() %>%
-    dplyr::mutate(
-      Area = dplyr::case_when(
-        .data$municipality %in%
-          c("Bobonaro", "Liquica", "Dili", "Baucau", "Oecusse") |
-          .data$landing_site %in%
-            c(
-              "Com",
-              "Tutuala",
-              "Ililai",
-              "Sentru/Liarafa/Sika/Rau Moko",
-              "Comando"
-            ) ~ "North Coast",
-        .data$municipality == "Atauro" ~ "Atauro island",
-        is.na(.data$municipality) |
-          is.na(.data$municipality) |
-          is.na(.data$municipality) & is.na(.data$municipality) ~ NA_character_,
-        TRUE ~ "South Coast"
-      )
+    dplyr::left_join(site_coast(conf), by = "landing_site")
+
+  # A site missing from the table would otherwise be dropped from `n_surveys`
+  # with no signal.
+  unclassified <-
+    data_area %>%
+    dplyr::filter(!is.na(.data$landing_id), !is.na(.data$landing_site),
+                  is.na(.data$Area)) %>%
+    dplyr::count(.data$landing_site, sort = TRUE)
+  if (nrow(unclassified) > 0) {
+    warning(
+      "No `metadata.coast_areas` entry for ", nrow(unclassified),
+      " landing site(s), covering ", sum(unclassified$n), " landings: ",
+      paste(unclassified$landing_site, collapse = ", "),
+      ". They are excluded from `summary_data$n_surveys`.",
+      call. = FALSE
     )
+  }
+
+  # Weighted by submissions, not by site count: two municipalities have sites on
+  # both coasts and a site-count majority would flip one of them. `arrange()`
+  # before the slice so a tie resolves alphabetically rather than by row order.
+  area_lookup <-
+    data_area %>%
+    dplyr::filter(!is.na(.data$municipality), !is.na(.data$Area)) %>%
+    dplyr::count(.data$municipality, .data$Area) %>%
+    dplyr::arrange(.data$municipality, dplyr::desc(.data$n), .data$Area) %>%
+    dplyr::slice_max(.data$n, n = 1, by = "municipality", with_ties = FALSE) %>%
+    dplyr::select("municipality", "Area")
+
+  # `fill_missing_regions()` resolves a `municipality` for tracker-only rows but
+  # not a `landing_site`, so those rows fall back to their municipality's coast.
+  data_area <-
+    data_area %>%
+    dplyr::left_join(
+      area_lookup,
+      by = "municipality",
+      suffix = c("", "_muni")
+    ) %>%
+    dplyr::mutate(Area = dplyr::coalesce(.data$Area, .data$Area_muni)) %>%
+    dplyr::select(-"Area_muni")
 
   nutrients_catch_average <-
     catch_table %>%
@@ -831,6 +880,9 @@ get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
   timor_shape <- get_timor_boundaries()
 
   list(
+    # Consumed by `export_files()`; not published, which rebuilds the portal
+    # `summary_data` from an explicit list of keys.
+    area_lookup = area_lookup,
     n_surveys = data_area %>%
       dplyr::filter(!is.na(.data$landing_id) & !is.na(.data$Area)) %>%
       dplyr::group_by(.data$Area) %>%
@@ -858,7 +910,7 @@ get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
       tidyr::unnest(.data$length_frequency) %>%
       dplyr::filter(.data$number_of_fish > 0) %>%
       dplyr::select(.data$catch_taxon, .data$catch) %>%
-      convert_taxa_names(conf) %>%
+      convert_taxa_names() %>%
       dplyr::filter(!is.na(.data$fish_group)) %>%
       dplyr::mutate(tot_catch = sum(.data$catch, na.rm = T)) %>%
       dplyr::group_by(.data$fish_group) %>%

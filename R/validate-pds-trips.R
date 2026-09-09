@@ -4,10 +4,6 @@
 #' per-trip descriptors written by [describe_pds_tracks()], merges trips that
 #' are really one, and flags anomalous duration, distance and signal quality.
 #'
-#' Kept as a Timor function in migration Phase 7 — `coasts` has no
-#' consecutive-trip merging and no distance or outlier logic — and listed as an
-#' upstream candidate for Phase 10.
-#'
 #' The parameters needed in the config file are `pds.pds_trips.*`,
 #' `pds.pds_tracks.descriptors.*` and the `validation.pds_trips` coefficients.
 #'
@@ -208,16 +204,9 @@ validate_pds_data <- function(data,
   validated_pds_list
 }
 
-# The typed, Dili-local view of the trips parquet `coasts::ingest_pds_trips()`
-# writes. There is no preprocessed trips artefact any more — Phase 7 deleted
-# `preprocess_pds_trips()`, which existed only to apply exactly this — and the
-# WIO pipelines have never had one.
-#
-# The coercions are not cosmetic. `coasts::get_trips()` leaves the API's CSV to
-# readr's guesser, which returns `IMEI` as a double, and `tracker_imei` is the
-# character key `merge_trips()` joins landings to trips on. `Trip` and `Boat`
-# come back as doubles for the same reason. This is what the
-# `col_types = "iTTicccdddccc"` spec used to pin.
+# The typed, Dili-local view of the raw trips parquet. The coercions matter:
+# the API's CSV leaves `IMEI`, `Trip` and `Boat` as doubles, and `tracker_imei`
+# is the character key `merge_trips()` joins landings to trips on.
 get_pds_trips <- function(conf) {
   coasts::download_parquet_from_cloud(
     prefix = conf$pds$pds_trips$file_prefix,

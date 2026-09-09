@@ -9,11 +9,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   KOBO_PASSWORD: ${{ secrets.KOBO_PASSWORD }}
   KOBO_USERNAME: ${{ secrets.KOBO_USERNAME }}
-  # Read by the harmonized `ingestion.landings.<v>` block. The *secrets* keep
-  # their legacy names: secret values are write-only, so renaming them to
-  # `KOBO_ASSET_ID_V<n>` means re-entering the three asset ids by hand for no
-  # behavioural gain. Decided in Phase 9; the legacy config keys that read
-  # `KOBO_PESKAS<n>` directly went in Phase 11, this mapping stays.
+  # The secrets keep their older names: secret values are write-only, so
+  # renaming them means re-entering the three asset ids by hand.
   KOBO_ASSET_ID_V1: ${{ secrets.KOBO_PESKAS1 }}
   KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}
   KOBO_ASSET_ID_V3: ${{ secrets.KOBO_PESKAS3 }}
@@ -22,19 +19,13 @@ env:
   AIRTABLE_BASE_ID_FRAME: ${{ secrets.AIRTABLE_BASE_ID_FRAME }}
   PDS_TOKEN: ${{ secrets.PESKAS_PDS_TOKEN }}
   PDS_SECRET: ${{ secrets.PESKAS_PDS_SECRET }}
-  GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-  # The validation flags sink since migration Phase 5, exercised in CI since
-  # run 31436031588. Absent → `validate_landings()` warns and the versioned
-  # flags snapshot in cloud storage is the only record of a run.
+  # The validation flags sink. Absent → `validate_landings()` warns and the
+  # versioned flags snapshot in cloud storage is the only record of a run.
   MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
   # Optional, and has no secret. Present: manual approvals entered in
   # KoBoToolbox survive a run. Absent: they are overwritten by the pipeline's
   # own flags. `sync_validation_status()` is not wired in either way.
   KOBO_TOKEN: ${{ secrets.KOBO_TOKEN }}
-  # `VALID_SHEET_ID` is not passed and no longer read: the validation flags
-  # sheet lost its last reader in Phase 5 and `validation.google_sheets` went
-  # from `inst/config.yml` in Phase 11. Deleting the GitHub secret itself is a
-  # user action, with `AIRTABLE_KEY`.
 
 jobs:
   build-container:
@@ -75,26 +66,6 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
           cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max
 
-  ingest-preprocess-metadata-tables:
-    name: Ingest metadata tables
-    needs: build-container
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Set env to production
-        if: endsWith(github.ref, '/main')
-        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      - name: Call ingest_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_metadata_tables()'
-      - name: Call preprocess_metadata_tables()
-        run: Rscript -e 'peskas.timor.data.pipeline::preprocess_metadata_tables()'
-      - name: Call ingest_assets()
-        run: Rscript -e 'peskas.timor.data.pipeline::ingest_assets()'
-
   ingest-landings:
     name: Ingest landings
     needs: build-container
@@ -113,7 +84,7 @@ jobs:
 
   preprocess-landings:
     name: Preprocess landings
-    needs: [ingest-landings, ingest-preprocess-metadata-tables]
+    needs: [ingest-landings]
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
@@ -161,18 +132,15 @@ jobs:
       - name: Validate landings
         run: Rscript -e 'peskas.timor.data.pipeline::validate_landings()'
       - name: Test validated landings
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_landings.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
-  # The cross-country API export, wired in migration Phase 9. Its own job, and
-  # deliberately a **leaf**: nothing needs it. Putting these two calls inside
-  # merge-landings and validate-landings — where their inputs are written — would
-  # have made the portal path, the live product, depend on a two-phase-old export
-  # succeeding. It reads the weight artefact and the validated long parquet, so it
-  # waits for both jobs; `merge-trips` and everything after it run in parallel
-  # with it and are unaffected if it fails.
-  #
-  # The steps carry no `if:` of their own, which matches Kenya, Mozambique and
-  # Zanzibar exactly: the only gate is the shared "Set env to production" step
+  # The cross-country API export, deliberately a leaf so the portal path never
+  # depends on it. It reads the weight artefact and the validated long parquet,
+  # so it waits for both jobs while everything after `merge-trips` runs in
+  # parallel.
   # above, so the bucket follows `storage.google.options_api` — `peskas-api-dev`
   # on a branch, `peskas-api-prod` on `main`.
   #
@@ -215,16 +183,9 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       # `log_threshold = logger::INFO` stays, deliberately. It used to be
       # load-bearing: `coasts::read_config()` ended with
-      # `logger::log_debug("Running with parameters {conf}")` and every coasts
-      # workflow function defaults to `logger::DEBUG`, so a default call printed
-      # the service-account private key, the MongoDB connection string, the KoBo
-      # password and the PDS and Dataverse tokens into this job's log —
-      # COASTS-TODO C21, the leak Phase 3 removed from Timor's own
-      # `read_config()`, arriving through the delegation. C21 was fixed upstream
-      # in coasts PR #11 and is in every release this workflow can resolve, so
-      # the argument is now a guard against a regression rather than a fix.
-      # Phase 11 kept it on that basis: it costs nothing and the failure mode is
-      # a secret in a public log.
+      # `log_threshold = logger::INFO` is a guard, not a fix: a coasts workflow
+      # function called at its default DEBUG level once printed the whole
+      # resolved config — service-account key included — into the job log.
       - name: Call ingest_pds_trips()
         run: Rscript -e 'coasts::ingest_pds_trips(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
       - name: Call ingest_pds_tracks()
@@ -244,24 +205,9 @@ jobs:
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       # `coasts::preprocess_pds_tracks()` — the spatial grid summaries the other
-      # three countries also run here — is deliberately not wired in, and
-      # migration Phase 8 decided to leave it that way rather than run its first
-      # pass out of band as Phase 7 did for the track conversion.
-      #
-      # Two reasons, in order. **Its output has no reader in Timor.** It exists
-      # to feed `coasts::summarize_data()`, and that is what Kenya, Mozambique
-      # and Zanzibar use it for; Timor's portal is the `public-timor` JSON
-      # contract, which PLAN §2.1 keeps as-is, and `summarize_data()` is blocked
-      # for Timor anyway on COASTS-TODO C17 (it resolves `asfis` and the grid
-      # summaries from the country bucket, where Timor has neither). Producing
-      # ~1.4 M grid rows and ~0.8 GB per run for nothing to read is not a
-      # migration step. Second, it cannot complete in CI: it reads *every* track
-      # in the bucket on its first pass with `parallel::detectCores() - 1`
-      # workers, which is **one** on a 2-core runner — measured 2026-08-11,
-      # Timor's 102k tracks are ~4 h at 13 workers locally. COASTS-TODO C20.
-      #
-      # Wire it in when C17 ships and Timor actually adopts a coasts consumer of
-      # the grid summaries, not before.
+      # three countries run here — is deliberately not wired in: its output
+      # feeds `coasts::summarize_data()`, which Timor does not use, and its
+      # first pass reads every track in the bucket.
       - name: Call describe_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::describe_pds_tracks()'
 
@@ -281,7 +227,10 @@ jobs:
       - name: Call validate_pds_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::validate_pds_trips()'
       - name: Test validated PDS trips
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
   merge-trips:
     name: Merge trips
@@ -299,7 +248,10 @@ jobs:
       - name: Call merge_trips()
         run: Rscript -e 'peskas.timor.data.pipeline::merge_trips()'
       - name: Test merged_trips
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_merged_trips.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_merged_trips.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 
   model-indicators:
     name: Estimate fishery indicators
@@ -333,8 +285,20 @@ jobs:
       - name: Call format_public_data()
         run: Rscript -e 'peskas.timor.data.pipeline::format_public_data()'
       - name: Call export_files()
-        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'        
+        run: Rscript -e 'peskas.timor.data.pipeline::export_files()'
+      # The portal contract is discovery-based: it lists `portal-*` and keeps
+      # the newest of each name, so a renamed object or a dropped key removes a
+      # section from the live site without failing anything. This compares the
+      # set just written against the golden shape and fails on any structural
+      # difference; numbers are printed, never failed.
+      - name: Test portal contract
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_portal_contract.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
       - name: Test public data
-        run: Rscript -e 'tinytest::run_test_file(system.file("tinytest/test_public_data.R", package = "peskas.timor.data.pipeline"))'
-      - name: Generate and upload enumerators report
-        run: Rscript -e 'source(system.file("report/generate_enumerators_report.R", package = "peskas.timor.data.pipeline"))'
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_public_data.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
+

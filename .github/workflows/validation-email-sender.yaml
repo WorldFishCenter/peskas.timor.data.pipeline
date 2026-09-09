@@ -1,18 +1,9 @@
-# The weekly validation summary mail. Rebuilt in migration Phase 9 rather than
-# retired, unlike the three siblings deleted in the same phase: it was one of
-# the four workflows still pushing to the **retired** `docker.pkg.github.com`
-# registry through `whoan/docker-build-with-cache-action@v5`, which is why it
-# has not succeeded since ≥2025-09 — but the function behind it is live.
-# Phase 5 repointed `send_validation_mail()` at the MongoDB flags sink and the
-# `validation.alerts` block of `inst/config.yml`, so it needs
-# `MONGODB_CONNECTION_STRING_VALIDATION`, not `VALID_SHEET_ID`, whose sheet has
-# had no reader since that phase.
+# The weekly validation summary mail. `send_validation_mail()` reads the
+# MongoDB flags sink and the `validation.alerts` block of `inst/config.yml`, so
+# it needs `MONGODB_CONNECTION_STRING_VALIDATION`.
 #
 # It runs in the container `data-pipeline.yaml` builds; it does not build one.
-#
-# State: `disabled_inactivity`. Re-enabling is a Phase 11 action — the schedule
-# fires from the default branch, which is still pre-migration code and would
-# mail from the retired Google Sheet.
+# Its schedule fires from the default branch.
 name: Send validation summary email
 
 on:
@@ -22,7 +13,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # No `GCP_SA_KEY`: since Phase 5 this reads the flags from MongoDB and the
+  # No `GCP_SA_KEY`: this reads the flags from MongoDB and the
   # alert descriptions from `inst/config.yml`, and touches cloud storage nowhere.
   PESKAS_GMAIL_KEY: ${{ secrets.PESKAS_GMAIL_KEY }}
   MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}

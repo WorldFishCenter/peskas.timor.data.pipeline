@@ -221,18 +221,6 @@ export_files <- function() {
     purrr::map(., ~ dplyr::filter(.x, !nutrient == "selenium"))
   summary_data <- get_file("summary_data")
 
-  # NOTE: `portal-indicators_grid` and `portal-label_groups_list` were emitted
-  # here until migration Phase 8 and are not any more. They were the **two
-  # objects `peskas.timor.portal.v2/scripts/fetchData.js` explicitly excludes**
-  # (AUDIT §3), rebuilt on every run from `indicators_gridded.rds` — an object
-  # last written 2024-07-27 in production and 2023-05-21 in dev, by
-  # `ingest_pds_map()`, which no workflow had called in two years and which
-  # Phase 11 deleted. So the export
-  # was publishing a fresh version number over two-year-old content that nothing
-  # read. Dropping them leaves the seven objects the portal actually consumes,
-  # and is reversible: no history was deleted, and re-adding the two lines
-  # restores the family. See the Phase 8 STATE entry.
-
   boats <- sum(unique(municipal_aggregated$n_boats))
 
   aggregated <- format_aggregated_data(aggregated, national_boats = boats)
@@ -323,32 +311,39 @@ export_files <- function() {
     dplyr::mutate(tons = round(.data$tons, 0)) %>%
     dplyr::arrange(-.data$tons)
 
-  # Coast is a property of the landing site, not the municipality, but by this
-  # point the model has collapsed the data to municipality and the site is gone.
-  # `get_summary_data()` in format-public-data.R has the site-level rescue list;
-  # this list is its municipality-level approximation. With "Lautem" the two
-  # rules agree on all but 3 of 76k landings (Lore 2, Welaluhu 1).
-  # The durable fix is one site->coast table read by both call sites: Phase 12.
-  # See .claude/migration/ALIGNMENT-AUDIT.md §11 (L3).
-  estimated_revenue <-
+  # The municipality -> coast map comes from `get_summary_data()`, which can
+  # still see the landing site; by this point the model has collapsed the data
+  # to municipality.
+  if (is.null(summary_data$area_lookup)) {
+    stop(
+      "`summary_data$area_lookup` is absent, so the municipality -> coast map ",
+      "cannot be resolved. Re-run `format_public_data()`, which writes it.",
+      call. = FALSE
+    )
+  }
+
+  revenue_by_area <-
     municipal_aggregated %>%
-    dplyr::mutate(
-      Area = dplyr::case_when(
-        .data$region %in%
-          c(
-            "Oecusse",
-            "Bobonaro",
-            "Liquica",
-            "Dili",
-            "Manatuto",
-            "Baucau",
-            "Lautem"
-          ) ~
-          "North Coast",
-        .data$region == "Atauro" ~ "Atauro island",
-        TRUE ~ "South Coast"
-      )
-    ) %>%
+    dplyr::left_join(
+      dplyr::rename(summary_data$area_lookup, region = "municipality"),
+      by = "region"
+    )
+
+  # An unmapped region would otherwise reach the portal as a fourth,
+  # null-named area.
+  unmapped <- sort(unique(revenue_by_area$region[is.na(revenue_by_area$Area)]))
+  if (length(unmapped) > 0) {
+    stop(
+      "No coast could be resolved for region(s): ",
+      paste(unmapped, collapse = ", "),
+      ". Every landing site in them is missing from `metadata.coast_areas`, ",
+      "so `get_summary_data()` derived no majority. Add them to that list.",
+      call. = FALSE
+    )
+  }
+
+  estimated_revenue <-
+    revenue_by_area %>%
     dplyr::group_by(.data$Area) %>%
     dplyr::summarise(`Estimated revenue` = round(sum(.data$revenue, na.rm = T), 0))
 

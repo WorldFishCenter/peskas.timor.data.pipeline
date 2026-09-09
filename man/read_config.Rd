@@ -15,9 +15,8 @@ convenience.
 }
 \details{
 Environment variables are loaded from \code{.env} first (see \code{\link[=load_dotenv]{load_dotenv()}}), so
-local runs and CI resolve the \emph{same} configuration branch and differ only by
-\code{R_CONFIG_ACTIVE}. The former \verb{local:} environment, which read plaintext
-files from \verb{auth/}, no longer exists.
+local runs and CI resolve the same configuration branch and differ only by
+\code{R_CONFIG_ACTIVE}.
 
 The configuration file is \code{inst/config.yml}. \code{conf.yml} is still accepted as
 a fallback so that an older installed copy of the package keeps resolving.

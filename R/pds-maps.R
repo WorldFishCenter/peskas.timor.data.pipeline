@@ -1,70 +1,22 @@
-#' PDS-derived map products
+#' Boundary and taxa lookups for the public data export
 #'
-#' Everything in this file is Timor-only and downstream of PDS, not PDS
-#' ingestion: migration Phase 7 deleted `ingest_pds_trips()`,
-#' `ingest_pds_tracks()` and `preprocess_pds_trips()` in favour of
-#' `coasts::ingest_pds_trips()`, `coasts::ingest_pds_tracks()` and
-#' `coasts::preprocess_pds_tracks()`, which is how Mozambique, Kenya and
-#' Zanzibar have always done it — none of them carries any PDS code.
-#'
-#' What is left are the boundary and taxa-name lookups the map products used to
-#' share with `format_public_data()`.
-#'
-#' Phase 8 resolved the dangling dependency the Phase 7 handover described. Of
-#' the two map products, `tracks-map.png` (last written 2021-12-11) turned out
-#' to have no reader at all, and `indicators_gridded.rds` (last written
-#' 2024-07-27 in production) had exactly one: `export_files()`, which rebuilt
-#' `portal-indicators_grid.json` and `portal-label_groups_list.json` from it on
-#' every run. Those are the two objects `peskas.timor.portal.v2` explicitly
-#' excludes, so Phase 8 dropped them — which left `ingest_pds_map()`,
-#' `ingest_kepler_tracks()`, `kepler_mapper()` and `ingest_complete_tracks()`
-#' unreferenced. **Phase 11 deleted all four**, with `inst/kepler_mapper.py`
-#' and the accessors that fed them. What is left is
-#' `get_timor_boundaries()` and `convert_taxa_names()`, both of which
-#' `format_public_data()` calls.
+#' The two lookups [get_timor_boundaries()] and [convert_taxa_names()], both
+#' called by [format_public_data()].
 #'
 #' @keywords internal
 #' @name pds-maps
 NULL
 
-# NOTE: `ingest_complete_tracks()`, `ingest_pds_map()`, `ingest_kepler_tracks()`
-# and `kepler_mapper()` lived here until migration Phase 11, together with
-# `inst/kepler_mapper.py`. All four were unreferenced once Phase 8 stopped
-# `export_files()` reading `indicators_gridded`; restore from git history if a
-# map product is ever wanted again.
-
-#' Convert taxa codes to common names
+#' Assign each taxon code to a broad species group
 #'
 #' @param data A dataframe with taxa codes under a column named "catch_taxon"
-#' @param conf The config file
 #'
-#' @return A dataframe with taxa common names
+#' @return `data` with a `fish_group` column
 #' @keywords helper
 #' @export
 #'
-convert_taxa_names <- function(data, conf) {
-  catch_types <-
-    peskas.timor.data.pipeline::get_preprocessed_sheets(conf)$catch_types %>%
-    dplyr::filter(
-      !.data$catch_name_en %in%
-        c("Herring", "Unknown", "Surgeonfish", "Bannerfish", "No catch")
-    ) %>%
-    dplyr::select(
-      catch_taxon = .data$interagency_code,
-      "Common name" = .data$catch_name_en
-    ) %>%
-    dplyr::mutate(
-      "Common name" = dplyr::case_when(
-        catch_taxon == "RAX" ~ "Short mackerel",
-        catch_taxon == "CGX" ~ "Jacks/Trevally",
-        catch_taxon == "CLP" ~ "Sardines",
-        catch_taxon == "TUN" ~ "Tuna/Bonito",
-        catch_taxon == "SNA" ~ "Snapper",
-        TRUE ~ .data$`Common name`
-      )
-    )
+convert_taxa_names <- function(data) {
   data %>%
-    dplyr::left_join(catch_types, by = "catch_taxon") %>%
     dplyr::mutate(
       fish_group = dplyr::case_when(
         catch_taxon %in% c("COZ") ~ "Molluscs",
@@ -135,9 +87,7 @@ convert_taxa_names <- function(data, conf) {
           ) ~ "Small pelagics",
         TRUE ~ NA_character_
       )
-    ) %>%
-    dplyr::select(-.data$catch_taxon) %>%
-    dplyr::rename(catch_taxon = .data$`Common name`)
+    )
 }
 
 #' Extract Timor Geographical Boundaries

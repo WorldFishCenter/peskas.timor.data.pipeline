@@ -2,15 +2,27 @@ library(peskas.timor.data.pipeline)
 
 logger::log_threshold(logger::ERROR)
 # Local runs read their credentials from `.env`; CI supplies them as real
-# environment variables, where this is a no-op. (Until migration Phase 5 this
-# was a `setwd("../..")`, which never worked from an installed package —
+# environment variables, where this is a no-op. Not a `setwd("../..")`:
 # tinytest sets the working directory to the test file's own directory, so
-# `../..` landed inside the R library.)
+# that lands inside the R library.
 if (file.exists(".env")) dotenv::load_dot_env()
 conf <- peskas.timor.data.pipeline::read_config()
 
 validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
-metadata <- peskas.timor.data.pipeline:::get_preprocessed_sheets(conf)
+assets <- peskas.timor.data.pipeline::get_assets(conf)
+
+# Submissions carrying alert 4, "landing date after submission date". The alert
+# string is a hyphen-separated list, so split it rather than matching "4" inside
+# "14" or "24".
+flagged_dates <-
+  coasts::download_parquet_from_cloud(
+    prefix = conf$surveys$landings$validation$flags$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country")
+  ) |>
+  subset(vapply(strsplit(alert, "-"), function(x) "4" %in% x, logical(1))) |>
+  getElement("submission_id") |>
+  as.integer()
 
 # Function to check if there are negative values in a vector
 any_negative <- . %>% magrittr::is_less_than(0) %>% any() %>% isTRUE()
@@ -21,14 +33,9 @@ catch <- validated_landings %>%
 
 # Landing columns ---------------------------------------------------------
 
-# NOTE: four of these assertions named columns the validated artefact has never
-# had — `trip_duration`, `landing_value`, `catch_purpose` and `individuals`, a
-# schema that was never shipped. Reading a missing column returns NULL, so they
-# passed vacuously (and `catch_purpose` failed outright on the empty compare)
-# while warning "Unknown or uninitialised column". Pointed at the real columns
-# in migration Phase 5. No assertion was dropped or weakened: `trip_length`,
-# `catch_price`, `catch_use` and `number_of_fish` are the same quantities under
-# the names `format_public_data()` reads.
+# Name the columns the artefact actually has: reading a missing one returns
+# NULL, so an assertion over it passes vacuously while warning "Unknown or
+# uninitialised column".
 
 expect_false(
   any_negative(na.omit(validated_landings$trip_length)),
@@ -38,9 +45,18 @@ expect_false(
   any_negative(na.omit(validated_landings$catch_price)),
   "Negative values in landings")
 
+# A landing date after the submission date is flagged (alert 4) and kept, not
+# blanked: `landing_date` is the merge key and every time aggregation reads it,
+# so dropping the row would hide a correctable typo. The guarantee is therefore
+# that no future date escapes *unflagged*, which is what this asserts.
 expect_false(
-  any(na.omit(validated_landings$landing_date) > (lubridate::with_tz(Sys.Date() + 1, "Asia/Dili"))),
-  "Landing dates larger than current date + 1")
+  any(
+    !is.na(validated_landings$landing_date) &
+      validated_landings$landing_date >
+        as.Date(lubridate::with_tz(Sys.time(), "Asia/Dili")) + 1 &
+      !validated_landings$landing_id %in% flagged_dates
+  ),
+  "Unflagged landing dates larger than current date + 1")
 
 expect_false(
   any(na.omit(validated_landings$landing_date) <
@@ -67,7 +83,7 @@ expect_equal(
 expect_true(
   {
     landing_codes <- na.omit(catch$catch_taxon)
-    valid_codes <- c(na.omit(metadata$catch_types$interagency_code), "0")
+    valid_codes <- c(na.omit(assets$taxa$alpha3_code), "0")
     all(landing_codes %in% valid_codes)
   },
   "Catch codes has unepected values"

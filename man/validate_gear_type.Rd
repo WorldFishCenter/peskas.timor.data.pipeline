@@ -15,7 +15,7 @@ A tibble: \code{gear_type}, \code{alert_number}, \code{submission_id}.
 \description{
 Reads the \code{gear} label \code{\link[=preprocess_landings]{preprocess_landings()}} resolves from the
 PESKAS | FRAME frame. Note the frame's labels are Title Case where the
-retired Google Sheets \code{gear_types} table was lower case, and \code{MC} is
+older reference table was lower case, and \code{MC} is
 "Gleaning" where the Sheets said "manual collection".
 }
 \keyword{validation}

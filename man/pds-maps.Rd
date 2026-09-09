@@ -2,30 +2,9 @@
 % Please edit documentation in R/pds-maps.R
 \name{pds-maps}
 \alias{pds-maps}
-\title{PDS-derived map products}
+\title{Boundary and taxa lookups for the public data export}
 \description{
-Everything in this file is Timor-only and downstream of PDS, not PDS
-ingestion: migration Phase 7 deleted \code{ingest_pds_trips()},
-\code{ingest_pds_tracks()} and \code{preprocess_pds_trips()} in favour of
-\code{coasts::ingest_pds_trips()}, \code{coasts::ingest_pds_tracks()} and
-\code{coasts::preprocess_pds_tracks()}, which is how Mozambique, Kenya and
-Zanzibar have always done it — none of them carries any PDS code.
-}
-\details{
-What is left are the boundary and taxa-name lookups the map products used to
-share with \code{format_public_data()}.
-
-Phase 8 resolved the dangling dependency the Phase 7 handover described. Of
-the two map products, \code{tracks-map.png} (last written 2021-12-11) turned out
-to have no reader at all, and \code{indicators_gridded.rds} (last written
-2024-07-27 in production) had exactly one: \code{export_files()}, which rebuilt
-\code{portal-indicators_grid.json} and \code{portal-label_groups_list.json} from it on
-every run. Those are the two objects \code{peskas.timor.portal.v2} explicitly
-excludes, so Phase 8 dropped them — which left \code{ingest_pds_map()},
-\code{ingest_kepler_tracks()}, \code{kepler_mapper()} and \code{ingest_complete_tracks()}
-unreferenced. \strong{Phase 11 deleted all four}, with \code{inst/kepler_mapper.py}
-and the accessors that fed them. What is left is
-\code{get_timor_boundaries()} and \code{convert_taxa_names()}, both of which
-\code{format_public_data()} calls.
+The two lookups \code{\link[=get_timor_boundaries]{get_timor_boundaries()}} and \code{\link[=convert_taxa_names]{convert_taxa_names()}}, both
+called by \code{\link[=format_public_data]{format_public_data()}}.
 }
 \keyword{internal}

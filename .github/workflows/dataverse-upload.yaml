@@ -1,11 +1,6 @@
 # Publishes the public dataset family to Harvard Dataverse using the container
-# `data-pipeline.yaml` builds. As with `data-report.yaml`, the duplicate
-# `build-container` job is gone: it could not succeed since migration Phase 2
-# gave `Dockerfile.prod` an `ARG COASTS_REF` with no default, which this
-# workflow never resolved.
-#
-# State: `disabled_inactivity`. Re-enabling is a Phase 11 action — a schedule
-# fires from the default branch, which is still pre-migration code.
+# `data-pipeline.yaml` builds. As with `data-report.yaml`, it does not build
+# its own image, and its schedule fires from the default branch.
 name: Upload public files to Dataverse
 
 on:

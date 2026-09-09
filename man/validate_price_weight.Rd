@@ -38,12 +38,7 @@ individuals-count alerts onto both the price and the catch frames so that a
 single alert number per submission survives the assembly.
 }
 \details{
-The relationship between weight and price is mostly linear, and this function
-used to also compute a per-submission Cook's distance from a
-\code{log(price) ~ log(weight)} fit. That term has been commented out of the
-threshold for as long as the fixed band has existed, so the fit — a
-\code{stats::lm()} plus a \code{broom} augmentation over ~90k submissions, one of the two
-most expensive steps in validation — was deleted in migration Phase 5. The
-\code{cook_dist} parameter is retained because \code{config.yml} still supplies it.
+The \code{cook_dist} parameter is unused and retained only because \code{config.yml}
+still supplies it.
 }
 \keyword{validation}

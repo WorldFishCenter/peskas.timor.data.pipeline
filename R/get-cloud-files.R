@@ -5,10 +5,6 @@
 #' with [coasts::download_cloud_file()] and deserialises it with
 #' [readr::read_rds()].
 #'
-#' The interchange format is still `.rds` with nested list-columns. It flips to
-#' flat long parquet in migration Phase 4, at which point these helpers become
-#' [coasts::download_parquet_from_cloud()] calls and this helper goes away.
-#'
 #' @param prefix Object-name prefix, without the version string.
 #' @param provider Cloud storage provider key, e.g. `conf$storage$google$key`.
 #' @param options Provider options, e.g. from [coasts::resolve_storage_opts()].
@@ -48,8 +44,7 @@ download_versioned_rds <- function(prefix,
 #' Download the merged landings
 #'
 #' The merged table is the flat long catch table produced by
-#' [merge_landings()]: one row per (submission, catch, length bin), parquet
-#' since migration Phase 4.
+#' [merge_landings()]: one row per (submission, catch, length bin).
 #'
 #' @param conf The configuration file.
 #' @return A tibble of merged landings.
@@ -67,9 +62,7 @@ get_merged_landings <- function(conf) {
 #' Download the merged landings with catch weights
 #'
 #' The flat long catch table of [merge_landings()] with `weight` (grams) and the
-#' seven per-catch nutrient columns added by [calculate_weights()]. Parquet
-#' since migration Phase 5, when the re-nesting that validation used to need
-#' was deleted.
+#' seven per-catch nutrient columns added by [calculate_weights()].
 #'
 #' @param conf The configuration file.
 #' @return A tibble, one row per (submission, catch, length bin).
@@ -88,8 +81,7 @@ get_weighted_landings <- function(conf) {
 #'
 #' The same content as [get_validated_landings()], one row per (submission,
 #' catch, length bin) under the standard column names and with `catch_kg` in
-#' kilograms. Written beside the nested artefact since migration Phase 5 and
-#' read by [export_api_validated()].
+#' kilograms. Read by [export_api_validated()].
 #'
 #' @param conf The configuration file.
 #' @return A tibble, one row per (submission, catch, length bin).
@@ -110,15 +102,8 @@ get_validated_landings_long <- function(conf) {
 #' `length_frequency` list-columns that [merge_trips()], `format_public_data()`
 #' and `estimate_fishery_indicators()` read.
 #'
-#' Until migration Phase 8 this read a second stored artefact,
-#' `timor-landings-merged_validated__*.rds`, written by [validate_landings()]
-#' beside the long parquet. That artefact is gone: this is now a **view** over
-#' [get_validated_landings_long()], rebuilt by `nest_landing_catch()`. The two
-#' were proven interchangeable before the switch — 97,360 submissions and
-#' 1,648,016 catch rows compared column by column, every column equal, with
-#' 1,599 catch weights differing by at most 2.9e-11 g (one ULP of the
-#' grams → kg → grams round trip) and the national total unchanged to 20
-#' significant digits.
+#' This is a view over [get_validated_landings_long()], re-nested on read; there
+#' is no separate stored artefact in this shape.
 #'
 #' @param conf The configuration file.
 #'
@@ -132,7 +117,7 @@ get_validated_landings <- function(conf) {
   catch <- long %>%
     dplyr::transmute(
       .data$submission_id, .data$n_catch, .data$catch_taxon,
-      .data$catch_use, .data$length_type, .data$length,
+      .data$catch_use, .data$length,
       number_of_fish = .data$n_individuals,
       catch = .data$catch_kg * 1000,
       dplyr::across(tidyselect::ends_with("_mu"))
@@ -185,20 +170,15 @@ get_validated_landings <- function(conf) {
 long_catch_cols <- function() {
   c(
     "n_catch", "catch_taxon", "scientific_name", "catch_use", "catch_outcome",
-    "length_type", "length", "n_individuals", "catch_kg",
+    "length", "n_individuals", "catch_kg",
     "Selenium_mu", "Zinc_mu", "Protein_mu", "Omega_3_mu", "Calcium_mu",
     "Iron_mu", "Vitamin_A_mu"
   )
 }
 
 # Nest the validated catch into the `landing_catch` / `length_frequency`
-# list-columns the portal path consumes. Written by `validate_landings()` until
-# migration Phase 8; it is a read-side reshape now that the nested artefact is
-# gone.
-#
-# `nest(landing_catch = -submission_id)` groups on the submission alone, so two
-# catches of one submission that happen to share a taxon, use and length type
-# stay two rows — 4,873 submissions do.
+# list-columns the portal path consumes. Grouping is on the submission alone, so
+# two catches of one submission that share a taxon and use stay two rows.
 #
 # The leading select() is load-bearing: `nest()` groups on every column it is
 # not nesting, so an extra column in `validated_catch` would silently change the
@@ -207,7 +187,7 @@ long_catch_cols <- function() {
 nest_landing_catch <- function(validated_catch) {
   validated_catch %>%
     dplyr::select(
-      "submission_id", "n_catch", "catch_taxon", "catch_use", "length_type",
+      "submission_id", "n_catch", "catch_taxon", "catch_use",
       "length", "number_of_fish", "catch", tidyselect::ends_with("_mu")
     ) %>%
     tidyr::nest(
@@ -217,8 +197,7 @@ nest_landing_catch <- function(validated_catch) {
       )
     ) %>%
     dplyr::select(
-      "submission_id", "catch_taxon", "catch_use", "length_type",
-      "length_frequency"
+      "submission_id", "catch_taxon", "catch_use", "length_frequency"
     ) %>%
     tidyr::nest(landing_catch = -"submission_id")
 }
@@ -283,57 +262,126 @@ get_models <- function(conf) {
   )
 }
 
-#' Download the Airtable frame assets snapshot
+#' Download the Airtable frame mapping tables for Timor
 #'
-#' Reads the versioned `assets__*.rds` written by [ingest_assets()] from the
-#' shared coasts hub bucket. The snapshot is **cross-country**: use
-#' [timor_assets()] to narrow a table to Timor's rows.
+#' Wraps [coasts::get_assets()], which downloads the shared snapshot and returns
+#' only the rows belonging to Timor's survey forms.
 #'
-#' @param conf The configuration file
-#' @return A named list of asset tables (`taxa`, `gear`, `vessels`, `sites`,
-#'   `geo`, `forms`, `devices`, `frame`).
+#' @param conf The configuration file.
+#' @return A named list of five tibbles: `taxa`, `gear`, `vessels`, `sites`,
+#'   `geo`.
 #' @keywords storage
 #' @export
 get_assets <- function(conf) {
-  download_versioned_rds(
+  coasts::get_assets(
+    form_ids = timor_form_ids(conf),
     prefix = conf$metadata$airtable$name,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "coasts")
   )
 }
 
-#' Keep only Timor's rows of an assets table
+#' Resolve a KoBo asset id to its Airtable form record id
 #'
-#' The snapshot carries no `country` column, so rows are selected by the
-#' record ids of Timor's two KoBo forms (`metadata.airtable.form_ids`). Tables
-#' whose `form_id` lists several forms are matched if any of them is Timor's.
+#' Reads the frame's `forms` table, the only place the two ids are linked.
+#' Errors unless the asset id matches exactly one record, since an unresolved id
+#' would silently filter every mapping table down to nothing.
 #'
-#' @param x An asset table from [get_assets()], carrying a `form_id` column.
+#' @param kobo_asset_id A single KoBoToolbox asset id.
 #' @param conf The configuration file.
-#' @return `x`, filtered to Timor.
+#' @return The Airtable record id, length 1.
 #' @keywords helper
 #' @export
-timor_assets <- function(x, conf) {
-  dplyr::filter(
-    x,
-    grepl(
-      paste(conf$metadata$airtable$form_ids, collapse = "|"),
-      .data$form_id
+get_airtable_form_id <- function(kobo_asset_id = NULL, conf = NULL) {
+  if (
+    length(kobo_asset_id) != 1 || is.na(kobo_asset_id) || !nzchar(kobo_asset_id)
+  ) {
+    stop(
+      "`kobo_asset_id` must be a single non-empty string (got ",
+      class(kobo_asset_id)[1], " of length ", length(kobo_asset_id),
+      "). Check the matching `ingestion.landings.*.asset_id` entry in ",
+      "config.yml and that its environment variable is set.",
+      call. = FALSE
     )
+  }
+
+  airtable_id <-
+    coasts::airtable_to_df(
+      base_id = conf$airtable$frame$base_id,
+      table_name = "forms",
+      token = conf$airtable$token
+    ) %>%
+    janitor::clean_names() %>%
+    dplyr::filter(.data$form_id == kobo_asset_id) %>%
+    dplyr::pull(.data$airtable_id) %>%
+    unique()
+
+  if (length(airtable_id) != 1) {
+    stop(
+      "Expected exactly 1 Airtable `forms` record for kobo asset id \'",
+      kobo_asset_id, "\', found ", length(airtable_id), ".",
+      call. = FALSE
+    )
+  }
+
+  airtable_id
+}
+
+# The Airtable record ids of Timor's two survey forms, resolved from the KoBo
+# asset ids in `ingestion.landings`.
+timor_form_ids <- function(conf) {
+  vapply(
+    conf$ingestion$landings[c("v2", "v3")],
+    function(x) get_airtable_form_id(x$asset_id, conf),
+    character(1),
+    USE.NAMES = FALSE
   )
 }
 
-#' Download Peskas metadata
+#' Every tracker IMEI Timor has deployed
 #'
-#' Download preprocessed Peskas metadata from Google Sheets
+#' The roster `validate_imeis()` reconstructs a full IMEI from the digits an
+#' enumerator wrote down. Two sources, unioned: the stored archive, which holds
+#' devices the frame no longer lists because they were retired or transferred,
+#' and the frame's current devices, so a newly deployed tracker needs no manual
+#' step. The archive is immutable; the frame half keeps it current.
 #'
-#' @param conf The configuration file
-#' @keywords storage
-#' @export
-get_preprocessed_sheets <- function(conf) {
-  download_versioned_rds(
-    prefix = paste(conf$metadata$google_sheets$name, "preprocessed", sep = "_"),
+#' The frame's device table is cross-country, so it is narrowed by customer
+#' name. A wider roster is not harmless: enumerators write only part of an IMEI,
+#' and more devices means more chance a fragment matches two.
+#'
+#' @param conf The configuration file.
+#' @return A character vector of IMEIs.
+#' @keywords helper
+#' @noRd
+tracker_imeis <- function(conf) {
+  archive <- coasts::download_parquet_from_cloud(
+    prefix = conf$metadata$tracker_imeis$file_prefix,
     provider = conf$storage$google$key,
     options = coasts::resolve_storage_opts(conf, "country")
+  )$device_imei
+
+  coasts_opts <- coasts::resolve_storage_opts(conf, "coasts")
+  snapshot <- coasts::cloud_object_name(
+    prefix = conf$metadata$airtable$name,
+    provider = conf$storage$google$key,
+    version = "latest",
+    extension = "rds",
+    options = coasts_opts
   )
+  coasts::download_cloud_file(
+    name = snapshot,
+    provider = conf$storage$google$key,
+    options = coasts_opts
+  )
+  devices <- readr::read_rds(snapshot)$devices
+  unlink(snapshot)
+
+  current <- devices$imei[devices$customer_name %in% conf$metadata$tracker_imeis$customers]
+
+  unique(c(
+    as.character(archive),
+    as.character(current[!is.na(current) & nzchar(current)])
+  ))
 }
+

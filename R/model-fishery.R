@@ -1,33 +1,37 @@
-# Registered boats per reporting region, from the PESKAS | FRAME snapshot.
+#' Timor's reporting region for a frame `geo` row
+#'
+#' Eleven of the twelve published regions are GAUL level-1 districts; Atauro is
+#' a level-2 sub-district of Dili that Timor reports separately. Three district
+#' names also carry diacritics the published vocabulary does not.
+#'
+#' @param geo A frame `geo` table from [get_assets()].
+#' @return `geo` with a `reporting_region` column.
+#' @keywords helper
+#' @noRd
+frame_reporting_region <- function(geo) {
+  dplyr::mutate(
+    geo,
+    reporting_region = dplyr::case_when(
+      # Atauro is a gaul_2 of Dili, but a reporting region of its own here
+      .data$gaul_2_name == "Atauro" ~ "Atauro",
+      .data$gaul_1_name == "Liqui\u00E7\u00E1" ~ "Liquica",
+      .data$gaul_1_name == "Laut\u00E9m" ~ "Lautem",
+      .data$gaul_1_name == "Oecussi" ~ "Oecusse",
+      TRUE ~ .data$gaul_1_name
+    )
+  )
+}
+
+# Registered boats per reporting region, from the Airtable frame.
 #
-# This is the raising factor for every published municipal and national
-# estimate: `run_estimations()` does `catch = landing_catch *
-# n_landings_per_boat * n_boats`, strictly linear in `n_boats`.
-#
-# Airtable is authoritative (PLAN 2.5) and `geo.total_boats` is the
-# cross-country registered-boat field -- `coasts::generate_fleet_analysis()`
-# builds its own `boat_registry` from it. It replaces the Google Sheets
-# `registered_boats` table, which agreed on ten of twelve regions and
-# over-reported Manatuto (283 vs 213) and Viqueque (213 vs 207).
-#
-# The recode is four cases, not an accent strip: `iconv(x, "UTF-8",
-# "ASCII//TRANSLIT")` yields `Laut'em` / `Liquic'a` on macOS and matches
-# nothing. Same three spellings as `get_timor_boundaries()` in pds-maps.R;
-# consolidating the label sources is Phase 12.
-#
-# See .claude/migration/ALIGNMENT-AUDIT.md 11, table 5.
+# This is the raising factor for every published estimate: `run_estimations()`
+# computes `catch = landing_catch * n_landings_per_boat * n_boats`.
 get_registered_boats <- function(conf) {
-  timor_assets(get_assets(conf)$geo, conf) %>%
+  get_assets(conf)$geo %>%
     dplyr::filter(!is.na(.data$total_boats)) %>%
+    frame_reporting_region() %>%
     dplyr::transmute(
-      reporting_region = dplyr::case_when(
-        # Atauro is a gaul_2 of Dili, but a reporting region of its own here
-        .data$gaul_2_name == "Atauro" ~ "Atauro",
-        .data$gaul_1_name == "Liqui\u00E7\u00E1" ~ "Liquica",
-        .data$gaul_1_name == "Laut\u00E9m" ~ "Lautem",
-        .data$gaul_1_name == "Oecussi" ~ "Oecusse",
-        TRUE ~ .data$gaul_1_name
-      ),
+      .data$reporting_region,
       n_boats = as.integer(.data$total_boats)
     )
 }
@@ -635,11 +639,3 @@ model_taxa_porportion <- function(aggregated_results, taxa_results) {
   estimations_per_taxa
 }
 
-# NOTE: `model_indicators()` and its subgraph — `run_models()`,
-# `model_landings()`, `model_catch()`, `model_catch_per_taxa()`,
-# `model_value()`, `estimate_statistics()` and `estimates_per_taxa()` — lived
-# here until migration Phase 11. 674 lines, the former `R/model-catch.R`: a
-# second glmmTMB implementation of the same estimates that no workflow ever
-# called and nothing outside the block referenced.
-# `estimate_fishery_indicators()` above is the one the pipeline runs. Restore
-# from git history if the alternative estimator is ever wanted.

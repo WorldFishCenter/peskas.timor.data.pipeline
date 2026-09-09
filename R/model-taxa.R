@@ -71,29 +71,14 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 #' @section Length types:
 #' **Every length reaching this function is a total length.** v2 and v3 record
 #' TL; v1 recorded fork length and was converted once, at the freeze
-#' (`data-raw/freeze-landings-v1.R`, migration Phase 3).
-#'
-#' `length_type` is carried through from `catch_types` and is **descriptive
-#' only** — it selects nothing and converts nothing. It is non-`NA` for five
-#' invertebrate taxa (`SLV` CL, `OCZ` ML, `IAX` ML, `CRA` CW, `COZ` ShL), but
-#' enumerators measure those on total length in the field, which is what the
-#' `OCZ`/`SLV`/`IAX`/`MOO` overrides below encode. Confirmed 2026-08-10.
-#'
-#' The prose this replaced claimed the opposite of the code — "total length
-#' (TL) in survey version 1 and fork length (FL) in survey version 2" — and an
-#' `SRX` → disk-width rule that was never implemented. Both were wrong.
+#' (done once in the freeze).
 #'
 #' @section Input and output shape:
 #' Both are the **flat long** table — one row per (submission, catch, length
 #' bin) — with the taxon already resolved from the assets snapshot by
 #' [preprocess_landings()]. The output adds `weight` (grams) and the seven
 #' per-catch nutrient columns and changes nothing else.
-#'
-#' Until migration Phase 5 this function also re-nested the catch columns into
-#' `species_group` / `length_individuals` and dropped the standard submission
-#' columns, purely so the validators could keep reading raw KoBo names off a
-#' legacy-shaped artefact. [validate_landings()] reads the long table now, so
-#' the bridge is gone and the artefact is parquet like every stage before it.
+
 #'
 #' @param data The merged long landings table
 #' @param rfish_tab Table with length weight parameters
@@ -149,8 +134,8 @@ join_weights <- function(data, rfish_tab, nutrients_table) {
 #' applied it to TL, which overestimates weight, because FL and SL are shorter
 #' than TL (medians here: FL 0.958 TL, SL 0.827 TL).
 #'
-#' `length_length` is fetched by the same call and was previously discarded.
-#' It is now used to restate every convertible pair on a TL basis. POPLL fits
+#' `length_length`, fetched by the same call, restates every convertible pair on
+#' a TL basis. POPLL fits
 #' `Length1 = aL + bL * Length2` — **the second column is the predictor** — so
 #' the ratio `L_type / TL` is `bL` when `Length2` is `TL` and `1 / bL` when
 #' `Length1` is. Substituting `L_type ~= ratio * TL` into `W = a * L_type^b`
@@ -177,7 +162,7 @@ join_weights <- function(data, rfish_tab, nutrients_table) {
 #' conversion above, they are never restated either. That is deliberate: their
 #' `Type` values (`CW`, `ShL`, `ML`, `CL`) are invertebrate axes FishBase
 #' carries no conversion for, and field practice measures those taxa on total
-#' length anyway (confirmed 2026-08-10).
+#' length anyway.
 #'
 #' @param conf The configuration file.
 #'
@@ -262,12 +247,7 @@ get_morphometric_tables <- function(conf) {
 #' crustaceans, echinoderms and seaweed, plus flyingfish. Roughly 4% of national
 #' catch weight rests on them.
 #'
-#' They lived in the Google Sheets `morphometric_table` until 2026-09-05 and are
-#' now a package snapshot, refreshed by
-#' `data-raw/refresh-morphometric-coefficients.R`. No WIO pipeline has a Sheets
-#' metadata source, and this was the weight path's last read of one. Their
-#' permanent home is a curated table in `coasts` that
-#' [coasts::get_taxa_morphometrics()] pools for every country — COASTS-TODO C23.
+#' A hand-curated table shipped with the package; edit the CSV directly.
 #'
 #' @return A tibble in [coasts::get_length_weight_coeffs()] shape:
 #'   `alpha3_code`, `species_found`, `Type`, `EsQ`, `a`, `b`.
@@ -302,9 +282,9 @@ curated_lw_coeffs <- function() {
 #' container is rebuilt. Release **26.06** dissolved `Caesionidae` into
 #' `Lutjanidae` and `Scaridae` into `Labridae` — both family names survive with
 #' **zero species** — which took `CJX` and `PWT` to no coefficients at all.
-#' Nothing failed, because a taxon with no coefficient pair simply produces `NA`
-#' weight, which sums to zero: `CJX` is one of the 13 `models.modelled_taxa` and
-#' it went missing from `portal-taxa_aggregated` on two runs. COASTS-TODO C25.
+#' Nothing failed, because a taxon with no coefficient pair produces `NA`
+#' weight, which sums to zero — so a modelled taxon can vanish from the portal
+#' silently.
 #'
 #' This turns that into a failed job. Two codes are expected to have no
 #' coefficients and are exempt: `MZZ` ("Marine fishes nei", the class
@@ -326,11 +306,9 @@ assert_taxa_coverage <- function(taxa, lw) {
       "No length-weight coefficients resolved for: ",
       paste(sort(missing), collapse = ", "),
       ". Every catch row of these taxa would weigh NA. Before changing any ",
-      "code, check which FishBase release was used: a new release can empty a ",
-      "family without removing its name, which is how CJX and PWT broke in ",
-      "26.06. `rfishbase` is pinned to 5.0.1 in the Dockerfiles for exactly ",
-      "this reason -- see COASTS-TODO C25. If the taxon's reference name is a ",
-      "family, add a genus-level alias in `taxa_search_aliases()`."
+      "code, check `metadata.fishbase.db_version`: a new FishBase release can ",
+      "empty a family without removing its name. If the taxon's reference ",
+      "name is a family, add a genus-level alias in `taxa_search_aliases()`."
     )
   }
 
@@ -376,12 +354,9 @@ get_taxa_expansion <- function(conf, expanded = NULL) {
 #' code may appear more than once — the expansion is an inner join and unions
 #' the matches.
 #'
-#' The **codes** come from the PESKAS | FRAME assets snapshot, which is
-#' authoritative for taxa (PLAN §2.5). The **names** come from the FAO ASFIS
-#' list, keyed on `Alpha3_Code`, exactly as Mozambique's `process_species_list()`
-#' does. The two sources were measured identical on 2026-09-05: 55 of Timor's 56
-#' codes carry the same `scientific_name` in both, the exception being `MZZ`
-#' (frame `Osteichthyes`, ASFIS `Actinopterygii`), and both expand to the same
+#' The **codes** come from the Airtable frame, the **names** from the FAO ASFIS
+#' list keyed on `Alpha3_Code`. The two agree for 55 of Timor's 56 codes, the
+#' exception being `MZZ`, and both expand to the same
 #' 50 codes over the same species. ASFIS is used because the WIO pipelines use
 #' it, not because it changes an answer.
 #'
@@ -391,7 +366,6 @@ get_taxa_expansion <- function(conf, expanded = NULL) {
 #' @noRd
 get_taxa_list <- function(conf) {
   codes <- get_assets(conf)$taxa %>%
-    timor_assets(conf) %>%
     dplyr::transmute(alpha3_code = as.character(.data$alpha3_code)) %>%
     dplyr::filter(!is.na(.data$alpha3_code)) %>%
     dplyr::distinct()

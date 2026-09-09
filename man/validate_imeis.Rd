@@ -20,10 +20,7 @@ a recorded value is matched against the deployed devices by \strong{suffix}. A
 value short enough to be ambiguous, or matching no device, is flagged.
 }
 \details{
-The deployed-device list still comes from the Google Sheets \code{devices} table
-rather than the frame's \code{pds_devices}: measured 2026-08-10, the frame carries
-442 Timor devices against the Sheets' 595, and switching would take alert 3
-from 824 to 1,475 submissions and strip the resolved IMEI — hence the
-matched trip — from 651 of them.
+The roster spans every device ever deployed, since a submission from any year
+can reference one.
 }
 \keyword{validation}

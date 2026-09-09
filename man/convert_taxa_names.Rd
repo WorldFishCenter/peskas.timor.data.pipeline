@@ -2,19 +2,17 @@
 % Please edit documentation in R/pds-maps.R
 \name{convert_taxa_names}
 \alias{convert_taxa_names}
-\title{Convert taxa codes to common names}
+\title{Assign each taxon code to a broad species group}
 \usage{
-convert_taxa_names(data, conf)
+convert_taxa_names(data)
 }
 \arguments{
 \item{data}{A dataframe with taxa codes under a column named "catch_taxon"}
-
-\item{conf}{The config file}
 }
 \value{
-A dataframe with taxa common names
+\code{data} with a \code{fish_group} column
 }
 \description{
-Convert taxa codes to common names
+Assign each taxon code to a broad species group
 }
 \keyword{helper}

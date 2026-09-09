@@ -14,7 +14,6 @@ A tibble of merged landings.
 }
 \description{
 The merged table is the flat long catch table produced by
-\code{\link[=merge_landings]{merge_landings()}}: one row per (submission, catch, length bin), parquet
-since migration Phase 4.
+\code{\link[=merge_landings]{merge_landings()}}: one row per (submission, catch, length bin).
 }
 \keyword{storage}

@@ -54,13 +54,12 @@ docs
 ## coefficients are package data, not a downloaded artefact.
 !inst/extdata/*.csv
 
-## Golden-output snapshots for the coasts migration
-reference/
+## Local maintainer notes: the alignment record and spent one-off scripts.
+## Nothing in the package reads them.
+notes/
 
-## Claude Code — track .claude/migration/, not local settings
+## Claude Code — track CLAUDE.md and .claude/rules/, not local settings
 .claude/settings.local.json
-
-## Reference copy of the Mozambique pipeline (migration only)
 
 # Preview left behind by rendering README.Rmd
 README.html

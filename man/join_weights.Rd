@@ -26,17 +26,7 @@ convert catch  labels according to the FAO nomenclature
 
 \strong{Every length reaching this function is a total length.} v2 and v3 record
 TL; v1 recorded fork length and was converted once, at the freeze
-(\code{data-raw/freeze-landings-v1.R}, migration Phase 3).
-
-\code{length_type} is carried through from \code{catch_types} and is \strong{descriptive
-only} — it selects nothing and converts nothing. It is non-\code{NA} for five
-invertebrate taxa (\code{SLV} CL, \code{OCZ} ML, \code{IAX} ML, \code{CRA} CW, \code{COZ} ShL), but
-enumerators measure those on total length in the field, which is what the
-\code{OCZ}/\code{SLV}/\code{IAX}/\code{MOO} overrides below encode. Confirmed 2026-08-10.
-
-The prose this replaced claimed the opposite of the code — "total length
-(TL) in survey version 1 and fork length (FL) in survey version 2" — and an
-\code{SRX} → disk-width rule that was never implemented. Both were wrong.
+(done once in the freeze).
 }
 
 \section{Input and output shape}{
@@ -45,12 +35,6 @@ Both are the \strong{flat long} table — one row per (submission, catch, length
 bin) — with the taxon already resolved from the assets snapshot by
 \code{\link[=preprocess_landings]{preprocess_landings()}}. The output adds \code{weight} (grams) and the seven
 per-catch nutrient columns and changes nothing else.
-
-Until migration Phase 5 this function also re-nested the catch columns into
-\code{species_group} / \code{length_individuals} and dropped the standard submission
-columns, purely so the validators could keep reading raw KoBo names off a
-legacy-shaped artefact. \code{\link[=validate_landings]{validate_landings()}} reads the long table now, so
-the bridge is gone and the artefact is parquet like every stage before it.
 }
 
 \keyword{preprocessing}

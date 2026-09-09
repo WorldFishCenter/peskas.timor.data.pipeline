@@ -121,10 +121,9 @@ bin_midpoint <- function(bin) {
 
 #' Strip stray newlines from free-text answers
 #'
-#' About 60 free-text answers carry leading or trailing newlines that the CSV
-#' era preserved and the parquet era inherited. They are transcription noise:
-#' `trimws()`'s default whitespace class removes them, and migration Phase 3
-#' deliberately did **not** so that the format change stayed inert.
+#' About 60 free-text answers carry leading or trailing newlines. They are
+#' transcription noise, and `trimws()`'s default whitespace class removes
+#' them.
 #'
 #' @param x A data frame.
 #' @return `x` with every character column trimmed and `""` mapped to `NA`.

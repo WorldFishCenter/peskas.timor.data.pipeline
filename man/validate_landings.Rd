@@ -13,25 +13,16 @@ validate_landings(log_threshold = logger::DEBUG)
 no outputs. This function is used for it's side effects
 }
 \description{
-Downloads the weighted long catch table from cloud storage, runs every
-validator in \code{R/validation-functions.R}, and publishes two things: the validated
-landings artefacts, and the per-submission flags the enumerators act on.
-}
-\details{
-By default outlier identification uses the median absolute deviation (MAD).
+Downloads the weighted long catch table, runs every validator in
+\code{R/validation-functions.R}, and publishes the validated landings and the
+per-submission flags. Outlier identification uses the median absolute
+deviation by default.
 }
 \section{Outputs}{
 
 \itemize{
-\item \verb{<surveys.landings.validated.file_prefix>__*.rds} — the \strong{nested}
-artefact, one row per submission with the \code{landing_catch} list-column. This
-is the portal's input and its column names are load-bearing:
-\code{format_public_data()} reads \code{municipality}, \code{landing_site},
-\code{propulsion_gear}, \code{trip_length}, \code{catch_preservation} and the
-\verb{fisher_number_*} trio by name. Unchanged by migration Phase 5.
-\item \verb{<...>_long__*.parquet} — the same content in the \strong{flat long} shape, one
-row per (submission, catch, length bin), under the standard column names.
-Written for migration Phase 6's API export; nothing reads it yet.
+\item \verb{<...>_validated_long__*.parquet} — one row per (submission, catch, length
+bin) under the standard column names.
 \item \verb{<surveys.landings.validation.flags.file_prefix>__*.parquet} — a versioned
 snapshot of the flags. \code{\link[coasts:mdb_collection_push]{coasts::mdb_collection_push()}} replaces a
 collection wholesale, so this is the only history of what was flagged when.
@@ -40,17 +31,12 @@ collection wholesale, so this is the only history of what was flagged when.
 
 \section{Flags sink}{
 
-Flags go to the \strong{shared} cross-country validation database
-(\code{storage.mongodb.databases.validation}), one
+Flags go to the shared cross-country validation database, one
 \verb{surveys_flags-<asset_id>} collection per live form plus the matching
-\verb{enumerators_stats-<asset_id>}. v1 is frozen and gets neither. This replaced
-the Google Sheets \code{flags} tab in migration Phase 5.
+\verb{enumerators_stats-<asset_id>}; v1 is frozen and gets neither.
 
-Where a token is configured, the current KoBoToolbox validation status of the
-already-flagged submissions is read first, so an approval an enumerator
-entered by hand is preserved rather than overwritten. Writing a status \emph{back}
-to KoBoToolbox is \code{\link[=sync_validation_status]{sync_validation_status()}}, which the recurring pipeline
-deliberately does not call.
+Where a token is configured the current KoBoToolbox validation status is read
+first, so an approval entered by hand is preserved rather than overwritten.
 }
 
 \keyword{validation}

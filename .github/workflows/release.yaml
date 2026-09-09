@@ -1,5 +1,5 @@
 # Cuts a GitHub release from the top block of NEWS.md when one does not exist
-# for that version yet. Ported from the reference pipeline in migration Phase 9
+# for that version yet. Ported from the reference pipeline
 # **with its tag bug fixed**: the original writes `tag_name=v$version` to
 # `$GITHUB_OUTPUT` and then uses `v${{ steps.changelog.outputs.tag_name }}`,
 # producing `vv4.0.0`, and `check_tag` compounds it with a third `v`. Here the

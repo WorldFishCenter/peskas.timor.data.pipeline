@@ -15,13 +15,8 @@ details}
 no outputs. This function is used for it's side effects
 }
 \description{
-The one PDS product \code{coasts} has no equivalent for, and the reason Timor
-still has a track-preprocessing step at all after migration Phase 7 moved
-ingestion to \verb{coasts::*}. \code{coasts::preprocess_pds_tracks()} aggregates track
-points into 500 m and 1 km spatial grid cells for the shared effort
-products; \code{\link[=validate_pds_trips]{validate_pds_trips()}} needs something different — one row per
-trip carrying the geometry and signal-quality measures its alerts are built
-on:
+One row per trip, carrying the geometry and signal-quality measures
+\code{\link[=validate_pds_trips]{validate_pds_trips()}} builds its alerts on:
 }
 \details{
 \itemize{

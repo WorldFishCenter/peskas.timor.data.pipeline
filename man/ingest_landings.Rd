@@ -24,7 +24,7 @@ to the country bucket.
 \details{
 Only the \strong{live} forms are ingested. \code{v1} (SSF Landings) received its last
 submission on 2020-08-28 and is frozen: its preprocessed output was snapshot
-once by \code{data-raw/freeze-landings-v1.R} and is read from
+once, out of band, and is read from
 \code{surveys.landings.v1.frozen} thereafter.
 
 The parameters needed in \code{config.yml} are:

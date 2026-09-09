@@ -15,7 +15,6 @@ A tibble, one row per (submission, catch, length bin).
 \description{
 The same content as \code{\link[=get_validated_landings]{get_validated_landings()}}, one row per (submission,
 catch, length bin) under the standard column names and with \code{catch_kg} in
-kilograms. Written beside the nested artefact since migration Phase 5 and
-read by \code{\link[=export_api_validated]{export_api_validated()}}.
+kilograms. Read by \code{\link[=export_api_validated]{export_api_validated()}}.
 }
 \keyword{storage}

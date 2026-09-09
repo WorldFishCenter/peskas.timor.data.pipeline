@@ -4,18 +4,15 @@
 \alias{validate_conservation}
 \title{Resolve the recorded catch-preservation method}
 \usage{
-validate_conservation(submissions, metadata_conservation)
+validate_conservation(submissions)
 }
 \arguments{
 \item{submissions}{Output of \code{\link[=validation_submissions]{validation_submissions()}}.}
-
-\item{metadata_conservation}{The Google Sheets \code{conservation} table.}
 }
 \value{
 A tibble: \code{submission_id}, \code{conservation_place}, \code{alert_number}.
 }
 \description{
-Conservation has no frame equivalent, so the Google Sheets \code{conservation}
-table stays. Raises no alert.
+Maps the recorded code to its label. Raises no alert.
 }
 \keyword{validation}

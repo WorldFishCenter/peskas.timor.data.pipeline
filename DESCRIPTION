@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 4.0.0
+Version: 5.0.0
 Authors@R:
     c(person(given = "Lorenzo",
              family = "Longobardi",
@@ -28,6 +28,7 @@ BugReports:
 Depends:
     R (>= 2.10)
 Imports:
+    Amelia,
     arrow,
     blastula,
     coasts,
@@ -42,9 +43,10 @@ Imports:
     geosphere,
     git2r,
     glue,
-    googlesheets4,
     httr,
+    janitor,
     jsonlite,
+    kableExtra,
     logger,
     lubridate,
     magrittr,
@@ -59,39 +61,24 @@ Imports:
     tidyr,
     tidyselect,
     univOutl,
-    utils
+    utils,
+    zoo
 Suggests:
-    Amelia,
     apexcharter,
-    broom,
     covr,
     cowplot,
     ggchicklet,
     ggforce,
     ggplot2,
-    ggpubr,
     htmltools,
-    imputeTS,
-    janitor,
-    kableExtra,
-    leaflet,
-    mice,
-    mime,
-    mongolite,
     pkgdown,
-    RCurl,
     reactable,
-    readxl,
-    remotes,
     rmarkdown,
     roxygen2,
-    sessioninfo,
     testthat,
     tidytext,
     tinytest,
-    treemapify,
-    zip,
-    zoo
+    treemapify
 Remotes:
     github::hrbrmstr/ggchicklet,
     github::WorldFishCenter/peskas.coasts,

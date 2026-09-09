@@ -1,12 +1,11 @@
 # Runs the data report against the container `data-pipeline.yaml` builds and
 # pushes on every run. It deliberately does **not** build its own image: the
-# duplicate `build-container` job it used to carry could not succeed any more,
-# because `Dockerfile.prod` has taken `ARG COASTS_REF` with no default since
-# migration Phase 2 and this workflow never resolved or passed one.
+# duplicate `build-container` job it used to carry could not succeed, because
+# `Dockerfile.prod` takes `ARG COASTS_REF` with no default and this workflow
+# never resolved or passed one.
 #
-# State: `disabled_inactivity`. Re-enabling is a Phase 11 action, not a Phase 9
-# one — a schedule fires from the **default branch**, so until the migration
-# branch is merged this file's schedule would run `main`'s pre-migration code.
+# Its schedule fires from the **default branch**, so it always runs `main`'s
+# code regardless of which branch last changed this file.
 name: Generate and upload data report
 
 on:

@@ -4,14 +4,6 @@
 \alias{reports}
 \title{Emailed reports}
 \description{
-Renamed from \code{R/send-email.R} in migration Phase 8; the drivers and Rmd
-templates this renders live in \verb{inst/report/}. One function is left,
-\code{send_validation_mail()}, and it is not in a healthy workflow:
-\code{validation-email-sender.yaml} is disabled for inactivity and has been
-failing since ≥2025-09. Phase 5 rewrote the mail's source from the retired
-Google Sheets to the MongoDB flags sink and Phase 9 rebuilt the workflow;
-re-enabling the schedule waits for the Phase 11b merge, because a cron fires
-from the default branch. \code{send_sites_report()}, which never had a caller at
-all, went in Phase 11.
+The drivers and Rmd templates these render live in \verb{inst/report/}.
 }
 \keyword{internal}

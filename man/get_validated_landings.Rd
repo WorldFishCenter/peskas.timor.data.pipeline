@@ -18,14 +18,7 @@ One row per submission, with the catch as the \code{landing_catch} /
 and \code{estimate_fishery_indicators()} read.
 }
 \details{
-Until migration Phase 8 this read a second stored artefact,
-\code{timor-landings-merged_validated__*.rds}, written by \code{\link[=validate_landings]{validate_landings()}}
-beside the long parquet. That artefact is gone: this is now a \strong{view} over
-\code{\link[=get_validated_landings_long]{get_validated_landings_long()}}, rebuilt by \code{nest_landing_catch()}. The two
-were proven interchangeable before the switch — 97,360 submissions and
-1,648,016 catch rows compared column by column, every column equal, with
-1,599 catch weights differing by at most 2.9e-11 g (one ULP of the
-grams → kg → grams round trip) and the national total unchanged to 20
-significant digits.
+This is a view over \code{\link[=get_validated_landings_long]{get_validated_landings_long()}}, re-nested on read; there
+is no separate stored artefact in this shape.
 }
 \keyword{storage}

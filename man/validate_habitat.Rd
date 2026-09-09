@@ -15,10 +15,8 @@ A tibble: \code{submission_id}, \code{habitat_code}, \code{habitat_type},
 }
 \description{
 Habitat is the one label with no frame equivalent, so
-\code{\link[=preprocess_landings]{preprocess_landings()}} resolves it from the Google Sheets \code{habitat} table.
-This validator therefore only has to notice a code that table does not
-cover — the seven-way \code{case_when()} it used to duplicate was verified
-identical to the resolved column over all 97,347 submissions before being
-deleted.
+\code{\link[=preprocess_landings]{preprocess_landings()}} resolves it from a fixed code-to-label lookup.
+This validator therefore only has to notice a code the lookup does not
+cover.
 }
 \keyword{validation}

@@ -1,12 +1,7 @@
 #' Extract per-trip descriptors from PDS tracks
 #'
-#' The one PDS product `coasts` has no equivalent for, and the reason Timor
-#' still has a track-preprocessing step at all after migration Phase 7 moved
-#' ingestion to `coasts::*`. `coasts::preprocess_pds_tracks()` aggregates track
-#' points into 500 m and 1 km spatial grid cells for the shared effort
-#' products; [validate_pds_trips()] needs something different — one row per
-#' trip carrying the geometry and signal-quality measures its alerts are built
-#' on:
+#' One row per trip, carrying the geometry and signal-quality measures
+#' [validate_pds_trips()] builds its alerts on:
 #'
 #' * `start_end_distance` — metres between the first and last point of a trip,
 #'   which is how a one-way trip is spotted (alert 12).
@@ -116,13 +111,10 @@ describe_pds_tracks <- function(log_threshold = logger::DEBUG) {
 #' @export
 #'
 get_tracks_descriptors <- function(Trip, conf, tracks_list) {
-  # Nothing may escape this function as a bare condition. `furrr` maps it with
-  # `conf` as an argument, and R deparses the call when it prints a deferred
-  # warning or an unhandled error — which puts the **whole resolved config**,
-  # service-account private key and all, into the job log. That is the leak
-  # Phase 3 fixed in `read_config()`, arriving through a different door: the
-  # `Community` column of a PDS track carries an unquoted comma blob, so
-  # `read_csv()` warned on essentially every one of them. Muffle at the source.
+  # Nothing may escape as a bare condition: `furrr` maps this with `conf` as an
+  # argument, and R deparses the call when printing a deferred warning, which
+  # would put the whole resolved config — service-account key included — into
+  # the job log.
   withCallingHandlers(
     describe_one_track(Trip, conf, tracks_list),
     warning = function(w) {
@@ -133,10 +125,8 @@ get_tracks_descriptors <- function(Trip, conf, tracks_list) {
 }
 
 describe_one_track <- function(Trip, conf, tracks_list) {
-  # Since Phase 7 the track object name is exactly `<prefix>_<trip>.parquet`,
-  # with no version string, so this is an equality test rather than the
-  # substring match the versioned `pds-track-<trip>__<version>__.csv.gz` names
-  # needed — and it cannot mistake trip 1234 for trip 123.
+  # Track objects are named `<prefix>_<trip>.parquet` with no version string,
+  # so an equality test cannot mistake trip 1234 for trip 123.
   track_file <- sprintf(
     "%s_%s.parquet",
     conf$pds$pds_tracks$file_prefix,

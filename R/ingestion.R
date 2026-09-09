@@ -6,7 +6,7 @@
 #'
 #' Only the **live** forms are ingested. `v1` (SSF Landings) received its last
 #' submission on 2020-08-28 and is frozen: its preprocessed output was snapshot
-#' once by `data-raw/freeze-landings-v1.R` and is read from
+#' once, out of band, and is read from
 #' `surveys.landings.v1.frozen` thereafter.
 #'
 #' The parameters needed in `config.yml` are:
@@ -67,35 +67,6 @@ ingest_landings <- function(versions = c("v2", "v3"),
       options = coasts::resolve_storage_opts(conf, "country")
     )
   })
-}
-
-#' Ingest the Airtable frame assets snapshot
-#'
-#' Thin wrapper over [coasts::ingest_assets()], which pulls taxa, gears,
-#' vessels, landing sites, districts, forms, PDS devices and the fleet frame
-#' from the PESKAS | FRAME base and writes one versioned `assets__*.rds`.
-#'
-#' Airtable is authoritative wherever it overlaps the Google Sheets metadata
-#' tables (taxa, gears, vessels, landing sites, districts, PDS devices); the
-#' Sheets keep only the five tables the frame does not cover.
-#'
-#' Until coasts 4.7.0 the delegated call wrote the snapshot to the country
-#' bucket while every reader resolved the hub, so this function mirrored it
-#' afterwards. COASTS-TODO C11 fixed that upstream — `coasts::ingest_assets()`
-#' now writes the hub itself — and migration Phase 11 deleted the mirror.
-#'
-#' @param log_threshold The (standard Apache logj4) log level used as a
-#'   threshold for the logging infrastructure. See [logger::log_levels].
-#'
-#' @return No output. This function is used for its side effects.
-#' @keywords workflow ingestion metadata
-#' @export
-#'
-ingest_assets <- function(log_threshold = logger::DEBUG) {
-  coasts::ingest_assets(
-    log_threshold = log_threshold,
-    package = "peskas.timor.data.pipeline"
-  )
 }
 
 # Flatten one KoBo submission into a single-row tibble.

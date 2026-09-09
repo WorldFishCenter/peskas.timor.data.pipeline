@@ -4,31 +4,21 @@
 \alias{validate_sites}
 \title{Validate the recorded landing site}
 \usage{
-validate_sites(submissions, metadata_stations, metadata_reporting_units)
+validate_sites(submissions, frame_sites, frame_geo)
 }
 \arguments{
 \item{submissions}{Output of \code{\link[=validation_submissions]{validation_submissions()}}.}
 
-\item{metadata_stations}{The Google Sheets \code{stations} table.}
+\item{frame_sites}{The frame \code{sites} table from \code{\link[=get_assets]{get_assets()}}.}
 
-\item{metadata_reporting_units}{The Google Sheets \code{reporting_unit} table.}
+\item{frame_geo}{The frame \code{geo} table from \code{\link[=get_assets]{get_assets()}}.}
 }
 \value{
 A tibble: \code{submission_id}, \code{station_code}, \code{station_name},
 \code{reporting_region}, \code{alert_number}.
 }
 \description{
-Alert 16 fires when the recorded station code is in neither reference source.
-}
-\details{
-Unlike gear and vessels this validator \strong{keeps} its Google Sheets join, and
-deliberately. The published \code{municipality} is Timor's own reporting unit,
-which is not the frame's \code{gaul_1_name} — Atauro is its own reporting unit
-while GAUL puts it inside Dili — and \code{format_public_data()} hardcodes both
-the reporting-unit names and five Sheets spellings of \code{landing_site} when it
-classifies the north coast. Measured 2026-08-10: 11 of 40 site names differ
-between the two sources, two of them among those five. Reconciling the labels
-is migration Phase 8's, together with the portal parity gate; moving them
-here would silently reclassify published aggregates.
+Resolves the site name and reporting region from the Airtable frame by site
+code. Alert 16 fires when the recorded code matches no known site.
 }
 \keyword{validation}

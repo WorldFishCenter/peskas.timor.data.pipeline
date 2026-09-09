@@ -15,7 +15,7 @@ validate_mesh(submissions, mesh_limit)
 A tibble: \code{submission_id}, \code{mesh_size}, \code{alert_number}.
 }
 \description{
-The unit conversion moved to \code{\link[=preprocess_landings]{preprocess_landings()}} in migration Phase 5;
-\code{mesh_size} reaches this function in millimetres.
+\code{mesh_size} reaches this function in millimetres, converted by
+\code{\link[=preprocess_landings]{preprocess_landings()}}.
 }
 \keyword{validation}
