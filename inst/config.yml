@@ -140,15 +140,6 @@ default:
     exclude_customers:
       - "Traders"
       - "FSSP2: Traders"
-
-    # The fishing fleet's current devices, for `coasts::generate_fleet_analysis()`.
-    # An allowlist is right here and wrong above: this filters the *device*
-    # roster by who owns a tracker now, which is what fleet size means, while
-    # `exclude_customers` filters *historical trips* and must not drop the
-    # history of a tracker since reassigned. Same list as
-    # `metadata$tracker_imeis$customers`, for the same reason.
-    customers:
-      - "MAF / WorldFish"
     # Stage artefacts, read by `coasts::ingest_pds_trips()` and
     # `coasts::ingest_pds_tracks()`. Tracks are one `pds-tracks_<id>.parquet`
     # per trip and are not versioned, so a re-ingest overwrites.
