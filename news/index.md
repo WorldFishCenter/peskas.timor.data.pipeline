@@ -1,5 +1,50 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.1.0
+
+### Timor appears on the multi-country coasts portal
+
+Timor’s boundary polygons were already on the coasts portal and already
+pushed to its MongoDB on every run, but nothing published the metrics
+behind them, so the country rendered as empty shapes. Timor now runs the
+same coasts chain as Kenya, Mozambique and Zanzibar, in the same jobs
+and the same order, rather than a Timor-shaped variant of it.
+
+- **NEW** `summarize-model-data`
+  ([`coasts::summarize_data()`](https://rdrr.io/pkg/coasts/man/summarize_data.html)
+  then
+  [`coasts::generate_fleet_analysis()`](https://rdrr.io/pkg/coasts/man/generate_fleet_analysis.html))
+  and `export-surveys-portal`
+  ([`coasts::export_portal()`](https://rdrr.io/pkg/coasts/man/export_portal.html)),
+  mirroring the other three pipelines. `export_portal()` uploads
+  `timor_monthly_summaries_map` to the coasts bucket, which is what puts
+  Timor on the portal, and fills the `dashboard` database.
+- **NEW**
+  [`coasts::preprocess_pds_tracks()`](https://rdrr.io/pkg/coasts/man/preprocess_pds_tracks.html)
+  in `preprocess-pds-data`, the step Timor previously skipped. It is
+  incremental, but the first run has no `pds-tracks-preprocessed` to
+  diff against and so grids every track in the bucket — 101,985 objects
+  in `gs://pds-timor` measured 2026-09-10. Expect one long run, then
+  normal ones.
+- **NEW** config: `surveys$summaries`, `surveys$aggregated`,
+  `metadata$map_boundaries`, `pds$customers`, and
+  `storage$mongodb$databases$dashboard` — the keys the other three
+  already carry, in the same positions.
+- **NEW** `inst/tinytest/test_coasts_metrics.R`, 9 assertions on the
+  published parquet: the seven-column schema `export_geos()` reads,
+  `country` as the join key, metrics present and finite, and every named
+  administrative post resolving to a municipality. Runs as a step in
+  `export-surveys-portal`.
+- **CHANGED** Requires `peskas.coasts` \>= 4.12.3, which adds the
+  `timor_monthly_summaries_map` prefix to `export_geos()` and fixes two
+  things Timor’s data trips over: one undated landing aborting every
+  summary, and zero-fisher trips putting `Inf` in the published metrics.
+
+The Timor portal is unaffected. It is still served from versioned
+`portal-*.json` in the public bucket by `export-trips`, which is
+untouched; `storage$mongodb$databases$dashboard` is a separate sink that
+nothing in `peskas.timor.portal.v2` reads.
+
 ## peskas.timor.data.pipeline 5.0.0
 
 This release completes the move to a single source of reference data.

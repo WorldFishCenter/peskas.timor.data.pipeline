@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,24 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.1.0" id="peskastimordatapipeline-510">peskas.timor.data.pipeline 5.1.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-510"></a></h2>
+<div class="section level3">
+<h3 id="timor-appears-on-the-multi-country-coasts-portal-5-1-0">Timor appears on the multi-country coasts portal<a class="anchor" aria-label="anchor" href="#timor-appears-on-the-multi-country-coasts-portal-5-1-0"></a></h3>
+<p>Timor’s boundary polygons were already on the coasts portal and already pushed to its MongoDB on every run, but nothing published the metrics behind them, so the country rendered as empty shapes. Timor now runs the same coasts chain as Kenya, Mozambique and Zanzibar, in the same jobs and the same order, rather than a Timor-shaped variant of it.</p>
+<ul><li>
+<strong>NEW</strong> <code>summarize-model-data</code> (<code><a href="https://rdrr.io/pkg/coasts/man/summarize_data.html" class="external-link">coasts::summarize_data()</a></code> then <code><a href="https://rdrr.io/pkg/coasts/man/generate_fleet_analysis.html" class="external-link">coasts::generate_fleet_analysis()</a></code>) and <code>export-surveys-portal</code> (<code><a href="https://rdrr.io/pkg/coasts/man/export_portal.html" class="external-link">coasts::export_portal()</a></code>), mirroring the other three pipelines. <code>export_portal()</code> uploads <code>timor_monthly_summaries_map</code> to the coasts bucket, which is what puts Timor on the portal, and fills the <code>dashboard</code> database.</li>
+<li>
+<strong>NEW</strong> <code><a href="https://rdrr.io/pkg/coasts/man/preprocess_pds_tracks.html" class="external-link">coasts::preprocess_pds_tracks()</a></code> in <code>preprocess-pds-data</code>, the step Timor previously skipped. It is incremental, but the first run has no <code>pds-tracks-preprocessed</code> to diff against and so grids every track in the bucket — 101,985 objects in <code>gs://pds-timor</code> measured 2026-09-10. Expect one long run, then normal ones.</li>
+<li>
+<strong>NEW</strong> config: <code>surveys$summaries</code>, <code>surveys$aggregated</code>, <code>metadata$map_boundaries</code>, <code>pds$customers</code>, and <code>storage$mongodb$databases$dashboard</code> — the keys the other three already carry, in the same positions.</li>
+<li>
+<strong>NEW</strong> <code>inst/tinytest/test_coasts_metrics.R</code>, 9 assertions on the published parquet: the seven-column schema <code>export_geos()</code> reads, <code>country</code> as the join key, metrics present and finite, and every named administrative post resolving to a municipality. Runs as a step in <code>export-surveys-portal</code>.</li>
+<li>
+<strong>CHANGED</strong> Requires <code>peskas.coasts</code> &gt;= 4.12.3, which adds the <code>timor_monthly_summaries_map</code> prefix to <code>export_geos()</code> and fixes two things Timor’s data trips over: one undated landing aborting every summary, and zero-fisher trips putting <code>Inf</code> in the published metrics.</li>
+</ul><p>The Timor portal is unaffected. It is still served from versioned <code>portal-*.json</code> in the public bucket by <code>export-trips</code>, which is untouched; <code>storage$mongodb$databases$dashboard</code> is a separate sink that nothing in <code>peskas.timor.portal.v2</code> reads.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.0.0" id="peskastimordatapipeline-500">peskas.timor.data.pipeline 5.0.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-500"></a></h2>
 <p>This release completes the move to a single source of reference data. Landing site names, municipalities, gears, vessels and species codes now all come from the shared Peskas reference base, the same one Kenya, Mozambique and Zanzibar use, so a site or species means the same thing in every country’s data. The spreadsheets that used to hold some of this are gone.</p>

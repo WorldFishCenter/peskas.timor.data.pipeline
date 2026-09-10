@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,11 +45,11 @@
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span>         <span class="co"># testthat, 40 assertions</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">docker</span> compose up                                   <span class="co"># RStudio on :8802</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">docker</span> build <span class="at">-f</span> Dockerfile.prod <span class="at">--build-arg</span> COASTS_REF=<span class="op">&lt;</span>tag<span class="op">&gt;</span> -t peskas-timor .</span></code></pre></div>
-<p>The five <code>inst/tinytest/</code> suites assert against cloud artefacts and run as steps <strong>inside</strong> the pipeline workflow, not under <code>devtools::test()</code>:</p>
+<p>The six <code>inst/tinytest/</code> suites assert against cloud artefacts and run as steps <strong>inside</strong> the pipeline workflow, not under <code>devtools::test()</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">tinytest</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tinytest/man/run_test_file.html" class="external-link">run_test_file</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"tinytest/test_validated_landings.R"</span>,</span>
 <span>                                    package <span class="op">=</span> <span class="st">"peskas.timor.data.pipeline"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code>ARG COASTS_REF</code> has <strong>no default</strong> in either Dockerfile — a local build must pass it. The workflow resolves the latest <code>peskas.coasts</code> release and passes it in, so a build always records which hub release it used. Keep <code>Dockerfile</code> and <code>Dockerfile.prod</code> in step. <strong>coasts &gt;= 4.11.0 is a hard floor.</strong></p>
+<p><code>ARG COASTS_REF</code> has <strong>no default</strong> in either Dockerfile — a local build must pass it. The workflow resolves the latest <code>peskas.coasts</code> release and passes it in, so a build always records which hub release it used. Keep <code>Dockerfile</code> and <code>Dockerfile.prod</code> in step. <strong>coasts &gt;= 4.12.3 is a hard floor.</strong></p>
 </div>
 <div class="section level2">
 <h2 id="rules-that-apply-everywhere">Rules that apply everywhere<a class="anchor" aria-label="anchor" href="#rules-that-apply-everywhere"></a></h2>
@@ -82,7 +82,7 @@
 </tr><tr><td>
 <strong><code><a href="https://rdrr.io/pkg/tinytest/man/run_test_file.html" class="external-link">tinytest::run_test_file()</a></code> sets no exit status</strong> — the test steps reported success regardless of what they found</td>
 <td><code>validation.md</code></td>
-</tr><tr><td>An <strong>allowlist</strong> of PDS customers discards the trip history of any tracker later reassigned</td>
+</tr><tr><td>An <strong>allowlist</strong> of PDS customers discards the trip history of any tracker later reassigned. <code>pds$exclude_customers</code> selects trips; <code>pds$customers</code> is a separate device roster for <code>generate_fleet_analysis()</code> and is correctly an allowlist</td>
 <td><code>pds.md</code></td>
 </tr><tr><td>
 <strong><code>harmonise_v2()</code>/<code>harmonise_v3()</code> are not <code>map_surveys()</code></strong> — they reconcile form versions, not labels</td>
@@ -90,14 +90,19 @@
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="pipeline">Pipeline<a class="anchor" aria-label="anchor" href="#pipeline"></a></h2>
-<p><code>.github/workflows/data-pipeline.yaml</code>, twelve jobs, every 2 days plus on every push (~1h30m). It is the only workflow that produces data, and a push to any non-<code>main</code> branch runs the whole thing against the <code>-dev</code> buckets, which is the integration test.</p>
+<p><code>.github/workflows/data-pipeline.yaml</code>, fourteen jobs, every 2 days plus on every push (~1h30m). It is the only workflow that produces data, and a push to any non-<code>main</code> branch runs the whole thing against the <code>-dev</code> buckets, which is the integration test.</p>
 <pre><code>build-container
 ├── ingest-landings   -&gt; preprocess-landings
 └── ingest-pds-data   -&gt; preprocess-pds-data -&gt; validate-pds-data
 
 merge-landings -&gt; validate-landings ├── export-api
                                     └── merge-trips ├── model-indicators
-                                                    └── export-trips</code></pre>
+                                                    └── export-trips
+
+export-api ─────────┐
+                    ├── summarize-model-data -&gt; export-surveys-portal
+preprocess-pds-data ─┘</code></pre>
+<p><code>summarize-model-data</code> and <code>export-surveys-portal</code> are the shared coasts chain, the same two jobs in the same order as Kenya, Mozambique and Zanzibar: <code>summarize_data()</code> -&gt; <code>generate_fleet_analysis()</code> -&gt; <code>export_portal()</code>. They put Timor on the multi-country coasts portal by publishing <code>timor_monthly_summaries_map</code> to the coasts bucket, and fill the <code>dashboard</code> MongoDB. <strong>Neither feeds <code>peskas.timor.portal.v2</code></strong> — that is <code>export-trips</code>, which writes <code>portal-*.json</code> to the public bucket and is independent.</p>
 <p>Eight other workflows: <code>R-CMD-check</code>, <code>pkgdown</code>, <code>test-coverage</code>, <code>pr-commands</code>, <code>release</code> (cuts a release from the top block of <code>NEWS.md</code> on a push to <code>main</code>), and three that run in the pipeline’s container — <code>data-report</code>, <code>dataverse-upload</code>, <code>validation-email-sender</code>. Two things the non-pipeline workflows must not do again: <strong>build their own image</strong>, and <strong>assume a referenced function is exercised</strong>.</p>
 </div>
 <div class="section level2">
