@@ -46,7 +46,7 @@
 <li>
 <strong>NEW</strong> <code>inst/tinytest/test_coasts_metrics.R</code>, 9 assertions on the published parquet: the seven-column schema <code>export_geos()</code> reads, <code>country</code> as the join key, metrics present and finite, and every named administrative post resolving to a municipality. Runs as a step in <code>export-surveys-portal</code>.</li>
 <li>
-<strong>CHANGED</strong> Requires <code>peskas.coasts</code> &gt;= 4.12.3, which adds the <code>timor_monthly_summaries_map</code> prefix to <code>export_geos()</code> and fixes two things Timor’s data trips over: one undated landing aborting every summary, and zero-fisher trips putting <code>Inf</code> in the published metrics.</li>
+<strong>CHANGED</strong> Requires <code>peskas.coasts</code> &gt;= 4.12.3, which fixes two things Timor’s data trips over: one undated landing aborting every summary, and zero-fisher trips putting <code>Inf</code> in the published metrics. Both are in <code>summarize_data()</code>, and without them this pipeline cannot complete.</li>
 </ul><p>The Timor portal is unaffected. It is still served from versioned <code>portal-*.json</code> in the public bucket by <code>export-trips</code>, which is untouched; <code>storage$mongodb$databases$dashboard</code> is a separate sink that nothing in <code>peskas.timor.portal.v2</code> reads.</p>
 </div>
 </div>

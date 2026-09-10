@@ -41,10 +41,11 @@ and the same order, rather than a Timor-shaped variant of it.
   `country` as the join key, metrics present and finite, and every named
   administrative post resolving to a municipality. Runs as a step in
   `export-surveys-portal`.
-- **CHANGED** Requires `peskas.coasts` \>= 4.12.3, which adds the
-  `timor_monthly_summaries_map` prefix to `export_geos()` and fixes two
+- **CHANGED** Requires `peskas.coasts` \>= 4.12.3, which fixes two
   things Timor’s data trips over: one undated landing aborting every
   summary, and zero-fisher trips putting `Inf` in the published metrics.
+  Both are in `summarize_data()`, and without them this pipeline cannot
+  complete.
 
 The Timor portal is unaffected. It is still served from versioned
 `portal-*.json` in the public bucket by `export-trips`, which is
