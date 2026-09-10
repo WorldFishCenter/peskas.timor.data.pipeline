@@ -22,6 +22,12 @@ env:
   # The validation flags sink. Absent → `validate_landings()` warns and the
   # versioned flags snapshot in cloud storage is the only record of a run.
   MONGODB_CONNECTION_STRING_VALIDATION: ${{ secrets.MONGODB_CONNECTION_STRING_VALIDATION }}
+  # The country dashboard sink, `storage.mongodb.connection_strings.main`.
+  # Required by `export-surveys-portal`: `coasts::export_portal()` uploads the
+  # coasts parquet first and only then pushes the five dashboard collections,
+  # so an absent value still publishes Timor to the coasts portal but fails the
+  # job at the Mongo step.
+  MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
   # Optional, and has no secret. Present: manual approvals entered in
   # KoBoToolbox survive a run. Absent: they are overwritten by the pipeline's
   # own flags. `sync_validation_status()` is not wired in either way.
@@ -204,12 +210,17 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      # `coasts::preprocess_pds_tracks()` — the spatial grid summaries the other
-      # three countries run here — is deliberately not wired in: its output
-      # feeds `coasts::summarize_data()`, which Timor does not use, and its
-      # first pass reads every track in the bucket.
       - name: Call describe_pds_tracks()
         run: Rscript -e 'peskas.timor.data.pipeline::describe_pds_tracks()'
+      # The spatial grid summaries, as in the other three countries. Its output
+      # feeds `coasts::summarize_data()` and ends up in the dashboard's
+      # `grid_summaries` collection. Incremental: it reads the existing
+      # `pds-tracks-preprocessed` and only grids trips missing from it. The
+      # FIRST run has no such file and so reads every track in the bucket —
+      # 101,985 objects in `gs://pds-timor` measured 2026-09-10, hours rather
+      # than minutes. Expect one long run, then normal ones.
+      - name: Call preprocess_pds_tracks()
+        run: Rscript -e 'coasts::preprocess_pds_tracks(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
 
   validate-pds-data:
     name: Validate pds data
@@ -229,6 +240,56 @@ jobs:
       - name: Test validated PDS trips
         run: >
           Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_validated_pds_trips.R",
+          package = "peskas.timor.data.pipeline"));
+          if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
+
+  # The coasts chain, in the same two jobs and the same order as Kenya,
+  # Mozambique and Zanzibar. `summarize_data()` reads `timor/validated` from the
+  # API bucket and the grid summaries from the country bucket, so this waits on
+  # both `export-api` and `preprocess-pds-data`.
+  summarize-model-data:
+    name: Summarize and model validated data
+    needs: [export-api, preprocess-pds-data]
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call summarize_data()
+        run: Rscript -e 'coasts::summarize_data(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
+      - name: Call generate_fleet_analysis()
+        run: Rscript -e 'coasts::generate_fleet_analysis(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
+
+  # `export_portal()` does two things: it uploads `timor_monthly_summaries_map`
+  # to the coasts bucket, which is what puts Timor on the multi-country portal,
+  # and it pushes five collections to the `dashboard` database. The Timor portal
+  # is not involved — that is `export-trips`, which writes `portal-*.json`.
+  export-surveys-portal:
+    name: Export aggregated data
+    needs: summarize-model-data
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Set env to production
+        if: endsWith(github.ref, '/main')
+        run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
+      - name: Call export_portal()
+        run: Rscript -e 'coasts::export_portal(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
+      # Every way this export can fail renders as polygons with no data on the
+      # coasts portal, which is what it was added to fix. `run_test_file()` sets
+      # no exit status, hence the explicit quit.
+      - name: Test coasts portal metrics
+        run: >
+          Rscript -e 'r <- tinytest::run_test_file(system.file("tinytest/test_coasts_metrics.R",
           package = "peskas.timor.data.pipeline"));
           if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)'
 

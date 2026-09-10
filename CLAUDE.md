@@ -27,7 +27,7 @@ docker compose up                                   # RStudio on :8802
 docker build -f Dockerfile.prod --build-arg COASTS_REF=<tag> -t peskas-timor .
 ```
 
-The five `inst/tinytest/` suites assert against cloud artefacts and run as
+The six `inst/tinytest/` suites assert against cloud artefacts and run as
 steps **inside** the pipeline workflow, not under `devtools::test()`:
 
 ```r
@@ -38,7 +38,7 @@ tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
 `ARG COASTS_REF` has **no default** in either Dockerfile — a local build must
 pass it. The workflow resolves the latest `peskas.coasts` release and passes it
 in, so a build always records which hub release it used. Keep `Dockerfile` and
-`Dockerfile.prod` in step. **coasts >= 4.11.0 is a hard floor.**
+`Dockerfile.prod` in step. **coasts >= 4.12.3 is a hard floor.**
 
 ## Rules that apply everywhere
 
@@ -74,12 +74,12 @@ detail, loaded when you open the code it concerns.
 | An **unpinned FishBase release** changed published catch on a container rebuild, dropping a taxon worth 5% of landed weight from the portal | `taxa-and-weights.md` |
 | An **unset `metadata.fishbase.fao_areas`** silently filters Timor on the Indian Ocean pair the WIO repos use | `config-and-secrets.md` |
 | **`tinytest::run_test_file()` sets no exit status** — the test steps reported success regardless of what they found | `validation.md` |
-| An **allowlist** of PDS customers discards the trip history of any tracker later reassigned | `pds.md` |
+| An **allowlist** of PDS customers discards the trip history of any tracker later reassigned. `pds$exclude_customers` selects trips; `pds$customers` is a separate device roster for `generate_fleet_analysis()` and is correctly an allowlist | `pds.md` |
 | **`harmonise_v2()`/`harmonise_v3()` are not `map_surveys()`** — they reconcile form versions, not labels | `surveys.md` |
 
 ## Pipeline
 
-`.github/workflows/data-pipeline.yaml`, twelve jobs, every 2 days plus on every
+`.github/workflows/data-pipeline.yaml`, fourteen jobs, every 2 days plus on every
 push (~1h30m). It is the only workflow that produces data, and a push to any
 non-`main` branch runs the whole thing against the `-dev` buckets, which is the
 integration test.
@@ -92,7 +92,19 @@ build-container
 merge-landings -> validate-landings ├── export-api
                                     └── merge-trips ├── model-indicators
                                                     └── export-trips
+
+export-api ─────────┐
+                    ├── summarize-model-data -> export-surveys-portal
+preprocess-pds-data ─┘
 ```
+
+`summarize-model-data` and `export-surveys-portal` are the shared coasts chain, the
+same two jobs in the same order as Kenya, Mozambique and Zanzibar:
+`summarize_data()` -> `generate_fleet_analysis()` -> `export_portal()`. They
+put Timor on the multi-country coasts portal by publishing
+`timor_monthly_summaries_map` to the coasts bucket, and fill the `dashboard`
+MongoDB. **Neither feeds `peskas.timor.portal.v2`** — that is `export-trips`,
+which writes `portal-*.json` to the public bucket and is independent.
 
 Eight other workflows: `R-CMD-check`, `pkgdown`, `test-coverage`,
 `pr-commands`, `release` (cuts a release from the top block of `NEWS.md` on a

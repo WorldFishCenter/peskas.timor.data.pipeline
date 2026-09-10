@@ -50,6 +50,24 @@ default:
   # ===========================================================================
   surveys:
 
+    # The parquets `coasts::summarize_data()` writes to the country bucket, each
+    # named `<file_prefix>_<table>`. Only `_all_monthly_summaries` is read back,
+    # by `coasts::export_coasts_metrics()`; the others exist to fill a country
+    # dashboard, which Timor does not have. For the same reason
+    # `exclude_dashboard_ids` is unset: with no dashboard there is nothing to
+    # keep a survey form out of, and the coasts portal wants every form anyway.
+    summaries:
+      file_prefix: timor-summaries
+      version: latest
+
+    # `coasts::generate_fleet_analysis()` writes this; `coasts::export_portal()`
+    # reads it for the dashboard's estimated trips, catch tonnage and revenue.
+    # Distinct from `estimate_fishery_indicators()`, which models the same
+    # quantities for the Timor portal's own `portal-*.json` and is unaffected.
+    aggregated:
+      file_prefix: timor-aggregated
+      version: latest
+
     # Shape: {source}: {version}: raw / preprocessed / validated. File prefixes
     # match the object families already in `gs://timor`.
     landings:
@@ -122,6 +140,15 @@ default:
     exclude_customers:
       - "Traders"
       - "FSSP2: Traders"
+
+    # The fishing fleet's current devices, for `coasts::generate_fleet_analysis()`.
+    # An allowlist is right here and wrong above: this filters the *device*
+    # roster by who owns a tracker now, which is what fleet size means, while
+    # `exclude_customers` filters *historical trips* and must not drop the
+    # history of a tracker since reassigned. Same list as
+    # `metadata$tracker_imeis$customers`, for the same reason.
+    customers:
+      - "MAF / WorldFish"
     # Stage artefacts, read by `coasts::ingest_pds_trips()` and
     # `coasts::ingest_pds_tracks()`. Tracks are one `pds-tracks_<id>.parquet`
     # per trip and are not versioned, so a re-ingest overwrites.
@@ -155,6 +182,19 @@ default:
   # METADATA — reference data and lookup tables
   # ===========================================================================
   metadata:
+    # GAUL boundary geojson, held in the shared coasts bucket rather than this
+    # country's. `coasts::export_coasts_metrics()` joins `gaul2` to the monthly
+    # summaries to attach a municipality to each administrative post, and
+    # `coasts::export_geos()` renders both levels on the portal. Checked
+    # 2026-09-10: all 20 administrative posts the API publishes match a
+    # `gaul2_name` in the gaul2 file exactly, and every municipality those
+    # resolve to is present in the gaul1 file.
+    #
+    # First key under `metadata`, as in Kenya, Mozambique and Zanzibar.
+    map_boundaries:
+      gaul1: TLS_boundaries_gaul1
+      gaul2: TLS_boundaries_gaul2
+
     asfis:
       file_prefix: asfis
 
@@ -393,8 +433,12 @@ default:
     # Address a storage provider explicitly as `conf$storage$google`; nothing
     # may iterate the children of `storage`, since `mongodb` is one of them.
     #
-    # There is no `dashboard` database: Timor's portal is served from versioned
-    # `portal-*.json` in the public bucket, not from MongoDB.
+    # `dashboard` is the country-dashboard sink `coasts::export_portal()` fills,
+    # the same five collections Kenya, Mozambique and Zanzibar write. It is not
+    # what serves the Timor portal: that is still versioned `portal-*.json` in
+    # the public bucket, written by `export_files()` and untouched by this.
+    # Nor is it what serves the multi-country coasts portal, which reads
+    # `timor_monthly_summaries_map` as a parquet from the coasts bucket.
     mongodb:
       connection_strings:
         main: !expr Sys.getenv('MONGODB_CONNECTION_STRING')
@@ -409,6 +453,14 @@ default:
           collections:
             flags: surveys_flags
             enumerators_stats: enumerators_stats
+        dashboard:
+          database_name: portal-dev
+          collections:
+            monthly_summaries: monthly_summaries
+            taxa_summaries: taxa_summaries
+            districts_summaries: districts_summaries
+            gear_summaries: gear_summaries
+            grid_summaries: grid_summaries
 
   pds_storage:
     google:
@@ -445,6 +497,8 @@ production:
           database_name: timor-prod
         validation:
           database_name: validation-prod
+        dashboard:
+          database_name: portal-prod
   pds_storage:
     google:
       options:
