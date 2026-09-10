@@ -27,9 +27,15 @@ and the same order, rather than a Timor-shaped variant of it.
   in `gs://pds-timor` measured 2026-09-10. Expect one long run, then
   normal ones.
 - **NEW** config: `surveys$summaries`, `surveys$aggregated`,
-  `metadata$map_boundaries`, `pds$customers`, and
-  `storage$mongodb$databases$dashboard` — the keys the other three
-  already carry, in the same positions.
+  `metadata$map_boundaries` and `storage$mongodb$databases$dashboard` —
+  the keys the other three already carry, in the same positions.
+  `pds$customers` is deliberately *not* among them:
+  [`coasts::generate_fleet_analysis()`](https://rdrr.io/pkg/coasts/man/generate_fleet_analysis.html)
+  reads it as a device roster while
+  [`coasts::select_country_trips()`](https://rdrr.io/pkg/coasts/man/select_country_trips.html)
+  reads it as trip selection and refuses to run alongside
+  `exclude_customers`, which is how Timor selects trips. One key, two
+  meanings — see the note in `inst/config.yml`.
 - **NEW** `inst/tinytest/test_coasts_metrics.R`, 9 assertions on the
   published parquet: the seven-column schema `export_geos()` reads,
   `country` as the join key, metrics present and finite, and every named
