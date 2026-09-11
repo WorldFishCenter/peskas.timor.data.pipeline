@@ -48,14 +48,11 @@ therefore averaged fork-length and standard-length fits into one number and
 applied it to TL, which overestimates weight, because FL and SL are shorter
 than TL (medians here: FL 0.958 TL, SL 0.827 TL).
 
-\code{length_length}, fetched by the same call, restates every convertible pair on
-a TL basis. POPLL fits
-\code{Length1 = aL + bL * Length2} — \strong{the second column is the predictor} — so
-the ratio \code{L_type / TL} is \code{bL} when \code{Length2} is \code{TL} and \code{1 / bL} when
-\code{Length1} is. Substituting \verb{L_type ~= ratio * TL} into \code{W = a * L_type^b}
-gives \code{W = a * ratio^b * TL^b}: \strong{\code{b} is unchanged and only \code{a} is
-rescaled}. Fits with an intercept above 1 cm are not proportional and are
-skipped; per species and type the median ratio is used.
+\code{\link[coasts:convert_lw_to_tl]{coasts::convert_lw_to_tl()}} restates every convertible pair on a TL basis,
+from the \code{length_length} table fetched by the same call. \strong{\code{b} is unchanged
+and only \code{a} is rescaled}, by \code{ratio^b}. The POPLL fit direction, the 1 cm
+intercept cut-off and the median-ratio-per-species-and-type rule all live
+there, asserted by its tests rather than restated here.
 
 \code{length_types = NULL} is passed for this reason. The coasts default keeps
 only \code{TL}/\code{FL} pairs, which would leave the 460 \code{SL} rows unconvertible —

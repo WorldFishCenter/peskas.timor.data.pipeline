@@ -134,14 +134,11 @@ join_weights <- function(data, rfish_tab, nutrients_table) {
 #' applied it to TL, which overestimates weight, because FL and SL are shorter
 #' than TL (medians here: FL 0.958 TL, SL 0.827 TL).
 #'
-#' `length_length`, fetched by the same call, restates every convertible pair on
-#' a TL basis. POPLL fits
-#' `Length1 = aL + bL * Length2` — **the second column is the predictor** — so
-#' the ratio `L_type / TL` is `bL` when `Length2` is `TL` and `1 / bL` when
-#' `Length1` is. Substituting `L_type ~= ratio * TL` into `W = a * L_type^b`
-#' gives `W = a * ratio^b * TL^b`: **`b` is unchanged and only `a` is
-#' rescaled**. Fits with an intercept above 1 cm are not proportional and are
-#' skipped; per species and type the median ratio is used.
+#' [coasts::convert_lw_to_tl()] restates every convertible pair on a TL basis,
+#' from the `length_length` table fetched by the same call. **`b` is unchanged
+#' and only `a` is rescaled**, by `ratio^b`. The POPLL fit direction, the 1 cm
+#' intercept cut-off and the median-ratio-per-species-and-type rule all live
+#' there, asserted by its tests rather than restated here.
 #'
 #' `length_types = NULL` is passed for this reason. The coasts default keeps
 #' only `TL`/`FL` pairs, which would leave the 460 `SL` rows unconvertible —
@@ -187,49 +184,9 @@ get_morphometric_tables <- function(conf) {
     conf = conf
   )
 
-  # ratio = L_type / TL, from `Length1 = aL + bL * Length2`.
-  ratios <- m$length_length %>%
-    dplyr::filter(
-      !is.na(.data$bL),
-      .data$bL > 0,
-      !is.na(.data$aL),
-      abs(.data$aL) <= 1
-    ) %>%
-    dplyr::mutate(
-      Type = dplyr::case_when(
-        .data$Length2 == "TL" ~ .data$Length1,
-        .data$Length1 == "TL" ~ .data$Length2,
-        TRUE ~ NA_character_
-      ),
-      ratio = dplyr::case_when(
-        .data$Length2 == "TL" ~ .data$bL,
-        .data$Length1 == "TL" ~ 1 / .data$bL,
-        TRUE ~ NA_real_
-      )
-    ) %>%
-    dplyr::filter(!is.na(.data$Type), .data$Type != "TL", !is.na(.data$ratio)) %>%
-    dplyr::group_by(.data$species_found, .data$server, .data$Type) %>%
-    dplyr::summarise(ratio = stats::median(.data$ratio), .groups = "drop")
-
-  fetched <- m$length_weight %>%
-    dplyr::left_join(ratios, by = c("species_found", "server", "Type")) %>%
-    dplyr::mutate(
-      a = dplyr::if_else(
-        is.na(.data$ratio),
-        .data$a,
-        .data$a * .data$ratio^.data$b
-      ),
-      Type = dplyr::if_else(is.na(.data$ratio), .data$Type, "TL")
-    ) %>%
-    dplyr::select(-"ratio")
-
-  n_non_tl <- sum(m$length_weight$Type != "TL", na.rm = TRUE)
-  n_restated <- sum(fetched$Type == "TL", na.rm = TRUE) -
-    sum(m$length_weight$Type == "TL", na.rm = TRUE)
-  logger::log_info(
-    "Restated {n_restated} of {n_non_tl} non-TL length-weight pairs on a ",
-    "total-length basis"
-  )
+  # Restated on a total-length basis by coasts, which logs what it converted.
+  # Pairs with no usable conversion pass through carrying their original Type.
+  fetched <- coasts::convert_lw_to_tl(m$length_weight, m$length_length)
 
   lw <- summarise_lw_coeffs(
     dplyr::bind_rows(fetched, curated_lw_coeffs())
