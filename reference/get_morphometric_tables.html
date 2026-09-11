@@ -13,7 +13,7 @@ of a, arithmetic mean of b."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,14 +93,11 @@ synonym (<code>"Haemulidae (=Pomadasyidae)"</code>) and match nothing as written
 therefore averaged fork-length and standard-length fits into one number and
 applied it to TL, which overestimates weight, because FL and SL are shorter
 than TL (medians here: FL 0.958 TL, SL 0.827 TL).</p>
-<p><code>length_length</code>, fetched by the same call, restates every convertible pair on
-a TL basis. POPLL fits
-<code>Length1 = aL + bL * Length2</code> — <strong>the second column is the predictor</strong> — so
-the ratio <code>L_type / TL</code> is <code>bL</code> when <code>Length2</code> is <code>TL</code> and <code>1 / bL</code> when
-<code>Length1</code> is. Substituting <code>L_type ~= ratio * TL</code> into <code>W = a * L_type^b</code>
-gives <code>W = a * ratio^b * TL^b</code>: <strong><code>b</code> is unchanged and only <code>a</code> is
-rescaled</strong>. Fits with an intercept above 1 cm are not proportional and are
-skipped; per species and type the median ratio is used.</p>
+<p><code><a href="https://rdrr.io/pkg/coasts/man/convert_lw_to_tl.html" class="external-link">coasts::convert_lw_to_tl()</a></code> restates every convertible pair on a TL basis,
+from the <code>length_length</code> table fetched by the same call. <strong><code>b</code> is unchanged
+and only <code>a</code> is rescaled</strong>, by <code>ratio^b</code>. The POPLL fit direction, the 1 cm
+intercept cut-off and the median-ratio-per-species-and-type rule all live
+there, asserted by its tests rather than restated here.</p>
 <p><code>length_types = NULL</code> is passed for this reason. The coasts default keeps
 only <code>TL</code>/<code>FL</code> pairs, which would leave the 460 <code>SL</code> rows unconvertible —
 and <code>SL</code> is where the error is largest.</p>

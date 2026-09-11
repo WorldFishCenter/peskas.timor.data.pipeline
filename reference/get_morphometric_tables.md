@@ -55,14 +55,12 @@ fork-length and standard-length fits into one number and applied it to
 TL, which overestimates weight, because FL and SL are shorter than TL
 (medians here: FL 0.958 TL, SL 0.827 TL).
 
-`length_length`, fetched by the same call, restates every convertible
-pair on a TL basis. POPLL fits `Length1 = aL + bL * Length2` — **the
-second column is the predictor** — so the ratio `L_type / TL` is `bL`
-when `Length2` is `TL` and `1 / bL` when `Length1` is. Substituting
-`L_type ~= ratio * TL` into `W = a * L_type^b` gives
-`W = a * ratio^b * TL^b`: **`b` is unchanged and only `a` is rescaled**.
-Fits with an intercept above 1 cm are not proportional and are skipped;
-per species and type the median ratio is used.
+[`coasts::convert_lw_to_tl()`](https://rdrr.io/pkg/coasts/man/convert_lw_to_tl.html)
+restates every convertible pair on a TL basis, from the `length_length`
+table fetched by the same call. **`b` is unchanged and only `a` is
+rescaled**, by `ratio^b`. The POPLL fit direction, the 1 cm intercept
+cut-off and the median-ratio-per-species-and-type rule all live there,
+asserted by its tests rather than restated here.
 
 `length_types = NULL` is passed for this reason. The coasts default
 keeps only `TL`/`FL` pairs, which would leave the 460 `SL` rows

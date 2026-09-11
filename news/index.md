@@ -1,5 +1,26 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.1.1
+
+### The total-length restatement moves to coasts
+
+[`get_morphometric_tables()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/get_morphometric_tables.md)
+derived its own `ratio` table from POPLL and rescaled `a` inline.
+Zanzibar and Mozambique each had the same arithmetic written out again,
+with different semantics and nothing comparing them. It now lives in one
+place.
+
+- **CHANGED** The inline `ratios` block is replaced by
+  [`coasts::convert_lw_to_tl()`](https://github.com/WorldFishCenter/peskas.coasts),
+  which does exactly what Timor did — restate every convertible pair,
+  pass the rest through carrying their original `Type`. Verified end to
+  end against the old code on the full 11,349-row table:
+  [`identical()`](https://rdrr.io/r/base/identical.html) is `TRUE`, 615
+  taxon codes, zero difference in `lw_a` or `lw_b`.
+- **CHANGED** `coasts (>= 4.13.0)` is now a declared floor in
+  `DESCRIPTION`, so an old hub fails at install rather than part-way
+  through a run.
+
 ## peskas.timor.data.pipeline 5.1.0
 
 ### Timor appears on the multi-country coasts portal

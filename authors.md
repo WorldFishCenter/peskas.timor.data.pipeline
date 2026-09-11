@@ -18,13 +18,13 @@ Source:
 
 Longobardi L, Cagua F, Altarturi H (2026). *peskas.timor.data.pipeline:
 Functions to Implement the Timor Small Scale Fisheries Data Pipeline*. R
-package version 5.1.0,
+package version 5.1.1,
 <https://worldfishcenter.github.io/peskas.timor.data.pipeline/>.
 
     @Manual{,
       title = {peskas.timor.data.pipeline: Functions to Implement the Timor Small Scale Fisheries Data Pipeline},
       author = {Lorenzo Longobardi and Fernando Cagua and Hamza Altarturi},
       year = {2026},
-      note = {R package version 5.1.0},
+      note = {R package version 5.1.1},
       url = {https://worldfishcenter.github.io/peskas.timor.data.pipeline/},
     }

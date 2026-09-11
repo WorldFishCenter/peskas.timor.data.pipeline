@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,17 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.1.1" id="peskastimordatapipeline-511">peskas.timor.data.pipeline 5.1.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-511"></a></h2>
+<div class="section level3">
+<h3 id="the-total-length-restatement-moves-to-coasts-5-1-1">The total-length restatement moves to coasts<a class="anchor" aria-label="anchor" href="#the-total-length-restatement-moves-to-coasts-5-1-1"></a></h3>
+<p><code><a href="../reference/get_morphometric_tables.html">get_morphometric_tables()</a></code> derived its own <code>ratio</code> table from POPLL and rescaled <code>a</code> inline. Zanzibar and Mozambique each had the same arithmetic written out again, with different semantics and nothing comparing them. It now lives in one place.</p>
+<ul><li>
+<strong>CHANGED</strong> The inline <code>ratios</code> block is replaced by <a href="https://github.com/WorldFishCenter/peskas.coasts" class="external-link"><code>coasts::convert_lw_to_tl()</code></a>, which does exactly what Timor did — restate every convertible pair, pass the rest through carrying their original <code>Type</code>. Verified end to end against the old code on the full 11,349-row table: <code><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical()</a></code> is <code>TRUE</code>, 615 taxon codes, zero difference in <code>lw_a</code> or <code>lw_b</code>.</li>
+<li>
+<strong>CHANGED</strong> <code>coasts (&gt;= 4.13.0)</code> is now a declared floor in <code>DESCRIPTION</code>, so an old hub fails at install rather than part-way through a run.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.1.0" id="peskastimordatapipeline-510">peskas.timor.data.pipeline 5.1.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-510"></a></h2>
 <div class="section level3">
