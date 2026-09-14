@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,25 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.1.2" id="peskastimordatapipeline-512">peskas.timor.data.pipeline 5.1.2<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-512"></a></h2>
+<div class="section level3">
+<h3 id="a-recorded-crew-of-zero-is-a-crew-that-went-unrecorded-5-1-2">A recorded crew of zero is a crew that went unrecorded<a class="anchor" aria-label="anchor" href="#a-recorded-crew-of-zero-is-a-crew-that-went-unrecorded-5-1-2"></a></h3>
+<p>The cross-country API schema declares <code>n_fishers</code> with a minimum of 1, and the validated export published 343 rows across 273 submissions carrying zero. It is not a crew of zero: 209 of those 273 landed catch and 211 recorded revenue, so the field was simply never filled in. <code>sum_fishers()</code> reports a crew whenever <em>any</em> component is recorded, which is what let the 186 submissions with <code>no_men_fishers</code> blank but women and children entered as <code>0</code> through.</p>
+<ul><li>
+<strong>FIXED</strong> <code><a href="../reference/validate_n_fishers.html">validate_n_fishers()</a></code> raises alert 18 when the three <code>fisher_number_*</code> columns sum to zero and blanks them, the same way it already handles an outlying crew. <code>n_fishers</code> then derives as <code>NA</code>. Measured on the published <code>trips-validated__20260913022202</code> export: <code>n_fishers == 0</code> goes from 343 rows / 273 trips to none, <code>NA</code> from 6,166 to 6,509 rows, and the published minimum from 0 to 1. Row and trip counts are unchanged at 145,022 and 97,828, and <code>sum(catch_kg)</code> is unchanged at 889,070.0 kg — this is a correction to an unrecorded field, not a data loss.</li>
+<li>
+<strong>CHANGED</strong> 273 submissions gain alert 18 in their published flag string, so the enumerator sees them in the review queue and can enter the real crew. The alert vocabulary is untouched: 18 is already “Anomalous number of fishers” in <code>inst/config.yml</code>.</li>
+<li>
+<strong>FIXED</strong> Per-fisher metrics no longer divide by zero. On the same export the 247 <code>Inf</code> rows in <code>catch_kg / trip_duration_hrs / n_fishers</code> go to zero, and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code> over it goes from <code>Inf</code> to 1.27427; the median moves 0.6774 -&gt; 0.6755. <code><a href="https://rdrr.io/pkg/coasts/man/summarize_data.html" class="external-link">coasts::summarize_data()</a></code> and <code>R/format-public-data.R</code> both already discarded these defensively, so the portal is unchanged — the fix is for every other consumer of the API.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="the-landing-date-bound-no-longer-depends-on-the-submission-date-5-1-2">The landing-date bound no longer depends on the submission date<a class="anchor" aria-label="anchor" href="#the-landing-date-bound-no-longer-depends-on-the-submission-date-5-1-2"></a></h3>
+<ul><li>
+<strong>CHANGED</strong> <code><a href="../reference/validate_surveys_time.html">validate_surveys_time()</a></code> raises alert 4 on a landing dated after the run, not only on one dated after its own submission. The existing test implies the new one wherever <code>submission_date</code> is present, so this covers only a missing or itself-future submission date — <strong>0 rows change in the current export</strong>, where every submission has a submission date and the one future-dated landing is already flagged.</li>
+<li>A future landing date is still flagged and <strong>kept</strong>, not blanked or dropped. <code>landing_date</code> is the merge key and every time aggregation reads it, and the single offending submission is recoverable rather than lost: 818065108 was submitted 2026-09-07 and claims a landing on 2026-09-21, its neighbouring submission ids land between 2026-08-20 and 2026-09-07, and the latest legitimate landing anywhere in the export is 2026-09-11. Blanking it would destroy a correctable day typo whose true value the submission date already bounds.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.1.1" id="peskastimordatapipeline-511">peskas.timor.data.pipeline 5.1.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-511"></a></h2>
 <div class="section level3">
