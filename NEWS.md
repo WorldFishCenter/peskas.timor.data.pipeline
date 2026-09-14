@@ -1,3 +1,50 @@
+# peskas.timor.data.pipeline 5.1.2
+
+## A recorded crew of zero is a crew that went unrecorded
+
+The cross-country API schema declares `n_fishers` with a minimum of 1, and the
+validated export published 343 rows across 273 submissions carrying zero. It is
+not a crew of zero: 209 of those 273 landed catch and 211 recorded revenue, so
+the field was simply never filled in. `sum_fishers()` reports a crew whenever
+*any* component is recorded, which is what let the 186 submissions with
+`no_men_fishers` blank but women and children entered as `0` through.
+
+* **FIXED** `validate_n_fishers()` raises alert 18 when the three
+  `fisher_number_*` columns sum to zero and blanks them, the same way it
+  already handles an outlying crew. `n_fishers` then derives as `NA`.
+  Measured on the published `trips-validated__20260913022202` export:
+  `n_fishers == 0` goes from 343 rows / 273 trips to none, `NA` from 6,166 to
+  6,509 rows, and the published minimum from 0 to 1. Row and trip counts are
+  unchanged at 145,022 and 97,828, and `sum(catch_kg)` is unchanged at
+  889,070.0 kg — this is a correction to an unrecorded field, not a data loss.
+* **CHANGED** 273 submissions gain alert 18 in their published flag string, so
+  the enumerator sees them in the review queue and can enter the real crew.
+  The alert vocabulary is untouched: 18 is already "Anomalous number of
+  fishers" in `inst/config.yml`.
+* **FIXED** Per-fisher metrics no longer divide by zero. On the same export the
+  247 `Inf` rows in `catch_kg / trip_duration_hrs / n_fishers` go to zero, and
+  `mean()` over it goes from `Inf` to 1.27427; the median moves 0.6774 ->
+  0.6755. `coasts::summarize_data()` and `R/format-public-data.R` both already
+  discarded these defensively, so the portal is unchanged — the fix is for
+  every other consumer of the API.
+
+## The landing-date bound no longer depends on the submission date
+
+* **CHANGED** `validate_surveys_time()` raises alert 4 on a landing dated
+  after the run, not only on one dated after its own submission. The existing
+  test implies the new one wherever `submission_date` is present, so this
+  covers only a missing or itself-future submission date — **0 rows change in
+  the current export**, where every submission has a submission date and the
+  one future-dated landing is already flagged.
+* A future landing date is still flagged and **kept**, not blanked or dropped.
+  `landing_date` is the merge key and every time aggregation reads it, and the
+  single offending submission is recoverable rather than lost: 818065108 was
+  submitted 2026-09-07 and claims a landing on 2026-09-21, its neighbouring
+  submission ids land between 2026-08-20 and 2026-09-07, and the latest
+  legitimate landing anywhere in the export is 2026-09-11. Blanking it would
+  destroy a correctable day typo whose true value the submission date already
+  bounds.
+
 # peskas.timor.data.pipeline 5.1.1
 
 ## The total-length restatement moves to coasts
