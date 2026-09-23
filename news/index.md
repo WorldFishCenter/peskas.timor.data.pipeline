@@ -1,5 +1,16 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.2.0
+
+### Records say which organization collected them
+
+- **NEW**
+
+`survey_organization` names the organization behind each record, as the
+first column — `"MAF"` here, one programme across all three form
+versions. `survey_id` identifies the form, not the organization, and a
+country can run more than one programme at once, as Kenya does.
+
 ## peskas.timor.data.pipeline 5.1.2
 
 ### A recorded crew of zero is a crew that went unrecorded
