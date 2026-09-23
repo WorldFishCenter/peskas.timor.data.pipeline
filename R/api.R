@@ -1,19 +1,19 @@
 #' Export the raw trips table to the cross-country API bucket
 #'
 #' Projects the **weighted** (pre-validation) long catch table onto the
-#' 22-column schema `peskas-api-{dev,prod}` publishes for every country, and
+#' 23-column schema `peskas-api-{dev,prod}` publishes for every country, and
 #' uploads it to `conf$api$trips$raw$cloud_path`.
 #'
 #' @details
-#' The schema was read off the live `peskas-api-prod` objects (2026-08-10) and is
-#' the same 22 columns, in the same order, for Kenya, Mozambique and Zanzibar,
-#' raw and validated alike:
+#' The schema is the same columns, in the same order, for Kenya, Mozambique and
+#' Zanzibar, raw and validated alike:
 #'
 #' ```
-#' survey_id, trip_id, landing_date, gaul_1_code, gaul_1_name, gaul_2_code,
-#' gaul_2_name, landing_site, n_fishers, trip_duration_hrs, gear, vessel_type,
-#' catch_habitat, catch_outcome, n_catch, catch_taxon, scientific_name,
-#' length_cm, catch_kg, catch_price, tot_catch_kg, tot_catch_price
+#' survey_organization, survey_id, trip_id, landing_date, gaul_1_code,
+#' gaul_1_name, gaul_2_code, gaul_2_name, landing_site, n_fishers,
+#' trip_duration_hrs, gear, vessel_type, catch_habitat, catch_outcome, n_catch,
+#' catch_taxon, scientific_name, length_cm, catch_kg, catch_price,
+#' tot_catch_kg, tot_catch_price
 #' ```
 #'
 #' Three things to know about the mapping:
@@ -56,7 +56,7 @@ export_api_raw <- function(log_threshold = logger::DEBUG) {
 #' Export the validated trips table to the cross-country API bucket
 #'
 #' Projects the long validated catch table written by [validate_landings()] onto
-#' the 22-column schema `peskas-api-{dev,prod}` publishes for every country, and
+#' the 23-column schema `peskas-api-{dev,prod}` publishes for every country, and
 #' uploads it to `conf$api$trips$validated$cloud_path`. Same schema as
 #' [export_api_raw()]; the two differ only in their input.
 #'
@@ -78,7 +78,7 @@ export_api_validated <- function(log_threshold = logger::DEBUG) {
 }
 
 # Project a long catch table (standard names, `catch_kg` in kilos) onto the
-# 22 API columns. See [export_api_raw()] for the schema and the three decisions
+# 23 API columns. See [export_api_raw()] for the schema and the three decisions
 # behind it.
 api_trips <- function(landings, conf) {
   asset_ids <- purrr::map_chr(conf$ingestion$landings, "asset_id")
@@ -130,6 +130,9 @@ api_trips <- function(landings, conf) {
     ) %>%
     dplyr::ungroup() %>%
     dplyr::transmute(
+      # One programme across all three form versions, unlike Kenya, where WCS
+      # and KEFS publish side by side under different `survey_id` values.
+      survey_organization = "MAF",
       survey_id = unname(asset_ids[.data$survey_version]),
       trip_id = paste0("TRIP_", .data$submission_id),
       .data$landing_date,

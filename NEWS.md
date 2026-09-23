@@ -1,3 +1,14 @@
+# peskas.timor.data.pipeline 5.2.0
+
+## Records say which organization collected them
+
+* **NEW**
+
+`survey_organization` names the organization behind each record, as the first
+column — `"MAF"` here, one programme across all three form versions.
+`survey_id` identifies the form, not the organization, and a country can run
+more than one programme at once, as Kenya does.
+
 # peskas.timor.data.pipeline 5.1.2
 
 ## A recorded crew of zero is a crew that went unrecorded
@@ -387,13 +398,11 @@ caller or no reader before it went.
   `Suggests`. The `glmmTMB` GitHub install leaves both Dockerfiles with it — a
   TMB compile on every image build, for a package nothing imports.
 
-
 # peskas.timor.data.pipeline 3.3.0
 
 ### Breaking changes
 
 - Now kobo surveys are retrieved according the new v2 API. The function `retrieve_survey_data()` has been replaced by `get_kobo_data` updated to retrieve data from the new API. The function `retrieve_survey_metadata()` has been deprecated.
-
 
 # peskas.timor.data.pipeline 3.2.0
 
@@ -414,14 +423,12 @@ caller or no reader before it went.
 deployed with the aim to be more manageable for enumerators. It also includes some
 more questions regarding the fish handling and trading.
 
-
 # peskas.timor.data.pipeline 2.0.0
 
 ## Breaking changes
 
 - Validation step in now implemented using google sheets using the `googlesheets4`
 package.
-
 
 # peskas.timor.data.pipeline 1.4.0
 
@@ -435,7 +442,6 @@ package.
 ## Bug fixes
 
 - Improved revenue outliers identification based on empirical information
-
 
 # peskas.timor.data.pipeline 1.3.0
 
@@ -506,7 +512,6 @@ more realistic weight estimations by single individuals.
 - Added a series of functions (`get_sync_tracks()`, `get_full_tracks()` ,`get_full_trips()`) useful to retrieve the complete file of pds tracks.
 - Generate and retrieve the pds track map with `ingest_pds_map()` and `get_tracks_map()`.
 
-
 # peskas.timor.data.pipeline 0.16.0
 
 ## Breaking changes
@@ -517,7 +522,6 @@ more realistic weight estimations by single individuals.
 
 - Fixed the bug when calling `ingest_rfish_table()` in the main pipeline.
 
-
 # peskas.timor.data.pipeline 0.15.0
 
 ## New features
@@ -525,7 +529,6 @@ more realistic weight estimations by single individuals.
 - Added a series of functions (`get_catch_types()`, `get_fish_length()` ,`retrieve_lengths()`) useful to retrieve morphometric conversion factors from catch types names in metadata tables. 
 - Added a new metadata table in airtable (morphometric_table) containing length-weight and length-length conversion factors.
 - Added `join_weights()` which integrates morphometric data with merged landings.
-
 
 # peskas.timor.data.pipeline 0.14.0
 
