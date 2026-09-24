@@ -1,4 +1,4 @@
-# CLAUDE.md
+# peskas.timor.data.pipeline
 
 R package implementing the Peskas Timor-Leste small-scale-fisheries data
 pipeline: it ingests KoBoToolbox landing surveys and Pelagic Data
@@ -7,73 +7,48 @@ fishery indicators, and publishes JSON to a public GCS bucket consumed
 by the live portal (`peskas.timor.portal.v2`). It also publishes to
 Harvard Dataverse and emails reports.
 
-Timor was the first Peskas pipeline and predates the conventions the
-other country pipelines (Kenya, Mozambique, Zanzibar) share. It has
-since been aligned to them — shared `peskas.coasts` hub, `.env` secrets,
-parquet interchange, cross-country API. **Where it still differs, the
-difference is usually deliberate and documented; check before “fixing”
-it.**
+Timor was the first Peskas pipeline and has since been aligned to the
+shared conventions. **Where it still differs, the difference is usually
+deliberate and documented; check before “fixing” it.**
+
+Ecosystem context (other repos, data flow, cross-repo contracts): see
+PESKAS.md, loaded via CLAUDE.local.md.
 
 ## Commands
 
-``` r
-
-devtools::load_all()
-devtools::document()     # roxygen -> man/ + NAMESPACE
-devtools::check()        # baseline: 0 errors, 0 warnings, 3 NOTEs
-devtools::test()         # testthat, 40 assertions
-```
-
 ``` bash
-docker compose up                                   # RStudio on :8802
+Rscript -e 'devtools::load_all()'    # also document(), check(), test()
 docker build -f Dockerfile.prod --build-arg COASTS_REF=<tag> -t peskas-timor .
 ```
 
-The six `inst/tinytest/` suites assert against cloud artefacts and run
-as steps **inside** the pipeline workflow, not under `devtools::test()`:
+The `inst/tinytest/` suites assert against cloud artefacts and run as
+steps **inside** the pipeline workflow, not under `devtools::test()`.
+Each step must check the result itself; see
+`.claude/rules/validation.md`.
 
-``` r
-
-tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
-                                    package = "peskas.timor.data.pipeline"))
-```
-
-`ARG COASTS_REF` has **no default** in either Dockerfile — a local build
-must pass it. The workflow resolves the latest `peskas.coasts` release
-and passes it in, so a build always records which hub release it used.
-Keep `Dockerfile` and `Dockerfile.prod` in step. **coasts \>= 4.12.3 is
-a hard floor.**
+`ARG COASTS_REF` has **no default** in `Dockerfile.prod`, so a local
+build must pass it; the workflow passes the latest coasts release.
 
 ## Rules that apply everywhere
 
 - **Namespace every hub call `coasts::`.** Timor has no storage layer of
   its own and does not re-export those names.
-- **Never log the resolved config.** It carries the service-account key,
-  the Airtable PAT, the Dataverse token and the blastula credentials.
-  Pass `log_threshold = logger::INFO` to every `coasts::` workflow call.
+- The resolved config carries the service-account key, the Airtable PAT,
+  the Dataverse token and the blastula credentials. Pass
+  `log_threshold = logger::INFO` to every `coasts::` workflow call.
 - **Never write to a production bucket** from an ad-hoc script or a
   local session. `.Renviron` pins `R_CONFIG_ACTIVE=default` and
-  overrides the command line; `production` is CI-on-`main` only.
+  overrides the command line.
 - **Config variables are named `conf`**, matching the other pipelines.
   `pars` was the old name; do not reintroduce it.
 - **Never delete an assertion to make a change pass.** Update the
-  expectation deliberately, and say so.
-- Every workflow function follows the same shape:
-  [`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
-  -\> authenticate -\> download latest inputs -\> process -\>
-  [`logger::log_info()`](https://daroczig.github.io/logger/reference/log_level.html)
-  -\>
-  [`add_version()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/add_version.md)
-  -\> upload.
-- Comments explain *why*, in at most two sentences, and never reference
-  the migration or a phase number.
-- Run `devtools::document()` after touching roxygen; `man/` and
-  `NAMESPACE` are committed.
+  expectation deliberately, and say so. Tests are Timor’s advantage over
+  the other pipelines.
+- Comments never reference the migration or a phase number.
 
 ## Things that break silently
 
-These have all happened here. Each has a file under `.claude/rules/`
-with the detail, loaded when you open the code it concerns.
+All have happened here; detail in the named `.claude/rules/` file.
 
 |  |  |
 |----|----|
@@ -87,42 +62,34 @@ with the detail, loaded when you open the code it concerns.
 
 ## Pipeline
 
-`.github/workflows/data-pipeline.yaml`, fourteen jobs, every 2 days plus
-on every push (~1h30m). It is the only workflow that produces data, and
-a push to any non-`main` branch runs the whole thing against the `-dev`
-buckets, which is the integration test.
+`.github/workflows/data-pipeline.yaml` is the only workflow that
+produces data; read it for triggers and the exact `needs:` graph. In
+outline:
 
     build-container
-    ├── ingest-landings   -> preprocess-landings
-    └── ingest-pds-data   -> preprocess-pds-data -> validate-pds-data
+    ├── ingest-landings -> preprocess-landings -> merge-landings -> validate-landings
+    └── ingest-pds-data -> preprocess-pds-data -> validate-pds-data
 
-    merge-landings -> validate-landings ├── export-api
-                                        └── merge-trips ├── model-indicators
-                                                        └── export-trips
+    validate-landings ├── export-api
+                      └── merge-trips (also needs validate-pds-data)
+                            ├── model-indicators
+                            └── export-trips (also needs model-indicators)
 
-    export-api ─────────┐
-                        ├── summarize-model-data -> export-surveys-portal
-    preprocess-pds-data ─┘
+    export-api + preprocess-pds-data -> summarize-model-data -> export-surveys-portal
 
 `summarize-model-data` and `export-surveys-portal` are the shared coasts
-chain, the same two jobs in the same order as Kenya, Mozambique and
-Zanzibar: `summarize_data()` -\> `generate_fleet_analysis()` -\>
-`export_portal()`. They put Timor on the multi-country coasts portal by
-publishing `timor_monthly_summaries_map` to the coasts bucket, and fill
-the `dashboard` MongoDB. **Neither feeds `peskas.timor.portal.v2`** —
-that is `export-trips`, which writes `portal-*.json` to the public
-bucket and is independent.
+chain (`summarize_data()` -\> `generate_fleet_analysis()` -\>
+`export_portal()`), as in the other three countries: they put Timor on
+the coasts portal and fill the `dashboard` MongoDB. **Neither feeds
+`peskas.timor.portal.v2`**; that is `export-trips`, which writes
+`portal-*.json` to the public bucket.
 
-Eight other workflows: `R-CMD-check`, `pkgdown`, `test-coverage`,
-`pr-commands`, `release` (cuts a release from the top block of `NEWS.md`
-on a push to `main`), and three that run in the pipeline’s container —
-`data-report`, `dataverse-upload`, `validation-email-sender`. Two things
-the non-pipeline workflows must not do again: **build their own image**,
-and **assume a referenced function is exercised**.
+`data-report`, `dataverse-upload` and `validation-email-sender` run in
+the pipeline’s container. Two things these must not do again: **build
+their own image**, and **assume a referenced function is exercised**.
 
 ## Local notes
 
-`notes/` is gitignored: the record of the 2026 alignment work, where
-`STATE.md` is the decision log and `COASTS-TODO.md` the open items for
-`peskas.coasts` and the other country pipelines. A clone will not have
-it and nothing in the package reads it.
+`notes/` (gitignored) holds the 2026 alignment record: `STATE.md`
+decision log, `COASTS-TODO.md` open hub items. A clone lacks it, so
+never cite it from a committed file.

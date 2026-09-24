@@ -1,193 +1,248 @@
-# peskas.timor.data.pipeline
+# Peskas Timor-Leste data pipeline
 
-peskas.timor.data.pipeline implements, deploys and executes the data and
-modelling pipelines behind [Peskas](https://timor.peskas.org), the
-small-scale fisheries analytics system of Timor-Leste.
+The code that turns landing surveys and boat GPS tracks from Timor-Leste
+into the data behind Peskas Timor-Leste.
 
-It ingests KoBoToolbox landing surveys and Pelagic Data Systems (PDS)
-GPS tracker data, preprocesses and validates them, models fishery
-indicators, and publishes JSON to a public Google Cloud Storage bucket
-that the live portal reads. It also publishes the cross-country API
-tables that Peskas shares with the Kenya, Mozambique and Zanzibar
-pipelines, deposits datasets on Harvard Dataverse, and emails reports.
+See the results at [timor.peskas.org](https://timor.peskas.org).
+Timor-Leste also appears on
+[coasts.peskas.org](https://coasts.peskas.org), the Peskas Coasts
+regional comparison, which this pipeline feeds through a separate step.
 
-## The pipeline is an R package
+## What it is
 
-Structuring the pipeline as an R package makes it easier to write
-production-grade software. Specifically, it allows us to:
+This pipeline collects, checks and models small-scale fisheries data for
+Timor-Leste. It feeds Peskas Timor-Leste, the country’s official
+national fisheries monitoring system, used by fisheries managers,
+researchers and the public. It runs automatically every two days.
 
-- better handle system and package dependencies,
-- forces us to split the code into functions,
-- makes it easier to document the code, and
-- makes it easier to test the code
+## What it produces
 
-We make heavy use of [tidyverse style
-conventions](https://engineering-shiny.org) and the
-[usethis](https://usethis.r-lib.org) package to automate tasks during
-project setup and deployment.
+- Checks every landing survey and flags records that look wrong. The
+  flags go to the Peskas Management Platform, and a weekly email lists
+  the submissions with problems.
+- Estimates the weight of each catch and the nutrients it provides.
+- Estimates monthly catch and revenue for each municipality and for the
+  whole country.
+- Publishes the data files that timor.peskas.org reads, and a [data
+  report](https://storage.googleapis.com/public-timor/data_report.html)
+  twice a week.
+- Sends Timor-Leste landing records to the Peskas Fishery Data API, and
+  summaries to Peskas Coasts.
+- Publishes the public dataset on Harvard Dataverse once a month.
 
-For more information about the rationale of structuring a pipeline as a
-package, see [Chapter
-3](https://engineering-shiny.org/structuring-project.html#structuring-your-app_)
-of [*Engineering Production-Grade Shiny
-Apps*](https://engineering-shiny.org). The best place to learn more
-about package development is the [*R packages*](https://r-pkgs.org) book
-by Hadley Wickham and Jenny Bryan.
+## Where the data comes from
 
-## Shared code lives in `peskas.coasts`
+- **Landing surveys**: enumerators record landings around Timor-Leste
+  with KoboToolbox. The survey form has changed twice since it started,
+  and the pipeline reconciles the three versions.
+- **GPS trackers (Pelagic Data Systems)** on part of the fleet, matched
+  to the surveyed landings.
+- **Reference lists** of boats, species and landing sites, including the
+  number of registered boats in each area.
+- **Length-weight formulas** from FishBase and SeaLifeBase, used to turn
+  fish lengths into weights.
 
-Everything that is not specific to Timor-Leste has moved to
-[`peskas.coasts`](https://github.com/WorldFishCenter/peskas.coasts), the
-hub the four Peskas country pipelines share: cloud storage, KoBo
-retrieval, PDS ingestion, the Airtable reference frame, MongoDB access
-and the taxa morphometrics. This package keeps what is genuinely Timor’s
-— the survey reshaping of three form generations, sixteen validators,
-the `glmmTMB` catch and revenue models, the nutrient and RDI
-calculations, and the portal JSON contract.
+The data updates every two days. Known limits:
 
-`peskas.coasts` is not on CRAN. It is declared in `Remotes:` and, in the
-production container, installed from the latest tagged release, which
-the workflow resolves at build time and passes in as `COASTS_REF`.
-**Version 4.6.0 is a hard floor.**
+- National and municipal totals are estimates: models scale the surveyed
+  landings up using the number of registered boats.
+- GPS tracks cover only boats that carry a tracker.
 
-## The pipeline runs on GitHub Actions
+Key terms:
 
-Each step of the pipeline is a function in this package, and those
-functions are deployed and connected using [GitHub
-Actions](https://docs.github.com/en/actions/learn-github-actions).
-Workflow functions take no arguments and are used for their side
-effects.
+- **Landing**: a boat’s return to shore with its catch, recorded by an
+  enumerator.
+- **Enumerator**: a trained data collector who records landings at
+  landing sites.
+- **KoboToolbox**: the free mobile survey app enumerators use to record
+  landings.
+- **GPS trackers (Pelagic Data Systems)**: small solar-powered devices
+  on boats that record where they travel.
 
-The pipeline is defined in
-[`.github/workflows/data-pipeline.yaml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.github/workflows/data-pipeline.yaml)
-— every two days and on every push:
+## Who runs it
 
-``` R
-build-container
-├── ingest-preprocess-metadata-tables
-├── ingest-landings ──▶ preprocess-landings
-└── ingest-pds-data ──▶ preprocess-pds-data ──▶ validate-pds-data
+Peskas Timor-Leste is a partnership, since 2016, between
+[WorldFish](https://worldfishcenter.org/) and the Timor-Leste [Ministry
+of Agriculture and Fisheries](https://maf.gov.tl/) (MAF), through its
+Department of Fisheries, Aquaculture and Marine Resources. Since 2021 it
+has been funded by the Government of Timor-Leste, with technical support
+from WorldFish and Pelagic Data Systems Inc. Its development was
+supported by the Royal Norwegian Embassy in Jakarta, the Minderoo
+Foundation, the CGIAR Big Data Platform and the Schmidt Foundation.
 
-merge-landings ──▶ validate-landings ──▶ merge-trips ──▶ model-indicators
-                                                     └─▶ export-trips
-```
+For questions, write to <peskas.platform@gmail.com>.
 
-The other workflows are `R-CMD-check`, `pkgdown`, `test-coverage`,
-`pr-commands`, `release` (which cuts a GitHub release from `NEWS.md`),
-and three scheduled Timor-specific jobs: the data report, the Dataverse
-upload and the weekly validation email.
+## Part of Peskas
 
-Artifacts produced by each job are written to cloud storage and read
-back by the next job. They are versioned by
-[`add_version()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/add_version.md),
-which stamps a timestamp and the commit sha, so every artifact traces to
-a unique run:
+Peskas is WorldFish’s open-source platform for monitoring small-scale
+fisheries (<https://peskas.org>).
 
-``` R
-<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>
-```
+- [Peskas Zanzibar](https://zanzibar.peskas.org), [Peskas
+  Kenya](https://peskas-dashboard-kenya.vercel.app/en), [Peskas
+  Mozambique](https://peskas-dashboard-mozambique.vercel.app): country
+  dashboards
+- [Peskas Timor-Leste](https://timor.peskas.org): Timor-Leste portal
+- [Peskas Coasts](https://coasts.peskas.org): regional comparison across
+  countries
+- [Peskas Tracks](https://tracks.peskas.org): app for fishers to see
+  their trips and log catches
+- [Peskas Kenya BMU
+  dashboard](https://digitalfisheries.kenya.peskas.org): dashboard for
+  Beach Management Units in Kenya
+- [Peskas Management Platform](https://validation.peskas.org): data
+  review and download for survey teams
+- [Peskas Fishery Data API](https://api.peskas.org/docs): programmatic
+  access to landing data
+- Data pipelines:
+  [Kenya](https://github.com/WorldFishCenter/peskas.kenya.data.pipeline),
+  [Zanzibar](https://github.com/WorldFishCenter/peskas.zanzibar.data.pipeline),
+  [Mozambique](https://github.com/WorldFishCenter/peskas.mozambique.data.pipeline),
+  [Coasts](https://github.com/WorldFishCenter/peskas.coasts)
 
-`coasts::cloud_object_name(version = "latest")` resolves the newest
-version of a prefix, and
-[`coasts::cloud_object_names()`](https://rdrr.io/pkg/coasts/man/cloud_object_names.html)
-enumerates a whole family.
+## For developers
 
-Interchange format is **flat long parquet** — one row per (submission,
-catch, length bin) — from the raw survey table through to the validated
-one.
+### The pipeline is an R package
 
-## Environment parameters are in the config file
+Each step is an exported function, and the GitHub Actions workflow calls
+them in order. Everything not specific to Timor-Leste (cloud storage,
+KoboToolbox retrieval, GPS tracker ingestion, reference lists, MongoDB
+access, species weights) lives in
+[peskas.coasts](https://github.com/WorldFishCenter/peskas.coasts); call
+it as `coasts::fn()`. This package keeps the survey reshaping, the
+validators, the catch and revenue models, the nutrient calculations and
+the portal file contract. The function reference is at
+<https://worldfishcenter.github.io/peskas.timor.data.pipeline/>.
 
-How the pipeline runs is specified in
-[`inst/config.yml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/config.yml),
-read by
-[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md).
-Its shape follows the cross-country template shipped as
-[`inst/config_template.yml`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/inst/config_template.yml).
-Keeping these parameters out of the code is what lets one codebase run
-against two sets of cloud resources; we use the
-[config](https://github.com/rstudio/config) package, which selects an
-environment from `R_CONFIG_ACTIVE`.
-
-There are two environments:
-
-- **`default`** — the development environment. It uses the `-dev`
-  buckets (`timor-dev`, `pds-timor-dev`, `public-timor-dev`,
-  `peskas-api-dev`), so the whole pipeline can run end to end without
-  touching anything the portal reads. This is what `.Renviron` sets, and
-  what every push to a non-`main` branch runs in CI.
-- **`production`** — the same code against the production buckets. The
-  workflow sets `R_CONFIG_ACTIVE=production` only when the ref is
-  `main`.
-
-Credentials come from the environment in both cases, never from a file
-in the repository. Copy
-[`.env.example`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/.env.example)
-to `.env` and fill it in for local work —
-[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
-loads it through
-[`load_dotenv()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/load_dotenv.md).
-In CI the same variables are supplied from GitHub secrets by the
-workflow’s `env:` block. `.env` is gitignored and must stay that way.
-
-Note that
-[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
-deliberately logs configuration **key names** only. The resolved
-configuration holds the service-account key and every token, and GitHub
-Actions masks only byte-exact matches of a registered secret.
-
-## We use docker containers
-
-Docker makes it easier to run and develop the code.
-
-- **Development:**
-  [`Dockerfile`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile)
-  is based on `rocker/geospatial` and spins up an RStudio server. Run
-  `docker compose up` from the project directory and open
-  <http://localhost:8802>.
-- **Production:**
-  [`Dockerfile.prod`](https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/Dockerfile.prod)
-  is what the pipeline runs in. The first job of the workflow builds it
-  and every other job uses it, so each step executes in an identical
-  environment.
-
-Both need to know which `peskas.coasts` release to install, and neither
-has a default, so a local build must pass it explicitly:
-
-``` bash
-docker build -f Dockerfile.prod --build-arg COASTS_REF=v4.6.0 -t peskas-timor .
-```
-
-## Tests
-
-Two suites, with different jobs:
-
-- `tests/testthat/` — unit tests over pure reshaping and schema logic.
-  No network, no credentials. Run with `devtools::test()`.
-- `inst/tinytest/` — four assertion suites over the real artifacts a run
-  produces (validated landings, validated PDS trips, merged trips,
-  public data). They run as steps **inside** the pipeline workflow,
-  right after the job that writes what they assert on, so a schema
-  regression stops the pipeline instead of reaching the portal.
+peskas.coasts is not on CRAN. It is declared in `Remotes:`, and the
+production container installs the latest coasts release; see
+`DESCRIPTION` for the minimum version.
 
 ``` r
 
-tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
+# Copy .env.example to .env and fill in the values (ask the Peskas team).
+remotes::install_deps(dependencies = TRUE)  # installs peskas.coasts from GitHub
+devtools::load_all()
+devtools::document()    # rebuild man/ after changing roxygen comments
+devtools::check()
+```
+
+### Configuration
+
+[`inst/config.yml`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/inst/config.yml),
+read by
+[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md),
+has two profiles:
+
+- **`default`**: development. It uses the `-dev` buckets (`timor-dev`,
+  `pds-timor-dev`, `public-timor-dev`, `peskas-api-dev`), so the whole
+  pipeline can run without touching anything the portal reads.
+  `.Renviron` sets it for local sessions, and every push to a branch
+  other than `main` runs it in CI.
+- **`production`**: the same code against the production buckets. The
+  workflow selects it only on `main`. Never write to a production bucket
+  from a local session or an ad-hoc script.
+
+### Secrets and logging
+
+Credentials come from the environment, never from a file in the
+repository. Copy
+[`.env.example`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.env.example)
+to `.env` for local work;
+[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
+loads it. In CI the same variables come from GitHub secrets. `.env` is
+gitignored.
+
+The resolved config holds the service-account key and every token, and
+GitHub Actions masks only exact matches of a secret.
+[`read_config()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_config.md)
+therefore logs key names only; log single values you need, never the
+whole config. Logging uses the
+[logger](https://daroczig.github.io/logger/) package: pass
+`log_threshold = logger::INFO` to every `coasts::` call in a workflow.
+
+### How it runs in production
+
+[`.github/workflows/data-pipeline.yaml`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/.github/workflows/data-pipeline.yaml)
+is the only workflow that produces data. It runs every two days and on
+every push; read it for the exact `needs:` graph. In outline:
+
+``` R
+build-container
+├── ingest-landings -> preprocess-landings -> merge-landings -> validate-landings
+└── ingest-pds-data -> preprocess-pds-data -> validate-pds-data
+
+validate-landings ├── export-api
+                  └── merge-trips (also needs validate-pds-data)
+                        ├── model-indicators
+                        └── export-trips (also needs model-indicators)
+
+export-api + preprocess-pds-data -> summarize-model-data -> export-surveys-portal
+```
+
+`export-trips` writes the files timor.peskas.org reads.
+`summarize-model-data` and `export-surveys-portal` are the shared coasts
+steps that put Timor-Leste on Peskas Coasts; neither feeds
+timor.peskas.org.
+
+Three scheduled workflows run `main`’s code in the container the
+pipeline builds: `data-report.yaml` (Mondays and Thursdays),
+`validation-email-sender.yaml` (Mondays) and `dataverse-upload.yaml`
+(first of each month).
+
+Files the jobs write are versioned as
+`<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>`, so each one traces back
+to a single run.
+
+### Docker
+
+[`Dockerfile.prod`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/Dockerfile.prod)
+is the image the pipeline runs in. The first workflow job builds it and
+every other job uses it. It installs peskas.coasts at the `COASTS_REF`
+build argument, which has no default:
+
+``` bash
+docker build -f Dockerfile.prod --build-arg COASTS_REF=<coasts release tag> -t peskas-timor .
+```
+
+### Tests
+
+- `tests/testthat/`: unit tests over reshaping and schema logic, with no
+  network or credentials. Run `devtools::test()`.
+- `inst/tinytest/`: six assertion suites over the real files a run
+  produces (validated landings, validated GPS trips, Peskas Coasts
+  summaries, merged trips, the portal contract and public data). They
+  run as steps inside the pipeline, right after the job that writes what
+  they check, so a schema change stops the pipeline before it reaches
+  the portal.
+
+The portal finds its files by name, so a renamed or dropped file
+disappears from the site without an error.
+`inst/tinytest/test_portal_contract.R` guards this on every run; run it
+before changing anything on the export path:
+
+``` r
+
+tinytest::run_test_file(system.file("tinytest/test_portal_contract.R",
                                     package = "peskas.timor.data.pipeline"))
 ```
 
-The portal discovers its files dynamically, which means a renamed or
-dropped object silently disappears from the site.
-`data-raw/compare-portal-json.R` is the gate for that: it asserts object
-names, keys, nesting, column sets and column types against a reference
-set, and reports per-column numeric summaries. Run it before changing
-anything on the export path.
+### Releases
 
-## Logging
+Bump `Version:` in `DESCRIPTION` and add a block at the top of
+[`NEWS.md`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/NEWS.md).
+On a push to `main`, `release.yaml` turns that block into a GitHub
+release.
 
-We use the [logger](https://daroczig.github.io/logger/) package to log
-events in production. Every workflow function takes a `log_threshold`
-argument.
+### AI-assisted work
+
+See
+[`CLAUDE.md`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/CLAUDE.md)
+and `.claude/rules/`.
+
+## Licence
+
+GPL-3. See
+[`LICENSE.md`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/LICENSE.md).
 
 # Package index
 
