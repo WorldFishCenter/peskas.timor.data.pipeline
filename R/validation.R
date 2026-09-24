@@ -51,7 +51,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Validating surveys trips...")
   surveys_time_alerts <- validate_surveys_time(
     submissions = submissions,
-    hrs = conf$validation$landings$survey_time$max_duration %||% default_max_limit,
+    hrs = conf$validation$landings$survey_time$max_duration %||%
+      default_max_limit,
     submission_delay = conf$validation$landings$survey_time$submission_delay
   )
 
@@ -91,7 +92,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     k = conf$validation$landings$n_fishers$k %||% default_k
   )
   habitat_alerts <- validate_habitat(submissions)
-  mesh_alerts <- validate_mesh(submissions,
+  mesh_alerts <- validate_mesh(
+    submissions,
     mesh_limit = conf$validation$landings$mesh
   )
   gleaners_alerts <- validate_gleaners(
@@ -156,7 +158,9 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   logger::log_info("Uploading the long validated catch table")
   coasts::upload_parquet_to_cloud(
     data = long_validated_landings(
-      validated_catch, validated_landings, api_submission_extras(landings)
+      validated_catch,
+      validated_landings,
+      api_submission_extras(landings)
     ),
     prefix = conf$surveys$landings$validated_long$file_prefix,
     provider = conf$storage$google$key,
@@ -185,7 +189,8 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     ) %>%
     purrr::imap(function(x, name) {
       dplyr::select(
-        x, "submission_id",
+        x,
+        "submission_id",
         !!paste0("alert_", name) := "alert_number"
       )
     }) %>%
@@ -200,14 +205,21 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   flags <-
     submissions %>%
     dplyr::select(
-      "submission_id", "survey_version", "submitted_by", "submission_date"
+      "submission_id",
+      "survey_version",
+      "submitted_by",
+      "submission_date"
     ) %>%
-    dplyr::mutate(submission_date = lubridate::as_date(.data$submission_date)) %>%
+    dplyr::mutate(
+      submission_date = lubridate::as_date(.data$submission_date)
+    ) %>%
     dplyr::left_join(alerts, by = "submission_id") %>%
     dplyr::arrange(.data$submission_date, .data$submission_id) %>%
     dplyr::mutate(
       alert = dplyr::if_else(
-        is.na(.data$alert) | .data$alert == "", "0", .data$alert
+        is.na(.data$alert) | .data$alert == "",
+        "0",
+        .data$alert
       ),
       flag_date = lubridate::today("GMT"),
       validated = FALSE,
@@ -223,8 +235,13 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   coasts::upload_parquet_to_cloud(
     data = dplyr::select(
       flags,
-      "submission_id", "submission_date", "flag_date", "alert", "validated",
-      "validated_when_ymd", "comments"
+      "submission_id",
+      "submission_date",
+      "flag_date",
+      "alert",
+      "validated",
+      "validated_when_ymd",
+      "comments"
     ),
     prefix = flags_filename,
     provider = conf$storage$google$key,
@@ -248,8 +265,10 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #' @export
 push_validation_flags <- function(conf, flags) {
   mdb <- conf$storage$mongodb
-  if (is.null(mdb$connection_strings$validation) ||
-    !nzchar(mdb$connection_strings$validation)) {
+  if (
+    is.null(mdb$connection_strings$validation) ||
+      !nzchar(mdb$connection_strings$validation)
+  ) {
     logger::log_warn(
       "MONGODB_CONNECTION_STRING_VALIDATION is not set - flags not pushed. ",
       "The versioned snapshot in cloud storage is the only record of this run."
@@ -266,7 +285,8 @@ push_validation_flags <- function(conf, flags) {
       return(invisible(NULL))
     }
 
-    collection <- paste(mdb$databases$validation$collections$flags,
+    collection <- paste(
+      mdb$databases$validation$collections$flags,
       asset_id,
       sep = "-"
     )
@@ -280,7 +300,8 @@ push_validation_flags <- function(conf, flags) {
         .data$submission_date,
         # The shared schema treats an absent flag as "nothing to review".
         alert_flag = dplyr::if_else(
-          .data$alert == "0", NA_character_,
+          .data$alert == "0",
+          NA_character_,
           gsub("-", ", ", .data$alert)
         )
       ) %>%
@@ -393,8 +414,10 @@ kobo_validation_status <- function(conf, version) {
 #' @return Invisibly, a tibble of per-submission update results.
 #' @keywords workflow validation
 #' @export
-sync_validation_status <- function(versions = c("v2", "v3"),
-                                   log_threshold = logger::DEBUG) {
+sync_validation_status <- function(
+  versions = c("v2", "v3"),
+  log_threshold = logger::DEBUG
+) {
   logger::log_threshold(log_threshold)
   conf <- read_config()
   mdb <- conf$storage$mongodb
@@ -408,7 +431,8 @@ sync_validation_status <- function(versions = c("v2", "v3"),
     flags <- coasts::mdb_collection_pull(
       connection_string = mdb$connection_strings$validation,
       db_name = mdb$databases$validation$database_name,
-      collection_name = paste(mdb$databases$validation$collections$flags,
+      collection_name = paste(
+        mdb$databases$validation$collections$flags,
         ingestion$asset_id,
         sep = "-"
       )
@@ -446,7 +470,9 @@ sync_validation_status <- function(versions = c("v2", "v3"),
   })
 
   failures <- sum(!results$update_success)
-  if (failures > 0) logger::log_warn("{failures} status updates failed")
+  if (failures > 0) {
+    logger::log_warn("{failures} status updates failed")
+  }
   invisible(results)
 }
 
@@ -471,9 +497,11 @@ rename_validated_catch <- function(catch) {
 # The one stored validated artefact: the validated submission columns joined
 # back onto the validated catch rows. `catch_kg` rather than grams, because that
 # is what the cross-country API publishes.
-long_validated_landings <- function(validated_catch,
-                                    validated_landings,
-                                    submission_extras) {
+long_validated_landings <- function(
+  validated_catch,
+  validated_landings,
+  submission_extras
+) {
   validated_landings %>%
     dplyr::rename(
       submission_id = "landing_id",
@@ -512,10 +540,12 @@ long_validated_landings <- function(validated_catch,
 api_submission_extras <- function(landings) {
   landings %>%
     dplyr::distinct(
-      .data$submission_id, .data$survey_version,
-      .data$gaul_1_code, .data$gaul_1_name,
-      .data$gaul_2_code, .data$gaul_2_name
+      .data$submission_id,
+      .data$survey_version,
+      .data$gaul_1_code,
+      .data$gaul_1_name,
+      .data$gaul_2_code,
+      .data$gaul_2_name
     ) %>%
     dplyr::mutate(submission_id = as.integer(.data$submission_id))
 }
-

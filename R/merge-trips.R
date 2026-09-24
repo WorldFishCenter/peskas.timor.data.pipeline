@@ -63,4 +63,3 @@ merge_trips <- function() {
     options = conf$storage$google$options
   )
 }
-

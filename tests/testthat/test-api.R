@@ -5,8 +5,10 @@ bins <- tidyr::tibble(
   submission_id = c(1L, 1L, 1L, 1L, 1L, 2L),
   survey_version = "v3",
   landing_date = as.Date("2026-01-02"),
-  gaul_1_code = "3089", gaul_1_name = "Dili",
-  gaul_2_code = "131705", gaul_2_name = "Atauro",
+  gaul_1_code = "3089",
+  gaul_1_name = "Dili",
+  gaul_2_code = "131705",
+  gaul_2_name = "Atauro",
   landing_site = "Beloi",
   n_fishers = 3,
   trip_duration = 4.5,
@@ -33,11 +35,28 @@ test_that("the emitted schema is the cross-country contract", {
   expect_equal(
     names(api),
     c(
-      "survey_id", "trip_id", "landing_date", "gaul_1_code", "gaul_1_name",
-      "gaul_2_code", "gaul_2_name", "landing_site", "n_fishers",
-      "trip_duration_hrs", "gear", "vessel_type", "catch_habitat",
-      "catch_outcome", "n_catch", "catch_taxon", "scientific_name",
-      "length_cm", "catch_kg", "catch_price", "tot_catch_kg", "tot_catch_price"
+      "survey_id",
+      "trip_id",
+      "landing_date",
+      "gaul_1_code",
+      "gaul_1_name",
+      "gaul_2_code",
+      "gaul_2_name",
+      "landing_site",
+      "n_fishers",
+      "trip_duration_hrs",
+      "gear",
+      "vessel_type",
+      "catch_habitat",
+      "catch_outcome",
+      "n_catch",
+      "catch_taxon",
+      "scientific_name",
+      "length_cm",
+      "catch_kg",
+      "catch_price",
+      "tot_catch_kg",
+      "tot_catch_price"
     )
   )
   expect_type(api$n_catch, "integer")
@@ -48,7 +67,10 @@ test_that("the emitted schema is the cross-country contract", {
 
 test_that("length bins collapse to one row per catch without losing weight", {
   expect_equal(nrow(api), 3L)
-  expect_equal(sum(api$catch_kg, na.rm = TRUE), sum(bins$catch_kg, na.rm = TRUE))
+  expect_equal(
+    sum(api$catch_kg, na.rm = TRUE),
+    sum(bins$catch_kg, na.rm = TRUE)
+  )
   # catch 1: 0.5 + 4, the empty bin contributing nothing
   expect_equal(api$catch_kg[which(api$catch_taxon == "SDX")], 4.5)
 })

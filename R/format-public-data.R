@@ -476,7 +476,8 @@ summarise_estimations <- function(
       tidyr::complete(date_bin_start = all_months) %>%
       # Correct last month as predictions are for the full month but we should present only the estimates to date
       dplyr::mutate(
-        current_period = lubridate::floor_date(today, "month") == .data$date_bin_start,
+        current_period = lubridate::floor_date(today, "month") ==
+          .data$date_bin_start,
         elapsed = as.numeric(today - .data$date_bin_start + 1),
         period_length = lubridate::days_in_month(.data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(
@@ -527,7 +528,8 @@ summarise_estimations <- function(
       tidyr::complete(date_bin_start = all_months) %>%
       # Correct last month as predictions are for the full month but we should present only the estimates to date
       dplyr::mutate(
-        current_period = lubridate::floor_date(today, "month") == .data$date_bin_start,
+        current_period = lubridate::floor_date(today, "month") ==
+          .data$date_bin_start,
         elapsed = as.numeric(today - .data$date_bin_start + 1),
         period_length = lubridate::days_in_month(.data$date_bin_start),
         n_landings_per_boat = dplyr::if_else(
@@ -726,7 +728,9 @@ site_coast <- function(conf) {
   if (length(dupes) > 0) {
     stop(
       "Landing site(s) listed under more than one `metadata.coast_areas` ",
-      "area: ", paste(unique(dupes), collapse = ", "), ".",
+      "area: ",
+      paste(unique(dupes), collapse = ", "),
+      ".",
       call. = FALSE
     )
   }
@@ -746,13 +750,19 @@ get_summary_data <- function(data = NULL, catch_table = NULL, conf) {
   # with no signal.
   unclassified <-
     data_area %>%
-    dplyr::filter(!is.na(.data$landing_id), !is.na(.data$landing_site),
-                  is.na(.data$Area)) %>%
+    dplyr::filter(
+      !is.na(.data$landing_id),
+      !is.na(.data$landing_site),
+      is.na(.data$Area)
+    ) %>%
     dplyr::count(.data$landing_site, sort = TRUE)
   if (nrow(unclassified) > 0) {
     warning(
-      "No `metadata.coast_areas` entry for ", nrow(unclassified),
-      " landing site(s), covering ", sum(unclassified$n), " landings: ",
+      "No `metadata.coast_areas` entry for ",
+      nrow(unclassified),
+      " landing site(s), covering ",
+      sum(unclassified$n),
+      " landings: ",
       paste(unclassified$landing_site, collapse = ", "),
       ". They are excluded from `summary_data$n_surveys`.",
       call. = FALSE

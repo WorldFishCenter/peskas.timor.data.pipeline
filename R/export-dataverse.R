@@ -20,19 +20,23 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   prefixes <- c("trips", "catch", "aggregated-month")
   files_names <-
-    purrr::map(prefixes, ~ coasts::cloud_object_name(
-      prefix = paste(conf$export$file_prefix, .x, sep = "_"),
-      version = "latest",
-      extension = "tsv",
-      provider = conf$public_storage$google$key,
-      options = conf$public_storage$google$options
-    )) %>%
+    purrr::map(
+      prefixes,
+      ~ coasts::cloud_object_name(
+        prefix = paste(conf$export$file_prefix, .x, sep = "_"),
+        version = "latest",
+        extension = "tsv",
+        provider = conf$public_storage$google$key,
+        options = conf$public_storage$google$options
+      )
+    ) %>%
     do.call("rbind", .) %>%
     as.character() %>%
     unique()
 
   logger::log_info("Retrieving public data to release...")
-  purrr::map(files_names,
+  purrr::map(
+    files_names,
     coasts::download_cloud_file,
     provider = conf$public_storage$google$key,
     options = conf$public_storage$google$options
@@ -40,10 +44,12 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 
   data_description <- generate_description()
 
-
   logger::log_info("Generating README...")
   rmarkdown::render(
-    input = system.file("export/README.Rmd", package = "peskas.timor.data.pipeline")
+    input = system.file(
+      "export/README.Rmd",
+      package = "peskas.timor.data.pipeline"
+    )
   )
 
   logger::log_info("Generating metadata...")
@@ -51,12 +57,16 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   new_names <- gsub("__[^>]+__", "", files_names)
   file.rename(from = files_names, to = new_names)
 
-  release_files_names <- c(new_names, system.file("export/README.html",
-    package = "peskas.timor.data.pipeline"
-  ))
+  release_files_names <- c(
+    new_names,
+    system.file("export/README.html", package = "peskas.timor.data.pipeline")
+  )
   release_files_names <- release_files_names[c(4, 3, 1, 2)]
 
-  metadat <- httr::upload_file(system.file("export/dataset-fields.json", package = "peskas.timor.data.pipeline"))
+  metadat <- httr::upload_file(system.file(
+    "export/dataset-fields.json",
+    package = "peskas.timor.data.pipeline"
+  ))
 
   logger::log_info("Initializing dataset in Peskas dataverse...")
   dataverse::create_dataset(
@@ -112,7 +122,12 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
 #'   server = "dataverse.example.com"
 #' )
 #' }
-upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server = NULL) {
+upload_files <- function(
+  file_list = NULL,
+  key = NULL,
+  dataverse = NULL,
+  server = NULL
+) {
   dataverse_content <-
     dataverse::dataverse_contents(
       dataverse = dataverse,
@@ -122,22 +137,26 @@ upload_files <- function(file_list = NULL, key = NULL, dataverse = NULL, server 
 
   last_dataset <- dataverse_content[length(dataverse_content)][[1]]
   PID <- paste0(
-    last_dataset$protocol, ":",
-    last_dataset$authority, "/",
+    last_dataset$protocol,
+    ":",
+    last_dataset$authority,
+    "/",
     last_dataset$identifier
   )
 
-  purrr::walk(file_list, purrr::slowly(dataverse::add_dataset_file,
-    rate = purrr::rate_delay(60 * 2),
-    quiet = FALSE
-  ),
-  dataset = PID,
-  key = key,
-  description = "",
-  server = server
+  purrr::walk(
+    file_list,
+    purrr::slowly(
+      dataverse::add_dataset_file,
+      rate = purrr::rate_delay(60 * 2),
+      quiet = FALSE
+    ),
+    dataset = PID,
+    key = key,
+    description = "",
+    server = server
   )
 }
-
 
 
 #' Publish latest dataset created
@@ -184,12 +203,18 @@ publish_last_dataset <- function(key = NULL, dataverse = NULL, server = NULL) {
 #' @export
 #'
 generate_description <- function(...) {
-  trips_dat <- readr::read_tsv(grep("timor_trips", list.files(), value = TRUE)) %>% dplyr::select(-.data$landing_catch)
+  trips_dat <- readr::read_tsv(grep(
+    "timor_trips",
+    list.files(),
+    value = TRUE
+  )) %>%
+    dplyr::select(-.data$landing_catch)
   catch_dat <- readr::read_tsv(grep("catch", list.files(), value = TRUE))
   aggr_dat <- readr::read_tsv(grep("aggregated", list.files(), value = TRUE))
 
   time_range <-
-    paste(zoo::as.yearmon(min(trips_dat$landing_date, na.rm = TRUE)),
+    paste(
+      zoo::as.yearmon(min(trips_dat$landing_date, na.rm = TRUE)),
       zoo::as.yearmon(max(trips_dat$landing_date, na.rm = TRUE)),
       sep = " - "
     )

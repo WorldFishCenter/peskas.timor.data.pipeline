@@ -42,7 +42,9 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
         )
       )
     }) %>%
-    dplyr::mutate(submission_date = lubridate::as_date(.data$submission_date)) %>%
+    dplyr::mutate(
+      submission_date = lubridate::as_date(.data$submission_date)
+    ) %>%
     dplyr::filter(.data$submission_date >= Sys.Date() - 7) %>%
     dplyr::select("submission_id", "submission_date", "alert_flag")
 
@@ -54,10 +56,16 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   )
 
   alerts_week <-
-    dplyr::left_join(peskas_alerts_week, alert_description, by = "alert_flag") %>%
+    dplyr::left_join(
+      peskas_alerts_week,
+      alert_description,
+      by = "alert_flag"
+    ) %>%
     dplyr::mutate(
       alert_description = dplyr::if_else(
-        grepl(",", .data$alert_flag), "Multiple alerts", .data$alert_description
+        grepl(",", .data$alert_flag),
+        "Multiple alerts",
+        .data$alert_description
       )
     ) %>%
     dplyr::rename(
@@ -90,7 +98,10 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
             kableExtra::kable_styling(bootstrap_options = "striped")
         )
       ),
-      footer = blastula::md(glue::glue("Email sent on ", as.character(Sys.time())))
+      footer = blastula::md(glue::glue(
+        "Email sent on ",
+        as.character(Sys.time())
+      ))
     )
 
   logger::log_info("Generate credentials file")
@@ -104,8 +115,16 @@ send_validation_mail <- function(log_threshold = logger::DEBUG) {
   email %>%
     blastula::smtp_send(
       from = "peskas.platform@gmail.com",
-      to = c("l.longobardi@cgiar.org", "v.sozinho@cgiar.org", "mafpeskaas@gmail.com"),
-      subject = paste("Peskas automations:", n_submissions_alert, "new submissions have problems"),
+      to = c(
+        "l.longobardi@cgiar.org",
+        "v.sozinho@cgiar.org",
+        "mafpeskaas@gmail.com"
+      ),
+      subject = paste(
+        "Peskas automations:",
+        n_submissions_alert,
+        "new submissions have problems"
+      ),
       credentials = blastula::creds_file("creds.txt")
     )
   file.remove("creds.txt")

@@ -3,7 +3,9 @@ library(peskas.timor.data.pipeline)
 logger::log_threshold(logger::ERROR)
 # Local runs read their credentials from `.env`; CI supplies them as real
 # environment variables, where this is a no-op.
-if (file.exists(".env")) dotenv::load_dot_env()
+if (file.exists(".env")) {
+  dotenv::load_dot_env()
+}
 
 # The frozen shape: production run 90ede9a of 2026-07-31. Pin the FULL version —
 # a bare sha is shared by every run of that commit. `latest` is the newest set in
@@ -21,6 +23,9 @@ failures <- peskas.timor.data.pipeline::check_portal_contract(
 
 expect_true(
   length(failures) == 0,
-  info = paste0(length(failures), " structural failure(s): ",
-                paste(failures, collapse = " | "))
+  info = paste0(
+    length(failures),
+    " structural failure(s): ",
+    paste(failures, collapse = " | ")
+  )
 )

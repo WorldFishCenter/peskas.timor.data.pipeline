@@ -38,8 +38,10 @@
 #' @keywords workflow ingestion
 #' @export
 #'
-ingest_landings <- function(versions = c("v2", "v3"),
-                            log_threshold = logger::DEBUG) {
+ingest_landings <- function(
+  versions = c("v2", "v3"),
+  log_threshold = logger::DEBUG
+) {
   logger::log_threshold(log_threshold)
   conf <- read_config()
 

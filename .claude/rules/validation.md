@@ -28,8 +28,8 @@ future date escapes **unflagged** — not that none exists.
 
 ## `tinytest::run_test_file()` sets no exit status
 
-It returns its results; the process exits 0 regardless. All four pipeline test
-steps reported success no matter what they found, for the life of the workflow.
+It returns its results; the process exits 0 regardless. The pipeline test steps
+once reported success no matter what they found.
 Each step must check the result itself:
 
 ```r
@@ -37,9 +37,6 @@ r <- tinytest::run_test_file(system.file("tinytest/test_validated_landings.R",
                                          package = "peskas.timor.data.pipeline"))
 if (any(!vapply(r, isTRUE, logical(1)))) quit(status = 1)
 ```
-
-**Never delete an assertion to make a change pass** — update the expectation
-deliberately. Tests are Timor's advantage over the other pipelines.
 
 ## The IMEI roster
 

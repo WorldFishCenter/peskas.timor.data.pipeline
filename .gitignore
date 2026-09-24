@@ -60,6 +60,7 @@ notes/
 
 ## Claude Code — track CLAUDE.md and .claude/rules/, not local settings
 .claude/settings.local.json
+CLAUDE.local.md
 
 # Preview left behind by rendering README.Rmd
 README.html

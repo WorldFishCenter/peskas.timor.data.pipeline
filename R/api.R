@@ -88,7 +88,9 @@ api_trips <- function(landings, conf) {
       # "0" is the no-catch sentinel; the other countries write NA.
       catch_taxon = dplyr::na_if(.data$catch_taxon, "0"),
       bin_n = dplyr::if_else(
-        is.na(.data$n_individuals) | is.na(.data$length), 0, .data$n_individuals
+        is.na(.data$n_individuals) | is.na(.data$length),
+        0,
+        .data$n_individuals
       ),
       bin_length = .data$bin_n * .data$length
     ) %>%
@@ -96,10 +98,21 @@ api_trips <- function(landings, conf) {
     dplyr::summarise(
       dplyr::across(
         dplyr::all_of(c(
-          "survey_version", "landing_date", "gaul_1_code", "gaul_1_name",
-          "gaul_2_code", "gaul_2_name", "landing_site", "n_fishers",
-          "trip_duration", "gear", "vessel_type", "catch_habitat",
-          "catch_outcome", "scientific_name", "catch_price"
+          "survey_version",
+          "landing_date",
+          "gaul_1_code",
+          "gaul_1_name",
+          "gaul_2_code",
+          "gaul_2_name",
+          "landing_site",
+          "n_fishers",
+          "trip_duration",
+          "gear",
+          "vessel_type",
+          "catch_habitat",
+          "catch_outcome",
+          "scientific_name",
+          "catch_price"
         )),
         dplyr::first
       ),
@@ -111,11 +124,15 @@ api_trips <- function(landings, conf) {
     ) %>%
     dplyr::mutate(
       length_cm = dplyr::if_else(
-        .data$individuals > 0, .data$length_sum / .data$individuals, NA_real_
+        .data$individuals > 0,
+        .data$length_sum / .data$individuals,
+        NA_real_
       ),
       # A catch nothing could be weighed for is unknown, not zero.
       catch_kg = dplyr::if_else(
-        .data$weighed_bins > 0, .data$catch_kg, NA_real_
+        .data$weighed_bins > 0,
+        .data$catch_kg,
+        NA_real_
       )
     )
 
@@ -125,7 +142,9 @@ api_trips <- function(landings, conf) {
     dplyr::group_by(.data$submission_id) %>%
     dplyr::mutate(
       tot_catch_kg = dplyr::if_else(
-        any(!is.na(.data$catch_kg)), sum(.data$catch_kg, na.rm = TRUE), NA_real_
+        any(!is.na(.data$catch_kg)),
+        sum(.data$catch_kg, na.rm = TRUE),
+        NA_real_
       )
     ) %>%
     dplyr::ungroup() %>%

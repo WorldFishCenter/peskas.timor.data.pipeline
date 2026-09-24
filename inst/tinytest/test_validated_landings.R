@@ -5,7 +5,9 @@ logger::log_threshold(logger::ERROR)
 # environment variables, where this is a no-op. Not a `setwd("../..")`:
 # tinytest sets the working directory to the test file's own directory, so
 # that lands inside the R library.
-if (file.exists(".env")) dotenv::load_dot_env()
+if (file.exists(".env")) {
+  dotenv::load_dot_env()
+}
 conf <- peskas.timor.data.pipeline::read_config()
 
 validated_landings <- peskas.timor.data.pipeline:::get_validated_landings(conf)
@@ -39,11 +41,13 @@ catch <- validated_landings %>%
 
 expect_false(
   any_negative(na.omit(validated_landings$trip_length)),
-  "Negative trip durations in landings")
+  "Negative trip durations in landings"
+)
 
 expect_false(
   any_negative(na.omit(validated_landings$catch_price)),
-  "Negative values in landings")
+  "Negative values in landings"
+)
 
 # A landing date after the submission date is flagged (alert 4) and kept, not
 # blanked: `landing_date` is the merge key and every time aggregation reads it,
@@ -56,12 +60,16 @@ expect_false(
         as.Date(lubridate::with_tz(Sys.time(), "Asia/Dili")) + 1 &
       !validated_landings$landing_id %in% flagged_dates
   ),
-  "Unflagged landing dates larger than current date + 1")
+  "Unflagged landing dates larger than current date + 1"
+)
 
 expect_false(
-  any(na.omit(validated_landings$landing_date) <
-        lubridate::with_tz("2017-01-01", "Asia/Dili")),
-  "Landing dates prior to 2017")
+  any(
+    na.omit(validated_landings$landing_date) <
+      lubridate::with_tz("2017-01-01", "Asia/Dili")
+  ),
+  "Landing dates prior to 2017"
+)
 
 expect_true(
   all(nchar(na.omit(validated_landings$tracker_imei)) == 15),
@@ -72,7 +80,8 @@ expect_true(
 
 expect_false(
   any_negative(na.omit(catch$length)),
-  "Negative catch lengths")
+  "Negative catch lengths"
+)
 
 expect_equal(
   sort(unique(na.omit(catch$catch_use))),
@@ -91,8 +100,10 @@ expect_true(
 
 expect_false(
   any_negative(na.omit(catch$number_of_fish)),
-  "Negative catch numbers")
+  "Negative catch numbers"
+)
 
 expect_false(
   anyNA(catch$catch_taxon),
-  "NA values in catch taxon")
+  "NA values in catch taxon"
+)

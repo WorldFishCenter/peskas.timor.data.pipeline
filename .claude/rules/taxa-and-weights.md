@@ -26,7 +26,7 @@ FAO areas **57 and 71**, from `metadata.fishbase.fao_areas`, with
 
 ## `taxa_search_aliases()` is the load-bearing part
 
-`expand_taxonomic_info()` matches the FishBase backbone at species / genus /
+`coasts::expand_taxonomic_info()` matches the FishBase backbone at species / genus /
 family / order / class only, and FAO names several taxa at ranks that backbone
 has no column for. Aliases are **additive** — extra search names for a code,
 never a replacement — so nothing that already resolves can regress and **no
@@ -70,8 +70,8 @@ overestimates weight, because FL and SL are shorter (medians 0.958 TL and
 0.827 TL).
 
 - **POPLL fits `Length1 = aL + bL * Length2` — the second column is the
-  predictor.** coasts' roxygen states this backwards (COASTS-TODO C28). Getting
-  it wrong inverts every ratio.
+  predictor.** Older coasts roxygen stated this backwards. Getting it wrong
+  inverts every ratio.
 - Substituting `L_type ~= ratio * TL` gives `W = a * ratio^b * TL^b`, so **`b`
   is unchanged and only `a` is rescaled**.
 - **`length_types = NULL` is passed deliberately.** The coasts default keeps
@@ -93,7 +93,7 @@ overestimates weight, because FL and SL are shorter (medians 0.958 TL and
   because `get_fao_composition()` legitimately does not cover every
   invertebrate.
 
-`expand_taxonomic_info()` warns about names it cannot match, and for Timor it
+`coasts::expand_taxonomic_info()` warns about names it cannot match, and for Timor it
 always names six: `Algae`, `Brachyura`, `Actinopterygii`, `Selachimorpha
 (Pleurotremata)`, `Leiognathus equulus`, `Thunnini`. **That is expected, not a
 fault.** Four resolve through `taxa_search_aliases()` instead and `CRA` through

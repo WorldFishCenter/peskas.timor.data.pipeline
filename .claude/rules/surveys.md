@@ -66,7 +66,8 @@ rows are selected by the Airtable record ids of its two forms —
 up from the frame's `forms` table by the KoBo asset id already in
 `ingestion.landings.{v2,v3}.asset_id`, as Kenya, Mozambique and Zanzibar do.
 The lookup must hit the API because `coasts::ingest_assets()` keeps
-`airtable_id` on `geo` but **drops it from `forms`** (COASTS-TODO C29). Beware:
+`airtable_id` on `geo` but **drops it from `forms`** (an open hub item: the
+snapshot cannot map a KoBo asset id to a form record id). Beware:
 in `forms` the column named `form_id` holds the *KoBo asset id*, while
 everywhere else `form_id` holds *Airtable record ids*.
 

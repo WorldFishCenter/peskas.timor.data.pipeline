@@ -20,7 +20,7 @@ Authors@R:
       person(given = "WorldFish",
              role = "cph"))
 Description: This package implements the data and modelling
-    pipelines underpining the Peskas system.
+    pipelines underpinning the Peskas system.
 License: GPL-3
 URL: https://worldfishcenter.github.io/peskas.timor.data.pipeline/
 BugReports:

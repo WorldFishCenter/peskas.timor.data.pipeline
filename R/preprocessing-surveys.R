@@ -47,8 +47,10 @@
 #' @return No output. This function is used for its side effects.
 #' @keywords workflow preprocessing
 #' @export
-preprocess_landings <- function(versions = c("v2", "v3"),
-                                log_threshold = logger::DEBUG) {
+preprocess_landings <- function(
+  versions = c("v2", "v3"),
+  log_threshold = logger::DEBUG
+) {
   logger::log_threshold(log_threshold)
   conf <- read_config()
 
@@ -168,19 +170,47 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
 landing_cols <- function() {
   c(
     # submission
-    "submission_id", "survey_id", "survey_version", "submitted_by",
-    "landing_date", "submission_date",
+    "submission_id",
+    "survey_id",
+    "survey_version",
+    "submitted_by",
+    "landing_date",
+    "submission_date",
     # place
-    "landing_site", "landing_site_code",
-    "gaul_1_code", "gaul_1_name", "gaul_2_code", "gaul_2_name",
+    "landing_site",
+    "landing_site_code",
+    "gaul_1_code",
+    "gaul_1_name",
+    "gaul_2_code",
+    "gaul_2_name",
     # effort
-    "n_fishers", "no_men_fishers", "no_women_fishers", "no_child_fishers",
-    "trip_duration", "gear", "gear_code", "vessel_type", "vessel_code",
-    "habitat", "habitat_code", "has_boat", "mesh_size", "n_gleaners", "fuel",
-    "conservation_code", "happiness", "tracker_imei",
+    "n_fishers",
+    "no_men_fishers",
+    "no_women_fishers",
+    "no_child_fishers",
+    "trip_duration",
+    "gear",
+    "gear_code",
+    "vessel_type",
+    "vessel_code",
+    "habitat",
+    "habitat_code",
+    "has_boat",
+    "mesh_size",
+    "n_gleaners",
+    "fuel",
+    "conservation_code",
+    "happiness",
+    "tracker_imei",
     # catch
-    "catch_price", "catch_outcome", "n_catch", "catch_taxon",
-    "scientific_name", "catch_use", "length", "n_individuals"
+    "catch_price",
+    "catch_outcome",
+    "n_catch",
+    "catch_taxon",
+    "scientific_name",
+    "catch_use",
+    "length",
+    "n_individuals"
   )
 }
 
@@ -212,7 +242,12 @@ reshape_landings <- function(raw, version, labels) {
     catches <- catches %>%
       dplyr::select(-dplyr::any_of("food_or_sale")) %>%
       dplyr::left_join(
-        dplyr::select(submissions, "submission_id", "catch_use", "catch_outcome"),
+        dplyr::select(
+          submissions,
+          "submission_id",
+          "catch_use",
+          "catch_outcome"
+        ),
         by = "submission_id"
       ) %>%
       dplyr::mutate(
@@ -235,7 +270,7 @@ reshape_landings <- function(raw, version, labels) {
     resolve_catch_taxa(labels) %>%
     resolve_survey_labels(labels) %>%
     trim_free_text() %>%
-        dplyr::select(dplyr::all_of(landing_cols()))
+    dplyr::select(dplyr::all_of(landing_cols()))
 }
 
 #' Reconcile one form version's submission-level columns
@@ -258,7 +293,8 @@ harmonise_submissions <- function(raw, version) {
     ) %>%
     dplyr::mutate(`_id` = as.character(.data$`_id`))
 
-  x <- switch(version,
+  x <- switch(
+    version,
     v2 = harmonise_v2(x),
     v3 = harmonise_v3(x),
     stop("Unsupported landings version: ", version)
@@ -267,11 +303,17 @@ harmonise_submissions <- function(raw, version) {
   # Not every form asks every question, and validation reads the standard
   # columns below off both. Absent answers used to become NA when the versions
   # were bound together; now they become NA one version earlier.
-  x <- add_missing_cols(x, c(
-    "trip_group/has_boat", "trip_group/mesh_size", "trip_group/mesh_size_other",
-    "how_many_gleaners_today", "group_conservation_trading/conservation",
-    "happiness_rating"
-  ))
+  x <- add_missing_cols(
+    x,
+    c(
+      "trip_group/has_boat",
+      "trip_group/mesh_size",
+      "trip_group/mesh_size_other",
+      "how_many_gleaners_today",
+      "group_conservation_trading/conservation",
+      "happiness_rating"
+    )
+  )
 
   x %>%
     dplyr::mutate(
@@ -280,7 +322,8 @@ harmonise_submissions <- function(raw, version) {
       survey_id = .data$`_uuid`,
       landing_date = lubridate::as_date(.data$date),
       submission_date = lubridate::with_tz(
-        lubridate::ymd_hms(.data$`_submission_time`), "Asia/Dili"
+        lubridate::ymd_hms(.data$`_submission_time`),
+        "Asia/Dili"
       ),
       landing_site_code = as.character(.data$landing_site_name),
       habitat_code = as.character(.data$`trip_group/habitat`),
@@ -297,7 +340,9 @@ harmonise_submissions <- function(raw, version) {
         .data$`trip_group/no_fishers/no_child_fishers`
       ),
       n_fishers = sum_fishers(
-        .data$no_men_fishers, .data$no_women_fishers, .data$no_child_fishers
+        .data$no_men_fishers,
+        .data$no_women_fishers,
+        .data$no_child_fishers
       ),
       # The remaining survey answers validation reads. They have no equivalent
       # in the PESKAS | FRAME frame and no standard name in the cross-country
@@ -352,7 +397,8 @@ harmonise_v2 <- function(x) {
           .data$`trip_group/habitat_no_boat`,
           .data$`trip_group/Habitat_no_boat`
         ),
-        1, 1
+        1,
+        1
       ),
       `trip_group/habitat` = dplyr::coalesce(
         .data$`trip_group/habitat_boat`,
@@ -367,17 +413,19 @@ harmonise_v2 <- function(x) {
       ),
       catch_outcome = NA_character_
     ) %>%
-    dplyr::select(-dplyr::any_of(c(
-      "habitat_no_boat",
-      "trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska",
-      "trip_group/fuel_used_L",
-      "trip_group/habitat_boat",
-      "trip_group/habitat_no_boat",
-      "trip_group/Habitat_no_boat",
-      "Tanba_sa_la_iha_ro_o_peskador_",
-      "Seluk_hakerek_manualmente",
-      "reason_for_zero_boats"
-    )))
+    dplyr::select(
+      -dplyr::any_of(c(
+        "habitat_no_boat",
+        "trip_group/Total_litru_mina_hir_e_ebe_gastu_ba_peska",
+        "trip_group/fuel_used_L",
+        "trip_group/habitat_boat",
+        "trip_group/habitat_no_boat",
+        "trip_group/Habitat_no_boat",
+        "Tanba_sa_la_iha_ro_o_peskador_",
+        "Seluk_hakerek_manualmente",
+        "reason_for_zero_boats"
+      ))
+    )
 }
 
 harmonise_v3 <- function(x) {
@@ -401,19 +449,20 @@ harmonise_v3 <- function(x) {
       ),
       catch_use = .data$`group_conservation_trading/food_or_sale`
     ) %>%
-    dplyr::select(-dplyr::any_of(c(
-      "trip_group/fuel_used_L",
-      "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA",
-      "group_conservation_trading/food_or_sale",
-      "group_info_general/municipality",
-      "group_info_general/Tanba_sa_la_iha_ro_o_peskador_",
-      "form_completed"
-    ))) %>%
+    dplyr::select(
+      -dplyr::any_of(c(
+        "trip_group/fuel_used_L",
+        "group_conservation_trading/SE_FAAN_ITA_BO_OT_HAKARAK_FAA",
+        "group_conservation_trading/food_or_sale",
+        "group_info_general/municipality",
+        "group_info_general/Tanba_sa_la_iha_ro_o_peskador_",
+        "form_completed"
+      ))
+    ) %>%
     dplyr::select(-dplyr::contains("group_info_general/group_station")) %>%
     dplyr::rename(
       date = "group_info_general/date",
-      Ita_koleta_dadus_husi_atividad =
-        "group_info_general/Ita_koleta_dadus_husi_atividad",
+      Ita_koleta_dadus_husi_atividad = "group_info_general/Ita_koleta_dadus_husi_atividad",
       total_catch_value = "group_conservation_trading/total_catch_value"
     )
 }
@@ -457,7 +506,9 @@ resolve_catch_taxa <- function(x, labels) {
     dplyr::left_join(labels$taxa, by = c("species" = "survey_label")) %>%
     dplyr::mutate(
       catch_taxon = dplyr::if_else(
-        !is.na(.data$species) & .data$species == "0", "0", .data$catch_taxon
+        !is.na(.data$species) & .data$species == "0",
+        "0",
+        .data$catch_taxon
       ),
       catch_taxon = dplyr::case_when(
         is.na(.data$catch_taxon) &
@@ -540,14 +591,14 @@ survey_labels <- function(conf) {
 # The habitat code -> label lookup recorded on the survey form.
 habitat_labels <- function() {
   tibble::tribble(
-    ~habitat_code, ~habitat,
-    "1", "Reef",
-    "2", "FAD",
-    "3", "Deep",
-    "4", "Beach",
-    "5", "Traditional FAD",
-    "6", "Mangrove",
-    "7", "Seagrass"
+    ~habitat_code , ~habitat          ,
+    "1"           , "Reef"            ,
+    "2"           , "FAD"             ,
+    "3"           , "Deep"            ,
+    "4"           , "Beach"           ,
+    "5"           , "Traditional FAD" ,
+    "6"           , "Mangrove"        ,
+    "7"           , "Seagrass"
   )
 }
 

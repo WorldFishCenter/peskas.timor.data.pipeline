@@ -2,20 +2,32 @@ dummy <- tidyr::tibble(
   `_id` = c("1", "2"),
   `species_group.0.species_group/species` = c("3", "0"),
   `species_group.0.species_group/food_or_sale` = c("food", NA),
-  `species_group.0.species_group/no_fish_by_length_group/no_individuals_5_10` =
-    c("4", NA),
-  `species_group.0.species_group/no_fish_by_length_group/no_individuals_over60` =
-    c("2", NA),
-  `species_group.0.species_group/no_fish_by_length_group/fish_length_over60` =
-    c("85", NA),
+  `species_group.0.species_group/no_fish_by_length_group/no_individuals_5_10` = c(
+    "4",
+    NA
+  ),
+  `species_group.0.species_group/no_fish_by_length_group/no_individuals_over60` = c(
+    "2",
+    NA
+  ),
+  `species_group.0.species_group/no_fish_by_length_group/fish_length_over60` = c(
+    "85",
+    NA
+  ),
   `species_group.1.species_group/species` = c("10", NA),
   `species_group.1.species_group/food_or_sale` = c("sale", NA),
-  `species_group.1.species_group/no_fish_by_length_group/no_individuals_5_10` =
-    c("1", NA),
-  `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` =
-    c(NA, NA),
-  `species_group.1.species_group/no_fish_by_length_group/fish_length_over60` =
-    c(NA, NA)
+  `species_group.1.species_group/no_fish_by_length_group/no_individuals_5_10` = c(
+    "1",
+    NA
+  ),
+  `species_group.1.species_group/no_fish_by_length_group/no_individuals_over60` = c(
+    NA,
+    NA
+  ),
+  `species_group.1.species_group/no_fish_by_length_group/fish_length_over60` = c(
+    NA,
+    NA
+  )
 )
 
 test_that("empty catch slots are dropped and the index is 1-based", {

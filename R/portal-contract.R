@@ -34,11 +34,13 @@
 #'   holds. The full report is printed.
 #' @keywords export
 #' @export
-check_portal_contract <- function(baseline,
-                                  candidate,
-                                  allow_dropped = character(),
-                                  numbers = FALSE,
-                                  conf = NULL) {
+check_portal_contract <- function(
+  baseline,
+  candidate,
+  allow_dropped = character(),
+  numbers = FALSE,
+  conf = NULL
+) {
   base <- read_portal_set(resolve_portal_set(baseline, conf))
   cand <- read_portal_set(resolve_portal_set(candidate, conf))
 
@@ -49,7 +51,13 @@ check_portal_contract <- function(baseline,
     failures <<- c(failures, msg)
   }
 
-  cat("baseline :", length(base), "objects\ncandidate:", length(cand), "objects\n\n")
+  cat(
+    "baseline :",
+    length(base),
+    "objects\ncandidate:",
+    length(cand),
+    "objects\n\n"
+  )
 
   cat("== 1. object names\n")
   missing <- setdiff(names(base), names(cand))
@@ -57,21 +65,44 @@ check_portal_contract <- function(baseline,
   declared <- intersect(missing, allow_dropped)
   missing <- setdiff(missing, allow_dropped)
   if (length(declared)) {
-    cat("NOTE dropped by declaration: ", paste(declared, collapse = ", "), "\n", sep = "")
+    cat(
+      "NOTE dropped by declaration: ",
+      paste(declared, collapse = ", "),
+      "\n",
+      sep = ""
+    )
   }
   if (length(missing)) {
-    fail("objects present in baseline and MISSING from candidate: ",
-         paste(missing, collapse = ", "))
+    fail(
+      "objects present in baseline and MISSING from candidate: ",
+      paste(missing, collapse = ", ")
+    )
   }
   if (length(added)) {
-    cat("NOTE object names added by the candidate: ", paste(added, collapse = ", "), "\n", sep = "")
+    cat(
+      "NOTE object names added by the candidate: ",
+      paste(added, collapse = ", "),
+      "\n",
+      sep = ""
+    )
   }
   if (!length(missing) && !length(added)) {
-    cat("ok - ", length(intersect(names(base), names(cand))), " names carried over",
-        if (length(declared)) paste0(", ", length(declared), " dropped by declaration") else "",
-        "\n", sep = "")
+    cat(
+      "ok - ",
+      length(intersect(names(base), names(cand))),
+      " names carried over",
+      if (length(declared)) {
+        paste0(", ", length(declared), " dropped by declaration")
+      } else {
+        ""
+      },
+      "\n",
+      sep = ""
+    )
   }
-  cat("\n== 2. structure (keys, nesting, column names, column types, row counts)\n")
+  cat(
+    "\n== 2. structure (keys, nesting, column names, column types, row counts)\n"
+  )
 
   shared <- intersect(names(base), names(cand))
   sb <- portal_shapes(base[shared])
@@ -82,12 +113,20 @@ check_portal_contract <- function(baseline,
     sub("^df [0-9]+ x ", "df N x ", sub("^list\\[[0-9]+\\]", "list[N]", s))
   }
   sorted_cols <- function(s) {
-    if (!grepl("^df ", s)) return(s)
-    paste0(sub("^(df N x [0-9]+): .*$", "\\1: ", strip_rows(s)),
-           paste(sort(strsplit(sub("^df N x [0-9]+: ", "", strip_rows(s)), ", ")[[1]]),
-                 collapse = ", "))
+    if (!grepl("^df ", s)) {
+      return(s)
+    }
+    paste0(
+      sub("^(df N x [0-9]+): .*$", "\\1: ", strip_rows(s)),
+      paste(
+        sort(strsplit(sub("^df N x [0-9]+: ", "", strip_rows(s)), ", ")[[1]]),
+        collapse = ", "
+      )
+    )
   }
-  size_of <- function(s) sub("^(df [0-9]+ x [0-9]+|list\\[[0-9]+\\]).*$", "\\1", s)
+  size_of <- function(s) {
+    sub("^(df [0-9]+ x [0-9]+|list\\[[0-9]+\\]).*$", "\\1", s)
+  }
 
   for (k in union(names(sb), names(sc))) {
     b <- sb[[k]]
@@ -99,16 +138,43 @@ check_portal_contract <- function(baseline,
     } else if (identical(b, c_)) {
       next
     } else if (identical(strip_rows(b), strip_rows(c_))) {
-      cat("NOTE size only    ", k, ": ", size_of(b), " -> ", size_of(c_), "\n", sep = "")
+      cat(
+        "NOTE size only    ",
+        k,
+        ": ",
+        size_of(b),
+        " -> ",
+        size_of(c_),
+        "\n",
+        sep = ""
+      )
     } else if (identical(sorted_cols(b), sorted_cols(c_))) {
-      cat("NOTE column order ", k, " (same column set and types; the portal reads by key)\n",
-          "      baseline : ", b, "\n      candidate: ", c_, "\n", sep = "")
+      cat(
+        "NOTE column order ",
+        k,
+        " (same column set and types; the portal reads by key)\n",
+        "      baseline : ",
+        b,
+        "\n      candidate: ",
+        c_,
+        "\n",
+        sep = ""
+      )
     } else {
-      fail("shape changed ", k, "\n      baseline : ", b, "\n      candidate: ", c_)
+      fail(
+        "shape changed ",
+        k,
+        "\n      baseline : ",
+        b,
+        "\n      candidate: ",
+        c_
+      )
     }
   }
 
-  if (isTRUE(numbers)) report_portal_numbers(base[shared], cand[shared])
+  if (isTRUE(numbers)) {
+    report_portal_numbers(base[shared], cand[shared])
+  }
 
   cat("\n== result: ", length(failures), " structural failure(s)\n", sep = "")
   failures
@@ -124,25 +190,38 @@ resolve_portal_set <- function(spec, conf = NULL) {
   conf <- conf %||% read_config()
   opts <- conf$public_storage$google$options
   if (!identical(spec, "latest")) {
-    opts <- utils::modifyList(opts, list(bucket = sub("^gs://([^@]+).*$", "\\1", spec)))
+    opts <- utils::modifyList(
+      opts,
+      list(bucket = sub("^gs://([^@]+).*$", "\\1", spec))
+    )
   }
   key <- conf$public_storage$google$key
   coasts::cloud_storage_authenticate(provider = key, options = opts)
   names_all <- coasts::cloud_object_names(
-    prefix = "portal-", provider = key, options = opts, latest_only = is.null(version)
+    prefix = "portal-",
+    provider = key,
+    options = opts,
+    latest_only = is.null(version)
   )
   if (!is.null(version)) {
     names_all <- grep(version, names_all, fixed = TRUE, value = TRUE)
   }
-  if (!length(names_all)) stop("no portal-*.json matched in ", spec)
+  if (!length(names_all)) {
+    stop("no portal-*.json matched in ", spec)
+  }
   # A version substring may be a commit sha, which many runs share. Reduce to
   # the newest version of each name before downloading, as the portal does.
   names_all <- newest_per_object(names_all)
-  dir <- file.path(tempdir(), paste0("portal-", sub("[^A-Za-z0-9]+", "-", sub("^gs://", "", spec))))
+  dir <- file.path(
+    tempdir(),
+    paste0("portal-", sub("[^A-Za-z0-9]+", "-", sub("^gs://", "", spec)))
+  )
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   logger::log_info("Fetching {length(names_all)} objects from {spec}")
   coasts::download_cloud_file(
-    name = names_all, provider = key, options = opts,
+    name = names_all,
+    provider = key,
+    options = opts,
     file = file.path(dir, names_all)
   )
   dir
@@ -157,7 +236,9 @@ newest_per_object <- function(x) {
 
 read_portal_set <- function(dir) {
   files <- list.files(dir, pattern = "^portal-.*\\.json$", full.names = TRUE)
-  if (!length(files)) stop("no portal-*.json found in ", dir)
+  if (!length(files)) {
+    stop("no portal-*.json found in ", dir)
+  }
   files <- newest_per_object(files)
   names(files) <- sub("__.*$", "", basename(files))
   # Name the file that failed. An unauthenticated download writes the API's
@@ -166,8 +247,14 @@ read_portal_set <- function(dir) {
     tryCatch(
       jsonlite::fromJSON(f, simplifyVector = TRUE),
       error = function(e) {
-        stop(basename(f), " (", file.size(f), " bytes) is not valid JSON: ",
-             conditionMessage(e), call. = FALSE)
+        stop(
+          basename(f),
+          " (",
+          file.size(f),
+          " bytes) is not valid JSON: ",
+          conditionMessage(e),
+          call. = FALSE
+        )
       }
     )
   })
@@ -180,10 +267,24 @@ portal_shapes <- function(set) {
   e <- new.env(parent = emptyenv())
   walk <- function(x, path) {
     if (is.data.frame(x)) {
-      cols <- paste0(names(x), "<", vapply(x, function(cl) class(cl)[1], ""), ">")
-      e[[path]] <- sprintf("df %d x %d: %s", nrow(x), ncol(x), paste(cols, collapse = ", "))
+      cols <- paste0(
+        names(x),
+        "<",
+        vapply(x, function(cl) class(cl)[1], ""),
+        ">"
+      )
+      e[[path]] <- sprintf(
+        "df %d x %d: %s",
+        nrow(x),
+        ncol(x),
+        paste(cols, collapse = ", ")
+      )
     } else if (is.list(x)) {
-      e[[path]] <- sprintf("list[%d]: %s", length(x), paste(names(x), collapse = ","))
+      e[[path]] <- sprintf(
+        "list[%d]: %s",
+        length(x),
+        paste(names(x), collapse = ",")
+      )
       for (i in seq_along(x)) {
         nm <- if (!is.null(names(x)) && nzchar(names(x)[i])) names(x)[i] else i
         walk(x[[i]], paste0(path, "$", nm))
@@ -192,7 +293,9 @@ portal_shapes <- function(set) {
       e[[path]] <- sprintf("%s[%d]", class(x)[1], length(x))
     }
   }
-  for (nm in names(set)) walk(set[[nm]], nm)
+  for (nm in names(set)) {
+    walk(set[[nm]], nm)
+  }
   out <- as.list(e)
   out[order(names(out))]
 }
@@ -206,8 +309,10 @@ portal_stats <- function(set) {
         col <- x[[cn]]
         if (is.numeric(col)) {
           e[[paste0(path, "$", cn)]] <- c(
-            n = length(col), na = sum(is.na(col)),
-            sum = sum(col, na.rm = TRUE), mean = mean(col, na.rm = TRUE),
+            n = length(col),
+            na = sum(is.na(col)),
+            sum = sum(col, na.rm = TRUE),
+            mean = mean(col, na.rm = TRUE),
             min = suppressWarnings(min(col, na.rm = TRUE)),
             max = suppressWarnings(max(col, na.rm = TRUE))
           )
@@ -220,7 +325,9 @@ portal_stats <- function(set) {
       }
     }
   }
-  for (nm in names(set)) walk(set[[nm]], nm)
+  for (nm in names(set)) {
+    walk(set[[nm]], nm)
+  }
   out <- as.list(e)
   out[order(names(out))]
 }
@@ -239,11 +346,22 @@ report_portal_numbers <- function(base, cand) {
       moved <- moved + 1L
       cat(sprintf(
         "  %-58s n %6d->%-6d sum %+.4f%%  mean %+.4f%%  min %+.4f%%  max %+.4f%%\n",
-        k, b[["n"]], c_[["n"]], 100 * rel[["sum"]], 100 * rel[["mean"]],
-        100 * rel[["min"]], 100 * rel[["max"]]
+        k,
+        b[["n"]],
+        c_[["n"]],
+        100 * rel[["sum"]],
+        100 * rel[["mean"]],
+        100 * rel[["min"]],
+        100 * rel[["max"]]
       ))
     }
   }
-  cat("  ", moved, " of ", length(shared),
-      " numeric columns moved by more than 1e-9 relative\n", sep = "")
+  cat(
+    "  ",
+    moved,
+    " of ",
+    length(shared),
+    " numeric columns moved by more than 1e-9 relative\n",
+    sep = ""
+  )
 }

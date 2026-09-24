@@ -10,23 +10,33 @@ pds_trips <- peskas.timor.data.pipeline:::get_validated_pds_trips(conf)
 
 trips <-
   pds_trips %>%
-  dplyr::mutate(duration = difftime(pds_trips$tracker_trip_end, pds_trips$tracker_trip_start, units = "sec"))
+  dplyr::mutate(
+    duration = difftime(
+      pds_trips$tracker_trip_end,
+      pds_trips$tracker_trip_start,
+      units = "sec"
+    )
+  )
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_start) < Sys.time()),
-  "Trip starts are in the future")
+  "Trip starts are in the future"
+)
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_end) < Sys.time()),
-  "Trip ends are in the future")
+  "Trip ends are in the future"
+)
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_start) > lubridate::ymd("2017-01-01")),
-  "Trip starts are prior to 2017")
+  "Trip starts are prior to 2017"
+)
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_end) > lubridate::ymd("2017-01-01")),
-  "Trip ends are prior to 2017")
+  "Trip ends are prior to 2017"
+)
 
 expect_true(
   all(na.omit(pds_trips$tracker_trip_start < pds_trips$tracker_trip_end)),

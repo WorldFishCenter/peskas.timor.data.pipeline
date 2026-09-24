@@ -10,11 +10,6 @@ GCS project `peskas`, service account
 `data-ingestion@peskas.iam.gserviceaccount.com` — it can read/write objects but
 **cannot** `storage.buckets.list`.
 
-Versioned naming, from `add_version()`:
-`<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>`. The sha comes from
-`git2r::sha(git2r::last_commit())`, falling back to `$GITHUB_SHA` in
-containers.
-
 **The layer is `coasts::*`.** Every call site is namespaced
 `coasts::{cloud_storage_authenticate, upload_cloud_file, download_cloud_file,
 cloud_object_name, insistent_upload_cloud_file}`. **Always write the prefix** —

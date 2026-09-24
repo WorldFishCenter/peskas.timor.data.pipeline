@@ -3,7 +3,9 @@ library(peskas.timor.data.pipeline)
 logger::log_threshold(logger::ERROR)
 # Local runs read their credentials from `.env`; CI supplies them as real
 # environment variables, where this is a no-op.
-if (file.exists(".env")) dotenv::load_dot_env()
+if (file.exists(".env")) {
+  dotenv::load_dot_env()
+}
 
 conf <- coasts::read_config(package = "peskas.timor.data.pipeline")
 
@@ -22,8 +24,13 @@ metrics <- coasts::download_parquet_from_cloud(
 expect_equal(
   names(metrics),
   c(
-    "country", "gaul1_name", "gaul_2_name", "date",
-    "mean_cpue", "mean_rpue", "mean_price_kg"
+    "country",
+    "gaul1_name",
+    "gaul_2_name",
+    "date",
+    "mean_cpue",
+    "mean_rpue",
+    "mean_price_kg"
   ),
   info = "the coasts portal metrics schema"
 )
@@ -63,8 +70,10 @@ unmatched <- unique(named$gaul_2_name[is.na(named$gaul1_name)])
 expect_true(
   length(unmatched) == 0,
   info = paste0(
-    length(unmatched), " administrative post(s) matched no polygon in ",
-    conf$metadata$map_boundaries$gaul2, ": ",
+    length(unmatched),
+    " administrative post(s) matched no polygon in ",
+    conf$metadata$map_boundaries$gaul2,
+    ": ",
     paste(unmatched, collapse = ", ")
   )
 )

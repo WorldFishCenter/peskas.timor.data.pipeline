@@ -35,10 +35,12 @@ NULL
 #' @keywords helper
 #' @export
 #'
-get_nutrients_table <- function(conf,
-                                expanded = NULL,
-                                summarise = TRUE,
-                                convert = TRUE) {
+get_nutrients_table <- function(
+  conf,
+  expanded = NULL,
+  summarise = TRUE,
+  convert = TRUE
+) {
   logger::log_info("Retrieving nutritional values for each taxa group.")
   rfish_tab <- get_taxa_expansion(conf, expanded)
   # get invertebrates nutrients
@@ -52,7 +54,11 @@ get_nutrients_table <- function(conf,
     dplyr::select(!dplyr::contains("_")) %>%
     dplyr::select(.data$SpecCode, .data$Calcium:.data$Zinc) %>%
     dplyr::right_join(rfish_tab) %>%
-    dplyr::select(.data$interagency_code, .data$SpecCode, .data$Calcium:.data$Zinc) %>%
+    dplyr::select(
+      .data$interagency_code,
+      .data$SpecCode,
+      .data$Calcium:.data$Zinc
+    ) %>%
     na.omit() %>%
     dplyr::group_by(.data$interagency_code, .data$SpecCode) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), ~ dplyr::first(.x))) %>%
@@ -67,7 +73,9 @@ get_nutrients_table <- function(conf,
       Iron_mu = .data$Iron,
       Vitamin_A_mu = .data$VitaminA
     ) %>%
-    dplyr::filter(!.data$interagency_code %in% unique(fao_groups$interagency_code)) %>%
+    dplyr::filter(
+      !.data$interagency_code %in% unique(fao_groups$interagency_code)
+    ) %>%
     dplyr::bind_rows(fao_groups) %>%
     dplyr::filter(!.data$interagency_code == "FLY")
 
@@ -162,28 +170,51 @@ get_nutrients_table <- function(conf,
 #' @keywords helper
 #' @export
 get_fao_composition <- function() {
-  fao_comp <- readr::read_csv("https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv")
+  fao_comp <- readr::read_csv(
+    "https://github.com/WorldFishCenter/timor.nutrients/raw/main/inst/fao_food_composition.csv"
+  )
 
   octopus <- c("OCT", "OCT")
   squids <- c("SQZ", "SQR", "OMZ", "CTL", "CTC")
   cockles <- c("CLV", "SVE")
-  shrimps <- c("CSH", "PAL", "PAN", "PRA", "PEZ", "ENS", "MPM", "MPN", "PRB", "WKP", "PBA", "GIT", "TIP", "PNV", "SHS")
+  shrimps <- c(
+    "CSH",
+    "PAL",
+    "PAN",
+    "PRA",
+    "PEZ",
+    "ENS",
+    "MPM",
+    "MPN",
+    "PRB",
+    "WKP",
+    "PBA",
+    "GIT",
+    "TIP",
+    "PNV",
+    "SHS"
+  )
   crabs <- c("CAD", "DUN", "CRE", "PCR", "SWM", "CRB", "SCD", "MUD")
   lobsters <- c("NEX", "LBA", "LBE", "NEP", "VLO", "LOR")
 
   fao_comp %>%
     dplyr::rename(interagency_code = .data$integragency_code) %>%
     dplyr::filter(.data$food_state == "r") %>%
-    dplyr::filter(.data$interagency_code %in% c(octopus, squids, cockles, shrimps, crabs, lobsters)) %>%
-    dplyr::mutate(interagency_code = dplyr::case_when(
-      .data$interagency_code %in% octopus ~ "OCZ",
-      .data$interagency_code %in% squids ~ "IAX",
-      .data$interagency_code %in% cockles ~ "COZ",
-      .data$interagency_code %in% shrimps ~ "PEZ",
-      .data$interagency_code %in% crabs ~ "CRA",
-      .data$interagency_code %in% lobsters ~ "SLV",
-      TRUE ~ .data$interagency_code
-    )) %>%
+    dplyr::filter(
+      .data$interagency_code %in%
+        c(octopus, squids, cockles, shrimps, crabs, lobsters)
+    ) %>%
+    dplyr::mutate(
+      interagency_code = dplyr::case_when(
+        .data$interagency_code %in% octopus ~ "OCZ",
+        .data$interagency_code %in% squids ~ "IAX",
+        .data$interagency_code %in% cockles ~ "COZ",
+        .data$interagency_code %in% shrimps ~ "PEZ",
+        .data$interagency_code %in% crabs ~ "CRA",
+        .data$interagency_code %in% lobsters ~ "SLV",
+        TRUE ~ .data$interagency_code
+      )
+    ) %>%
     # dplyr::group_by(.data$interagency_code) %>%
     # dplyr::summarise(dplyr::across(.data$`protein(g)`:.data$`omega3(g)`, ~ median(.x, na.rm = TRUE))) %>%
     dplyr::rename(

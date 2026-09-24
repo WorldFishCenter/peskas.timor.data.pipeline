@@ -36,11 +36,17 @@ test_that("assert_taxa_coverage() fails on the CJX/PWT disappearance", {
 })
 
 test_that("MZZ and SWX are exempt, and are the only exemptions", {
-  taxa <- dplyr::tibble(alpha3_code = c("MZZ", "SWX"), scientific_name = c("a", "b"))
+  taxa <- dplyr::tibble(
+    alpha3_code = c("MZZ", "SWX"),
+    scientific_name = c("a", "b")
+  )
   lw <- dplyr::tibble(alpha3_code = character(), n_studies = integer())
 
   expect_no_error(
-    suppressMessages(peskas.timor.data.pipeline:::assert_taxa_coverage(taxa, lw))
+    suppressMessages(peskas.timor.data.pipeline:::assert_taxa_coverage(
+      taxa,
+      lw
+    ))
   )
 
   # One more unresolved code, and it must fail.

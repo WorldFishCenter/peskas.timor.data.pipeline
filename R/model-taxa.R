@@ -57,10 +57,6 @@ calculate_weights <- function(log_threshold = logger::DEBUG) {
 }
 
 
-
-
-
-
 #' Join length-weights and nutritional parameters info to preprocessed landings
 #'
 #' The function integrate nutritional info from the `get_nutrients_table` function
@@ -97,8 +93,6 @@ join_weights <- function(data, rfish_tab, nutrients_table) {
       dplyr::across(tidyselect::ends_with("_mu"), ~ .x * .data$weight)
     )
 }
-
-
 
 
 #' Build per-taxon length-weight coefficients
@@ -360,7 +354,10 @@ get_taxa_list <- function(conf) {
 
   dplyr::bind_rows(
     named,
-    dplyr::filter(taxa_search_aliases(), .data$alpha3_code %in% codes$alpha3_code)
+    dplyr::filter(
+      taxa_search_aliases(),
+      .data$alpha3_code %in% codes$alpha3_code
+    )
   ) %>%
     dplyr::distinct()
 }
@@ -412,15 +409,15 @@ get_taxa_list <- function(conf) {
 #' @noRd
 taxa_search_aliases <- function() {
   dplyr::tribble(
-    ~alpha3_code, ~scientific_name,
-    "TUN", "Allothunnus",
-    "TUN", "Auxis",
-    "TUN", "Euthynnus",
-    "TUN", "Katsuwonus",
-    "TUN", "Thunnus",
-    "SKH", "Carcharhiniformes",
-    "LGE", "Leiognathidae",
-    "CLP", "Dorosomatidae"
+    ~alpha3_code , ~scientific_name    ,
+    "TUN"        , "Allothunnus"       ,
+    "TUN"        , "Auxis"             ,
+    "TUN"        , "Euthynnus"         ,
+    "TUN"        , "Katsuwonus"        ,
+    "TUN"        , "Thunnus"           ,
+    "SKH"        , "Carcharhiniformes" ,
+    "LGE"        , "Leiognathidae"     ,
+    "CLP"        , "Dorosomatidae"
   )
 }
 

@@ -17,12 +17,14 @@
 #'
 #' @keywords storage
 #' @noRd
-download_versioned_rds <- function(prefix,
-                                   provider,
-                                   options,
-                                   version = "latest",
-                                   extension = "rds",
-                                   exact_match = FALSE) {
+download_versioned_rds <- function(
+  prefix,
+  provider,
+  options,
+  version = "latest",
+  extension = "rds",
+  exact_match = FALSE
+) {
   object_name <- coasts::cloud_object_name(
     prefix = prefix,
     version = version,
@@ -116,8 +118,11 @@ get_validated_landings <- function(conf) {
 
   catch <- long %>%
     dplyr::transmute(
-      .data$submission_id, .data$n_catch, .data$catch_taxon,
-      .data$catch_use, .data$length,
+      .data$submission_id,
+      .data$n_catch,
+      .data$catch_taxon,
+      .data$catch_use,
+      .data$length,
       number_of_fish = .data$n_individuals,
       catch = .data$catch_kg * 1000,
       dplyr::across(tidyselect::ends_with("_mu"))
@@ -134,7 +139,8 @@ get_validated_landings <- function(conf) {
   if (anyDuplicated(submissions$submission_id) > 0) {
     stop(
       "The long validated table did not collapse to one row per submission: ",
-      sum(duplicated(submissions$submission_id)), " duplicates. A catch-level ",
+      sum(duplicated(submissions$submission_id)),
+      " duplicates. A catch-level ",
       "column is missing from long_catch_cols()."
     )
   }
@@ -169,10 +175,21 @@ get_validated_landings <- function(conf) {
 # multiply the submission rows.
 long_catch_cols <- function() {
   c(
-    "n_catch", "catch_taxon", "scientific_name", "catch_use", "catch_outcome",
-    "length", "n_individuals", "catch_kg",
-    "Selenium_mu", "Zinc_mu", "Protein_mu", "Omega_3_mu", "Calcium_mu",
-    "Iron_mu", "Vitamin_A_mu"
+    "n_catch",
+    "catch_taxon",
+    "scientific_name",
+    "catch_use",
+    "catch_outcome",
+    "length",
+    "n_individuals",
+    "catch_kg",
+    "Selenium_mu",
+    "Zinc_mu",
+    "Protein_mu",
+    "Omega_3_mu",
+    "Calcium_mu",
+    "Iron_mu",
+    "Vitamin_A_mu"
   )
 }
 
@@ -187,17 +204,28 @@ long_catch_cols <- function() {
 nest_landing_catch <- function(validated_catch) {
   validated_catch %>%
     dplyr::select(
-      "submission_id", "n_catch", "catch_taxon", "catch_use",
-      "length", "number_of_fish", "catch", tidyselect::ends_with("_mu")
+      "submission_id",
+      "n_catch",
+      "catch_taxon",
+      "catch_use",
+      "length",
+      "number_of_fish",
+      "catch",
+      tidyselect::ends_with("_mu")
     ) %>%
     tidyr::nest(
       length_frequency = c(
-        "length", "number_of_fish", "catch",
+        "length",
+        "number_of_fish",
+        "catch",
         tidyselect::ends_with("_mu")
       )
     ) %>%
     dplyr::select(
-      "submission_id", "catch_taxon", "catch_use", "length_frequency"
+      "submission_id",
+      "catch_taxon",
+      "catch_use",
+      "length_frequency"
     ) %>%
     tidyr::nest(landing_catch = -"submission_id")
 }
@@ -298,7 +326,9 @@ get_airtable_form_id <- function(kobo_asset_id = NULL, conf = NULL) {
   ) {
     stop(
       "`kobo_asset_id` must be a single non-empty string (got ",
-      class(kobo_asset_id)[1], " of length ", length(kobo_asset_id),
+      class(kobo_asset_id)[1],
+      " of length ",
+      length(kobo_asset_id),
       "). Check the matching `ingestion.landings.*.asset_id` entry in ",
       "config.yml and that its environment variable is set.",
       call. = FALSE
@@ -319,7 +349,10 @@ get_airtable_form_id <- function(kobo_asset_id = NULL, conf = NULL) {
   if (length(airtable_id) != 1) {
     stop(
       "Expected exactly 1 Airtable `forms` record for kobo asset id \'",
-      kobo_asset_id, "\', found ", length(airtable_id), ".",
+      kobo_asset_id,
+      "\', found ",
+      length(airtable_id),
+      ".",
       call. = FALSE
     )
   }
@@ -377,11 +410,12 @@ tracker_imeis <- function(conf) {
   devices <- readr::read_rds(snapshot)$devices
   unlink(snapshot)
 
-  current <- devices$imei[devices$customer_name %in% conf$metadata$tracker_imeis$customers]
+  current <- devices$imei[
+    devices$customer_name %in% conf$metadata$tracker_imeis$customers
+  ]
 
   unique(c(
     as.character(archive),
     as.character(current[!is.na(current) & nzchar(current)])
   ))
 }
-

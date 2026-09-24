@@ -40,15 +40,23 @@ pars <- peskas.timor.data.pipeline::read_config()
 
 kobo_trips <- peskas.timor.data.pipeline::get_merged_trips(pars) %>%
   dplyr::filter(.data$landing_date >= "2018-01-01")
-metadata <- peskas.timor.data.pipeline::get_preprocessed_sheets(pars)
 nutrients_table <- peskas.timor.data.pipeline::get_nutrients_table(pars)
 estimates <- peskas.timor.data.pipeline::get_models(pars)
 
-vessels_stats <-
-  metadata$vessels_stats %>%
-  dplyr::group_by(.data$reporting_region) %>%
-  dplyr::summarise(n_boats = sum(.data$n_boats)) %>%
-  dplyr::ungroup()
+# Short labels for the model's catch groups; the catch composition table
+# expects exactly these, in its icon order. Other taxa keep their FAO name.
+group_labels <- c(
+  CLP = "Sardines/pilchards", GZP = "Garfish", TUN = "Tuna/Bonito/Other Mackerel",
+  SDX = "Mackerel scad", FLY = "Flying fish", SNA = "Snapper/seaperch",
+  MOO = "Moonfish", CGX = "Jacks/Trevally/Other Scad", CJX = "Fusilier",
+  BEN = "Long tom", RAX = "Short bodied mackerel", LWX = "Jobfish", MZZ = "Other"
+)
+catch_types <-
+  peskas.timor.data.pipeline::get_assets(pars)$taxa %>%
+  dplyr::distinct(interagency_code = .data$alpha3_code, catch_name_en = .data$english_name) %>%
+  dplyr::mutate(catch_name_en = dplyr::coalesce(unname(group_labels[interagency_code]), catch_name_en))
+
+vessels_stats <- peskas.timor.data.pipeline:::get_registered_boats(pars)
 
 # palettes
 year_palette <-
@@ -176,42 +184,6 @@ kobo_trips %>%
 # Fishery profile
 
 This section contains information of the Timor-Leste SSF' fleet and the main characteristics of the fishing trips. The information is based on the data collected during the Peskas' surveys.
-
-## Boats information
-
-```{r echo=FALSE, fig.height=4, fig.width=10, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
-metadata$boats %>%
-  dplyr::select(.data$boat_length, .data$boat_engine_power) %>%
-  tidyr::pivot_longer(cols = tidyr::everything()) %>%
-  dplyr::mutate(value = as.numeric(value)) %>%
-  ggplot() +
-  theme_minimal(12) +
-  facet_grid(
-    . ~ name,
-    scales = "free",
-    labeller = as_labeller(c(
-      boat_engine_power = "Boat horspower (hp)",
-      boat_length = "Boat length (m)"
-    ))
-  ) +
-  geom_histogram(
-    mapping = aes(x = value),
-    bins = 30,
-    binwidth = 0.5,
-    fill = "#447597",
-    alpha = 0.5
-  ) +
-  scale_x_continuous(n.breaks = 10) +
-  theme(
-    text = element_text(family = "Helvetica"),
-    plot.subtitle = element_text(size = 9, color = "darkslategrey"),
-    panel.grid = element_blank()
-  ) +
-  labs(
-    x = "",
-    y = "N. observations"
-  )
-```
 
 ## Gear used and boats type
 
@@ -642,9 +614,8 @@ This section contains information on the final catch usage, it is recorded as de
 ```{r echo=FALSE, fig.height=8, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 species <-
-  metadata$catch_types %>%
-  dplyr::select(catch_taxon = interagency_code, catch_name_en) %>%
-  dplyr::filter(!catch_name_en %in% c("Herring", "Bannerfish", "Bannerfish"))
+  catch_types %>%
+  dplyr::select(catch_taxon = interagency_code, catch_name_en)
 
 preplot <-
   kobo_trips %>%
@@ -699,9 +670,8 @@ preplot %>%
 ```{r echo=FALSE, fig.height=5, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 species <-
-  metadata$catch_types %>%
-  dplyr::select(catch_taxon = interagency_code, catch_name_en) %>%
-  dplyr::filter(!catch_name_en %in% c("Herring", "Bannerfish", "Bannerfish"))
+  catch_types %>%
+  dplyr::select(catch_taxon = interagency_code, catch_name_en)
 
 preplot <-
   kobo_trips %>%
@@ -763,13 +733,10 @@ this section contains information on the catch composition, highlighting the mos
 cols <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
 
 species <-
-  metadata$catch_types %>%
+  catch_types %>%
   dplyr::select(
     grouped_taxa = interagency_code,
     grouped_taxa_names = catch_name_en
-  ) %>%
-  dplyr::filter(
-    !grouped_taxa_names %in% c("Herring", "Bannerfish", "Bannerfish")
   )
 
 
@@ -974,12 +941,11 @@ tab %>%
 ```{r echo=FALSE, fig.height=5, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 species <-
-  metadata$catch_types %>%
+  catch_types %>%
   dplyr::select(
     catch_taxon = interagency_code,
     comm_name = catch_name_en
-  ) %>%
-  dplyr::filter(!comm_name %in% c("Herring", "Bannerfish", "Bannerfish"))
+  )
 
 
 estimates$national$taxa %>%
@@ -1043,11 +1009,8 @@ estimates$national$taxa %>%
 ```{r echo=FALSE, fig.height=4, fig.width=7, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 species <-
-  metadata$catch_types %>%
-  dplyr::select(grouped_taxa = interagency_code, catch_name_en) %>%
-  dplyr::filter(
-    !catch_name_en %in% c("Herring", "Bannerfish", "Bannerfish", "Unknown")
-  )
+  catch_types %>%
+  dplyr::select(grouped_taxa = interagency_code, catch_name_en)
 
 
 estimates$municipal %>%
@@ -1373,12 +1336,11 @@ The nutritional values for each catch were obtained by integrating the weight es
 ```{r echo=FALSE, fig.height=8, fig.width=8, message=FALSE, warning=FALSE, out.height="100%",out.width="100%"}
 
 catch_groups_name <-
-  metadata$catch_types %>%
+  catch_types %>%
   dplyr::select(
     interagency_code,
     catch_name = catch_name_en
-  ) %>%
-  dplyr::filter(!catch_name %in% c("Herring", "Bannerfish", "Bannerfish"))
+  )
 
 base_plot <-
   nutrients_table %>%
