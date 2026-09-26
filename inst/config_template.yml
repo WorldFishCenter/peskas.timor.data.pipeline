@@ -35,10 +35,11 @@
 #
 # TIMOR DEVIATIONS FROM THE TEMPLATE (all deliberate, all recorded):
 #
-#   a. No `dashboard` MongoDB database. Timor's portal
-#      (`peskas.timor.portal.v2`) reads versioned `portal-*.json` objects from
-#      `gs://public-timor`, discovered by prefix. That contract is frozen and
-#      out of scope here.
+#   a. Timor's own portal (`peskas.timor.portal.v2`) reads versioned
+#      `portal-*.json` objects from `gs://public-timor`, discovered by prefix,
+#      not the `dashboard` MongoDB database. That contract is frozen and out of
+#      scope here; the `dashboard` database is only what coasts::export_portal()
+#      writes.
 #   b. An extra top-level `public_storage` block for that bucket. No other
 #      country has one.
 #   c. Extra Timor-only top-level blocks: `models`, `export`,
@@ -226,7 +227,17 @@ default:
           collections:
             flags: surveys_flags
             enumerators_stats: enumerators_stats
-        # No `dashboard` database — see deviation (a).
+        dashboard:                                         # filled by coasts::export_portal(); see deviation (a)
+          database_name: portal-dev
+          collections:
+            monthly_summaries: monthly_summaries
+            taxa_summaries: taxa_summaries
+            districts_summaries: districts_summaries
+            gear_summaries: gear_summaries
+            grid_summaries: grid_summaries
+            taxa_traits: taxa_traits
+            length_summaries: length_summaries
+            gear_taxa_summaries: gear_taxa_summaries
 
   # ===========================================================================
   # PDS STORAGE — separate bucket for GPS track objects
@@ -279,6 +290,8 @@ default:
     fishbase:
       fao_areas: [57, 71]                                  # MUST be set: coasts falls back to [51, 57]
       db_version: "25.04"                                  # MUST be pinned: "latest" is not a fixed dataset
+      taxa_enriched:
+        file_prefix: taxa-fishbase-enriched                # hub table of FishBase traits (coasts enrich_taxa())
     coast_areas: {}                                        # Timor-only: landing site -> coast
     tracker_imeis:                                         # Timor-only: IMEI roster, see config.yml
       file_prefix: tracker-imeis

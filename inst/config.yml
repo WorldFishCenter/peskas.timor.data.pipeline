@@ -272,6 +272,11 @@ default:
       # so a container rebuild can silently change every published weight.
       db_version: "25.04"
 
+      # Hub table of FishBase traits (enrich_taxa() in coasts) that
+      # coasts::summarize_data() turns into the dashboard's taxa traits.
+      taxa_enriched:
+        file_prefix: taxa-fishbase-enriched
+
     nutrients:
       RDI:
         name:
@@ -425,7 +430,7 @@ default:
     # may iterate the children of `storage`, since `mongodb` is one of them.
     #
     # `dashboard` is the country-dashboard sink `coasts::export_portal()` fills,
-    # the same five collections Kenya, Mozambique and Zanzibar write. It is not
+    # the same collections Kenya, Mozambique and Zanzibar write. It is not
     # what serves the Timor portal: that is still versioned `portal-*.json` in
     # the public bucket, written by `export_files()` and untouched by this.
     # Nor is it what serves the multi-country coasts portal, which reads
@@ -452,6 +457,9 @@ default:
             districts_summaries: districts_summaries
             gear_summaries: gear_summaries
             grid_summaries: grid_summaries
+            taxa_traits: taxa_traits
+            length_summaries: length_summaries
+            gear_taxa_summaries: gear_taxa_summaries
 
   pds_storage:
     google:

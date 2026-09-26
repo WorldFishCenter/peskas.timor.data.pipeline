@@ -31,7 +31,7 @@ Imports:
     Amelia,
     arrow,
     blastula,
-    coasts (>= 4.13.0),
+    coasts (>= 4.15.0),
     config,
     data.table,
     dataverse,
