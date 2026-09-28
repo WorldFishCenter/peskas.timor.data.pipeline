@@ -1,7 +1,7 @@
 # peskas.timor.data.pipeline: Functions to Implement the Timor Small Scale Fisheries Data Pipeline
 
-This package implements the data and modelling pipelines underpining the
-Peskas system.
+This package implements the data and modelling pipelines underpinning
+the Peskas system.
 
 ## See also
 

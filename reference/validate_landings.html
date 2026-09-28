@@ -13,7 +13,7 @@ deviation by default."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,8 +80,9 @@ collection wholesale, so this is the only history of what was flagged when.</p><
 <p>Flags go to the shared cross-country validation database, one
 <code>surveys_flags-&lt;asset_id&gt;</code> collection per live form plus the matching
 <code>enumerators_stats-&lt;asset_id&gt;</code>; v1 is frozen and gets neither.</p>
-<p>Where a token is configured the current KoBoToolbox validation status is read
-first, so an approval entered by hand is preserved rather than overwritten.</p>
+<p>Reviewers' decisions are read first, from the collection the Peskas
+Management Platform writes to and from KoBoToolbox (with
+<code><a href="https://rdrr.io/pkg/coasts/man/review_decisions.html" class="external-link">coasts::review_decisions()</a></code>), so they are kept rather than overwritten.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
