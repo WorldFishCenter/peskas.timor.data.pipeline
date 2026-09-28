@@ -97,7 +97,9 @@ RUN installGithub.r hrbrmstr/ggchicklet
 # Install local package
 COPY . /home
 WORKDIR /home
-RUN Rscript -e 'remotes::install_local(dependencies = TRUE)'
+# upgrade = "never": otherwise the peskas.coasts entry in Remotes (no ref)
+# reinstalls coasts from main over the release tag installed above.
+RUN Rscript -e 'remotes::install_local(dependencies = TRUE, upgrade = "never")'
 
 
 
