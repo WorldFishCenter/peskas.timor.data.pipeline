@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 5.2.1
+
+## Reviewers' decisions are kept between runs
+
+* **FIXED** Reviewers' decisions in the Peskas Management Platform are no longer undone by the next run.
+
 # peskas.timor.data.pipeline 5.2.0
 
 ## Records say which organization collected them

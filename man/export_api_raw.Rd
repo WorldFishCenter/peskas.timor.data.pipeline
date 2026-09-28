@@ -16,18 +16,18 @@ no outputs. This function is used for its side effects.
 }
 \description{
 Projects the \strong{weighted} (pre-validation) long catch table onto the
-22-column schema \verb{peskas-api-\{dev,prod\}} publishes for every country, and
+23-column schema \verb{peskas-api-\{dev,prod\}} publishes for every country, and
 uploads it to \code{conf$api$trips$raw$cloud_path}.
 }
 \details{
-The schema was read off the live \code{peskas-api-prod} objects (2026-08-10) and is
-the same 22 columns, in the same order, for Kenya, Mozambique and Zanzibar,
-raw and validated alike:
+The schema is the same columns, in the same order, for Kenya, Mozambique and
+Zanzibar, raw and validated alike:
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{survey_id, trip_id, landing_date, gaul_1_code, gaul_1_name, gaul_2_code,
-gaul_2_name, landing_site, n_fishers, trip_duration_hrs, gear, vessel_type,
-catch_habitat, catch_outcome, n_catch, catch_taxon, scientific_name,
-length_cm, catch_kg, catch_price, tot_catch_kg, tot_catch_price
+\if{html}{\out{<div class="sourceCode">}}\preformatted{survey_organization, survey_id, trip_id, landing_date, gaul_1_code,
+gaul_1_name, gaul_2_code, gaul_2_name, landing_site, n_fishers,
+trip_duration_hrs, gear, vessel_type, catch_habitat, catch_outcome, n_catch,
+catch_taxon, scientific_name, length_cm, catch_kg, catch_price,
+tot_catch_kg, tot_catch_price
 }\if{html}{\out{</div>}}
 
 Three things to know about the mapping:

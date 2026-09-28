@@ -35,8 +35,9 @@ Flags go to the shared cross-country validation database, one
 \verb{surveys_flags-<asset_id>} collection per live form plus the matching
 \verb{enumerators_stats-<asset_id>}; v1 is frozen and gets neither.
 
-Where a token is configured the current KoBoToolbox validation status is read
-first, so an approval entered by hand is preserved rather than overwritten.
+Reviewers' decisions are read first, from the collection the Peskas
+Management Platform writes to and from KoBoToolbox (with
+\code{\link[coasts:review_decisions]{coasts::review_decisions()}}), so they are kept rather than overwritten.
 }
 
 \keyword{validation}

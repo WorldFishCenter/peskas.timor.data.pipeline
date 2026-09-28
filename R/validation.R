@@ -17,8 +17,9 @@
 #' `surveys_flags-<asset_id>` collection per live form plus the matching
 #' `enumerators_stats-<asset_id>`; v1 is frozen and gets neither.
 #'
-#' Where a token is configured the current KoBoToolbox validation status is read
-#' first, so an approval entered by hand is preserved rather than overwritten.
+#' Reviewers' decisions are read first, from the collection the Peskas
+#' Management Platform writes to and from KoBoToolbox (with
+#' [coasts::review_decisions()]), so they are kept rather than overwritten.
 #'
 #' @param log_threshold The (standard Apache logj4) log level used as a threshold for the logging infrastructure. See [logger::log_levels] for more details
 #' @keywords workflow validation
@@ -335,66 +336,43 @@ push_validation_flags <- function(conf, flags) {
   invisible(flags)
 }
 
-# Derive the validation status each submission should carry, preserving an
-# approval a human entered in KoBoToolbox by hand. Reading the status is a GET
-# and safe from any environment; writing it back is `sync_validation_status()`.
+# Derive the validation status each submission should carry, keeping a
+# reviewer's decision, whether made in the Peskas Management Platform (which
+# writes it to this collection) or in KoBoToolbox; `coasts::review_decisions()`
+# reads both before this run's push replaces the collection. Reading is safe
+# from any environment; writing back to KoBoToolbox is `sync_validation_status()`.
 merge_kobo_validation_status <- function(flags, conf, version) {
-  statuses <- kobo_validation_status(conf, version)
+  mdb <- conf$storage$mongodb
+  ingestion <- conf$ingestion$landings[[version]]
+
+  logger::log_info("Reading reviewers' decisions for {version}")
+  reviews <- coasts::review_decisions(
+    flags = coasts::mdb_collection_pull(
+      connection_string = mdb$connection_strings$validation,
+      db_name = mdb$databases$validation$database_name,
+      collection_name = paste(
+        mdb$databases$validation$collections$flags,
+        ingestion$asset_id,
+        sep = "-"
+      )
+    ),
+    pipeline_users = ingestion$username,
+    asset_id = ingestion$asset_id,
+    username = ingestion$username,
+    password = ingestion$password
+  )
 
   flags %>%
-    dplyr::left_join(statuses, by = "submission_id") %>%
+    dplyr::left_join(reviews, by = "submission_id") %>%
     dplyr::mutate(
-      pipeline_user = conf$ingestion$landings[[version]]$username,
+      # `reviews` holds only decisions by someone other than the pipeline.
       validation_status = dplyr::case_when(
-        # Somebody other than the pipeline account ruled on this submission
-        !is.na(.data$validated_by) &
-          .data$validated_by != .data$pipeline_user ~ .data$validation_status,
+        !is.na(.data$validated_by) ~ .data$validation_status,
         !is.na(.data$alert_flag) ~ "validation_status_not_approved",
         TRUE ~ "validation_status_approved"
       ),
-      validated_by = dplyr::coalesce(.data$validated_by, .data$pipeline_user),
-      # No KoBoToolbox status for this submission, whether because the read
-      # failed or because the submission has since been deleted there.
-      fetch_error = is.na(.data$fetch_error)
-    ) %>%
-    dplyr::select(-"pipeline_user")
-}
-
-# Every submission's current status in KoBoToolbox, so an approval a human
-# entered there is not overwritten. One paginated request per 1,000 submissions;
-# see `coasts::list_validation_statuses()` for why this is not done one at a time.
-kobo_validation_status <- function(conf, version) {
-  empty <- tibble::tibble(
-    submission_id = integer(),
-    validation_status = character(),
-    validated_at = lubridate::as_datetime(character()),
-    validated_by = character(),
-    fetch_error = logical()
-  )
-
-  ingestion <- conf$ingestion$landings[[version]]
-  if (is.null(ingestion$username) || !nzchar(ingestion$username)) {
-    logger::log_warn(
-      "No KoBoToolbox credentials - manual approvals for {version} cannot be ",
-      "read and will be overwritten by this run's flags."
+      validated_by = dplyr::coalesce(.data$validated_by, ingestion$username)
     )
-    return(empty)
-  }
-
-  logger::log_info("Reading KoBoToolbox validation statuses for {version}")
-  tryCatch(
-    coasts::list_validation_statuses(
-      asset_id = ingestion$asset_id,
-      username = ingestion$username,
-      password = ingestion$password
-    ),
-    error = function(e) {
-      logger::log_warn(
-        "Could not read {version} validation statuses: {conditionMessage(e)}"
-      )
-      empty
-    }
-  )
 }
 
 #' Write validation statuses back to KoBoToolbox
