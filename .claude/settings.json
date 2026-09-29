@@ -15,5 +15,23 @@
       "Read(./.env)",
       "Read(./.Renviron)"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "peskas": {
+      "source": {
+        "source": "github",
+        "repo": "WorldFishCenter/peskas-context"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "peskas@peskas": true,
+    "ponytail@ponytail": true
   }
 }
