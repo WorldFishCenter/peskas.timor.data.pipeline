@@ -36,7 +36,7 @@
 
 <p>R package implementing the Peskas Timor-Leste small-scale-fisheries data pipeline: it ingests KoBoToolbox landing surveys and Pelagic Data Systems (PDS) GPS tracker data, preprocesses and validates them, models fishery indicators, and publishes JSON to a public GCS bucket consumed by the live portal (<code>peskas.timor.portal.v2</code>). It also publishes to Harvard Dataverse and emails reports.</p>
 <p>Timor was the first Peskas pipeline and has since been aligned to the shared conventions. <strong>Where it still differs, the difference is usually deliberate and documented; check before “fixing” it.</strong></p>
-<p>Ecosystem context (other repos, data flow, cross-repo contracts): see PESKAS.md, loaded via CLAUDE.local.md.</p>
+<p>Ecosystem context (other repos, data flow, cross-repo contracts): loaded by the <code>peskas</code> Claude Code plugin (repo <code>peskas-context</code>).</p>
 <div class="section level2">
 <h2 id="commands">Commands<a class="anchor" aria-label="anchor" href="#commands"></a></h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::load_all()'</span>    <span class="co"># also document(), check(), test()</span></span>

@@ -11,8 +11,8 @@ Timor was the first Peskas pipeline and has since been aligned to the
 shared conventions. **Where it still differs, the difference is usually
 deliberate and documented; check before “fixing” it.**
 
-Ecosystem context (other repos, data flow, cross-repo contracts): see
-PESKAS.md, loaded via CLAUDE.local.md.
+Ecosystem context (other repos, data flow, cross-repo contracts): loaded
+by the `peskas` Claude Code plugin (repo `peskas-context`).
 
 ## Commands
 
