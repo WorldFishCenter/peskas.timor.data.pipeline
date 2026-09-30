@@ -140,6 +140,10 @@ default:
     exclude_customers:
       - "Traders"
       - "FSSP2: Traders"
+    # The fleet's current devices, for `coasts::generate_fleet_analysis()`: an
+    # allowlist is right here because fleet size is who owns a tracker now.
+    fleet_customers:
+      - "MAF / WorldFish"
     # Stage artefacts, read by `coasts::ingest_pds_trips()` and
     # `coasts::ingest_pds_tracks()`. Tracks are one `pds-tracks_<id>.parquet`
     # per trip and are not versioned, so a re-ingest overwrites.
@@ -158,7 +162,7 @@ default:
   # API — cross-country trip interchange
   # ===========================================================================
   # Written to the `options_api` bucket below. Kenya, Mozambique and Zanzibar
-  # publish the same 22-column schema, so it is a cross-country contract.
+  # publish the same 23-column schema, so it is a cross-country contract.
   # ===========================================================================
   api:
     trips:

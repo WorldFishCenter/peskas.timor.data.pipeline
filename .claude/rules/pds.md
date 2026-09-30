@@ -64,8 +64,9 @@ and matches nothing.
 ## `coasts::generate_fleet_analysis()` — coasts portal only
 
 It runs in `summarize-model-data`, after `coasts::summarize_data()`, reading
-`conf$surveys$summaries` (`timor-summaries`) and the `conf$pds$customers`
-device roster, and feeds the coasts portal through `coasts::export_portal()`.
+`conf$surveys$summaries` (`timor-summaries`) and the `conf$pds$fleet_customers`
+device roster (coasts >= 4.17.1; `pds$customers` cannot be set next to
+`exclude_customers`), and feeds the coasts portal through `coasts::export_portal()`.
 It is **not** used for `peskas.timor.portal.v2`, whose fleet totals come from
 `estimate_fishery_indicators()` (glmmTMB). Do not swap one for the other:
 

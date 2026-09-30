@@ -16,6 +16,9 @@ descriptions in `inst/config.yml`'s `validation.alerts` block.
 
 The KoBo validation-status client lives in coasts —
 `coasts::list_validation_statuses()` / `coasts::update_validation_status()`.
+Reviewers' decisions, made in the Peskas Management Platform or in KoboToolbox,
+are read on every run by `coasts::review_decisions()` (called from
+`merge_kobo_validation_status()` in `R/validation.R`), so a run keeps them.
 `sync_validation_status()` (the write-back) is deliberately not wired into the
 pipeline.
 

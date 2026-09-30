@@ -1,6 +1,6 @@
 # Helpers for switching between configuration environments.
 #
-# Since migration Phase 1 there is no `local:` environment: local runs and CI
+# There is no `local:` environment: local runs and CI
 # resolve the same configuration branch and differ only by R_CONFIG_ACTIVE.
 #
 #   default     -> the -dev buckets (timor-dev, pds-timor-dev, public-timor-dev)

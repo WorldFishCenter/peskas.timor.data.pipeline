@@ -28,9 +28,9 @@ env:
   # so an absent value still publishes Timor to the coasts portal but fails the
   # job at the Mongo step.
   MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
-  # Optional, and has no secret. Present: manual approvals entered in
-  # KoBoToolbox survive a run. Absent: they are overwritten by the pipeline's
-  # own flags. `sync_validation_status()` is not wired in either way.
+  # Has no secret and no step reads it: `coasts::review_decisions()` reads
+  # reviewers' decisions with the KoBo username and password, so they survive a
+  # run either way. `sync_validation_status()` is not wired in.
   KOBO_TOKEN: ${{ secrets.KOBO_TOKEN }}
 
 jobs:

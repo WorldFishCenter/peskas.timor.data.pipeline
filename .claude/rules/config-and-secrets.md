@@ -76,10 +76,10 @@ JSON-valued entries must be minified onto one line — dotenv parses line by lin
 | env var | GitHub secret | notes |
 |---|---|---|
 | `KOBO_USERNAME` / `KOBO_PASSWORD` | same | basic auth against `eu.kobotoolbox.org` |
-| `KOBO_TOKEN` | *not set in CI* | optional; `ingestion` uses basic auth |
+| `KOBO_TOKEN` | *not set in CI* | read into the config but used by no step; KoboToolbox is reached with the username and password |
 | `KOBO_ASSET_ID_V1/2/3` | `KOBO_PESKAS1/2/3`, mapped in the workflow `env:` block | the secrets keep their legacy names on purpose: secret values are write-only, so renaming means re-entering three asset ids by hand for no behavioural gain |
 | `GCP_SA_KEY` | `PESKAS_DATAINGESTION_GCS_KEY` | full service-account JSON, minified |
-| `MONGODB_CONNECTION_STRING_VALIDATION` | *not set in CI yet* | absent → `validate_landings()` warns and only the GCS snapshot is written |
+| `MONGODB_CONNECTION_STRING_VALIDATION` | `MONGODB_CONNECTION_STRING_VALIDATION` | absent → `validate_landings()` warns and only the GCS snapshot is written |
 | `PDS_TOKEN` / `PDS_SECRET` | `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` | |
 | `DATAVERSE_TOKEN` | `PESKAS_DATAVERSE_TOKEN` | |
 | `PESKAS_GMAIL_KEY` | same | serialized blastula credentials JSON, **not** a bare app password |

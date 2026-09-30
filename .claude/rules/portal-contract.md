@@ -74,7 +74,7 @@ current month is published unscaled.
 
 ## The cross-country API
 
-`export_api_raw()` / `export_api_validated()` write a **22-column** trips table
+`export_api_raw()` / `export_api_validated()` write a **23-column** trips table
 to `peskas-api-{dev,prod}/timor/{raw,validated}`. That schema is the contract
 Kenya, Mozambique and Zanzibar already publish: **do not add, drop or reorder a
 column without agreeing it across all four.**
