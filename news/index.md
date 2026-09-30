@@ -1,5 +1,13 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.2.2
+
+### Fleet estimates use the right boats
+
+- **FIXED** Timor-Leste’s fleet activity estimates count the right boats
+  again. They return to the regional portal once each tracker is linked
+  to its district.
+
 ## peskas.timor.data.pipeline 5.2.1
 
 ### Reviewers’ decisions are kept between runs

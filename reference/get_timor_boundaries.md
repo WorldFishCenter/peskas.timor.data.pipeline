@@ -34,7 +34,7 @@ geometries.
 ``` r
 # Assuming 'peskas.timor.data.pipeline' package is installed and loaded
 timor_boundaries <- get_timor_boundaries()
-#> INFO [2026-09-29 14:29:13] Extracting Timor shape boundaries...
+#> INFO [2026-09-30 13:27:14] Extracting Timor shape boundaries...
 plot(timor_boundaries$geometry)
 
 ```

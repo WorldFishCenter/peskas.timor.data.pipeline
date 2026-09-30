@@ -1,7 +1,7 @@
 # peskas.timor.data.pipeline
 
 R package implementing the Peskas Timor-Leste small-scale-fisheries data
-pipeline: it ingests KoBoToolbox landing surveys and Pelagic Data
+pipeline: it ingests KoboToolbox landing surveys and Pelagic Data
 Systems (PDS) GPS tracker data, preprocesses and validates them, models
 fishery indicators, and publishes JSON to a public GCS bucket consumed
 by the live portal (`peskas.timor.portal.v2`). It also publishes to
@@ -57,7 +57,7 @@ All have happened here; detail in the named `.claude/rules/` file.
 | An **unpinned FishBase release** changed published catch on a container rebuild, dropping a taxon worth 5% of landed weight from the portal | `taxa-and-weights.md` |
 | An **unset `metadata.fishbase.fao_areas`** silently filters Timor on the Indian Ocean pair the WIO repos use | `config-and-secrets.md` |
 | **[`tinytest::run_test_file()`](https://rdrr.io/pkg/tinytest/man/run_test_file.html) sets no exit status** — the test steps reported success regardless of what they found | `validation.md` |
-| An **allowlist** of PDS customers discards the trip history of any tracker later reassigned. `pds$exclude_customers` selects trips; `pds$customers` is a separate device roster for `generate_fleet_analysis()` and is correctly an allowlist | `pds.md` |
+| An **allowlist** of PDS customers discards the trip history of any tracker later reassigned. `pds$exclude_customers` selects trips; `pds$fleet_customers` is a separate device roster for [`coasts::generate_fleet_analysis()`](https://rdrr.io/pkg/coasts/man/generate_fleet_analysis.html) and is correctly an allowlist | `pds.md` |
 | **`harmonise_v2()`/`harmonise_v3()` are not `map_surveys()`** — they reconcile form versions, not labels | `surveys.md` |
 
 ## Pipeline
