@@ -70,7 +70,10 @@ device roster (coasts >= 4.17.1; `pds$customers` cannot be set next to
 It is **not** used for `peskas.timor.portal.v2`, whose fleet totals come from
 `estimate_fishery_indicators()` (glmmTMB). Do not swap one for the other:
 
-- It keys `boat_registry` on `gaul_2_name`. Timor's twelve `geo.total_boats`
+- It keys `boat_registry` on `gaul_2_name`. Since coasts 4.20.0 it reads the
+  boats from the census table `frame_units`, where Timor's twelve rows are a
+  copy of `geo.total_boats` (which `get_registered_boats()` here still reads:
+  change one, change the other). The twelve
   values sit one per reporting unit, but on `gaul_2` rows named `Atabae`,
   `Bazartete`, `Cristo Rei`, `Barique/Natarbora`… — sub-districts, not Timor's
   published `gaul_1`-plus-Atauro vocabulary, which `frame_reporting_region()`
