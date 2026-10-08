@@ -405,7 +405,7 @@ default:
     dataverse_id: 'peskas'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
     # The one dataset every monthly release is a new version of.
-    dataset_doi: 'doi:10.7910/DVN/DGLSRQ'
+    dataset_doi: 'doi:10.7910/DVN/IQUWCJ'
     # The dataset record is sent from `inst/export/dataset-fields.json` on every
     # release, and the README is filled in from `inst/export/README.md`.
   report:

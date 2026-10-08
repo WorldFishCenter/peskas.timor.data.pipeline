@@ -16,6 +16,12 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   GCP_SA_KEY: ${{ secrets.PESKAS_DATAINGESTION_GCS_KEY }}
+  # The report reads taxa and boats through `get_assets()`, which finds Timor's
+  # forms in the Airtable frame by their KoBo asset ids.
+  KOBO_ASSET_ID_V2: ${{ secrets.KOBO_PESKAS2 }}
+  KOBO_ASSET_ID_V3: ${{ secrets.KOBO_PESKAS3 }}
+  AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+  AIRTABLE_BASE_ID_FRAME: ${{ secrets.AIRTABLE_BASE_ID_FRAME }}
 
 jobs:
   data-report:

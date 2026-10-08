@@ -5,6 +5,10 @@
 #
 # A manual run from another branch reads the dev bucket and leaves the draft
 # unpublished: `upload_dataverse()` only publishes under `production`.
+#
+# The code and `inst/config.yml` it runs are those in the image, not in the
+# commit: after a push, wait for `Build R container` in `data-pipeline.yaml`
+# before running this by hand.
 name: Upload public files to Dataverse
 
 on:
