@@ -80,7 +80,9 @@ RUN install2.r --error --skipinstalled \
     textclean \
     tidytext \
     tinytest \
+    tippy \
     treemapify \
+    webshot \
     zip \
     zoo
 
@@ -91,6 +93,11 @@ ARG COASTS_REF
 RUN test -n "$COASTS_REF" && \
     Rscript -e "remotes::install_github('WorldFishCenter/peskas.coasts', ref = '${COASTS_REF}')"
 RUN installGithub.r hrbrmstr/ggchicklet
+# reactablefmtr styles the tables of the data report. CRAN archived it on
+# 2026-03-17 as unmaintained, so `install2.r` cannot find it: its last release
+# is installed from the CRAN archive. `tippy` and `webshot` above are its two
+# imports nothing else brings in.
+RUN Rscript -e "remotes::install_version('reactablefmtr', version = '2.0.0', repos = 'https://cloud.r-project.org', upgrade = 'never')"
 
 
 # Install local package

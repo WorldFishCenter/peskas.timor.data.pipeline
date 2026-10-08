@@ -35,6 +35,7 @@ test_that("the emitted schema is the cross-country contract", {
   expect_equal(
     names(api),
     c(
+      "survey_organization",
       "survey_id",
       "trip_id",
       "landing_date",
@@ -61,6 +62,7 @@ test_that("the emitted schema is the cross-country contract", {
   )
   expect_type(api$n_catch, "integer")
   expect_s3_class(api$landing_date, "Date")
+  expect_equal(api$survey_organization, rep("MAF", 3))
   expect_equal(api$survey_id, rep("asset3", 3))
   expect_equal(api$trip_id, c("TRIP_1", "TRIP_1", "TRIP_2"))
 })
