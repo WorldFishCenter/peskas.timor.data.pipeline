@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@
 <li>Estimates monthly catch and revenue for each municipality and for the whole country.</li>
 <li>Publishes the data files that timor.peskas.org reads, and a <a href="https://storage.googleapis.com/public-timor/data_report.html" class="external-link">data report</a> twice a week.</li>
 <li>Sends Timor-Leste landing records to the Peskas Fishery Data API, and summaries to Peskas Coasts.</li>
-<li>Publishes the public dataset on Harvard Dataverse once a month.</li>
+<li>Publishes the checked landing records as an open, citable dataset on <a href="https://dataverse.harvard.edu/dataverse/peskas" class="external-link">Harvard Dataverse</a>, with a new version every month.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -181,6 +181,24 @@
 <p><code>export-trips</code> writes the files timor.peskas.org reads. <code>summarize-model-data</code> and <code>export-surveys-portal</code> are the shared coasts steps that put Timor-Leste on Peskas Coasts; neither feeds timor.peskas.org.</p>
 <p>Three scheduled workflows run <code>main</code>’s code in the container the pipeline builds: <code>data-report.yaml</code> (Mondays and Thursdays), <code>validation-email-sender.yaml</code> (Mondays) and <code>dataverse-upload.yaml</code> (first of each month).</p>
 <p>Files the jobs write are versioned as <code>&lt;prefix&gt;__&lt;YYYYMMDDHHMMSS&gt;_&lt;git-sha7&gt;__.&lt;ext&gt;</code>, so each one traces back to a single run.</p>
+</div>
+<div class="section level3">
+<h3 id="monthly-release-on-harvard-dataverse">Monthly release on Harvard Dataverse<a class="anchor" aria-label="anchor" href="#monthly-release-on-harvard-dataverse"></a>
+</h3>
+<p><code><a href="reference/upload_dataverse.html">upload_dataverse()</a></code> publishes the table the Peskas Fishery Data API serves for Timor-Leste (the <code>trips-validated</code> file that <code>export-api</code> writes) to the <a href="https://dataverse.harvard.edu/dataverse/peskas" class="external-link">Peskas collection</a> on Harvard Dataverse. Each release is a new version of one dataset, so its DOI stays the same.</p>
+<ul>
+<li>
+<strong>Files</strong>: <code>timor_landings.csv</code> and a <code>README.md</code> built from <a href="inst/export/README.html"><code>inst/export/README.md</code></a>. The column descriptions in it are read from the API (<code>/metadata/landings</code>) at release time, so they are maintained in <a href="https://github.com/WorldFishCenter/peskas-api" class="external-link">peskas-api</a>, not here. A column the API does not describe stops the release.</li>
+<li>
+<strong>Dataset record</strong> (title, authors, licence, links): <a href="inst/export/dataset-fields.json"><code>inst/export/dataset-fields.json</code></a>. It is sent on every release, so edit it there; a change made on the Dataverse website is overwritten.</li>
+<li>
+<strong>Which dataset</strong>: <code>export_dataverse.dataset_doi</code> in the config. While it is empty, a run creates the dataset as an unpublished draft and logs its DOI. Check the draft on Dataverse, put the DOI in the config, and the next run publishes it.</li>
+<li>
+<strong>Safety</strong>: only the <code>production</code> profile publishes. A manual run from another branch updates the draft and stops.</li>
+<li>
+<strong>Secrets</strong>: <code>DATAVERSE_TOKEN</code>. Reading the column descriptions needs no key.</li>
+</ul>
+<p>The calls follow the <a href="https://guides.dataverse.org/en/latest/api/native-api.html" class="external-link">Dataverse native API</a>. Releases from March 2022 to June 2025 are older, separate datasets in the same collection, with different files.</p>
 </div>
 <div class="section level3">
 <h3 id="docker">Docker<a class="anchor" aria-label="anchor" href="#docker"></a>

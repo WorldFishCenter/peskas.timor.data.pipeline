@@ -32,7 +32,7 @@ from `.github/workflows/data-pipeline.yaml` by name.
 - [`sync_validation_status()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/sync_validation_status.md)
   : Write validation statuses back to KoBoToolbox
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
-  : Upload and publish a dataset on Dataverse
+  : Publish the validated landings on Harvard Dataverse
 - [`validate_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.md)
   : Validate landings
 - [`validate_pds_trips()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_trips.md)
@@ -152,16 +152,10 @@ reports.
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
   : Export the validated trips table to the cross-country API bucket
-- [`generate_description()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_description.md)
-  : Generate data description
-- [`publish_last_dataset()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_last_dataset.md)
-  : Publish latest dataset created
 - [`send_validation_mail()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.md)
   : Send validation summary email
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
-  : Upload and publish a dataset on Dataverse
-- [`upload_files()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_files.md)
-  : Upload files to Dataverse
+  : Publish the validated landings on Harvard Dataverse
 
 ## Helper functions
 

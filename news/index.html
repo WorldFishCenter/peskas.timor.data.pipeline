@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,24 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.3.0" id="peskastimordatapipeline-530">peskas.timor.data.pipeline 5.3.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-530"></a></h2>
+<div class="section level3">
+<h3 id="the-dataverse-release-is-the-apis-validated-landings-5-3-0">The Dataverse release is the API’s validated landings<a class="anchor" aria-label="anchor" href="#the-dataverse-release-is-the-apis-validated-landings-5-3-0"></a></h3>
+<ul><li>
+<strong>CHANGED</strong> The monthly release on Harvard Dataverse now publishes the table the Peskas Fishery Data API serves for Timor-Leste, as <code>timor_landings.csv</code>. It replaces the trips, catch and monthly aggregate files.</li>
+<li>
+<strong>CHANGED</strong> Each release is a new version of one dataset, under one DOI, instead of a new dataset every month. The first run creates the dataset as a draft; set <code>export_dataverse.dataset_doi</code> to its DOI to start publishing.</li>
+<li>
+<strong>NEW</strong> The README published with the data takes its column descriptions from the API (<code>/metadata/landings</code>), so it cannot fall behind the file. That endpoint needs no key from peskas-api 1.6.0.</li>
+<li>
+<strong>NEW</strong> The dataset record names each author with an ORCID and gives the licence, the period covered, the reference paper and links to the portal, the API and the code.</li>
+<li>
+<strong>FIXED</strong> The release runs again. It had failed every month since September 2025, when the published files stopped matching the hand-written column descriptions.</li>
+<li>
+<strong>CHANGED</strong> <code>upload_files()</code>, <code>publish_last_dataset()</code> and <code>generate_description()</code> are gone, and so is the dependency on the <code>dataverse</code> package.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.2.2" id="peskastimordatapipeline-522">peskas.timor.data.pipeline 5.2.2<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-522"></a></h2>
 <div class="section level3">

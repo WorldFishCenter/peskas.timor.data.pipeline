@@ -28,7 +28,9 @@ researchers and the public. It runs automatically every two days.
   twice a week.
 - Sends Timor-Leste landing records to the Peskas Fishery Data API, and
   summaries to Peskas Coasts.
-- Publishes the public dataset on Harvard Dataverse once a month.
+- Publishes the checked landing records as an open, citable dataset on
+  [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/peskas),
+  with a new version every month.
 
 ## Where the data comes from
 
@@ -193,6 +195,39 @@ Files the jobs write are versioned as
 `<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>`, so each one traces back
 to a single run.
 
+### Monthly release on Harvard Dataverse
+
+[`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
+publishes the table the Peskas Fishery Data API serves for Timor-Leste
+(the `trips-validated` file that `export-api` writes) to the [Peskas
+collection](https://dataverse.harvard.edu/dataverse/peskas) on Harvard
+Dataverse. Each release is a new version of one dataset, so its DOI
+stays the same.
+
+- **Files**: `timor_landings.csv` and a `README.md` built from
+  [`inst/export/README.md`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/inst/export/README.md).
+  The column descriptions in it are read from the API
+  (`/metadata/landings`) at release time, so they are maintained in
+  [peskas-api](https://github.com/WorldFishCenter/peskas-api), not here.
+  A column the API does not describe stops the release.
+- **Dataset record** (title, authors, licence, links):
+  [`inst/export/dataset-fields.json`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/inst/export/dataset-fields.json).
+  It is sent on every release, so edit it there; a change made on the
+  Dataverse website is overwritten.
+- **Which dataset**: `export_dataverse.dataset_doi` in the config. While
+  it is empty, a run creates the dataset as an unpublished draft and
+  logs its DOI. Check the draft on Dataverse, put the DOI in the config,
+  and the next run publishes it.
+- **Safety**: only the `production` profile publishes. A manual run from
+  another branch updates the draft and stops.
+- **Secrets**: `DATAVERSE_TOKEN`. Reading the column descriptions needs
+  no key.
+
+The calls follow the [Dataverse native
+API](https://guides.dataverse.org/en/latest/api/native-api.html).
+Releases from March 2022 to June 2025 are older, separate datasets in
+the same collection, with different files.
+
 ### Docker
 
 [`Dockerfile.prod`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/Dockerfile.prod)
@@ -278,7 +313,7 @@ from `.github/workflows/data-pipeline.yaml` by name.
 - [`sync_validation_status()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/sync_validation_status.md)
   : Write validation statuses back to KoBoToolbox
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
-  : Upload and publish a dataset on Dataverse
+  : Publish the validated landings on Harvard Dataverse
 - [`validate_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.md)
   : Validate landings
 - [`validate_pds_trips()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_pds_trips.md)
@@ -398,16 +433,10 @@ reports.
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
   : Export the validated trips table to the cross-country API bucket
-- [`generate_description()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/generate_description.md)
-  : Generate data description
-- [`publish_last_dataset()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/publish_last_dataset.md)
-  : Publish latest dataset created
 - [`send_validation_mail()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.md)
   : Send validation summary email
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
-  : Upload and publish a dataset on Dataverse
-- [`upload_files()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_files.md)
-  : Upload files to Dataverse
+  : Publish the validated landings on Harvard Dataverse
 
 ## Helper functions
 
