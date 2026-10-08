@@ -404,13 +404,10 @@ default:
     server: 'dataverse.harvard.edu'
     dataverse_id: 'peskas'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
-    # The one dataset every monthly release is a new version of. While this is
-    # empty `upload_dataverse()` creates the dataset as a draft and logs its
-    # DOI (`doi:10.7910/DVN/...`): put it here to start publishing.
-    dataset_doi:
+    # The one dataset every monthly release is a new version of.
+    dataset_doi: 'doi:10.7910/DVN/DGLSRQ'
     # The dataset record is sent from `inst/export/dataset-fields.json` on every
     # release, and the README is filled in from `inst/export/README.md`.
-
   report:
     file_prefix: data_report
     summary_data: summary_data

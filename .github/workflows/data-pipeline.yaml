@@ -188,11 +188,6 @@ jobs:
       - name: Set env to production
         if: endsWith(github.ref, '/main')
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
-      # `log_threshold = logger::INFO` stays, deliberately. It used to be
-      # load-bearing: `coasts::read_config()` ended with
-      # `log_threshold = logger::INFO` is a guard, not a fix: a coasts workflow
-      # function called at its default DEBUG level once printed the whole
-      # resolved config — service-account key included — into the job log.
       - name: Call ingest_pds_trips()
         run: Rscript -e 'coasts::ingest_pds_trips(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
       - name: Call ingest_pds_tracks()
