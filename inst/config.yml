@@ -165,6 +165,10 @@ default:
   # publish the same 23-column schema, so it is a cross-country contract.
   # ===========================================================================
   api:
+    # The service that serves the tables below. Only `upload_dataverse()` calls
+    # it, to read the column descriptions (`/metadata/landings`, open without a
+    # key) for the README it publishes.
+    url: https://api.peskas.org/api/v1
     trips:
       raw:
         file_prefix: trips-raw
@@ -400,7 +404,12 @@ default:
     server: 'dataverse.harvard.edu'
     dataverse_id: 'peskas'
     token: !expr Sys.getenv('DATAVERSE_TOKEN')
-    # Dataset metadata is posted from `inst/export/dataset-fields.json`.
+    # The one dataset every monthly release is a new version of. While this is
+    # empty `upload_dataverse()` creates the dataset as a draft and logs its
+    # DOI (`doi:10.7910/DVN/...`): put it here to start publishing.
+    dataset_doi:
+    # The dataset record is sent from `inst/export/dataset-fields.json` on every
+    # release, and the README is filled in from `inst/export/README.md`.
 
   report:
     file_prefix: data_report

@@ -38,7 +38,9 @@ researchers and the public. It runs automatically every two days.
   twice a week.
 - Sends Timor-Leste landing records to the Peskas Fishery Data API, and
   summaries to Peskas Coasts.
-- Publishes the public dataset on Harvard Dataverse once a month.
+- Publishes the checked landing records as an open, citable dataset on
+  [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/peskas),
+  with a new version every month.
 
 ## Where the data comes from
 
@@ -193,6 +195,39 @@ pipeline builds: `data-report.yaml` (Mondays and Thursdays),
 Files the jobs write are versioned as
 `<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>`, so each one traces back
 to a single run.
+
+### Monthly release on Harvard Dataverse
+
+`upload_dataverse()` publishes the table the Peskas Fishery Data API
+serves for Timor-Leste (the `trips-validated` file that `export-api`
+writes) to the [Peskas
+collection](https://dataverse.harvard.edu/dataverse/peskas) on Harvard
+Dataverse. Each release is a new version of one dataset, so its DOI
+stays the same.
+
+- **Files**: `timor_landings.csv` and a `README.md` built from
+  [`inst/export/README.md`](inst/export/README.md). The column
+  descriptions in it are read from the API (`/metadata/landings`) at
+  release time, so they are maintained in
+  [peskas-api](https://github.com/WorldFishCenter/peskas-api), not here.
+  A column the API does not describe stops the release.
+- **Dataset record** (title, authors, licence, links):
+  [`inst/export/dataset-fields.json`](inst/export/dataset-fields.json).
+  It is sent on every release, so edit it there; a change made on the
+  Dataverse website is overwritten.
+- **Which dataset**: `export_dataverse.dataset_doi` in the config. While
+  it is empty, a run creates the dataset as an unpublished draft and
+  logs its DOI. Check the draft on Dataverse, put the DOI in the config,
+  and the next run publishes it.
+- **Safety**: only the `production` profile publishes. A manual run from
+  another branch updates the draft and stops.
+- **Secrets**: `DATAVERSE_TOKEN`. Reading the column descriptions needs
+  no key.
+
+The calls follow the [Dataverse native
+API](https://guides.dataverse.org/en/latest/api/native-api.html).
+Releases from March 2022 to June 2025 are older, separate datasets in
+the same collection, with different files.
 
 ### Docker
 

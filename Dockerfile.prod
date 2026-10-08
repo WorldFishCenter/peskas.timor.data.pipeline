@@ -19,7 +19,6 @@ RUN install2.r --error --skipinstalled \
     blastula \
     config \
     data.table \
-    dataverse \
     digest \
     dotenv \
     dplyr \

@@ -176,6 +176,7 @@ default:
   # must be matched exactly rather than inferred.
   # ===========================================================================
   api:
+    url: https://api.peskas.org/api/v1                     # Timor-only: read by upload_dataverse()
     trips:
       raw:
         file_prefix: trips-raw
@@ -336,7 +337,7 @@ default:
   # merged_trips      surveys joined to PDS trips (`all_trips`)
   # models            glmmTMB fishery indicator model, taxa lists
   # export            public-file prefix for the Dataverse/legacy outputs
-  # export_dataverse  Harvard Dataverse publishing target and metadata
+  # export_dataverse  Harvard Dataverse collection, token and the dataset's DOI
   # report            Rmd report artefacts
   # peskas_mail       blastula credentials for the validation email
   #

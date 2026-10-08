@@ -1,3 +1,14 @@
+# peskas.timor.data.pipeline 5.3.0
+
+## The Dataverse release is the API's validated landings
+
+* **CHANGED** The monthly release on Harvard Dataverse now publishes the table the Peskas Fishery Data API serves for Timor-Leste, as `timor_landings.csv`. It replaces the trips, catch and monthly aggregate files.
+* **CHANGED** Each release is a new version of one dataset, under one DOI, instead of a new dataset every month. The first run creates the dataset as a draft; set `export_dataverse.dataset_doi` to its DOI to start publishing.
+* **NEW** The README published with the data takes its column descriptions from the API (`/metadata/landings`), so it cannot fall behind the file. That endpoint needs no key from peskas-api 1.6.0.
+* **NEW** The dataset record names each author with an ORCID and gives the licence, the period covered, the reference paper and links to the portal, the API and the code.
+* **FIXED** The release runs again. It had failed every month since September 2025, when the published files stopped matching the hand-written column descriptions.
+* **CHANGED** `upload_files()`, `publish_last_dataset()` and `generate_description()` are gone, and so is the dependency on the `dataverse` package.
+
 # peskas.timor.data.pipeline 5.2.2
 
 ## Fleet estimates use the right boats

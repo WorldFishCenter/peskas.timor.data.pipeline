@@ -2,7 +2,7 @@
 % Please edit documentation in R/export-dataverse.R
 \name{upload_dataverse}
 \alias{upload_dataverse}
-\title{Upload and publish a dataset on Dataverse}
+\title{Publish the validated landings on Harvard Dataverse}
 \usage{
 upload_dataverse(log_threshold = logger::DEBUG)
 }
@@ -11,9 +11,40 @@ upload_dataverse(log_threshold = logger::DEBUG)
 threshold for the logging infrastructure. See \link[logger:log_levels]{logger::log_levels} for more
 details}
 }
+\value{
+Invisibly, the DOI of the dataset.
+}
 \description{
-This function upload and publish data on a specific Dataverse repository
-including associated metadata information.
+Releases the table the Peskas Fishery Data API serves for Timor-Leste (the
+\code{trips-validated} parquet written by \code{\link[=export_api_validated]{export_api_validated()}}) as a new
+version of one Dataverse dataset.
+}
+\details{
+Two files are released, both built here:
+\itemize{
+\item \code{timor_landings.csv}, the API table as it is, with empty cells for missing
+values.
+\item \code{README.md}, filled in from \code{inst/export/README.md}. Its column table is
+read from the API's \verb{/metadata/landings} endpoint at run time, so no column
+is described in this package, and a column the API does not describe stops
+the release.
+}
+
+The dataset record (title, authors, licence, links) is
+\code{inst/export/dataset-fields.json}. It is sent on every run, so edit it there:
+a change made on the Dataverse website is overwritten by the next release.
+
+\code{export_dataverse$dataset_doi} in \code{inst/config.yml} names the dataset:
+\itemize{
+\item \strong{Empty}: the dataset is created as an unpublished draft and its DOI is
+logged. Review the draft, put the DOI in the config, and run again.
+\item \strong{Set}: the files whose content changed are replaced and a new major
+version is published. Outside the \code{production} configuration the draft is
+left unpublished.
+}
+
+The calls follow the Dataverse native API,
+\url{https://guides.dataverse.org/en/latest/api/native-api.html}.
 }
 \keyword{export}
 \keyword{workflow}

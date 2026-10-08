@@ -1,164 +1,199 @@
 {
-  "datasetVersion": {
-    "metadataBlocks": {
-      "citation": {
-        "fields": [
-          {
-            "value": "Peskas - National Fisheries Monitoring System of Timor-Leste",
-            "typeClass": "primitive",
-            "multiple": false,
-            "typeName": "title"
-          },
-          {
-            "typeName": "keyword",
-            "multiple": true,
-            "typeClass": "compound",
-            "value": [
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Fish"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Fisheries"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Monitoring"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Management"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Production"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Digital"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Pipeline"
-                }
-              },
-              {
-                "keywordValue": {
-                  "typeName": "keywordValue",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "value": "Automated analytics"
-                }
-              }
-            ]
-          },
-          {
-            "value": [
-              {
-                "authorName": {
-                  "value": "Tilley Alex, Joctan Dos Reis Lopes, Fernando Cagua, Lorenzo Longobardi",
-                  "typeClass": "primitive",
-                  "multiple": false,
-                  "typeName": "authorName"
-                },
-                "authorAffiliation": {
-                  "value": "WorldFish",
-                  "typeClass": "primitive",
-                  "multiple": false,
-                  "typeName": "authorAffiliation"
-                }
-              }
-            ],
-            "typeClass": "compound",
-            "multiple": true,
-            "typeName": "author"
-          },
-          {
-            "value": [
-              {
-                "datasetContactEmail": {
-                  "typeClass": "primitive",
-                  "multiple": false,
-                  "typeName": "datasetContactEmail",
-                  "value": "lorenzo.longobardi@gmail.com"
-                },
-                "datasetContactName": {
-                  "typeClass": "primitive",
-                  "multiple": false,
-                  "typeName": "datasetContactName",
-                  "value": "Lorenzo Longobardi"
-                }
-              }
-            ],
-            "typeClass": "compound",
-            "multiple": true,
-            "typeName": "datasetContact"
-          },
-          {
-            "value": [
-              {
-                "dsDescriptionValue": {
-                  "value": "Data collected from small-scale fishing activities in Timor-Leste containing detailed information on fishing trips (temporal coverage, fishing effort, catch value) and catches (taxa type, number of individuals, species length and weight). Read README file for detailed info about specific data content and period covered.",
-                  "multiple": false,
-                  "typeClass": "primitive",
-                  "typeName": "dsDescriptionValue"
-                }
-              }
-            ],
-            "typeClass": "compound",
-            "multiple": true,
-            "typeName": "dsDescription"
-          },
-          {
-            "value": [
-              "Medicine, Health and Life Sciences"
-            ],
-            "typeClass": "controlledVocabulary",
-            "multiple": true,
-            "typeName": "subject"
-          },
-          {
-            "value": {
-              "typeClass": "primitive",
-              "multiple": false,
-              "typeName": "license",
-              "value": "CC BY-NC-SA 4.0"
+  "license": {
+    "name": "CC BY-NC-SA 4.0",
+    "uri": "http://creativecommons.org/licenses/by-nc-sa/4.0"
+  },
+  "metadataBlocks": {
+    "citation": {
+      "displayName": "Citation Metadata",
+      "fields": [
+        {
+          "typeName": "title",
+          "typeClass": "primitive",
+          "multiple": false,
+          "value": "Peskas Timor-Leste: small-scale fisheries landings"
+        },
+        {
+          "typeName": "alternativeURL",
+          "typeClass": "primitive",
+          "multiple": false,
+          "value": "https://timor.peskas.org"
+        },
+        {
+          "typeName": "author",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "authorName": {"typeName": "authorName", "typeClass": "primitive", "multiple": false, "value": "Tilley, Alex"},
+              "authorAffiliation": {"typeName": "authorAffiliation", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "authorIdentifierScheme": {"typeName": "authorIdentifierScheme", "typeClass": "controlledVocabulary", "multiple": false, "value": "ORCID"},
+              "authorIdentifier": {"typeName": "authorIdentifier", "typeClass": "primitive", "multiple": false, "value": "0000-0002-6363-0945"}
             },
-            "typeClass": "compound",
-            "multiple": false,
-            "typeName": "license"
-          }
-        ],
-        "displayName": "Citation Metadata"
-      }
+            {
+              "authorName": {"typeName": "authorName", "typeClass": "primitive", "multiple": false, "value": "Dos Reis Lopes, Joctan"},
+              "authorAffiliation": {"typeName": "authorAffiliation", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "authorIdentifierScheme": {"typeName": "authorIdentifierScheme", "typeClass": "controlledVocabulary", "multiple": false, "value": "ORCID"},
+              "authorIdentifier": {"typeName": "authorIdentifier", "typeClass": "primitive", "multiple": false, "value": "0000-0002-4437-1044"}
+            },
+            {
+              "authorName": {"typeName": "authorName", "typeClass": "primitive", "multiple": false, "value": "Cagua, Fernando"},
+              "authorAffiliation": {"typeName": "authorAffiliation", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "authorIdentifierScheme": {"typeName": "authorIdentifierScheme", "typeClass": "controlledVocabulary", "multiple": false, "value": "ORCID"},
+              "authorIdentifier": {"typeName": "authorIdentifier", "typeClass": "primitive", "multiple": false, "value": "0000-0001-5867-3687"}
+            },
+            {
+              "authorName": {"typeName": "authorName", "typeClass": "primitive", "multiple": false, "value": "Longobardi, Lorenzo"},
+              "authorAffiliation": {"typeName": "authorAffiliation", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "authorIdentifierScheme": {"typeName": "authorIdentifierScheme", "typeClass": "controlledVocabulary", "multiple": false, "value": "ORCID"},
+              "authorIdentifier": {"typeName": "authorIdentifier", "typeClass": "primitive", "multiple": false, "value": "0000-0003-3126-7341"}
+            }
+          ]
+        },
+        {
+          "typeName": "datasetContact",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "datasetContactName": {"typeName": "datasetContactName", "typeClass": "primitive", "multiple": false, "value": "Peskas team"},
+              "datasetContactAffiliation": {"typeName": "datasetContactAffiliation", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "datasetContactEmail": {"typeName": "datasetContactEmail", "typeClass": "primitive", "multiple": false, "value": "peskas.platform@gmail.com"}
+            }
+          ]
+        },
+        {
+          "typeName": "dsDescription",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "dsDescriptionValue": {
+                "typeName": "dsDescriptionValue",
+                "typeClass": "primitive",
+                "multiple": false,
+                "value": "<p>Records of small-scale fishing trips landed around Timor-Leste, collected for <a href=\"https://timor.peskas.org\">Peskas Timor-Leste</a>, the country's official national fisheries monitoring system. Enumerators working with the Ministry of Agriculture and Fisheries record landings at landing sites with KoboToolbox: date, place, crew size, trip duration, gear, boat, habitat, and for each catch the species, length, estimated weight and value.</p><p>One row is one catch from one fishing trip. The table has passed automated checks and is the one the <a href=\"https://api.peskas.org/docs\">Peskas Fishery Data API</a> serves for Timor-Leste as validated landings. A new version is published every month under the same DOI, each holding the whole table from 2017 onwards.</p><p>README.md describes every column, how the data is produced and its limits. Releases from March 2022 to June 2025 are separate datasets in the <a href=\"https://dataverse.harvard.edu/dataverse/peskas\">Peskas collection</a>, with different files.</p>"
+              }
+            }
+          ]
+        },
+        {
+          "typeName": "subject",
+          "typeClass": "controlledVocabulary",
+          "multiple": true,
+          "value": ["Agricultural Sciences", "Earth and Environmental Sciences"]
+        },
+        {
+          "typeName": "keyword",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "small-scale fisheries"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "fisheries monitoring"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "fish landings"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "catch"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "fishing effort"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "Timor-Leste"}},
+            {"keywordValue": {"typeName": "keywordValue", "typeClass": "primitive", "multiple": false, "value": "Peskas"}}
+          ]
+        },
+        {
+          "typeName": "publication",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "publicationRelationType": {"typeName": "publicationRelationType", "typeClass": "controlledVocabulary", "multiple": false, "value": "References"},
+              "publicationCitation": {"typeName": "publicationCitation", "typeClass": "primitive", "multiple": false, "value": "Tilley A, Dos Reis Lopes J, Wilkinson SP (2020). PeskAAS: A near-real-time, open-source monitoring and analytics system for small-scale fisheries. PLOS ONE 15(11): e0234760."},
+              "publicationIDType": {"typeName": "publicationIDType", "typeClass": "controlledVocabulary", "multiple": false, "value": "doi"},
+              "publicationIDNumber": {"typeName": "publicationIDNumber", "typeClass": "primitive", "multiple": false, "value": "10.1371/journal.pone.0234760"},
+              "publicationURL": {"typeName": "publicationURL", "typeClass": "primitive", "multiple": false, "value": "https://doi.org/10.1371/journal.pone.0234760"}
+            }
+          ]
+        },
+        {
+          "typeName": "notesText",
+          "typeClass": "primitive",
+          "multiple": false,
+          "value": "Published automatically on the first day of each month. Catch weights are estimated from fish counts and lengths, not weighed. The records are a sample of landings, not a census."
+        },
+        {
+          "typeName": "language",
+          "typeClass": "controlledVocabulary",
+          "multiple": true,
+          "value": ["English"]
+        },
+        {
+          "typeName": "producer",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "producerName": {"typeName": "producerName", "typeClass": "primitive", "multiple": false, "value": "WorldFish"},
+              "producerURL": {"typeName": "producerURL", "typeClass": "primitive", "multiple": false, "value": "https://worldfishcenter.org"}
+            }
+          ]
+        },
+        {
+          "typeName": "contributor",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "contributorType": {"typeName": "contributorType", "typeClass": "controlledVocabulary", "multiple": false, "value": "Data Collector"},
+              "contributorName": {"typeName": "contributorName", "typeClass": "primitive", "multiple": false, "value": "Ministry of Agriculture and Fisheries, Timor-Leste"}
+            }
+          ]
+        },
+        {
+          "typeName": "timePeriodCovered",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "timePeriodCoveredStart": {"typeName": "timePeriodCoveredStart", "typeClass": "primitive", "multiple": false, "value": "<<start>>"},
+              "timePeriodCoveredEnd": {"typeName": "timePeriodCoveredEnd", "typeClass": "primitive", "multiple": false, "value": "<<end>>"}
+            }
+          ]
+        },
+        {
+          "typeName": "kindOfData",
+          "typeClass": "primitive",
+          "multiple": true,
+          "value": ["Survey data"]
+        },
+        {
+          "typeName": "software",
+          "typeClass": "compound",
+          "multiple": true,
+          "value": [
+            {
+              "softwareName": {"typeName": "softwareName", "typeClass": "primitive", "multiple": false, "value": "peskas.timor.data.pipeline"},
+              "softwareVersion": {"typeName": "softwareVersion", "typeClass": "primitive", "multiple": false, "value": "<<version>>"}
+            }
+          ]
+        },
+        {
+          "typeName": "relatedMaterial",
+          "typeClass": "primitive",
+          "multiple": true,
+          "value": [
+            "Peskas Timor-Leste portal: <a href=\"https://timor.peskas.org\">https://timor.peskas.org</a>",
+            "Peskas Fishery Data API: <a href=\"https://api.peskas.org/docs\">https://api.peskas.org/docs</a>",
+            "Pipeline source code: <a href=\"https://github.com/WorldFishCenter/peskas.timor.data.pipeline\">https://github.com/WorldFishCenter/peskas.timor.data.pipeline</a>",
+            "Peskas: <a href=\"https://peskas.org\">https://peskas.org</a>"
+          ]
+        },
+        {
+          "typeName": "dataSources",
+          "typeClass": "primitive",
+          "multiple": true,
+          "value": [
+            "Landing surveys recorded with KoboToolbox by enumerators working with the Ministry of Agriculture and Fisheries of Timor-Leste, since 2017.",
+            "Length-weight relationships from FishBase and SeaLifeBase, used to estimate catch weight."
+          ]
+        }
+      ]
     }
   }
 }
