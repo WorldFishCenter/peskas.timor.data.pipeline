@@ -1,0 +1,22 @@
+{
+  "name": "Peskas Timor-Leste data pipeline",
+  "short_name": "Timor-Leste pipeline",
+  "icons": [
+    {
+      "src": "web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "./",
+  "theme_color": "#f8f9fa",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
