@@ -1,5 +1,31 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.4.0
+
+### Validated data leaves out flagged submissions
+
+- **FIXED** The validated landings now leave out a submission with any
+  flag unless a reviewer approved it, and always leave out one a
+  reviewer rejected. This is the rule Kenya, Mozambique and Zanzibar
+  already follow. Before, Timor blanked the flagged values but kept
+  every submission, so the API returned the same 98,190 trips as raw and
+  as validated.
+- The change reaches everything that reads the validated landings: the
+  API’s validated table (88,151 trips, 10.2% fewer; 872,129 kg of catch
+  instead of 894,979 kg), the Dataverse release and the portal. The
+  portal’s landings per boat come from the trackers, so they do not
+  change; the catch and revenue per landing are now estimated from
+  unflagged landings only.
+- **CHANGED** A survey submitted more than 28 days after the landing is
+  no longer flagged (alert 10 is retired). A late submission is not an
+  error in the data, and those landings, about 4,000, stay in the
+  validated data. The `validation.landings.survey_time.submission_delay`
+  setting is gone.
+- **NEW**
+  [`read_review_decisions()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_review_decisions.md)
+  reads reviewers’ decisions once per run, for the validated landings
+  and the flags push alike.
+
 ## peskas.timor.data.pipeline 5.3.0
 
 ### The Dataverse release is the API’s validated landings

@@ -8,7 +8,7 @@ and gets no collection.
 ## Usage
 
 ``` r
-push_validation_flags(conf, flags)
+push_validation_flags(conf, flags, reviews)
 ```
 
 ## Arguments
@@ -21,6 +21,11 @@ push_validation_flags(conf, flags)
 
   The flags frame assembled by
   [`validate_landings()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_landings.md).
+
+- reviews:
+
+  Reviewers' decisions, from
+  [`read_review_decisions()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_review_decisions.md).
 
 ## Value
 

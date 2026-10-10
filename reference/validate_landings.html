@@ -13,7 +13,7 @@ deviation by default."><meta property="og:image" content="https://worldfishcente
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,9 @@ deviation by default.</p>
 
 
 <ul><li><p><code>&lt;...&gt;_validated_long__*.parquet</code> — one row per (submission, catch, length
-bin) under the standard column names.</p></li>
+bin) under the standard column names. As in Kenya, Mozambique and
+Zanzibar, it holds only the submissions with no flag or a reviewer's
+approval, never one a reviewer rejected.</p></li>
 <li><p><code>&lt;surveys.landings.validation.flags.file_prefix&gt;__*.parquet</code> — a versioned
 snapshot of the flags. <code><a href="https://rdrr.io/pkg/coasts/man/mdb_collection_push.html" class="external-link">coasts::mdb_collection_push()</a></code> replaces a
 collection wholesale, so this is the only history of what was flagged when.</p></li>

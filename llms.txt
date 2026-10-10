@@ -378,6 +378,8 @@ block of `inst/config.yml`.
 
 - [`push_validation_flags()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/push_validation_flags.md)
   : Push the validation flags to the shared validation database
+- [`read_review_decisions()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/read_review_decisions.md)
+  : Read reviewers' decisions on the live forms
 - [`sync_validation_status()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/sync_validation_status.md)
   : Write validation statuses back to KoBoToolbox
 - [`validate_catch_params()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/validate_catch_params.md)

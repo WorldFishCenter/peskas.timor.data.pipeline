@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,19 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.4.0" id="peskastimordatapipeline-540">peskas.timor.data.pipeline 5.4.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-540"></a></h2>
+<div class="section level3">
+<h3 id="validated-data-leaves-out-flagged-submissions-5-4-0">Validated data leaves out flagged submissions<a class="anchor" aria-label="anchor" href="#validated-data-leaves-out-flagged-submissions-5-4-0"></a></h3>
+<ul><li>
+<strong>FIXED</strong> The validated landings now leave out a submission with any flag unless a reviewer approved it, and always leave out one a reviewer rejected. This is the rule Kenya, Mozambique and Zanzibar already follow. Before, Timor blanked the flagged values but kept every submission, so the API returned the same 98,190 trips as raw and as validated.</li>
+<li>The change reaches everything that reads the validated landings: the API’s validated table (88,151 trips, 10.2% fewer; 872,129 kg of catch instead of 894,979 kg), the Dataverse release and the portal. The portal’s landings per boat come from the trackers, so they do not change; the catch and revenue per landing are now estimated from unflagged landings only.</li>
+<li>
+<strong>CHANGED</strong> A survey submitted more than 28 days after the landing is no longer flagged (alert 10 is retired). A late submission is not an error in the data, and those landings, about 4,000, stay in the validated data. The <code>validation.landings.survey_time.submission_delay</code> setting is gone.</li>
+<li>
+<strong>NEW</strong> <code><a href="../reference/read_review_decisions.html">read_review_decisions()</a></code> reads reviewers’ decisions once per run, for the validated landings and the flags push alike.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.3.0" id="peskastimordatapipeline-530">peskas.timor.data.pipeline 5.3.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-530"></a></h2>
 <div class="section level3">

@@ -27,7 +27,9 @@ no outputs. This function is used for it's side effects
 ## Outputs
 
 - `<...>_validated_long__*.parquet` — one row per (submission, catch,
-  length bin) under the standard column names.
+  length bin) under the standard column names. As in Kenya, Mozambique
+  and Zanzibar, it holds only the submissions with no flag or a
+  reviewer's approval, never one a reviewer rejected.
 
 - `<surveys.landings.validation.flags.file_prefix>__*.parquet` — a
   versioned snapshot of the flags.

@@ -9,7 +9,7 @@ the temporal info associated to each survey."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ the temporal info associated to each survey.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_surveys_time</span><span class="op">(</span><span class="va">submissions</span>, hrs <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">submission_delay</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_surveys_time</span><span class="op">(</span><span class="va">submissions</span>, hrs <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -56,11 +56,6 @@ the temporal info associated to each survey.</p>
 <dd><p>Limit of trip duration in hours to be considered a valid catch
 session.</p></dd>
 
-
-<dt id="arg-submission-delay">submission_delay<a class="anchor" aria-label="anchor" href="#arg-submission-delay"></a></dt>
-<dd><p>Limit for maximum difference (in days) between the
-survey submission date and the recorded landing date.</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -73,7 +68,7 @@ duration.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">conf</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_config.html">read_config</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">landings</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_weighted_landings.html">get_weighted_landings</a></span><span class="op">(</span><span class="va">conf</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">validate_surveys_time</span><span class="op">(</span><span class="fu"><a href="validation_submissions.html">validation_submissions</a></span><span class="op">(</span><span class="va">landings</span><span class="op">)</span>, hrs <span class="op">=</span> <span class="fl">18</span>, <span class="fl">28</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">validate_surveys_time</span><span class="op">(</span><span class="fu"><a href="validation_submissions.html">validation_submissions</a></span><span class="op">(</span><span class="va">landings</span><span class="op">)</span>, hrs <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
