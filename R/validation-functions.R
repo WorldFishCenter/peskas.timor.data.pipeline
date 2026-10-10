@@ -12,7 +12,8 @@
 #
 #   code             validator                       meaning
 #   1, 2, 3   [validate_imeis()]                IMEI too short / ambiguous / unknown
-#   4, 10     [validate_surveys_time()]         landing after submission / submitted too late
+#   4         [validate_surveys_time()]         landing after submission
+#   10        retired: a late submission is not an error in the data
 #   5         [validate_surveys_time()]         implausible trip duration
 #   6         [validate_catch_price()]          revenue too large
 #   11        [validate_catch_params()]         individuals per catch an outlier
@@ -253,8 +254,6 @@ validate_imeis <- function(submissions, deployed_imeis) {
 #' @param submissions Output of [validation_submissions()].
 #' @param hrs Limit of trip duration in hours to be considered a valid catch
 #'   session.
-#' @param submission_delay Limit for maximum difference (in days) between the
-#'   survey submission date and the recorded landing date.
 #'
 #' @return A list containing data frames with validated catch dates and catch
 #'   duration.
@@ -267,9 +266,9 @@ validate_imeis <- function(submissions, deployed_imeis) {
 #' \dontrun{
 #' conf <- read_config()
 #' landings <- get_weighted_landings(conf)
-#' validate_surveys_time(validation_submissions(landings), hrs = 18, 28)
+#' validate_surveys_time(validation_submissions(landings), hrs = 18)
 #' }
-validate_surveys_time <- function(submissions, hrs = NULL, submission_delay) {
+validate_surveys_time <- function(submissions, hrs = NULL) {
   list(
     validated_dates = submissions %>%
       dplyr::select("submission_id", "landing_date", "submission_date") %>%
@@ -285,9 +284,6 @@ validate_surveys_time <- function(submissions, hrs = NULL, submission_delay) {
           # above already implies this wherever `submission_date` is present,
           # so this only covers a missing or itself-future submission date.
           .data$date > lubridate::now("Asia/Dili") ~ 4,
-          .data$date <
-            .data$submission_date -
-              lubridate::duration(submission_delay, units = "days") ~ 10,
           TRUE ~ NA_real_
         ),
         date = as.Date(.data$date, tz = "Asia/Dili"),

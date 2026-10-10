@@ -17,17 +17,27 @@ descriptions in `inst/config.yml`'s `validation.alerts` block.
 The KoBo validation-status client lives in coasts —
 `coasts::list_validation_statuses()` / `coasts::update_validation_status()`.
 Reviewers' decisions, made in the Peskas Management Platform or in KoboToolbox,
-are read on every run by `coasts::review_decisions()` (called from
-`merge_kobo_validation_status()` in `R/validation.R`), so a run keeps them.
+are read on every run by `read_review_decisions()` (wrapping
+`coasts::review_decisions()`), so a run keeps them.
 `sync_validation_status()` (the write-back) is deliberately not wired into the
 pipeline.
 
-## A future landing date is flagged and kept, not blanked
+## The validated table drops flagged submissions, as the other countries do
+
+A submission reaches the validated long table only with no flag or a
+reviewer's approval, and never once a reviewer rejected it: Kenya's,
+Mozambique's and Zanzibar's rule. The validators' in-place blanking still
+applies to what is kept. Before 5.4.0 Timor only blanked and kept every
+submission, so the API's raw and validated tables had the same trip count.
+Every downstream reader (API, Dataverse, portal) inherits the filter.
+
+## A future landing date is flagged, not blanked
 
 Alert 4, ~107 submissions. `landing_date` is the merge key and every time
-aggregation reads it, so dropping or blanking the row would hide a correctable
-typo instead of surfacing it. The guarantee to assert is therefore that no
-future date escapes **unflagged** — not that none exists.
+aggregation reads it, so blanking it would hide a correctable typo instead of
+surfacing it. The submission waits for review outside the validated table. The
+guarantee to assert is therefore that no future date escapes **unflagged** —
+not that none exists.
 
 ## `tinytest::run_test_file()` sets no exit status
 

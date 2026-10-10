@@ -22,7 +22,9 @@ deviation by default.
 
 \itemize{
 \item \verb{<...>_validated_long__*.parquet} — one row per (submission, catch, length
-bin) under the standard column names.
+bin) under the standard column names. As in Kenya, Mozambique and
+Zanzibar, it holds only the submissions with no flag or a reviewer's
+approval, never one a reviewer rejected.
 \item \verb{<surveys.landings.validation.flags.file_prefix>__*.parquet} — a versioned
 snapshot of the flags. \code{\link[coasts:mdb_collection_push]{coasts::mdb_collection_push()}} replaces a
 collection wholesale, so this is the only history of what was flagged when.

@@ -4,12 +4,14 @@
 \alias{push_validation_flags}
 \title{Push the validation flags to the shared validation database}
 \usage{
-push_validation_flags(conf, flags)
+push_validation_flags(conf, flags, reviews)
 }
 \arguments{
 \item{conf}{The configuration file.}
 
 \item{flags}{The flags frame assembled by \code{\link[=validate_landings]{validate_landings()}}.}
+
+\item{reviews}{Reviewers' decisions, from \code{\link[=read_review_decisions]{read_review_decisions()}}.}
 }
 \value{
 Invisibly, the flags frame that was pushed.

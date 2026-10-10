@@ -49,10 +49,12 @@ expect_false(
   "Negative values in landings"
 )
 
-# A landing date after the submission date is flagged (alert 4) and kept, not
-# blanked: `landing_date` is the merge key and every time aggregation reads it,
-# so dropping the row would hide a correctable typo. The guarantee is therefore
-# that no future date escapes *unflagged*, which is what this asserts.
+# A landing date after the submission date is flagged (alert 4), not blanked:
+# `landing_date` is the merge key and every time aggregation reads it, so
+# blanking it would hide a correctable typo. The submission waits for review
+# outside the validated table, and one a reviewer approves comes back with its
+# date. The guarantee is therefore that no future date escapes *unflagged*,
+# which is what this asserts.
 expect_false(
   any(
     !is.na(validated_landings$landing_date) &

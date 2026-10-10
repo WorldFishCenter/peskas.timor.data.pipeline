@@ -335,7 +335,6 @@ default:
         min: 0
       survey_time:
         max_duration: 96
-        submission_delay: 28
       catch:
         n_individuals:
           k: 2.5
@@ -365,7 +364,7 @@ default:
       "7": Recorded length is too large for the catch type
       "8": Total catch value is negative
       "9": Total catch value is too small
-      "10": Survey submitted more than 28 days after landing date
+      "10": Survey submitted more than 28 days after landing date (retired in 5.4.0; never reuse)
       "11": Number of individuals is too large
       "12": Boat type specified doesn't match previous records
       "13": No boat type recorded for a trip that declared a boat

@@ -7,7 +7,9 @@
 #'
 #' @section Outputs:
 #' * `<...>_validated_long__*.parquet` — one row per (submission, catch, length
-#'   bin) under the standard column names.
+#'   bin) under the standard column names. As in Kenya, Mozambique and
+#'   Zanzibar, it holds only the submissions with no flag or a reviewer's
+#'   approval, never one a reviewer rejected.
 #' * `<surveys.landings.validation.flags.file_prefix>__*.parquet` — a versioned
 #'   snapshot of the flags. [coasts::mdb_collection_push()] replaces a
 #'   collection wholesale, so this is the only history of what was flagged when.
@@ -53,8 +55,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
   surveys_time_alerts <- validate_surveys_time(
     submissions = submissions,
     hrs = conf$validation$landings$survey_time$max_duration %||%
-      default_max_limit,
-    submission_delay = conf$validation$landings$survey_time$submission_delay
+      default_max_limit
   )
 
   logger::log_info("Validating catches values...")
@@ -154,20 +155,6 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       "happiness"
     )
 
-  # The only stored validated artefact; the portal path gets its nested shape
-  # from `get_validated_landings()`, which re-nests this table on read.
-  logger::log_info("Uploading the long validated catch table")
-  coasts::upload_parquet_to_cloud(
-    data = long_validated_landings(
-      validated_catch,
-      validated_landings,
-      api_submission_extras(landings)
-    ),
-    prefix = conf$surveys$landings$validated_long$file_prefix,
-    provider = conf$storage$google$key,
-    options = coasts::resolve_storage_opts(conf, "country")
-  )
-
   # HANDLE FLAGS ------------------------------------------------------------
 
   # Column order here is the alert contract: `unite()` composes the flag string
@@ -232,6 +219,27 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     "{sum(flags$alert != '0')} of {nrow(flags)} submissions flagged"
   )
 
+  # Read before this run's push replaces the flags collection.
+  reviews <- read_review_decisions(conf)
+
+  kept <- validated_ids(flags, reviews)
+  logger::log_info("{length(kept)} of {nrow(flags)} submissions validated")
+
+  # The only stored validated artefact; the portal path gets its nested shape
+  # from `get_validated_landings()`, which re-nests this table on read.
+  logger::log_info("Uploading the long validated catch table")
+  coasts::upload_parquet_to_cloud(
+    data = long_validated_landings(
+      validated_catch,
+      validated_landings,
+      api_submission_extras(landings)
+    ) %>%
+      dplyr::filter(.data$submission_id %in% kept),
+    prefix = conf$surveys$landings$validated_long$file_prefix,
+    provider = conf$storage$google$key,
+    options = coasts::resolve_storage_opts(conf, "country")
+  )
+
   flags_filename <- conf$surveys$landings$validation$flags$file_prefix
   coasts::upload_parquet_to_cloud(
     data = dplyr::select(
@@ -249,7 +257,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
     options = coasts::resolve_storage_opts(conf, "country")
   )
 
-  push_validation_flags(conf, flags)
+  push_validation_flags(conf, flags, reviews)
 }
 
 #' Push the validation flags to the shared validation database
@@ -261,10 +269,11 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #'
 #' @param conf The configuration file.
 #' @param flags The flags frame assembled by [validate_landings()].
+#' @param reviews Reviewers' decisions, from [read_review_decisions()].
 #' @return Invisibly, the flags frame that was pushed.
 #' @keywords validation
 #' @export
-push_validation_flags <- function(conf, flags) {
+push_validation_flags <- function(conf, flags, reviews) {
   mdb <- conf$storage$mongodb
   if (
     is.null(mdb$connection_strings$validation) ||
@@ -306,7 +315,10 @@ push_validation_flags <- function(conf, flags) {
           gsub("-", ", ", .data$alert)
         )
       ) %>%
-      merge_kobo_validation_status(conf, version)
+      merge_kobo_validation_status(
+        reviews,
+        conf$ingestion$landings[[version]]$username
+      )
 
     logger::log_info("Pushing {nrow(out)} {version} flags to {collection}")
     coasts::mdb_collection_push(
@@ -336,32 +348,64 @@ push_validation_flags <- function(conf, flags) {
   invisible(flags)
 }
 
-# Derive the validation status each submission should carry, keeping a
-# reviewer's decision, whether made in the Peskas Management Platform (which
-# writes it to this collection) or in KoBoToolbox; `coasts::review_decisions()`
-# reads both before this run's push replaces the collection. Reading is safe
-# from any environment; writing back to KoBoToolbox is `sync_validation_status()`.
-merge_kobo_validation_status <- function(flags, conf, version) {
+#' Read reviewers' decisions on the live forms
+#'
+#' Decisions made in the Peskas Management Platform (which writes them to the
+#' flags collection) and in KoBoToolbox, read with [coasts::review_decisions()]
+#' before a run's push replaces the collection. v1 is frozen and has neither.
+#' Reading is safe from any environment; writing back to KoBoToolbox is
+#' [sync_validation_status()].
+#'
+#' @param conf The configuration file.
+#' @return A tibble, one row per reviewed submission: `submission_id`,
+#'   `validation_status`, `validated_at`, `validated_by`.
+#' @keywords validation
+#' @export
+read_review_decisions <- function(conf) {
   mdb <- conf$storage$mongodb
-  ingestion <- conf$ingestion$landings[[version]]
+  purrr::map_dfr(c("v2", "v3"), function(version) {
+    ingestion <- conf$ingestion$landings[[version]]
+    logger::log_info("Reading reviewers' decisions for {version}")
+    coasts::review_decisions(
+      # Without the database, only the decisions made in KoBoToolbox.
+      flags = if (nzchar(mdb$connection_strings$validation %||% "")) {
+        coasts::mdb_collection_pull(
+          connection_string = mdb$connection_strings$validation,
+          db_name = mdb$databases$validation$database_name,
+          collection_name = paste(
+            mdb$databases$validation$collections$flags,
+            ingestion$asset_id,
+            sep = "-"
+          )
+        )
+      },
+      pipeline_users = ingestion$username,
+      asset_id = ingestion$asset_id,
+      username = ingestion$username,
+      password = ingestion$password
+    )
+  })
+}
 
-  logger::log_info("Reading reviewers' decisions for {version}")
-  reviews <- coasts::review_decisions(
-    flags = coasts::mdb_collection_pull(
-      connection_string = mdb$connection_strings$validation,
-      db_name = mdb$databases$validation$database_name,
-      collection_name = paste(
-        mdb$databases$validation$collections$flags,
-        ingestion$asset_id,
-        sep = "-"
-      )
-    ),
-    pipeline_users = ingestion$username,
-    asset_id = ingestion$asset_id,
-    username = ingestion$username,
-    password = ingestion$password
-  )
+# The submissions the validated table keeps. A reviewer's decision outranks the
+# automatic flags, either way, as in Kenya, Mozambique and Zanzibar. A kept
+# submission still carries the validators' blanking.
+validated_ids <- function(flags, reviews) {
+  approved <- reviews$submission_id[
+    reviews$validation_status == "validation_status_approved"
+  ]
+  rejected <- reviews$submission_id[
+    reviews$validation_status == "validation_status_not_approved"
+  ]
+  flags$submission_id[
+    (flags$alert == "0" | flags$submission_id %in% approved) &
+      !flags$submission_id %in% rejected
+  ]
+}
 
+# The validation status each submission carries: a reviewer's decision when
+# there is one, otherwise the pipeline's own, from the flags.
+merge_kobo_validation_status <- function(flags, reviews, pipeline_user) {
   flags %>%
     dplyr::left_join(reviews, by = "submission_id") %>%
     dplyr::mutate(
@@ -371,7 +415,7 @@ merge_kobo_validation_status <- function(flags, conf, version) {
         !is.na(.data$alert_flag) ~ "validation_status_not_approved",
         TRUE ~ "validation_status_approved"
       ),
-      validated_by = dplyr::coalesce(.data$validated_by, ingestion$username)
+      validated_by = dplyr::coalesce(.data$validated_by, pipeline_user)
     )
 }
 
