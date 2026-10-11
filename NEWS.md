@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 5.4.1
+
+## Registered boats come from the census table
+
+* **FIXED** `get_registered_boats()` now reads the twelve boat counts from the Airtable census table `frame_units` instead of `districts.total_boats`, which has been removed. The counts are the same in all twelve reporting regions, so no published number changes.
+
 # peskas.timor.data.pipeline 5.4.0
 
 ## Validated data leaves out flagged submissions

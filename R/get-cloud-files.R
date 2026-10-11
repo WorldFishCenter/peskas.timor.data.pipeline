@@ -290,6 +290,33 @@ get_models <- function(conf) {
   )
 }
 
+#' Download the whole Airtable frame snapshot, all countries
+#'
+#' For the tables [get_assets()] cannot filter by form: `devices` and
+#' `frame_units` have no `form_id`.
+#'
+#' @param conf The configuration file.
+#' @return The snapshot: a named list of tibbles.
+#' @keywords helper
+#' @noRd
+frame_snapshot <- function(conf) {
+  coasts_opts <- coasts::resolve_storage_opts(conf, "coasts")
+  snapshot <- coasts::cloud_object_name(
+    prefix = conf$metadata$airtable$name,
+    provider = conf$storage$google$key,
+    version = "latest",
+    extension = "rds",
+    options = coasts_opts
+  )
+  coasts::download_cloud_file(
+    name = snapshot,
+    provider = conf$storage$google$key,
+    options = coasts_opts
+  )
+  on.exit(unlink(snapshot))
+  readr::read_rds(snapshot)
+}
+
 #' Download the Airtable frame mapping tables for Timor
 #'
 #' Wraps [coasts::get_assets()], which downloads the shared snapshot and returns
@@ -394,21 +421,7 @@ tracker_imeis <- function(conf) {
     options = coasts::resolve_storage_opts(conf, "country")
   )$device_imei
 
-  coasts_opts <- coasts::resolve_storage_opts(conf, "coasts")
-  snapshot <- coasts::cloud_object_name(
-    prefix = conf$metadata$airtable$name,
-    provider = conf$storage$google$key,
-    version = "latest",
-    extension = "rds",
-    options = coasts_opts
-  )
-  coasts::download_cloud_file(
-    name = snapshot,
-    provider = conf$storage$google$key,
-    options = coasts_opts
-  )
-  devices <- readr::read_rds(snapshot)$devices
-  unlink(snapshot)
+  devices <- frame_snapshot(conf)$devices
 
   current <- devices$imei[
     devices$customer_name %in% conf$metadata$tracker_imeis$customers

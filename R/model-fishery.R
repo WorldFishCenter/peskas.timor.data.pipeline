@@ -22,17 +22,18 @@ frame_reporting_region <- function(geo) {
   )
 }
 
-# Registered boats per reporting region, from the Airtable frame.
+# Registered boats per reporting region, from the Airtable frame census
+# (`frame_units`, one row per region), which the coasts portal raises with too.
 #
 # This is the raising factor for every published estimate: `run_estimations()`
 # computes `catch = landing_catch * n_landings_per_boat * n_boats`.
 get_registered_boats <- function(conf) {
-  get_assets(conf)$geo %>%
-    dplyr::filter(!is.na(.data$total_boats)) %>%
+  frame_snapshot(conf)$frame_units %>%
+    dplyr::filter(.data$country == "Timor-Leste", !is.na(.data$n_boats)) %>%
     frame_reporting_region() %>%
     dplyr::transmute(
       .data$reporting_region,
-      n_boats = as.integer(.data$total_boats)
+      n_boats = as.integer(.data$n_boats)
     )
 }
 
