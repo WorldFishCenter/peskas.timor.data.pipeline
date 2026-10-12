@@ -26,8 +26,10 @@ validate_catch_params(landings = NULL, k_ind = NULL)
 
 ## Value
 
-A list with `alerts` (one row per submission) and `catch` (the long
-table with outlying counts and their weights blanked).
+A list with `alerts` (one row per submission), `catch` (the long table
+with outlying counts and their weights blanked) and `locations` (per
+submission with alert 11, a nested `alert_catches` table: the catch's
+number in the form, `code`, `species` and the count recorded).
 
 ## Details
 

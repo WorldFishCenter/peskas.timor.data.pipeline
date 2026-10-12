@@ -1,5 +1,16 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.5.0
+
+### Alert 11 points to the catch that raised it
+
+- **NEW** An outlying number of individuals (alert 11) records which
+  catch it is about (numbered as in the form), its species and the count
+  recorded. The Management Platform shows them, so a reviewer goes
+  straight to the catch instead of checking each one: 2,228 landings now
+  say which. No alert or decision changes, and the validated landings
+  are identical.
+
 ## peskas.timor.data.pipeline 5.4.2
 
 ### Alert 11 is no longer hidden by alerts 6 and 17
