@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,18 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.4.2" id="peskastimordatapipeline-542">peskas.timor.data.pipeline 5.4.2<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-542"></a></h2>
+<div class="section level3">
+<h3 id="alert-is-no-longer-hidden-by-alerts-and-5-4-2">Alert 11 is no longer hidden by alerts 6 and 17<a class="anchor" aria-label="anchor" href="#alert-is-no-longer-hidden-by-alerts-and-5-4-2"></a></h3>
+<ul><li>
+<strong>FIXED</strong> A landing with an outlying number of individuals (alert 11) shows that alert even when its revenue is too large (6): the flag reads “6-11” where it read “6”. Alerts 6, 17 and 22 shared one place in the flag with 11, and only one of them was kept.</li>
+<li>
+<strong>FIXED</strong> Price per kilo (17) is no longer judged on a landing with alert 11. That alert blanks the outlying catch rows, so the weight left is short and the price per kilo came out too high. In the data, 226 landings read “11” instead of “17”, and 6 read “6-11” instead of “6”. The validated landings are identical: the same values are blanked as before.</li>
+<li>Codes 7, 8 and 9 are marked in <code>config.yml</code> as having no check that produces them, and 23 as never reaching the flag string.</li>
+<li>The descriptions of alerts 6, 17 and 20 give their limits (1,500 USD; 0.25 to 30 USD per kg; 200 mm), and those of alerts 5, 12 and 14 in <code>config.yml</code> say what the checks do: 5 is a trip under 1 hour or over 96 hours (it said only “too long”), and 12 and 14 are a boat or gear code that is not a known type (they said “doesn’t match previous records”).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.4.1" id="peskastimordatapipeline-541">peskas.timor.data.pipeline 5.4.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-541"></a></h2>
 <div class="section level3">

@@ -1,5 +1,28 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.4.2
+
+### Alert 11 is no longer hidden by alerts 6 and 17
+
+- **FIXED** A landing with an outlying number of individuals (alert 11)
+  shows that alert even when its revenue is too large (6): the flag
+  reads “6-11” where it read “6”. Alerts 6, 17 and 22 shared one place
+  in the flag with 11, and only one of them was kept.
+- **FIXED** Price per kilo (17) is no longer judged on a landing with
+  alert 11. That alert blanks the outlying catch rows, so the weight
+  left is short and the price per kilo came out too high. In the data,
+  226 landings read “11” instead of “17”, and 6 read “6-11” instead of
+  “6”. The validated landings are identical: the same values are blanked
+  as before.
+- Codes 7, 8 and 9 are marked in `config.yml` as having no check that
+  produces them, and 23 as never reaching the flag string.
+- The descriptions of alerts 6, 17 and 20 give their limits (1,500 USD;
+  0.25 to 30 USD per kg; 200 mm), and those of alerts 5, 12 and 14 in
+  `config.yml` say what the checks do: 5 is a trip under 1 hour or over
+  96 hours (it said only “too long”), and 12 and 14 are a boat or gear
+  code that is not a known type (they said “doesn’t match previous
+  records”).
+
 ## peskas.timor.data.pipeline 5.4.1
 
 ### Registered boats come from the census table

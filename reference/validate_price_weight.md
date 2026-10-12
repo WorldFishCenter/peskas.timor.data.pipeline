@@ -2,8 +2,10 @@
 
 Flags submissions whose revenue per kilo of estimated catch falls
 outside the configured band, and propagates the regularity, revenue and
-individuals-count alerts onto both the price and the catch frames so
-that a single alert number per submission survives the assembly.
+individuals-count alerts onto both the price and the catch frames. Price
+per kilo (17), regularity (22) and revenue (6) share one alert number
+per submission; the individuals count (11) is reported on its own, so 6
+or 17 no longer hide it.
 
 ## Usage
 
@@ -49,7 +51,8 @@ validate_price_weight(
 ## Value
 
 A list with `alerts` (one row per submission, carrying the validated
-`catch_price`) and `catch` (the long table with blanked measurements).
+`catch_price`), `individuals` (the submissions with alert 11) and
+`catch` (the long table with blanked measurements).
 
 ## Details
 
