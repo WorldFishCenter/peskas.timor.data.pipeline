@@ -167,6 +167,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       date = surveys_time_alerts$validated_dates,
       duration = surveys_time_alerts$validated_duration,
       price_weight = price_weight$alerts,
+      individuals = price_weight$individuals,
       vessel = vessel_type_alerts,
       gear = gear_type_alerts,
       site = site_alerts,

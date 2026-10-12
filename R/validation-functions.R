@@ -516,8 +516,10 @@ validate_catch_params <- function(landings = NULL, k_ind = NULL) {
 #'
 #' Flags submissions whose revenue per kilo of estimated catch falls outside the
 #' configured band, and propagates the regularity, revenue and
-#' individuals-count alerts onto both the price and the catch frames so that a
-#' single alert number per submission survives the assembly.
+#' individuals-count alerts onto both the price and the catch frames. Price per
+#' kilo (17), regularity (22) and revenue (6) share one alert number per
+#' submission; the individuals count (11) is reported on its own, so 6 or 17
+#' no longer hide it.
 #'
 #' The `cook_dist` parameter is unused and retained only because `config.yml`
 #' still supplies it.
@@ -530,7 +532,8 @@ validate_catch_params <- function(landings = NULL, k_ind = NULL) {
 #' @param price_weight_min Min price per weight value threshold.
 #' @param price_weight_max Max price per weight value threshold.
 #' @return A list with `alerts` (one row per submission, carrying the validated
-#'   `catch_price`) and `catch` (the long table with blanked measurements).
+#'   `catch_price`), `individuals` (the submissions with alert 11) and `catch`
+#'   (the long table with blanked measurements).
 #' @keywords validation
 #' @export
 #'
@@ -542,9 +545,17 @@ validate_price_weight <- function(
   price_weight_min = NULL,
   price_weight_max = NULL
 ) {
-  # Extract IDs with an abnormal price per kilo of estimated catch
+  n_individuals_alert <-
+    catch_params$alerts %>%
+    dplyr::filter(!is.na(.data$alert_number)) %>%
+    magrittr::extract2("submission_id")
+
+  # Extract IDs with an abnormal price per kilo of estimated catch. A landing
+  # already flagged for its individuals count has those rows' weight blanked,
+  # so its total is short and its price per kilo overstated: it is not judged.
   price_per_weight_alerts <-
     catch_params$catch %>%
+    dplyr::filter(!.data$submission_id %in% n_individuals_alert) %>%
     dplyr::select("submission_id", "weight") %>%
     dplyr::left_join(
       dplyr::select(price_alerts, "submission_id", "catch_price"),
@@ -568,11 +579,6 @@ validate_price_weight <- function(
   regularity_alerts <-
     non_regular_ids %>%
     dplyr::filter(!is.na(.data$alert_regularity)) %>%
-    magrittr::extract2("submission_id")
-
-  n_individuals_alert <-
-    catch_params$alerts %>%
-    dplyr::filter(!is.na(.data$alert_number)) %>%
     magrittr::extract2("submission_id")
 
   revenue_alert <-
@@ -626,12 +632,18 @@ validate_price_weight <- function(
       by = "submission_id"
     ) %>%
       dplyr::mutate(
+        # 11 is reported through `individuals`; the blanking it drives above
+        # is unchanged.
         alert_number = dplyr::coalesce(
           .data$alert_number.x,
           .data$alert_number.y
-        )
+        ) %>%
+          dplyr::na_if(11)
       ) %>%
       dplyr::select(-"alert_number.x", -"alert_number.y"),
+    individuals = catch_params$alerts %>%
+      dplyr::filter(.data$alert_number == 11) %>%
+      dplyr::distinct(.data$submission_id, .data$alert_number),
     catch = catch_params$catch %>%
       dplyr::select(-"alert_number") %>%
       dplyr::left_join(catch_alerts, by = "submission_id") %>%

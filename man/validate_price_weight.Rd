@@ -29,13 +29,16 @@ validate_price_weight(
 }
 \value{
 A list with \code{alerts} (one row per submission, carrying the validated
-\code{catch_price}) and \code{catch} (the long table with blanked measurements).
+\code{catch_price}), \code{individuals} (the submissions with alert 11) and \code{catch}
+(the long table with blanked measurements).
 }
 \description{
 Flags submissions whose revenue per kilo of estimated catch falls outside the
 configured band, and propagates the regularity, revenue and
-individuals-count alerts onto both the price and the catch frames so that a
-single alert number per submission survives the assembly.
+individuals-count alerts onto both the price and the catch frames. Price per
+kilo (17), regularity (22) and revenue (6) share one alert number per
+submission; the individuals count (11) is reported on its own, so 6 or 17
+no longer hide it.
 }
 \details{
 The \code{cook_dist} parameter is unused and retained only because \code{config.yml}
