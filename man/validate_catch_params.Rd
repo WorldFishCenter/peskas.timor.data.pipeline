@@ -13,8 +13,10 @@ carrying \code{alert_number}.}
 \item{k_ind}{Extension of bounds for the number of individuals}
 }
 \value{
-A list with \code{alerts} (one row per submission) and \code{catch} (the long
-table with outlying counts and their weights blanked).
+A list with \code{alerts} (one row per submission), \code{catch} (the long
+table with outlying counts and their weights blanked) and \code{locations} (per
+submission with alert 11, a nested \code{alert_catches} table: the catch's
+number in the form, \code{code}, \code{species} and the count recorded).
 }
 \description{
 Uses univariate techniques (see \link[univOutl:LocScaleB]{univOutl::LocScaleB}) to identify outliers

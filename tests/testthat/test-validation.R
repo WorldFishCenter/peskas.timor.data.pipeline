@@ -61,3 +61,31 @@ test_that("validate_price_weight() reports 11 on its own and does not judge its 
   expect_true(all(is.na(alerts$catch_price[1:2])))
   expect_true(all(is.na(out$catch$weight[out$catch$submission_id %in% c(1, 2)])))
 })
+
+test_that("validate_catch_params() records which catch raised alert 11", {
+  # Submission 1 has two catches; the second holds the outlying count.
+  landings <- tibble::tibble(
+    submission_id = c(1, 1, 2),
+    n_catch = c(1, 2, 1),
+    gear = "GN",
+    catch_taxon = "CGX",
+    scientific_name = c("Carangidae", "Siganus spp", "Carangidae"),
+    n_individuals = c(5, 500, 4),
+    alert_number = NA_real_
+  )
+  for (col in catch_value_cols()) landings[[col]] <- 1
+
+  out <- with_mocked_bindings(
+    validate_catch_params(landings, k_ind = 2.5),
+    alert_outlier = function(x, ...) ifelse(x > 100, 11, NA_real_),
+    .package = "peskas.timor.data.pipeline"
+  )
+
+  expect_equal(out$locations$submission_id, 1)
+  expect_equal(
+    out$locations$alert_catches[[1]],
+    tibble::tibble(catch_number = 2L, code = "11", species = "Siganus spp", value = "500")
+  )
+  # The count is still blanked where it was an outlier, and nowhere else.
+  expect_equal(out$catch$n_individuals, c(5, NA, 4))
+})

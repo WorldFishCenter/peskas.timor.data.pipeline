@@ -444,8 +444,10 @@ validate_catch_price <- function(regular_landings, method = NULL, k = NULL) {
 #'   carrying `alert_number`.
 #' @param k_ind Extension of bounds for the number of individuals
 #'
-#' @return A list with `alerts` (one row per submission) and `catch` (the long
-#'   table with outlying counts and their weights blanked).
+#' @return A list with `alerts` (one row per submission), `catch` (the long
+#'   table with outlying counts and their weights blanked) and `locations` (per
+#'   submission with alert 11, a nested `alert_catches` table: the catch's
+#'   number in the form, `code`, `species` and the count recorded).
 #' @keywords validation
 #' @export
 #'
@@ -468,14 +470,36 @@ validate_catch_params <- function(landings = NULL, k_ind = NULL) {
         alert_if_larger = 11,
         logt = TRUE,
         k = k_ind
-      ),
+      )
+    ) %>%
+    dplyr::ungroup()
+
+  # Where each outlying count was recorded, read before it is blanked, so a
+  # reviewer can go straight to the catch. `n_catch` follows the form from 1.
+  locations <-
+    validated %>%
+    dplyr::filter(!is.na(.data$alert_number), !is.na(.data$n_catch)) %>%
+    dplyr::group_by(
+      .data$submission_id,
+      catch_number = as.integer(.data$n_catch)
+    ) %>%
+    dplyr::summarise(
+      code = "11",
+      species = dplyr::first(.data$scientific_name),
+      value = paste(unique(stats::na.omit(.data$n_individuals)), collapse = ", "),
+      .groups = "drop"
+    ) %>%
+    tidyr::nest(alert_catches = -"submission_id")
+
+  validated <-
+    validated %>%
+    dplyr::mutate(
       n_individuals = dplyr::if_else(
         is.na(.data$alert_number),
         .data$n_individuals,
         NA_real_
       )
     ) %>%
-    dplyr::ungroup() %>%
     # Adjusting weight and nutrients accordingly: a counted zero weighs zero,
     # an outlying count weighs nothing we can trust.
     dplyr::mutate(
@@ -508,7 +532,8 @@ validate_catch_params <- function(landings = NULL, k_ind = NULL) {
         dplyr::distinct(.data$submission_id, .data$alert_number),
       alerts
     ),
-    catch = dplyr::bind_rows(already_alerted, validated)
+    catch = dplyr::bind_rows(already_alerted, validated),
+    locations = locations
   )
 }
 

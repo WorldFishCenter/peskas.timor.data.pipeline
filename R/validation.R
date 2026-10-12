@@ -203,6 +203,7 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
       submission_date = lubridate::as_date(.data$submission_date)
     ) %>%
     dplyr::left_join(alerts, by = "submission_id") %>%
+    dplyr::left_join(catch_params$locations, by = "submission_id") %>%
     dplyr::arrange(.data$submission_date, .data$submission_id) %>%
     dplyr::mutate(
       alert = dplyr::if_else(
@@ -314,6 +315,12 @@ push_validation_flags <- function(conf, flags, reviews) {
           .data$alert == "0",
           NA_character_,
           gsub("-", ", ", .data$alert)
+        ),
+        # Which catch raised alert 11. Stored as [] when none did; a missing
+        # one would be {}.
+        alert_catches = lapply(
+          .data$alert_catches,
+          function(x) if (is.null(x)) list() else x
         )
       ) %>%
       merge_kobo_validation_status(
@@ -335,7 +342,7 @@ push_validation_flags <- function(conf, flags, reviews) {
     coasts::mdb_collection_push(
       data = out %>%
         tidyr::separate_rows("alert_flag", sep = ",\\s*") %>%
-        dplyr::select(-tidyselect::starts_with("valid")),
+        dplyr::select(-tidyselect::starts_with("valid"), -"alert_catches"),
       connection_string = mdb$connection_strings$validation,
       db_name = mdb$databases$validation$database_name,
       collection_name = paste(
