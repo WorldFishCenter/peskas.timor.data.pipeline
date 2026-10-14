@@ -1,3 +1,12 @@
+# peskas.timor.data.pipeline 5.6.0
+
+## Emperors, parrotfish and groupers get their own catch estimates
+
+* **NEW** The monthly catch estimates now give emperors, parrotfish and groupers their own series. They were counted under "Other", and with the corrected weights they are among the largest groups that had none. From 2018 to 2025 they come to 674 t of emperors, 490 t of groupers and 333 t of parrotfish, and "Other" falls from 4,193 t to 2,657 t.
+* Total catch does not change, and neither do the other twelve groups in months with landings. In months filled from their neighbours each group moves, typically by about 12% in a month and by less than 3% over 2018 to 2025.
+* Nutrient supply changes a little, because the three groups now carry their own nutrient values instead of the average used for "Other": vitamin A +7%, zinc +5%, omega-3 -3%, calcium and iron within 2%, protein unchanged.
+* The portal and the data report show the three new groups, each with its own drawing.
+
 # peskas.timor.data.pipeline 5.5.0
 
 ## Alert 11 points to the catch that raised it

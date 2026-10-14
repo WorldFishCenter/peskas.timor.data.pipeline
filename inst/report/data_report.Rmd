@@ -44,12 +44,13 @@ nutrients_table <- peskas.timor.data.pipeline::get_nutrients_table(pars)
 estimates <- peskas.timor.data.pipeline::get_models(pars)
 
 # Short labels for the model's catch groups; the catch composition table
-# expects exactly these, in its icon order. Other taxa keep their FAO name.
+# expects exactly these. Other taxa keep their FAO name.
 group_labels <- c(
   CLP = "Sardines/pilchards", GZP = "Garfish", TUN = "Tuna/Bonito/Other Mackerel",
   SDX = "Mackerel scad", FLY = "Flying fish", SNA = "Snapper/seaperch",
   MOO = "Moonfish", CGX = "Jacks/Trevally/Other Scad", CJX = "Fusilier",
-  BEN = "Long tom", RAX = "Short bodied mackerel", LWX = "Jobfish", MZZ = "Other"
+  BEN = "Long tom", RAX = "Short bodied mackerel", LWX = "Jobfish", EMP = "Emperors",
+  PWT = "Parrotfish", GPX = "Grouper", MZZ = "Other"
 )
 catch_types <-
   peskas.timor.data.pipeline::get_assets(pars)$taxa %>%
@@ -740,20 +741,24 @@ species <-
   )
 
 
+# Icons by catch group; a group with no icon of its own takes the "Other" one.
 images <- c(
-  "https://storage.googleapis.com/public-timor/SAR.svg",
-  "https://storage.googleapis.com/public-timor/GAR.svg",
-  "https://storage.googleapis.com/public-timor/TUN.svg",
-  "https://storage.googleapis.com/public-timor/MAC.svg",
-  "https://storage.googleapis.com/public-timor/FLYFI.svg",
-  "https://storage.googleapis.com/public-timor/SNA.svg",
-  "https://storage.googleapis.com/public-timor/MOO.svg",
-  "https://storage.googleapis.com/public-timor/JAC.svg",
-  "https://storage.googleapis.com/public-timor/FUS.svg",
-  "https://storage.googleapis.com/public-timor/NEE.svg",
-  "https://storage.googleapis.com/public-timor/SHM.svg",
-  "https://storage.googleapis.com/public-timor/JOB.svg",
-  "https://storage.googleapis.com/public-timor/OTHR.svg"
+  CLP = "https://storage.googleapis.com/public-timor/SAR.svg",
+  GZP = "https://storage.googleapis.com/public-timor/GAR.svg",
+  TUN = "https://storage.googleapis.com/public-timor/TUN.svg",
+  SDX = "https://storage.googleapis.com/public-timor/MAC.svg",
+  FLY = "https://storage.googleapis.com/public-timor/FLYFI.svg",
+  SNA = "https://storage.googleapis.com/public-timor/SNA.svg",
+  MOO = "https://storage.googleapis.com/public-timor/MOO.svg",
+  CGX = "https://storage.googleapis.com/public-timor/JAC.svg",
+  CJX = "https://storage.googleapis.com/public-timor/FUS.svg",
+  BEN = "https://storage.googleapis.com/public-timor/NEE.svg",
+  RAX = "https://storage.googleapis.com/public-timor/SHM.svg",
+  LWX = "https://storage.googleapis.com/public-timor/JOB.svg",
+  EMP = "https://storage.googleapis.com/public-timor/EMP.svg",
+  PWT = "https://storage.googleapis.com/public-timor/PAR.svg",
+  GPX = "https://storage.googleapis.com/public-timor/GRO.svg",
+  MZZ = "https://storage.googleapis.com/public-timor/OTHR.svg"
 )
 
 t_format <- function(value) {
@@ -799,6 +804,9 @@ tab <-
         "Long tom",
         "Short bodied mackerel",
         "Jobfish",
+        "Emperors",
+        "Parrotfish",
+        "Grouper",
         "Other"
       )
     )
@@ -826,7 +834,7 @@ tab <-
   dplyr::ungroup() %>%
   dplyr::filter(!grouped_taxa_names == c("Unknown")) %>%
   dplyr::mutate(
-    urls = images,
+    urls = dplyr::coalesce(unname(images[grouped_taxa]), images[["MZZ"]]),
     dplyr::across(dplyr::where(is.numeric), ~ round(.x, 2))
   ) %>%
   dplyr::select(grouped_taxa_names, urls, dplyr::everything()) %>%
