@@ -47,8 +47,9 @@
 #   d. `validation` carries Timor's much deeper threshold set (mesh, gleaners,
 #      fuel, survey_time, cook_dist, pds_trips, ...) rather than the
 #      template's four `k_*` scalars.
-#   e. PDS track file prefix is singular (`pds-track`), matching eleven years
-#      of existing objects, not the template's `pds-tracks`.
+#   e. (Retired.) The PDS track file prefix was the singular `pds-track`; it
+#      is now the template's `pds-tracks`, which coasts::ingest_pds_tracks()
+#      writes.
 #   f. Airtable key paths follow **coasts**, not Mozambique. coasts reads
 #      `airtable.token` / `airtable.frame.base_id` at the top level; Mozambique
 #      nests the same values under `metadata.airtable` because it vendors its
@@ -117,6 +118,12 @@ default:
   # (.csv/.rds -> parquet) does not orphan the history.
   # ===========================================================================
   surveys:
+    summaries:                                             # coasts::summarize_data()
+      file_prefix: timor-summaries
+      version: latest
+    aggregated:                                            # coasts::generate_fleet_analysis()
+      file_prefix: timor-aggregated
+      version: latest
     landings:
       v3:
         raw:
@@ -156,11 +163,12 @@ default:
     token: !expr Sys.getenv('PDS_TOKEN')
     secret: !expr Sys.getenv('PDS_SECRET')
     exclude_customers: []                                  # or `customers:` — one, not both
+    fleet_customers: []                                    # the fleet, for generate_fleet_analysis()
     pds_trips:
       file_prefix: pds-trips
       version: latest
     pds_tracks:
-      file_prefix: pds-track                               # singular, see deviation (e)
+      file_prefix: pds-tracks
       version: latest
       descriptors:                                         # Timor-only, see config.yml
         file_prefix: pds-tracks-descriptors
@@ -283,8 +291,11 @@ default:
   # country implements it.
   # ===========================================================================
   metadata:
+    map_boundaries:                                        # first key, as in every country
+      gaul1: TLS_boundaries_gaul1
+      gaul2: TLS_boundaries_gaul2
     airtable:
-      name: assets                                         # prefix of the assets snapshot
+      name: assets                                        # prefix of the assets snapshot
       assets: assets                                       # coasts reads both spellings
     asfis:
       file_prefix: asfis                                   # FAO species list, country bucket
@@ -366,6 +377,8 @@ production:
           database_name: timor-prod
         validation:
           database_name: validation-prod
+        dashboard:
+          database_name: portal-prod
 
   pds_storage:
     google:

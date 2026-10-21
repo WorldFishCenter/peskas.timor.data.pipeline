@@ -69,7 +69,9 @@ jobs:
           push: true
           build-args: |
             COASTS_REF=${{ steps.coasts.outputs.ref }}
-          tags: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+          # Only main pushes :latest, which the scheduled workflows run; other
+          # branches push and run :dev, so they cannot change what those run.
+          tags: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
           cache-from: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache
           cache-to: type=registry,ref=ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:buildcache,mode=max
 
@@ -78,7 +80,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +96,7 @@ jobs:
     needs: [ingest-landings]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -110,7 +112,7 @@ jobs:
     needs: [preprocess-landings]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -128,7 +130,7 @@ jobs:
     needs: [merge-landings]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -162,7 +164,7 @@ jobs:
     needs: [merge-landings, validate-landings]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -180,7 +182,7 @@ jobs:
     needs: build-container
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -198,7 +200,7 @@ jobs:
     needs: [ingest-pds-data]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -223,7 +225,7 @@ jobs:
     needs: preprocess-pds-data
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -248,7 +250,7 @@ jobs:
     needs: [export-api, preprocess-pds-data]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -270,7 +272,7 @@ jobs:
     needs: summarize-model-data
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -294,7 +296,7 @@ jobs:
     needs: [validate-landings, validate-pds-data]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -315,7 +317,7 @@ jobs:
     needs: [merge-trips]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -331,7 +333,7 @@ jobs:
     needs: [merge-trips, model-indicators]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:latest
+      image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

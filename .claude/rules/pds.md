@@ -20,11 +20,11 @@ needs is in `conf$pds`.
 grid summaries that `coasts::summarize_data()` reads for the **coasts portal**
 (`grid_summaries`). `peskas.timor.portal.v2` does not use them.
 
-`describe_pds_tracks()` is the one PDS product coasts has no equivalent for —
-per-trip descriptors (`start_end_distance`, `outliers_proportion`,
-`timetrace_dispersion`, start/end coordinates) that `validate_pds_trips()`
-joins on. `coasts::preprocess_pds_tracks()` emits spatial grid summaries
-instead.
+`describe_pds_tracks()` writes per-trip descriptors (`start_end_distance`,
+`outliers_proportion`, `timetrace_dispersion`, start/end coordinates) that
+`validate_pds_trips()` joins on. coasts has exported the same function since
+4.18.0, so Timor's copy is a duplicate still called by `data-pipeline.yaml`;
+switching to `coasts::describe_pds_tracks()` is pending a check on real data.
 
 ## Device selection is a denylist, on purpose
 

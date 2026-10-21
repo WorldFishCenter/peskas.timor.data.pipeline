@@ -144,9 +144,10 @@ profiles:
 
 - **`default`**: development. It uses the `-dev` buckets (`timor-dev`,
   `pds-timor-dev`, `public-timor-dev`, `peskas-api-dev`), so the whole
-  pipeline can run without touching anything the portal reads.
-  `.Renviron` sets it for local sessions, and every push to a branch
-  other than `main` runs it in CI.
+  pipeline can run without touching anything the portal reads. A local
+  `.Renviron` sets it for local sessions (it is gitignored, so create it
+  with `R_CONFIG_ACTIVE=default`), and every push to a branch other than
+  `main` runs it in CI.
 - **`production`**: the same code against the production buckets. The
   workflow selects it only on `main`. Never write to a production bucket
   from a local session or an ad-hoc script.
@@ -187,8 +188,9 @@ every push; read it for the exact `needs:` graph. In outline:
 steps that put Timor-Leste on Peskas Coasts; neither feeds
 timor.peskas.org.
 
-Three scheduled workflows run `main`’s code in the container the
-pipeline builds: `data-report.yaml` (Mondays and Thursdays),
+Three scheduled workflows run `main`’s code in the `:latest` container,
+which only a run on `main` pushes (other branches push `:dev`):
+`data-report.yaml` (Mondays and Thursdays),
 `validation-email-sender.yaml` (Mondays) and `dataverse-upload.yaml`
 (first of each month).
 
