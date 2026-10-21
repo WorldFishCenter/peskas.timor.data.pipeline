@@ -31,7 +31,7 @@
 
     <a class="navbar-brand me-2" href="index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -161,7 +161,7 @@
 <p><a href="inst/config.yml"><code>inst/config.yml</code></a>, read by <code><a href="reference/read_config.html">read_config()</a></code>, has two profiles:</p>
 <ul>
 <li>
-<strong><code>default</code></strong>: development. It uses the <code>-dev</code> buckets (<code>timor-dev</code>, <code>pds-timor-dev</code>, <code>public-timor-dev</code>, <code>peskas-api-dev</code>), so the whole pipeline can run without touching anything the portal reads. <code>.Renviron</code> sets it for local sessions, and every push to a branch other than <code>main</code> runs it in CI.</li>
+<strong><code>default</code></strong>: development. It uses the <code>-dev</code> buckets (<code>timor-dev</code>, <code>pds-timor-dev</code>, <code>public-timor-dev</code>, <code>peskas-api-dev</code>), so the whole pipeline can run without touching anything the portal reads. A local <code>.Renviron</code> sets it for local sessions (it is gitignored, so create it with <code>R_CONFIG_ACTIVE=default</code>), and every push to a branch other than <code>main</code> runs it in CI.</li>
 <li>
 <strong><code>production</code></strong>: the same code against the production buckets. The workflow selects it only on <code>main</code>. Never write to a production bucket from a local session or an ad-hoc script.</li>
 </ul>
@@ -187,7 +187,7 @@
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a></span>
 <span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>export<span class="sc">-</span>api <span class="sc">+</span> preprocess<span class="sc">-</span>pds<span class="sc">-</span>data <span class="ot">-&gt;</span> summarize<span class="sc">-</span>model<span class="sc">-</span>data <span class="ot">-&gt;</span> export<span class="sc">-</span>surveys<span class="sc">-</span>portal</span></code></pre></div>
 <p><code>export-trips</code> writes the files timor.peskas.org reads. <code>summarize-model-data</code> and <code>export-surveys-portal</code> are the shared coasts steps that put Timor-Leste on Peskas Coasts; neither feeds timor.peskas.org.</p>
-<p>Three scheduled workflows run <code>main</code>’s code in the container the pipeline builds: <code>data-report.yaml</code> (Mondays and Thursdays), <code>validation-email-sender.yaml</code> (Mondays) and <code>dataverse-upload.yaml</code> (first of each month).</p>
+<p>Three scheduled workflows run <code>main</code>’s code in the <code>:latest</code> container, which only a run on <code>main</code> pushes (other branches push <code>:dev</code>): <code>data-report.yaml</code> (Mondays and Thursdays), <code>validation-email-sender.yaml</code> (Mondays) and <code>dataverse-upload.yaml</code> (first of each month).</p>
 <p>Files the jobs write are versioned as <code>&lt;prefix&gt;__&lt;YYYYMMDDHHMMSS&gt;_&lt;git-sha7&gt;__.&lt;ext&gt;</code>, so each one traces back to a single run.</p>
 </div>
 <div class="section level3">

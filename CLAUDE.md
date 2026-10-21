@@ -37,8 +37,9 @@ build must pass it; the workflow passes the latest coasts release.
   the Dataverse token and the blastula credentials. Pass
   `log_threshold = logger::INFO` to every `coasts::` workflow call.
 - **Never write to a production bucket** from an ad-hoc script or a
-  local session. `.Renviron` pins `R_CONFIG_ACTIVE=default` and
-  overrides the command line.
+  local session. A local `.Renviron` with `R_CONFIG_ACTIVE=default`
+  overrides the command line; it is gitignored, so a fresh clone has
+  none until you create it.
 - **Config variables are named `conf`**, matching the other pipelines.
   `pars` was the old name; do not reintroduce it.
 - **Never delete an assertion to make a change pass.** Update the
