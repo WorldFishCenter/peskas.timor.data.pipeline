@@ -1,3 +1,16 @@
+# peskas.timor.data.pipeline 5.6.1
+
+## One scientific name per species code
+
+* **FIXED**
+
+`MZZ` went out under three names at once — *Actinopterygii*, *Osteichthyes* and
+none at all — because each form version kept whatever name it stored, and the
+frozen v1 snapshot can never pick up a later correction. The merged landings now
+take the name from the taxa table for every row, so a code has one name
+whatever vintage it came from. 8,935 rows change, all of them `MZZ`, and no
+other code is touched.
+
 # peskas.timor.data.pipeline 5.6.0
 
 ## Emperors, parrotfish and groupers get their own catch estimates

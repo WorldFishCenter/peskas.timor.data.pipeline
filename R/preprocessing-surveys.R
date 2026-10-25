@@ -153,6 +153,15 @@ merge_landings <- function(log_threshold = logger::DEBUG) {
   # here as well. `any_of()` because that snapshot predates any later column.
   merged <- dplyr::select(merged, dplyr::any_of(landing_cols()))
 
+  # One name per code, taken from the taxa table rather than from whatever each
+  # vintage stored: the frozen v1 snapshot cannot pick up a later correction.
+  taxa <- survey_labels(conf)$taxa %>%
+    dplyr::distinct(.data$catch_taxon, .data$scientific_name)
+  merged <- merged %>%
+    dplyr::select(-"scientific_name") %>%
+    dplyr::left_join(taxa, by = "catch_taxon") %>%
+    dplyr::relocate("scientific_name", .after = "catch_taxon")
+
   logger::log_info(
     "Merged {dplyr::n_distinct(merged$submission_id)} submissions, ",
     "{nrow(merged)} catch rows, {ncol(merged)} columns"
