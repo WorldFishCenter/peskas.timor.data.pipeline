@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,14 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.6.1" id="peskastimordatapipeline-561">peskas.timor.data.pipeline 5.6.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-561"></a></h2>
+<div class="section level3">
+<h3 id="one-scientific-name-per-species-code-5-6-1">One scientific name per species code<a class="anchor" aria-label="anchor" href="#one-scientific-name-per-species-code-5-6-1"></a></h3>
+<ul><li><strong>FIXED</strong></li>
+</ul><p><code>MZZ</code> went out under three names at once — <em>Actinopterygii</em>, <em>Osteichthyes</em> and none at all — because each form version kept whatever name it stored, and the frozen v1 snapshot can never pick up a later correction. The merged landings now take the name from the taxa table for every row, so a code has one name whatever vintage it came from. 8,935 rows change, all of them <code>MZZ</code>, and no other code is touched.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.6.0" id="peskastimordatapipeline-560">peskas.timor.data.pipeline 5.6.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-560"></a></h2>
 <div class="section level3">
