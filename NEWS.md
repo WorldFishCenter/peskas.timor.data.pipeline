@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 5.7.1
+
+## Catch outcome goes out as a number
+
+* **FIXED** Whether a trip caught anything is published as a number, as the API describes it, instead of text.
+
 # peskas.timor.data.pipeline 5.7.0
 
 ## Timor's estimates reach the API

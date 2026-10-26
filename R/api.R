@@ -303,7 +303,7 @@ api_trips <- function(landings, conf) {
       .data$gear,
       .data$vessel_type,
       .data$catch_habitat,
-      .data$catch_outcome,
+      catch_outcome = as.integer(.data$catch_outcome),
       n_catch = as.integer(.data$n_catch),
       .data$catch_taxon,
       .data$scientific_name,
