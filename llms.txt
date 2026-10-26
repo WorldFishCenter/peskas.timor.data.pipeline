@@ -295,6 +295,8 @@ from `.github/workflows/data-pipeline.yaml` by name.
   : Extract per-trip descriptors from PDS tracks
 - [`estimate_fishery_indicators()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/estimate_fishery_indicators.md)
   : Estimate fisheries indicators
+- [`export_api_district_months()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_district_months.md)
+  : Export Timor's district-months to the cross-country API bucket
 - [`export_api_raw()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_raw.md)
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
@@ -433,6 +435,8 @@ reports.
 
 - [`check_portal_contract()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/check_portal_contract.md)
   : Check the portal JSON contract
+- [`export_api_district_months()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_district_months.md)
+  : Export Timor's district-months to the cross-country API bucket
 - [`export_api_raw()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_raw.md)
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)

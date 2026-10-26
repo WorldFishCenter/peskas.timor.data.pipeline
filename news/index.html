@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,16 @@
       <small>Source: <a href="https://github.com/WorldFishCenter/peskas.timor.data.pipeline/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="5.7.0" id="peskastimordatapipeline-570">peskas.timor.data.pipeline 5.7.0<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-570"></a></h2>
+<div class="section level3">
+<h3 id="timors-estimates-reach-the-api-5-7-0">Timor’s estimates reach the API<a class="anchor" aria-label="anchor" href="#timors-estimates-reach-the-api-5-7-0"></a></h3>
+<ul><li>
+<strong>FIXED</strong> The API’s district-months for Timor had no estimates of trips, catch or revenue: they came from the coasts GPS tracker method, which never raised Timor’s fleet. They now come from this pipeline’s own model, the Timor portal’s, so every month since January 2018 has them, adding up to the national totals the portal publishes.</li>
+<li>
+<strong>CHANGED</strong> Timor’s district-months are now one row per reporting region and month (the twelve municipalities, Atauro on its own), the unit its census counts boats in, instead of one per administrative post. The survey figures on each row are its posts’ put together, each weighted by its surveyed trips. <code>sampling_rate</code> and the FAO ARTFISH columns stay empty.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="5.6.1" id="peskastimordatapipeline-561">peskas.timor.data.pipeline 5.6.1<a class="anchor" aria-label="anchor" href="#peskastimordatapipeline-561"></a></h2>
 <div class="section level3">
