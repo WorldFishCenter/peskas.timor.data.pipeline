@@ -269,7 +269,7 @@ jobs:
   # is not involved — that is `export-trips`, which writes `portal-*.json`.
   export-surveys-portal:
     name: Export aggregated data
-    needs: summarize-model-data
+    needs: [summarize-model-data, model-indicators]
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/worldfishcenter/peskas.timor.data.pipeline/r-runner-peskas-timor:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
@@ -282,6 +282,11 @@ jobs:
         run: echo "R_CONFIG_ACTIVE=production" >> $GITHUB_ENV
       - name: Call export_portal()
         run: Rscript -e 'coasts::export_portal(log_threshold = logger::INFO, package = "peskas.timor.data.pipeline")'
+      # Replaces the per-post district-months export_portal() just wrote with
+      # per-region rows and this pipeline's own estimates. The API serves the
+      # newest file, so this must run after export_portal(), in the same job.
+      - name: Call export_api_district_months()
+        run: Rscript -e 'peskas.timor.data.pipeline::export_api_district_months(log_threshold = logger::INFO)'
       # Every way this export can fail renders as polygons with no data on the
       # coasts portal, which is what it was added to fix. `run_test_file()` sets
       # no exit status, hence the explicit quit.

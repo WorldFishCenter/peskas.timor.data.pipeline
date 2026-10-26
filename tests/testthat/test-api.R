@@ -127,3 +127,56 @@ test_that("nesting the validated catch ignores the columns the API added", {
   )
   expect_equal(nrow(nested$landing_catch[[1]]), 1L)
 })
+
+# Two posts of Baucau, Atauro and another post of Dili, in one month.
+districts <- tidyr::tibble(
+  gaul_1_code = c("3086", "3086", "3089", "3089"),
+  gaul_1_name = c("Baucau", "Baucau", "Dili", "Dili"),
+  gaul_2_code = c("131687", "131690", "131705", "131706"),
+  gaul_2_name = c("Baucau", "Vemasse", "Atauro", "Cristo Rei"),
+  date = as.POSIXct("2026-01-01", tz = "UTC"),
+  n_submissions = c(30L, 10L, 12L, NA),
+  n_fishers = c(2, 4, 3, NA),
+  trip_duration_hrs = c(5, 5, 6, NA),
+  mean_catch_kg = c(20, 40, 15, NaN),
+  mean_catch_price = c(60, 100, 50, NaN),
+  mean_price_kg = 3,
+  mean_cpue = 1,
+  mean_rpue = 2
+)
+model_month <- function(boats) {
+  list(aggregated = tidyr::tibble(
+    # As the model stores it: midnight in Dili, the day before in UTC.
+    landing_period = as.POSIXct("2026-01-01", tz = "Asia/Dili"),
+    n_landings_per_boat = 10, n_boats = boats, catch = 5000, catch_price = 1e4
+  ))
+}
+municipal <- list(
+  Baucau = model_month(433),
+  Atauro = model_month(348),
+  Dili = model_month(365)
+)
+
+test_that("district-months are one row per reporting region, in 23 columns", {
+  out <- peskas.timor.data.pipeline:::api_district_months(districts, municipal)
+
+  expect_equal(names(out), c(
+    "country", "month", "gaul_1_code", "gaul_1_name", "gaul_2_code",
+    "gaul_2_name", "n_submissions", "mean_n_fishers", "mean_trip_duration_hrs",
+    "mean_catch_kg", "mean_catch_price", "mean_price_kg", "mean_cpue",
+    "mean_rpue", "estimated_fishing_trips", "estimated_catch_tn",
+    "estimated_revenue", "sampling_rate", "estimated_fishing_trips_fao",
+    "estimated_catch_tn_fao", "estimated_revenue_fao",
+    "relative_error_catch_fao", "relative_error_revenue_fao"
+  ))
+  # Baucau, then Dili's Atauro apart from the rest of Dili.
+  expect_equal(out$gaul_1_name, c("Baucau", "Dili", "Dili"))
+  expect_equal(out$gaul_2_name, c(NA, "Atauro", NA))
+  expect_equal(out$n_submissions, c(40L, 12L, 0L))
+  # Each post weighted by its surveyed trips.
+  expect_equal(out$mean_catch_kg[1], (30 * 20 + 10 * 40) / 40)
+  # A region with no surveyed trip has no means, but keeps the model's figures.
+  expect_true(is.na(out$mean_catch_kg[3]))
+  expect_equal(out$estimated_fishing_trips, c(4330, 3480, 3650))
+  expect_equal(out$estimated_catch_tn, c(5, 5, 5))
+})

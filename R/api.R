@@ -77,6 +77,144 @@ export_api_validated <- function(log_threshold = logger::DEBUG) {
   upload_api_trips(api_trips(landings, conf), conf$api$trips$validated, conf)
 }
 
+#' Export Timor's district-months to the cross-country API bucket
+#'
+#' Writes the API's district-months (`timor/aggregated/district-months`) with
+#' one row per reporting region and month, in place of the per-post rows
+#' `coasts::export_portal()` writes just before it: Timor counts its boats, and
+#' this pipeline models its catch, per municipality. The survey figures are the
+#' posts' (`coasts::summarize_data()`) put together per region, each post
+#' weighted by its surveyed trips. The estimates are this pipeline's own
+#' ([estimate_fishery_indicators()]), the Timor portal's. Same 23 columns as the
+#' other countries; `gaul_2_*` is filled on Atauro only, and `sampling_rate` and
+#' the FAO ARTFISH columns stay empty.
+#'
+#' @inheritParams export_api_raw
+#' @return no outputs. This function is used for its side effects.
+#' @keywords workflow export
+#' @export
+export_api_district_months <- function(log_threshold = logger::DEBUG) {
+  logger::log_threshold(log_threshold)
+  conf <- read_config()
+
+  districts <- coasts::download_parquet_from_cloud(
+    prefix = paste0(conf$surveys$summaries$file_prefix, "_districts_summaries"),
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options
+  )
+  months <- api_district_months(districts, get_models(conf)$municipal)
+
+  filename <- add_version("district-months", extension = "parquet")
+  arrow::write_parquet(
+    months,
+    sink = filename,
+    compression = "lz4",
+    compression_level = 12
+  )
+  cloud_path <- file.path(
+    dirname(conf$api$trips$validated$cloud_path),
+    "aggregated",
+    filename
+  )
+  logger::log_info("Uploading {cloud_path} to cloud storage")
+  coasts::upload_cloud_file(
+    file = filename,
+    provider = conf$storage$google$key,
+    options = conf$storage$google$options_api,
+    name = cloud_path
+  )
+  file.remove(filename)
+  invisible(NULL)
+}
+
+# The posts' survey summaries put together per reporting region and month,
+# beside the model's municipal estimates (`get_models()$municipal`).
+api_district_months <- function(districts, municipal) {
+  estimates <- purrr::imap_dfr(municipal, function(x, region) {
+    dplyr::transmute(
+      x$aggregated,
+      reporting_region = region,
+      # Months are midnight in Dili; as.Date() would shift them to UTC.
+      month = lubridate::as_date(.data$landing_period),
+      estimated_fishing_trips = .data$n_landings_per_boat * .data$n_boats,
+      estimated_catch_tn = .data$catch / 1000,
+      estimated_revenue = .data$catch_price
+    )
+  })
+  # API name = summaries name.
+  means <- c(
+    mean_n_fishers = "n_fishers",
+    mean_trip_duration_hrs = "trip_duration_hrs",
+    mean_catch_kg = "mean_catch_kg",
+    mean_catch_price = "mean_catch_price",
+    mean_price_kg = "mean_price_kg",
+    mean_cpue = "mean_cpue",
+    mean_rpue = "mean_rpue"
+  )
+
+  districts |>
+    dplyr::filter(!is.na(.data$gaul_2_code)) |>
+    frame_reporting_region() |>
+    dplyr::mutate(
+      month = lubridate::as_date(.data$date),
+      n_submissions = dplyr::coalesce(.data$n_submissions, 0L),
+      # Atauro is a post of Dili but a region of its own.
+      gaul_2_code = dplyr::if_else(
+        .data$reporting_region == "Atauro",
+        .data$gaul_2_code,
+        NA
+      ),
+      gaul_2_name = dplyr::if_else(
+        .data$reporting_region == "Atauro",
+        .data$gaul_2_name,
+        NA
+      )
+    ) |>
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::all_of(means),
+        ~ stats::weighted.mean(.x, .data$n_submissions, na.rm = TRUE)
+      ),
+      n_submissions = sum(.data$n_submissions),
+      .by = c(
+        "reporting_region",
+        "gaul_1_code",
+        "gaul_1_name",
+        "gaul_2_code",
+        "gaul_2_name",
+        "month"
+      )
+    ) |>
+    dplyr::left_join(estimates, by = c("reporting_region", "month")) |>
+    dplyr::mutate(
+      # A mean over no surveyed trips is NaN; the API reads it as empty.
+      dplyr::across(dplyr::where(is.numeric), ~ replace(.x, is.nan(.x), NA)),
+      country = "timor",
+      sampling_rate = NA_real_,
+      estimated_fishing_trips_fao = NA_real_,
+      estimated_catch_tn_fao = NA_real_,
+      estimated_revenue_fao = NA_real_,
+      relative_error_catch_fao = NA_real_,
+      relative_error_revenue_fao = NA_real_
+    ) |>
+    dplyr::select(
+      "country",
+      "month",
+      "gaul_1_code",
+      "gaul_1_name",
+      "gaul_2_code",
+      "gaul_2_name",
+      "n_submissions",
+      dplyr::all_of(names(means)),
+      "estimated_fishing_trips",
+      "estimated_catch_tn",
+      "estimated_revenue",
+      "sampling_rate",
+      dplyr::ends_with("_fao")
+    ) |>
+    dplyr::arrange(.data$gaul_1_code, .data$gaul_2_code, .data$month)
+}
+
 # Project a long catch table (standard names, `catch_kg` in kilos) onto the
 # 23 API columns. See [export_api_raw()] for the schema and the three decisions
 # behind it.

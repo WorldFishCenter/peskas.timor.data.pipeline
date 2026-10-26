@@ -1,3 +1,10 @@
+# peskas.timor.data.pipeline 5.7.0
+
+## Timor's estimates reach the API
+
+* **FIXED** The API's district-months for Timor had no estimates of trips, catch or revenue: they came from the coasts GPS tracker method, which never raised Timor's fleet. They now come from this pipeline's own model, the Timor portal's, so every month since January 2018 has them, adding up to the national totals the portal publishes.
+* **CHANGED** Timor's district-months are now one row per reporting region and month (the twelve municipalities, Atauro on its own), the unit its census counts boats in, instead of one per administrative post. The survey figures on each row are its posts' put together, each weighted by its surveyed trips. `sampling_rate` and the FAO ARTFISH columns stay empty.
+
 # peskas.timor.data.pipeline 5.6.1
 
 ## One scientific name per species code
