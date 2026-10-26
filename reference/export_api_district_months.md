@@ -11,8 +11,9 @@ put together per region, each post weighted by its surveyed trips. The
 estimates are this pipeline's own
 ([`estimate_fishery_indicators()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/estimate_fishery_indicators.md)),
 the Timor portal's. Same 23 columns as the other countries; `gaul_2_*`
-is filled on Atauro only, and `sampling_rate` and the FAO ARTFISH
-columns stay empty.
+carries the reporting region, which for Timor is a GAUL level 1
+municipality (Atauro keeps its own level 2 code), and `sampling_rate`
+and the FAO ARTFISH columns stay empty.
 
 ## Usage
 

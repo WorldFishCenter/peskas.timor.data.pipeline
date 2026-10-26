@@ -6,16 +6,18 @@ this pipeline models its catch, per municipality. The survey figures are the
 posts' (coasts::summarize_data()) put together per region, each post
 weighted by its surveyed trips. The estimates are this pipeline's own
 (estimate_fishery_indicators()), the Timor portal's. Same 23 columns as the
-other countries; gaul_2_* is filled on Atauro only, and sampling_rate and
-the FAO ARTFISH columns stay empty."><meta property="og:description" content="Writes the API's district-months (timor/aggregated/district-months) with
+other countries; gaul_2_* carries the reporting region, which for Timor is a
+GAUL level 1 municipality (Atauro keeps its own level 2 code), and
+sampling_rate and the FAO ARTFISH columns stay empty."><meta property="og:description" content="Writes the API's district-months (timor/aggregated/district-months) with
 one row per reporting region and month, in place of the per-post rows
 coasts::export_portal() writes just before it: Timor counts its boats, and
 this pipeline models its catch, per municipality. The survey figures are the
 posts' (coasts::summarize_data()) put together per region, each post
 weighted by its surveyed trips. The estimates are this pipeline's own
 (estimate_fishery_indicators()), the Timor portal's. Same 23 columns as the
-other countries; gaul_2_* is filled on Atauro only, and sampling_rate and
-the FAO ARTFISH columns stay empty."><meta property="og:image" content="https://worldfishcenter.github.io/peskas.timor.data.pipeline/logo.png"></head><body>
+other countries; gaul_2_* carries the reporting region, which for Timor is a
+GAUL level 1 municipality (Atauro keeps its own level 2 code), and
+sampling_rate and the FAO ARTFISH columns stay empty."><meta property="og:image" content="https://worldfishcenter.github.io/peskas.timor.data.pipeline/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -23,7 +25,7 @@ the FAO ARTFISH columns stay empty."><meta property="og:image" content="https://
 
     <a class="navbar-brand me-2" href="../index.html">peskas.timor.data.pipeline</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,8 +58,9 @@ this pipeline models its catch, per municipality. The survey figures are the
 posts' (<code><a href="https://rdrr.io/pkg/coasts/man/summarize_data.html" class="external-link">coasts::summarize_data()</a></code>) put together per region, each post
 weighted by its surveyed trips. The estimates are this pipeline's own
 (<code><a href="estimate_fishery_indicators.html">estimate_fishery_indicators()</a></code>), the Timor portal's. Same 23 columns as the
-other countries; <code>gaul_2_*</code> is filled on Atauro only, and <code>sampling_rate</code> and
-the FAO ARTFISH columns stay empty.</p>
+other countries; <code>gaul_2_*</code> carries the reporting region, which for Timor is a
+GAUL level 1 municipality (Atauro keeps its own level 2 code), and
+<code>sampling_rate</code> and the FAO ARTFISH columns stay empty.</p>
     </div>
 
     <div class="section level2">
