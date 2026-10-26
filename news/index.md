@@ -1,5 +1,14 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.8.1
+
+### District codes go back to being empty where there is no district
+
+- **FIXED** A Timor region covers several districts, so it has no
+  district code of its own. The previous release put the region’s own
+  code there, which made the file claim a district that does not exist.
+  It is empty again, and Timor is queried by region.
+
 ## peskas.timor.data.pipeline 5.8.0
 
 ### Timor’s district-months can be queried by district
