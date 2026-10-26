@@ -171,7 +171,9 @@ test_that("district-months are one row per reporting region, in 23 columns", {
   ))
   # Baucau, then Dili's Atauro apart from the rest of Dili.
   expect_equal(out$gaul_1_name, c("Baucau", "Dili", "Dili"))
-  expect_equal(out$gaul_2_name, c(NA, "Atauro", NA))
+  # gaul_2 carries the region, except Atauro which has a level 2 code of its own.
+  expect_equal(out$gaul_2_name, c("Baucau", "Atauro", "Dili"))
+  expect_equal(out$gaul_2_code, c("3086", "131705", "3089"))
   expect_equal(out$n_submissions, c(40L, 12L, 0L))
   # Each post weighted by its surveyed trips.
   expect_equal(out$mean_catch_kg[1], (30 * 20 + 10 * 40) / 40)
