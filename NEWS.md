@@ -1,7 +1,8 @@
-# peskas.timor.data.pipeline 5.7.1
+# peskas.timor.data.pipeline 5.8.0
 
-## Catch outcome goes out as a number
+## Timor's district-months can be queried by district
 
+* **FIXED** Every row of the API's district-months now carries a district code, so Timor can be filtered like the other three countries. The code is the municipality's, the level Timor reports at.
 * **FIXED** Whether a trip caught anything is published as a number, as the API describes it, instead of text.
 
 # peskas.timor.data.pipeline 5.7.0

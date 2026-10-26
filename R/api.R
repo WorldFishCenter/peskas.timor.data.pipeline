@@ -86,8 +86,9 @@ export_api_validated <- function(log_threshold = logger::DEBUG) {
 #' posts' (`coasts::summarize_data()`) put together per region, each post
 #' weighted by its surveyed trips. The estimates are this pipeline's own
 #' ([estimate_fishery_indicators()]), the Timor portal's. Same 23 columns as the
-#' other countries; `gaul_2_*` is filled on Atauro only, and `sampling_rate` and
-#' the FAO ARTFISH columns stay empty.
+#' other countries; `gaul_2_*` carries the reporting region, which for Timor is a
+#' GAUL level 1 municipality (Atauro keeps its own level 2 code), and
+#' `sampling_rate` and the FAO ARTFISH columns stay empty.
 #'
 #' @inheritParams export_api_raw
 #' @return no outputs. This function is used for its side effects.
@@ -158,16 +159,17 @@ api_district_months <- function(districts, municipal) {
     dplyr::mutate(
       month = lubridate::as_date(.data$date),
       n_submissions = dplyr::coalesce(.data$n_submissions, 0L),
-      # Atauro is a post of Dili but a region of its own.
+      # gaul_2 carries the reporting region so the API can filter Timor like the
+      # other three. Atauro is a post of Dili, so it has a real level 2 code.
       gaul_2_code = dplyr::if_else(
         .data$reporting_region == "Atauro",
         .data$gaul_2_code,
-        NA
+        .data$gaul_1_code
       ),
       gaul_2_name = dplyr::if_else(
         .data$reporting_region == "Atauro",
         .data$gaul_2_name,
-        NA
+        .data$gaul_1_name
       )
     ) |>
     dplyr::summarise(

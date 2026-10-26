@@ -22,8 +22,9 @@ this pipeline models its catch, per municipality. The survey figures are the
 posts' (\code{coasts::summarize_data()}) put together per region, each post
 weighted by its surveyed trips. The estimates are this pipeline's own
 (\code{\link[=estimate_fishery_indicators]{estimate_fishery_indicators()}}), the Timor portal's. Same 23 columns as the
-other countries; \verb{gaul_2_*} is filled on Atauro only, and \code{sampling_rate} and
-the FAO ARTFISH columns stay empty.
+other countries; \verb{gaul_2_*} carries the reporting region, which for Timor is a
+GAUL level 1 municipality (Atauro keeps its own level 2 code), and
+\code{sampling_rate} and the FAO ARTFISH columns stay empty.
 }
 \keyword{export}
 \keyword{workflow}

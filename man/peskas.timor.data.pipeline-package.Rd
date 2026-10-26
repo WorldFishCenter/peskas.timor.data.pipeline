@@ -6,6 +6,8 @@
 \alias{peskas.timor.data.pipeline-package}
 \title{peskas.timor.data.pipeline: Functions to Implement the Timor Small Scale Fisheries Data Pipeline}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 This package implements the data and modelling pipelines underpinning the Peskas system.
 }
 \seealso{
