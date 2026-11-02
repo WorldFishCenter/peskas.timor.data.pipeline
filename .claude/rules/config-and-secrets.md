@@ -82,7 +82,6 @@ JSON-valued entries must be minified onto one line — dotenv parses line by lin
 | `MONGODB_CONNECTION_STRING_VALIDATION` | `MONGODB_CONNECTION_STRING_VALIDATION` | absent → `validate_landings()` warns and only the GCS snapshot is written |
 | `PDS_TOKEN` / `PDS_SECRET` | `PESKAS_PDS_TOKEN` / `PESKAS_PDS_SECRET` | |
 | `DATAVERSE_TOKEN` | `PESKAS_DATAVERSE_TOKEN` | |
-| `PESKAS_GMAIL_KEY` | same | serialized blastula credentials JSON, **not** a bare app password |
 | `AIRTABLE_TOKEN` | same | the **bare** `pat…` — coasts prepends `Bearer `. Needs frame-base read + `schema.bases:read` |
 | `AIRTABLE_BASE_ID_FRAME` | same | PESKAS \| FRAME, `appMMEJYlJdfSJEjm` |
 

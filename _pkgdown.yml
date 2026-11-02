@@ -63,7 +63,7 @@ reference:
 - title: Export
   desc: >
     Publication of processed and analysed fisheries data — the portal JSON
-    contract, the cross-country API parquet, Dataverse and the emailed reports.
+    contract, the cross-country API parquet and Dataverse.
   contents:
   - has_keyword("export")
 

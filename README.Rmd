@@ -21,7 +21,7 @@ This pipeline collects, checks and models small-scale fisheries data for Timor-L
 
 ## What it produces
 
-- Checks every landing survey and flags records that look wrong. The flags go to the Peskas Management Platform, and a weekly email lists the submissions with problems.
+- Checks every landing survey and flags records that look wrong. The flags go to the Peskas Management Platform.
 - Estimates the weight of each catch and the nutrients it provides.
 - Estimates monthly catch and revenue for each municipality and for the whole country.
 - Publishes the data files that timor.peskas.org reads, and a [data report](https://storage.googleapis.com/public-timor/data_report.html) twice a week.
@@ -114,7 +114,7 @@ export-api + preprocess-pds-data -> summarize-model-data -> export-surveys-porta
 
 `export-trips` writes the files timor.peskas.org reads. `summarize-model-data` and `export-surveys-portal` are the shared coasts steps that put Timor-Leste on Peskas Coasts; neither feeds timor.peskas.org.
 
-Three scheduled workflows run `main`'s code in the `:latest` container, which only a run on `main` pushes (other branches push `:dev`): `data-report.yaml` (Mondays and Thursdays), `validation-email-sender.yaml` (Mondays) and `dataverse-upload.yaml` (first of each month).
+Two scheduled workflows run `main`'s code in the `:latest` container, which only a run on `main` pushes (other branches push `:dev`): `data-report.yaml` (Mondays and Thursdays) and `dataverse-upload.yaml` (first of each month).
 
 Files the jobs write are versioned as `<prefix>__<YYYYMMDDHHMMSS>_<git-sha7>__.<ext>`, so each one traces back to a single run.
 

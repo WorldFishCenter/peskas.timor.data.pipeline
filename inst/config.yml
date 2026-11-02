@@ -320,9 +320,6 @@ default:
     frame:
       base_id: !expr Sys.getenv('AIRTABLE_BASE_ID_FRAME')
 
-  peskas_mail:
-    key: !expr Sys.getenv("PESKAS_GMAIL_KEY")
-
   # ===========================================================================
   # VALIDATION — thresholds and flag sink
   # ===========================================================================
@@ -347,8 +344,8 @@ default:
         k: 1.5
       fuel:
         k: 3
-    # The alert dictionary, read by `send_validation_mail()`. The codes are the
-    # contract — see the table at the top of `R/validation-functions.R`.
+    # The alert dictionary. The codes are the contract — see the table at the
+    # top of `R/validation-functions.R`.
     #
     # Codes 7, 8, 9 and 13/15/18 have no live producer: 7 and 9 were retired
     # thresholds, 8 is covered by taking the absolute value, and 13/15/18 are

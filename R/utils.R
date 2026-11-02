@@ -128,9 +128,9 @@ read_config <- function() {
   logger::log_info("Using configutation: {attr(conf, 'config')}")
   # Deliberately not dumping `conf`. Workflow functions default to
   # `log_threshold = logger::DEBUG`, and the resolved config carries the
-  # service-account private key, the Airtable PAT, the Dataverse token and the
-  # blastula credentials. GitHub Actions only masks byte-exact matches of a
-  # registered secret, which the re-serialised JSON is not.
+  # service-account private key, the Airtable PAT and the Dataverse token.
+  # GitHub Actions only masks byte-exact matches of a registered secret, which
+  # the re-serialised JSON is not.
   logger::log_debug("Configuration keys: {paste(names(conf), collapse = ', ')}")
 
   conf

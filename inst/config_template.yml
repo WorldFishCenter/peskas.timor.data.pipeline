@@ -43,7 +43,7 @@
 #   b. An extra top-level `public_storage` block for that bucket. No other
 #      country has one.
 #   c. Extra Timor-only top-level blocks: `models`, `export`,
-#      `export_dataverse`, `report`, `peskas_mail`, `merged_trips`.
+#      `export_dataverse`, `report`, `merged_trips`.
 #   d. `validation` carries Timor's much deeper threshold set (mesh, gleaners,
 #      fuel, survey_time, cook_dist, pds_trips, ...) rather than the
 #      template's four `k_*` scalars.
@@ -350,7 +350,6 @@ default:
   # export            public-file prefix for the Dataverse/legacy outputs
   # export_dataverse  Harvard Dataverse collection, token and the dataset's DOI
   # report            Rmd report artefacts
-  # peskas_mail       blastula credentials for the validation email
   #
   # Full definitions in `config.yml`.
 

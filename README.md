@@ -28,8 +28,7 @@ researchers and the public. It runs automatically every two days.
 ## What it produces
 
 - Checks every landing survey and flags records that look wrong. The
-  flags go to the Peskas Management Platform, and a weekly email lists
-  the submissions with problems.
+  flags go to the Peskas Management Platform.
 - Estimates the weight of each catch and the nutrients it provides.
 - Estimates monthly catch and revenue for each municipality and for the
   whole country.
@@ -188,10 +187,9 @@ every push; read it for the exact `needs:` graph. In outline:
 steps that put Timor-Leste on Peskas Coasts; neither feeds
 timor.peskas.org.
 
-Three scheduled workflows run `main`’s code in the `:latest` container,
+Two scheduled workflows run `main`’s code in the `:latest` container,
 which only a run on `main` pushes (other branches push `:dev`):
-`data-report.yaml` (Mondays and Thursdays),
-`validation-email-sender.yaml` (Mondays) and `dataverse-upload.yaml`
+`data-report.yaml` (Mondays and Thursdays) and `dataverse-upload.yaml`
 (first of each month).
 
 Files the jobs write are versioned as

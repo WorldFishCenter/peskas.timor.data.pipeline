@@ -1,7 +1,7 @@
 Package: peskas.timor.data.pipeline
 Title: Functions to Implement the Timor Small Scale Fisheries
     Data Pipeline
-Version: 5.8.1
+Version: 5.9.0
 Authors@R:
     c(person(given = "Lorenzo",
              family = "Longobardi",
@@ -30,7 +30,6 @@ Depends:
 Imports:
     Amelia,
     arrow,
-    blastula,
     coasts (>= 4.17.1),
     config,
     data.table,
@@ -45,7 +44,6 @@ Imports:
     httr,
     janitor,
     jsonlite,
-    kableExtra,
     logger,
     lubridate,
     magrittr,
