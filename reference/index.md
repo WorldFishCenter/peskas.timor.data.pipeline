@@ -147,8 +147,7 @@ block of `inst/config.yml`.
 ## Export
 
 Publication of processed and analysed fisheries data — the portal JSON
-contract, the cross-country API parquet, Dataverse and the emailed
-reports.
+contract, the cross-country API parquet and Dataverse.
 
 - [`check_portal_contract()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/check_portal_contract.md)
   : Check the portal JSON contract
@@ -158,8 +157,6 @@ reports.
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
   : Export the validated trips table to the cross-country API bucket
-- [`send_validation_mail()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.md)
-  : Send validation summary email
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
   : Publish the validated landings on Harvard Dataverse
 

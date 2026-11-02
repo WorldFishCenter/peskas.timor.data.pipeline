@@ -18,8 +18,7 @@ researchers and the public. It runs automatically every two days.
 ## What it produces
 
 - Checks every landing survey and flags records that look wrong. The
-  flags go to the Peskas Management Platform, and a weekly email lists
-  the submissions with problems.
+  flags go to the Peskas Management Platform.
 - Estimates the weight of each catch and the nutrients it provides.
 - Estimates monthly catch and revenue for each municipality and for the
   whole country.
@@ -187,10 +186,9 @@ export-api + preprocess-pds-data -> summarize-model-data -> export-surveys-porta
 steps that put Timor-Leste on Peskas Coasts; neither feeds
 timor.peskas.org.
 
-Three scheduled workflows run `main`’s code in the `:latest` container,
+Two scheduled workflows run `main`’s code in the `:latest` container,
 which only a run on `main` pushes (other branches push `:dev`):
-`data-report.yaml` (Mondays and Thursdays),
-`validation-email-sender.yaml` (Mondays) and `dataverse-upload.yaml`
+`data-report.yaml` (Mondays and Thursdays) and `dataverse-upload.yaml`
 (first of each month).
 
 Files the jobs write are versioned as
@@ -430,8 +428,7 @@ block of `inst/config.yml`.
 ## Export
 
 Publication of processed and analysed fisheries data — the portal JSON
-contract, the cross-country API parquet, Dataverse and the emailed
-reports.
+contract, the cross-country API parquet and Dataverse.
 
 - [`check_portal_contract()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/check_portal_contract.md)
   : Check the portal JSON contract
@@ -441,8 +438,6 @@ reports.
   : Export the raw trips table to the cross-country API bucket
 - [`export_api_validated()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/export_api_validated.md)
   : Export the validated trips table to the cross-country API bucket
-- [`send_validation_mail()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/send_validation_mail.md)
-  : Send validation summary email
 - [`upload_dataverse()`](https://worldfishcenter.github.io/peskas.timor.data.pipeline/reference/upload_dataverse.md)
   : Publish the validated landings on Harvard Dataverse
 

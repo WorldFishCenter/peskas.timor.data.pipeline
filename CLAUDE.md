@@ -5,7 +5,7 @@ pipeline: it ingests KoboToolbox landing surveys and Pelagic Data
 Systems (PDS) GPS tracker data, preprocesses and validates them, models
 fishery indicators, and publishes JSON to a public GCS bucket consumed
 by the live portal (`peskas.timor.portal.v2`). It also publishes to
-Harvard Dataverse and emails reports.
+Harvard Dataverse.
 
 Timor was the first Peskas pipeline and has since been aligned to the
 shared conventions. **Where it still differs, the difference is usually
@@ -33,9 +33,9 @@ build must pass it; the workflow passes the latest coasts release.
 
 - **Namespace every hub call `coasts::`.** Timor has no storage layer of
   its own and does not re-export those names.
-- The resolved config carries the service-account key, the Airtable PAT,
-  the Dataverse token and the blastula credentials. Pass
-  `log_threshold = logger::INFO` to every `coasts::` workflow call.
+- The resolved config carries the service-account key, the Airtable PAT
+  and the Dataverse token. Pass `log_threshold = logger::INFO` to every
+  `coasts::` workflow call.
 - **Never write to a production bucket** from an ad-hoc script or a
   local session. A local `.Renviron` with `R_CONFIG_ACTIVE=default`
   overrides the command line; it is gitignored, so a fresh clone has
@@ -85,9 +85,9 @@ the coasts portal and fill the `dashboard` MongoDB. **Neither feeds
 `peskas.timor.portal.v2`**; that is `export-trips`, which writes
 `portal-*.json` to the public bucket.
 
-`data-report`, `dataverse-upload` and `validation-email-sender` run in
-the pipeline’s container. Two things these must not do again: **build
-their own image**, and **assume a referenced function is exercised**.
+`data-report` and `dataverse-upload` run in the pipeline’s container.
+Two things these must not do again: **build their own image**, and
+**assume a referenced function is exercised**.
 
 ## Local notes
 

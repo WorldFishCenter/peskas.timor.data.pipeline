@@ -1,5 +1,15 @@
 # Changelog
 
+## peskas.timor.data.pipeline 5.9.0
+
+### The weekly validation email is gone
+
+- **CHANGED** Flagged submissions are reviewed in the Peskas Management
+  Platform, so the weekly email is no longer needed.
+  `send_validation_mail()`, its workflow and the `PESKAS_GMAIL_KEY`
+  setting are removed, along with the `blastula` and `kableExtra`
+  packages only it used.
+
 ## peskas.timor.data.pipeline 5.8.1
 
 ### District codes go back to being empty where there is no district
