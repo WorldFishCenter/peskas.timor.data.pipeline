@@ -162,7 +162,7 @@ default:
   # API — cross-country trip interchange
   # ===========================================================================
   # Written to the `options_api` bucket below. Kenya, Mozambique and Zanzibar
-  # publish the same 23-column schema, so it is a cross-country contract.
+  # publish the same 24-column schema, so it is a cross-country contract.
   # ===========================================================================
   api:
     # The service that serves the tables below. Only `upload_dataverse()` calls

@@ -17,7 +17,7 @@ This is the table the [Peskas Fishery Data API](https://api.peskas.org/docs) ser
 
 ## How to read the table
 
-- **One row is one catch from one trip.** A catch is one species or species group. A trip that landed three species has three rows with the same `trip_id`, and the trip's details repeat on each row.
+- **One row is one size class of one catch from one trip.** A catch is one species or species group, and enumerators count its fish by length class. Each class with fish has its own row; a catch with no fish counted has one row. A trip that landed three species has at least three rows with the same `trip_id`, and the trip's details repeat on each row.
 - **Trip totals repeat on every row of the trip.** Take `tot_catch_kg` and `tot_catch_price` once per `trip_id`; do not sum them over rows.
 - **Empty cells are missing values.** Either the value was not recorded, or it failed a check (see "How the data is produced").
 - **A row with an empty `catch_taxon`** is a trip with no catch, or a catch whose species was not recorded. From 2023, `catch_outcome` tells the two apart (0 means no catch).
@@ -29,8 +29,8 @@ Specific to Timor-Leste:
 - `survey_id` is the KoboToolbox form. The form changed twice: `aur3fK7mtJem5Cg8Wi2SPd` (SSF Landings, from 2017), `aaztUDtRzb9SpSV7i9iptb` (peskAAS, from 2019) and `aEoWV7aprG47Q4uTpaopgD` (PeskAAS 2, from 2023, the current form).
 - `trip_id` is `TRIP_` followed by the KoboToolbox submission number.
 - `gaul_1_name` is the municipality and `gaul_2_name` the administrative post.
-- `n_catch` is the catch's number within the trip, as entered in the form.
-- `length_cm` is the mean length of the fish in the catch. Enumerators count fish by length class, and the mean weighs each class by its count.
+- `n_catch` is the catch's number within the trip, as entered in the form. The rows of one catch share it.
+- `length_cm` is the middle of the length class, and `n_fish` the number of fish counted in it.
 - `catch_kg` is estimated, not weighed. It is computed from the counts and lengths with length-weight relationships from [FishBase](https://www.fishbase.org) and [SeaLifeBase](https://www.sealifebase.org).
 - `catch_price` is always empty. Timor-Leste records the value of the whole landing, which is `tot_catch_price`, in US dollars.
 - `catch_outcome` is recorded only by the current form.

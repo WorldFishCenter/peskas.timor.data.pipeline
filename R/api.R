@@ -1,7 +1,7 @@
 #' Export the raw trips table to the cross-country API bucket
 #'
 #' Projects the **weighted** (pre-validation) long catch table onto the
-#' 23-column schema `peskas-api-{dev,prod}` publishes for every country, and
+#' 24-column schema `peskas-api-{dev,prod}` publishes for every country, and
 #' uploads it to `conf$api$trips$raw$cloud_path`.
 #'
 #' @details
@@ -12,17 +12,17 @@
 #' survey_organization, survey_id, trip_id, landing_date, gaul_1_code,
 #' gaul_1_name, gaul_2_code, gaul_2_name, landing_site, n_fishers,
 #' trip_duration_hrs, gear, vessel_type, catch_habitat, catch_outcome, n_catch,
-#' catch_taxon, scientific_name, length_cm, catch_kg, catch_price,
+#' catch_taxon, scientific_name, length_cm, n_fish, catch_kg, catch_price,
 #' tot_catch_kg, tot_catch_price
 #' ```
 #'
 #' Three things to know about the mapping:
 #'
-#' * **Grain.** The API is one row per (trip, catch); Timor's long tables are one
-#'   row per (submission, catch, **length bin**). The bins are collapsed:
-#'   `catch_kg` is their sum and `length_cm` their mean weighted by the number of
-#'   individuals counted in each bin. Empty bins are kept in the input and
-#'   contribute nothing to either, so no catch record is lost.
+#' * **Grain.** The API is one row per (trip, catch, size class with fish), as
+#'   in Mozambique and Zanzibar; `length_cm` is the class middle and `n_fish`
+#'   the fish counted in it. Timor's long tables also hold the form's empty
+#'   classes; those are dropped. A catch with no fish counted keeps one row,
+#'   with no length.
 #' * **`trip_id`** is `TRIP_<submission_id>`, as in all three other countries — a
 #'   trip identifier, not the PDS `tracker_trip_id`. `coasts::summarize_data()`
 #'   does `group_by(trip_id) |> slice(1)`, so it must be unique per landing, and
@@ -56,7 +56,7 @@ export_api_raw <- function(log_threshold = logger::DEBUG) {
 #' Export the validated trips table to the cross-country API bucket
 #'
 #' Projects the long validated catch table written by [validate_landings()] onto
-#' the 23-column schema `peskas-api-{dev,prod}` publishes for every country, and
+#' the 24-column schema `peskas-api-{dev,prod}` publishes for every country, and
 #' uploads it to `conf$api$trips$validated$cloud_path`. Same schema as
 #' [export_api_raw()]; the two differ only in their input.
 #'
@@ -218,7 +218,7 @@ api_district_months <- function(districts, municipal) {
 }
 
 # Project a long catch table (standard names, `catch_kg` in kilos) onto the
-# 23 API columns. See [export_api_raw()] for the schema and the three decisions
+# 24 API columns. See [export_api_raw()] for the schema and the three decisions
 # behind it.
 api_trips <- function(landings, conf) {
   asset_ids <- purrr::map_chr(conf$ingestion$landings, "asset_id")
@@ -227,14 +227,22 @@ api_trips <- function(landings, conf) {
     dplyr::mutate(
       # "0" is the no-catch sentinel; the other countries write NA.
       catch_taxon = dplyr::na_if(.data$catch_taxon, "0"),
-      bin_n = dplyr::if_else(
-        is.na(.data$n_individuals) | is.na(.data$length),
-        0,
-        .data$n_individuals
-      ),
-      bin_length = .data$bin_n * .data$length
+      length_cm = dplyr::if_else(
+        .data$n_individuals > 0,
+        .data$length,
+        NA_real_,
+        missing = NA_real_
+      )
     ) %>%
     dplyr::group_by(.data$submission_id, .data$n_catch, .data$catch_taxon) %>%
+    # Empty size classes go, unless they carry weight; a catch with no fish
+    # counted keeps one row.
+    dplyr::filter(
+      !is.na(.data$length_cm) |
+        all(is.na(.data$length_cm)) |
+        dplyr::coalesce(.data$catch_kg, 0) > 0
+    ) %>%
+    dplyr::group_by(.data$length_cm, .add = TRUE) %>%
     dplyr::summarise(
       dplyr::across(
         dplyr::all_of(c(
@@ -256,17 +264,16 @@ api_trips <- function(landings, conf) {
         )),
         dplyr::first
       ),
-      individuals = sum(.data$bin_n, na.rm = TRUE),
-      length_sum = sum(.data$bin_length, na.rm = TRUE),
+      n_fish = sum(.data$n_individuals),
       weighed_bins = sum(!is.na(.data$catch_kg)),
       catch_kg = sum(.data$catch_kg, na.rm = TRUE),
       .groups = "drop"
     ) %>%
     dplyr::mutate(
-      length_cm = dplyr::if_else(
-        .data$individuals > 0,
-        .data$length_sum / .data$individuals,
-        NA_real_
+      n_fish = dplyr::if_else(
+        is.na(.data$length_cm),
+        NA_integer_,
+        as.integer(round(.data$n_fish))
       ),
       # A catch nothing could be weighed for is unknown, not zero.
       catch_kg = dplyr::if_else(
@@ -310,6 +317,7 @@ api_trips <- function(landings, conf) {
       .data$catch_taxon,
       .data$scientific_name,
       .data$length_cm,
+      .data$n_fish,
       .data$catch_kg,
       catch_price = NA_real_,
       .data$tot_catch_kg,
