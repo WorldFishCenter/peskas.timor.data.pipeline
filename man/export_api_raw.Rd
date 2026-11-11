@@ -16,7 +16,7 @@ no outputs. This function is used for its side effects.
 }
 \description{
 Projects the \strong{weighted} (pre-validation) long catch table onto the
-23-column schema \verb{peskas-api-\{dev,prod\}} publishes for every country, and
+24-column schema \verb{peskas-api-\{dev,prod\}} publishes for every country, and
 uploads it to \code{conf$api$trips$raw$cloud_path}.
 }
 \details{
@@ -26,17 +26,17 @@ Zanzibar, raw and validated alike:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{survey_organization, survey_id, trip_id, landing_date, gaul_1_code,
 gaul_1_name, gaul_2_code, gaul_2_name, landing_site, n_fishers,
 trip_duration_hrs, gear, vessel_type, catch_habitat, catch_outcome, n_catch,
-catch_taxon, scientific_name, length_cm, catch_kg, catch_price,
+catch_taxon, scientific_name, length_cm, n_fish, catch_kg, catch_price,
 tot_catch_kg, tot_catch_price
 }\if{html}{\out{</div>}}
 
 Three things to know about the mapping:
 \itemize{
-\item \strong{Grain.} The API is one row per (trip, catch); Timor's long tables are one
-row per (submission, catch, \strong{length bin}). The bins are collapsed:
-\code{catch_kg} is their sum and \code{length_cm} their mean weighted by the number of
-individuals counted in each bin. Empty bins are kept in the input and
-contribute nothing to either, so no catch record is lost.
+\item \strong{Grain.} The API is one row per (trip, catch, size class with fish), as
+in Mozambique and Zanzibar; \code{length_cm} is the class middle and \code{n_fish}
+the fish counted in it. Timor's long tables also hold the form's empty
+classes; those are dropped. A catch with no fish counted keeps one row,
+with no length.
 \item \strong{\code{trip_id}} is \verb{TRIP_<submission_id>}, as in all three other countries — a
 trip identifier, not the PDS \code{tracker_trip_id}. \code{coasts::summarize_data()}
 does \code{group_by(trip_id) |> slice(1)}, so it must be unique per landing, and

@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 5.10.0
+
+## Number of fish behind each length
+
+* **CHANGED** Landings in the API and in the monthly public dataset have one row per length class with its number of fish, as in Mozambique and Zanzibar, instead of one row per catch with an average length.
+
 # peskas.timor.data.pipeline 5.9.0
 
 ## The weekly validation email is gone

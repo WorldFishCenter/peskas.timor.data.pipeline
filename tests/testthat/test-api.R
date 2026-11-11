@@ -54,6 +54,7 @@ test_that("the emitted schema is the cross-country contract", {
       "catch_taxon",
       "scientific_name",
       "length_cm",
+      "n_fish",
       "catch_kg",
       "catch_price",
       "tot_catch_kg",
@@ -61,29 +62,38 @@ test_that("the emitted schema is the cross-country contract", {
     )
   )
   expect_type(api$n_catch, "integer")
+  expect_type(api$n_fish, "integer")
   expect_s3_class(api$landing_date, "Date")
-  expect_equal(api$survey_organization, rep("MAF", 3))
-  expect_equal(api$survey_id, rep("asset3", 3))
-  expect_equal(api$trip_id, c("TRIP_1", "TRIP_1", "TRIP_2"))
+  expect_equal(api$survey_organization, rep("MAF", 4))
+  expect_equal(api$survey_id, rep("asset3", 4))
+  expect_equal(api$trip_id, c("TRIP_1", "TRIP_1", "TRIP_1", "TRIP_2"))
 })
 
-test_that("length bins collapse to one row per catch without losing weight", {
-  expect_equal(nrow(api), 3L)
+test_that("each size class with fish is a row, and no weight is lost", {
+  expect_equal(nrow(api), 4L)
   expect_equal(
     sum(api$catch_kg, na.rm = TRUE),
     sum(bins$catch_kg, na.rm = TRUE)
   )
-  # catch 1: 0.5 + 4, the empty bin contributing nothing
-  expect_equal(api$catch_kg[which(api$catch_taxon == "SDX")], 4.5)
+  # catch 1: the empty 12.5 bin is dropped
+  expect_equal(api$catch_kg[which(api$catch_taxon == "SDX")], c(0.5, 4))
 })
 
-test_that("length_cm is the individuals-weighted mean of the bin midpoints", {
-  # catch 1: (2 * 7.5 + 0 * 12.5 + 8 * 17.5) / 10
-  expect_equal(api$length_cm[which(api$catch_taxon == "SDX")], 15.5)
-  # catch 2: the 27.5 bin has no count, so only the 22.5 bin is weighed
+test_that("length_cm is the size class and n_fish its count", {
+  expect_equal(api$length_cm[which(api$catch_taxon == "SDX")], c(7.5, 17.5))
+  expect_equal(api$n_fish[which(api$catch_taxon == "SDX")], c(2L, 8L))
+  # catch 2: the 27.5 bin has no count
   expect_equal(api$length_cm[which(api$catch_taxon == "TUN")], 22.5)
-  # a landing with no catch has no length
+  expect_equal(api$n_fish[which(api$catch_taxon == "TUN")], 1L)
+  # a landing with no catch has no length and no count
   expect_true(is.na(api$length_cm[is.na(api$catch_taxon)]))
+  expect_true(is.na(api$n_fish[is.na(api$catch_taxon)]))
+})
+
+test_that("a size class without fish keeps its weight", {
+  weighed <- dplyr::mutate(bins, catch_kg = c(0.5, 1, 4, 2, NA, NA))
+  out <- peskas.timor.data.pipeline:::api_trips(weighed, conf)
+  expect_equal(sum(out$catch_kg, na.rm = TRUE), 7.5)
 })
 
 test_that("nothing weighable becomes NA rather than zero", {
@@ -93,9 +103,9 @@ test_that("nothing weighable becomes NA rather than zero", {
 
 test_that("the landing's revenue is tot_catch_price and catch_price is NA", {
   expect_true(all(is.na(api$catch_price)))
-  expect_equal(api$tot_catch_price, c(30, 30, 0))
-  # tot_catch_kg is the landing's total, repeated on each of its catches
-  expect_equal(api$tot_catch_kg[api$trip_id == "TRIP_1"], c(6.5, 6.5))
+  expect_equal(api$tot_catch_price, c(30, 30, 30, 0))
+  # tot_catch_kg is the landing's total, repeated on each of its rows
+  expect_equal(api$tot_catch_kg[api$trip_id == "TRIP_1"], rep(6.5, 3))
 })
 
 test_that("the no-catch sentinel becomes NA, as in the other countries", {

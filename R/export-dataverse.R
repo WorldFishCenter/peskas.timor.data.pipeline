@@ -99,7 +99,7 @@ upload_dataverse <- function(log_threshold = logger::DEBUG) {
   )
   dataverse_upload(
     landings,
-    "Validated landings: one row per catch per fishing trip. See README.md.",
+    "Validated landings: one row per catch and size class. See README.md.",
     current,
     doi,
     conf
