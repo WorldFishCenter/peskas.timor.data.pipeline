@@ -3,7 +3,10 @@
 One `surveys_flags-<asset_id>` collection per **live** form, plus the
 `enumerators_stats-<asset_id>` long form (one row per raised alert) the
 cross-country validation UI reads. v1 is frozen: it has no live asset
-and gets no collection.
+and gets no collection. Reviewers' decisions are read again just before
+each push
+([`coasts::refresh_review_decisions()`](https://rdrr.io/pkg/coasts/man/refresh_review_decisions.html)),
+so one saved while the run goes on is kept.
 
 ## Usage
 
