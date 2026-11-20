@@ -267,7 +267,9 @@ validate_landings <- function(log_threshold = logger::DEBUG) {
 #' One `surveys_flags-<asset_id>` collection per **live** form, plus the
 #' `enumerators_stats-<asset_id>` long form (one row per raised alert) the
 #' cross-country validation UI reads. v1 is frozen: it has no live asset and
-#' gets no collection.
+#' gets no collection. Reviewers' decisions are read again just before each
+#' push ([coasts::refresh_review_decisions()]), so one saved while the run
+#' goes on is kept.
 #'
 #' @param conf The configuration file.
 #' @param flags The flags frame assembled by [validate_landings()].
@@ -328,6 +330,14 @@ push_validation_flags <- function(conf, flags, reviews) {
         conf$ingestion$landings[[version]]$username
       )
 
+    # Right before the push: a reviewer may have decided since the run began.
+    out <- coasts::refresh_review_decisions(
+      flags = out,
+      pipeline_users = conf$ingestion$landings[[version]]$username,
+      connection_string = mdb$connection_strings$validation,
+      db_name = mdb$databases$validation$database_name,
+      collection_name = collection
+    )
     logger::log_info("Pushing {nrow(out)} {version} flags to {collection}")
     coasts::mdb_collection_push(
       data = out,

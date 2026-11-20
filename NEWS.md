@@ -1,3 +1,9 @@
+# peskas.timor.data.pipeline 5.10.1
+
+## Reviewers' decisions saved during a run are kept
+
+* **FIXED** A decision a reviewer saves in the management platform while the pipeline is running is no longer undone when the run writes its flags.
+
 # peskas.timor.data.pipeline 5.10.0
 
 ## Number of fish behind each length

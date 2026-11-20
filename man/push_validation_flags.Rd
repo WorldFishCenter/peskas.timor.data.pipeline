@@ -20,6 +20,8 @@ Invisibly, the flags frame that was pushed.
 One \verb{surveys_flags-<asset_id>} collection per \strong{live} form, plus the
 \verb{enumerators_stats-<asset_id>} long form (one row per raised alert) the
 cross-country validation UI reads. v1 is frozen: it has no live asset and
-gets no collection.
+gets no collection. Reviewers' decisions are read again just before each
+push (\code{\link[coasts:refresh_review_decisions]{coasts::refresh_review_decisions()}}), so one saved while the run
+goes on is kept.
 }
 \keyword{validation}
